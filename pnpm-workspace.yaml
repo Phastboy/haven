@@ -1,2 +1,0 @@
-minimumReleaseAgeExclude:
-  - '@nestjs/observe@0.1.10'

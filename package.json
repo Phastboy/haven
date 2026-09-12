@@ -1,16 +1,17 @@
 {
   "name": "haven",
   "version": "0.0.1",
-  "private": true,
   "description": "",
-  "license": "UNLICENSED",
   "author": "",
+  "private": true,
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "build": "nest build",
     "deploy": "nest deploy",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "dev": "nest start --watch",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "oxlint src/ test/",
@@ -23,38 +24,26 @@
   "dependencies": {
     "@nestjs/common": "^12.0.1",
     "@nestjs/core": "^12.0.1",
-    "@nestjs/observe": "^0.1.10",
+    "@nestjs/observe": "^0.1.8",
     "@nestjs/platform-express": "^12.0.1",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.2"
+    "rxjs": "^7.8.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^12.0.0",
     "@nestjs/mau": "^0.2.6",
-    "@nestjs/schematics": "^12.0.1",
+    "@nestjs/schematics": "^12.0.0",
     "@nestjs/testing": "^12.0.1",
-    "@types/express": "^5.0.6",
+    "@types/express": "^5.0.0",
     "@types/node": "^24.0.0",
-    "@types/supertest": "^7.2.1",
-    "@vitest/coverage-v8": "^5.0.0",
-    "oxlint": "^1.82.0",
-    "prettier": "^3.9.6",
+    "@types/supertest": "^7.0.0",
+    "@vitest/coverage-v8": "^4.1.2",
+    "oxlint": "^1.58.0",
+    "prettier": "^3.4.2",
     "source-map-support": "^0.5.21",
-    "supertest": "^7.2.2",
+    "supertest": "^7.0.0",
     "typescript": "^6.0.2",
-    "vite-tsconfig-paths": "^6.1.1",
-    "vitest": "^5.0.0"
-  },
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": ">=12.4.1",
-      "onFail": "error"
-    },
-    "runtime": {
-      "name": "node",
-      "version": ">=26.0.0",
-      "onFail": "error"
-    }
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^4.1.2"
   }
 }
