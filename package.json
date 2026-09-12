@@ -1,10 +1,10 @@
 {
   "name": "haven",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
   "private": true,
+  "description": "",
   "license": "UNLICENSED",
+  "author": "",
   "type": "module",
   "scripts": {
     "build": "nest build",
@@ -45,5 +45,17 @@
     "typescript": "^6.0.2",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^5.0.0"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": ">=12.4.1",
+      "onFail": "error"
+    },
+    "runtime": {
+      "name": "node",
+      "version": ">=26.0.0",
+      "onFail": "error"
+    }
   }
 }
