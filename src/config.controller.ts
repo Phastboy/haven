@@ -6,6 +6,6 @@ export const configController = new Elysia({ prefix: '/config', name: 'config-co
   }, () => {
     return {
       googleClientId: process.env['GOOGLE_CLIENT_ID'] || '',
-      // Add other public configurations here as needed
+      primeUiLicense: process.env['PRIME_UI_LICENSE'] || '',
     };
   });
