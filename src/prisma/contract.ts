@@ -38,7 +38,7 @@ export const contract = defineContract({}, ({ field, model, rel }) => {
       id: field.id.uuidv7String(),
       accountId: field.uuidString(),
       token: field.text().unique(),
-      expiresAt: field.temporal.timestampString(),
+      expiresAt: field.temporal.timestamptzString(),
       userAgent: field.text().optional(),
       ipAddress: field.text().optional(),
       createdAt: field.temporal.createdAtString(),
@@ -50,8 +50,8 @@ export const contract = defineContract({}, ({ field, model, rel }) => {
       id: field.id.uuidv7String(),
       email: field.text(),
       token: field.text().unique(),
-      expiresAt: field.temporal.timestampString(),
-      usedAt: field.temporal.timestampString().optional(),
+      expiresAt: field.temporal.timestamptzString(),
+      usedAt: field.temporal.timestamptzString().optional(),
       createdAt: field.temporal.createdAtString(),
     },
   });
@@ -64,10 +64,14 @@ export const contract = defineContract({}, ({ field, model, rel }) => {
       providerUserId: field.text(),
       accessToken: field.text(),
       refreshToken: field.text().optional(),
-      tokenExpiresAt: field.temporal.timestampString().optional(),
+      tokenExpiresAt: field.temporal.timestamptzString().optional(),
       createdAt: field.temporal.createdAtString(),
       updatedAt: field.temporal.updatedAtString(),
     },
+  }).sql({
+    indexes: [
+      { kind: 'index', fields: ['provider', 'providerUserId'], unique: true, name: 'OAuthCredential_provider_providerUserId_key' }
+    ]
   });
 
   const AccountPlatformLink = model('AccountPlatformLink', {
