@@ -1,10 +1,12 @@
 import openapi from "@elysia/openapi";
 import { Elysia } from "elysia";
 import { createUserPlugin } from "./user/presentation/user.plugin";
+import { authController } from "./auth";
 
 const app = new Elysia()
   .use(openapi())
   .use(createUserPlugin())
+  .use(authController)
   .get("/", () => "Hello Elysia")
   .listen(
     {
