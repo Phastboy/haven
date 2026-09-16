@@ -10,8 +10,11 @@ const app = new Elysia()
   .use(configController)
   .use(createUserPlugin())
   .use(authController)
-  .get("/", () => "Hello Elysia")
-  .listen(
+  .get("/", () => "Hello Elysia");
+
+export type App = typeof app;
+
+app.listen(
     {
       port: 3000,
       hostname: "0.0.0.0",
