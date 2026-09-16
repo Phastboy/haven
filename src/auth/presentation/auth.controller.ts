@@ -45,7 +45,7 @@ const linkPlatformUC = new LinkPlatformUseCase(platformLinkRepo);
 
 const createUserUC = new CreateUserUseCase(new PrismaUserRepository());
 
-export const authController = new Elysia({ prefix: '/auth', name: 'auth-controller' })
+export const authController = new Elysia({ prefix: '/auth', name: 'auth-controller', tags: ['Auth'] })
   .use(authErrorPlugin)
   .use(authMiddleware)
   
