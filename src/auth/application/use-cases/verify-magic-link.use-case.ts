@@ -25,7 +25,10 @@ export class VerifyMagicLinkUseCase {
       throw new ExpiredTokenError();
     }
 
-    await this.magicLinkRepo.markUsed(magicLink.id, new Date().toISOString());
+    const marked = await this.magicLinkRepo.markUsed(magicLink.id, new Date().toISOString());
+    if (!marked) {
+      throw new InvalidTokenError();
+    }
 
     let account = await this.accountRepo.findByEmail(magicLink.email);
     if (!account) {

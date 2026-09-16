@@ -22,7 +22,8 @@ export class MagicLinkRepository implements IMagicLinkRepository {
     return { ...rest, ...(usedAt ? { usedAt } : {}) };
   }
 
-  async markUsed(id: string, usedAt: string): Promise<void> {
-    await db.orm.public.MagicLink.where({ id: asId(id) }).update({ usedAt });
+  async markUsed(id: string, usedAt: string): Promise<boolean> {
+    const res = await db.orm.public.MagicLink.where({ id: asId(id), usedAt: null }).update({ usedAt });
+    return res !== null;
   }
 }

@@ -43,7 +43,10 @@ const loginWithGoogleUC = new LoginWithGoogleUseCase(accountRepo, oauthRepo, ses
 const logoutUC = new LogoutUseCase(sessionRepo, tokenService);
 const linkPlatformUC = new LinkPlatformUseCase(platformLinkRepo);
 
-const createUserUC = new CreateUserUseCase(new PrismaUserRepository());
+import { ConflictError } from '../../shared/errors';
+
+const userRepo = new PrismaUserRepository();
+const createUserUC = new CreateUserUseCase(userRepo);
 
 export const authController = new Elysia({ prefix: '/auth', name: 'auth-controller', tags: ['Auth'] })
   .use(authErrorPlugin)
@@ -70,8 +73,17 @@ export const authController = new Elysia({ prefix: '/auth', name: 'auth-controll
         await linkPlatformUC.execute(account.id, user.id, 'haven_platform');
       }
     } catch (e) {
-      console.log('Error in user/link creation (Magic Link):', e);
-      // Ignored if user already exists
+      if (e instanceof ConflictError) {
+        const account = await accountRepo.findById(session.accountId);
+        if (account) {
+          const existingUser = await userRepo.findByEmail(account.email);
+          if (existingUser) {
+            await linkPlatformUC.execute(account.id, existingUser.id, 'haven_platform');
+          }
+        }
+      } else {
+        console.log('Error in user/link creation (Magic Link):', e);
+      }
     }
 
     return session;
@@ -94,8 +106,17 @@ export const authController = new Elysia({ prefix: '/auth', name: 'auth-controll
         await linkPlatformUC.execute(account.id, user.id, 'haven_platform');
       }
     } catch (e) {
-      console.log('Error in user/link creation (Google):', e);
-      // Ignored if user already exists
+      if (e instanceof ConflictError) {
+        const account = await accountRepo.findById(session.accountId);
+        if (account) {
+          const existingUser = await userRepo.findByEmail(account.email);
+          if (existingUser) {
+            await linkPlatformUC.execute(account.id, existingUser.id, 'haven_platform');
+          }
+        }
+      } else {
+        console.log('Error in user/link creation (Google):', e);
+      }
     }
 
     return session;

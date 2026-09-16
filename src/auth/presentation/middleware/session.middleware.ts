@@ -1,5 +1,6 @@
 import Elysia from 'elysia';
 import { GetSessionUseCase } from '../../application/use-cases/get-session.use-case';
+import { UnauthorizedError } from '../../domain/errors';
 import { SessionRepository } from '../../infrastructure/repositories/session.repository';
 import { tokenService } from '../../infrastructure/services/token.service';
 
@@ -24,7 +25,10 @@ export const authMiddleware = new Elysia({ name: 'auth-middleware' })
         account: sessionWithAccount.account,
       };
     } catch (e) {
-      return { session: null, account: null };
+      if (e instanceof UnauthorizedError) {
+        return { session: null, account: null };
+      }
+      throw e;
     }
   })
   .macro({

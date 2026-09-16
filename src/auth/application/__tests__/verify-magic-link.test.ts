@@ -62,7 +62,7 @@ describe('VerifyMagicLinkUseCase', () => {
       createdAt: new Date().toISOString(),
     });
 
-    mockMagicLinkRepo.markUsed.mockResolvedValueOnce(undefined);
+    mockMagicLinkRepo.markUsed.mockResolvedValueOnce(true);
     
     // Simulate new account
     mockAccountRepo.findByEmail.mockResolvedValueOnce(null);

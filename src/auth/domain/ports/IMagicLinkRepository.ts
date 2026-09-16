@@ -9,5 +9,5 @@ export interface CreateMagicLinkDTO {
 export interface IMagicLinkRepository {
   create(data: CreateMagicLinkDTO): Promise<MagicLink>;
   findByToken(token: string): Promise<MagicLink | null>;
-  markUsed(id: string, usedAt: string): Promise<void>;
+  markUsed(id: string, usedAt: string): Promise<boolean>;
 }
