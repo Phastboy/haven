@@ -15,10 +15,12 @@ describe('SmtpEmailService Integration', () => {
       await service.send('integration-test@example.com', 'Integration Test Subject', 'This is an integration test.');
       expect(true).toBe(true);
     } catch (e: any) {
-      // Bun currently has a known quirk with Nodemailer where the TLS socket closes abruptly 
-      // upon the SMTP QUIT command, throwing an error even though the mail was successfully sent.
-      console.log('Caught expected Bun/Nodemailer socket teardown error:', e.message);
-      expect(e).toBeDefined();
+      if (e.message && (e.message.includes('socket') || e.message.includes('Connection closed') || e.message.includes('TLS'))) {
+        console.log('Caught expected Bun/Nodemailer socket teardown error:', e.message);
+        expect(e).toBeDefined();
+      } else {
+        throw e;
+      }
     }
   });
 });

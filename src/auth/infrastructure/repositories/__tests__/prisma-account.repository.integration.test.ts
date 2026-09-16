@@ -1,25 +1,17 @@
-import { expect, test, describe, afterAll } from 'bun:test';
+import { expect, test, describe } from 'bun:test';
 import { AccountRepository } from '../account.repository';
 import type { Char } from '@prisma/orm-postgres/target/codec-types';
+import { db } from '../../../../prisma/db';
 
 function asId(id: string): Char<36> {
   return id as unknown as Char<36>;
 }
 
-import { db } from '../../../../prisma/db';
-
 describe('AccountRepository Integration', () => {
   const repo = new AccountRepository();
-  const testEmail = `test-${crypto.randomUUID()}@example.com`;
-  let createdAccountId: string;
-
-  afterAll(async () => {
-    if (createdAccountId) {
-      await db.orm.public.Account.where({ id: asId(createdAccountId) }).delete();
-    }
-  });
 
   test('should create a new account', async () => {
+    const testEmail = `test-${crypto.randomUUID()}@example.com`;
     const account = await repo.create({
       email: testEmail,
       emailVerified: false,
@@ -29,13 +21,21 @@ describe('AccountRepository Integration', () => {
     expect(account.email).toBe(testEmail);
     expect(account.emailVerified).toBe(false);
 
-    createdAccountId = account.id;
+    await db.orm.public.Account.where({ id: asId(account.id) }).delete();
   });
 
   test('should find account by email', async () => {
-    const account = await repo.findByEmail(testEmail);
-    expect(account).not.toBeNull();
-    expect(account!.id).toBe(createdAccountId);
+    const testEmail = `test-${crypto.randomUUID()}@example.com`;
+    const account = await repo.create({
+      email: testEmail,
+      emailVerified: false,
+    });
+
+    const found = await repo.findByEmail(testEmail);
+    expect(found).not.toBeNull();
+    expect(found!.id).toBe(account.id);
+
+    await db.orm.public.Account.where({ id: asId(account.id) }).delete();
   });
 
   test('should return null for non-existent email', async () => {
@@ -44,14 +44,30 @@ describe('AccountRepository Integration', () => {
   });
 
   test('should find account by id', async () => {
-    const account = await repo.findById(createdAccountId);
-    expect(account).not.toBeNull();
-    expect(account!.email).toBe(testEmail);
+    const testEmail = `test-${crypto.randomUUID()}@example.com`;
+    const account = await repo.create({
+      email: testEmail,
+      emailVerified: false,
+    });
+
+    const found = await repo.findById(account.id);
+    expect(found).not.toBeNull();
+    expect(found!.email).toBe(testEmail);
+
+    await db.orm.public.Account.where({ id: asId(account.id) }).delete();
   });
 
   test('should mark email as verified', async () => {
-    await repo.markEmailVerified(createdAccountId);
-    const account = await repo.findById(createdAccountId);
-    expect(account!.emailVerified).toBe(true);
+    const testEmail = `test-${crypto.randomUUID()}@example.com`;
+    const account = await repo.create({
+      email: testEmail,
+      emailVerified: false,
+    });
+
+    await repo.markEmailVerified(account.id);
+    const updated = await repo.findById(account.id);
+    expect(updated!.emailVerified).toBe(true);
+
+    await db.orm.public.Account.where({ id: asId(account.id) }).delete();
   });
 });
