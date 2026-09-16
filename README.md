@@ -1,36 +1,15 @@
-# haven
+# Elysia with Bun runtime
 
-A minimal nest app with Prisma 8 and Prisma Composer.
-
-## Run locally
-
+## Getting Started
+To get started with this template, simply paste this command into your terminal:
 ```bash
-pnpm run dev:composer
+bun create elysia ./elysia-example
 ```
 
-This builds the app and starts it with Composer. PostgreSQL projects get a local Prisma Postgres database and apply the contract automatically.
-
-## Deploy
-
+## Development
+To start the development server run:
 ```bash
-pnpm run deploy
+bun run dev
 ```
 
-The deploy script builds the framework output, provisions Prisma Postgres when selected, applies migrations, and deploys the app to Prisma Compute.
-
-The starter users are inserted idempotently from `src/prisma/seed.ts` on the first database query through the Composer service binding.
-
-
-## Prisma
-
-- Contract: `src/prisma/contract.ts`
-- Prisma and Composer config: `prisma.config.ts`
-- Composer app: `module.ts` and `service.ts`
-
-After changing the contract, run:
-
-```bash
-pnpm run contract:emit
-```
-
-To use the framework's development server directly, run `pnpm run dev`. This direct mode requires `DATABASE_URL`.
+Open http://localhost:3000/ with your browser to see the result.
