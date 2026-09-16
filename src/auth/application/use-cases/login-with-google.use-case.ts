@@ -16,27 +16,35 @@ export class LoginWithGoogleUseCase {
 
   async execute(idToken: string, userAgent?: string, ipAddress?: string): Promise<Session> {
     const claims = await this.googleService.verify(idToken);
-    
-    let account = await this.accountRepo.findByEmail(claims.email);
-    if (!account) {
-      account = await this.accountRepo.create({
-        email: claims.email,
-        emailVerified: claims.email_verified,
-      });
-    } else if (claims.email_verified && !account.emailVerified) {
-      await this.accountRepo.markEmailVerified(account.id);
-    }
-
     let credential = await this.oauthRepo.findByProvider('GOOGLE', claims.sub);
-    if (!credential) {
-      await this.oauthRepo.create({
+    let account: { id: string, emailVerified: boolean } | null = null;
+
+    if (credential) {
+      account = await this.accountRepo.findById(credential.accountId);
+      if (!account) {
+        throw new Error('Inconsistent state: OAuth credential exists but account does not');
+      }
+    } else {
+      if (!claims.email_verified) {
+        throw new Error('Email must be verified to link a new Google account');
+      }
+      account = await this.accountRepo.findByEmail(claims.email);
+      
+      if (!account) {
+        account = await this.accountRepo.create({
+          email: claims.email,
+          emailVerified: true, // we already know it's verified here
+        });
+      } else if (!account.emailVerified) {
+        await this.accountRepo.markEmailVerified(account.id);
+      }
+
+      credential = await this.oauthRepo.create({
         accountId: account.id,
         provider: 'GOOGLE',
         providerUserId: claims.sub,
-        accessToken: idToken, // Storing idToken as access token for simplicity, we don't request offline access now
+        accessToken: claims.sub, // Storing sub since we don't request offline access right now
       });
-    } else {
-      await this.oauthRepo.updateTokens(credential.id, idToken);
     }
 
     const sessionRawToken = this.tokenService.generate(64);
