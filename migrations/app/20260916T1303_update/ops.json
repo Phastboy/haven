@@ -1,0 +1,362 @@
+[
+  {
+    "id": "table.Account",
+    "label": "Create table \"Account\"",
+    "summary": "Creates table \"Account\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "Account"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"Account\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Account\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"Account\"",
+        "sql": "CREATE TABLE \"public\".\"Account\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"email\" text NOT NULL,\n  \"emailVerified\" bool DEFAULT false NOT NULL,\n  \"id\" character(36) NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"Account\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Account\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.AccountPlatformLink",
+    "label": "Create table \"AccountPlatformLink\"",
+    "summary": "Creates table \"AccountPlatformLink\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "AccountPlatformLink"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"AccountPlatformLink\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AccountPlatformLink\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"AccountPlatformLink\"",
+        "sql": "CREATE TABLE \"public\".\"AccountPlatformLink\" (\n  \"accountId\" character(36) NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" character(36) NOT NULL,\n  \"platform\" text NOT NULL,\n  \"platformUserId\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"AccountPlatformLink\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AccountPlatformLink\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.MagicLink",
+    "label": "Create table \"MagicLink\"",
+    "summary": "Creates table \"MagicLink\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "MagicLink"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"MagicLink\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"MagicLink\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"MagicLink\"",
+        "sql": "CREATE TABLE \"public\".\"MagicLink\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"email\" text NOT NULL,\n  \"expiresAt\" timestamp NOT NULL,\n  \"id\" character(36) NOT NULL,\n  \"token\" text NOT NULL,\n  \"usedAt\" timestamp,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"MagicLink\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"MagicLink\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.OAuthCredential",
+    "label": "Create table \"OAuthCredential\"",
+    "summary": "Creates table \"OAuthCredential\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "OAuthCredential"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"OAuthCredential\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"OAuthCredential\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"OAuthCredential\"",
+        "sql": "CREATE TABLE \"public\".\"OAuthCredential\" (\n  \"accessToken\" text NOT NULL,\n  \"accountId\" character(36) NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" character(36) NOT NULL,\n  \"provider\" text NOT NULL,\n  \"providerUserId\" text NOT NULL,\n  \"refreshToken\" text,\n  \"tokenExpiresAt\" timestamp,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"OAuthCredential\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"OAuthCredential\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.Session",
+    "label": "Create table \"Session\"",
+    "summary": "Creates table \"Session\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "Session"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"Session\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Session\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"Session\"",
+        "sql": "CREATE TABLE \"public\".\"Session\" (\n  \"accountId\" character(36) NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"expiresAt\" timestamp NOT NULL,\n  \"id\" character(36) NOT NULL,\n  \"ipAddress\" text,\n  \"token\" text NOT NULL,\n  \"userAgent\" text,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"Session\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Session\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.Account.Account_email_key",
+    "label": "Add unique constraint on \"Account\" (email)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "Account_email_key",
+        "table": "Account"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"Account_email_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Account_email_key",
+          "public",
+          "\"public\".\"Account\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"Account_email_key\"",
+        "sql": "ALTER TABLE \"public\".\"Account\" ADD CONSTRAINT \"Account_email_key\" UNIQUE (\"email\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"Account_email_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Account_email_key",
+          "public",
+          "\"public\".\"Account\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.MagicLink.MagicLink_token_key",
+    "label": "Add unique constraint on \"MagicLink\" (token)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "MagicLink_token_key",
+        "table": "MagicLink"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"MagicLink_token_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "MagicLink_token_key",
+          "public",
+          "\"public\".\"MagicLink\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"MagicLink_token_key\"",
+        "sql": "ALTER TABLE \"public\".\"MagicLink\" ADD CONSTRAINT \"MagicLink_token_key\" UNIQUE (\"token\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"MagicLink_token_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "MagicLink_token_key",
+          "public",
+          "\"public\".\"MagicLink\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.Session.Session_token_key",
+    "label": "Add unique constraint on \"Session\" (token)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "Session_token_key",
+        "table": "Session"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"Session_token_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Session_token_key",
+          "public",
+          "\"public\".\"Session\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"Session_token_key\"",
+        "sql": "ALTER TABLE \"public\".\"Session\" ADD CONSTRAINT \"Session_token_key\" UNIQUE (\"token\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"Session_token_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Session_token_key",
+          "public",
+          "\"public\".\"Session\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.AccountPlatformLink.account_platform_link_unique_9a628f2f",
+    "label": "Create index \"account_platform_link_unique_9a628f2f\" on \"AccountPlatformLink\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "account_platform_link_unique_9a628f2f",
+        "table": "AccountPlatformLink"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"account_platform_link_unique_9a628f2f\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"account_platform_link_unique_9a628f2f\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"account_platform_link_unique_9a628f2f\"",
+        "sql": "CREATE UNIQUE INDEX \"account_platform_link_unique_9a628f2f\" ON \"public\".\"AccountPlatformLink\" (\"accountId\", \"platform\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"account_platform_link_unique_9a628f2f\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"account_platform_link_unique_9a628f2f\""
+        ]
+      }
+    ]
+  }
+]
