@@ -250,7 +250,7 @@
               "expiresAt": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/timestamp-string@1",
+                  "codecId": "pg/timestamptz-string@1",
                   "kind": "scalar"
                 }
               },
@@ -274,7 +274,7 @@
               "usedAt": {
                 "nullable": true,
                 "type": {
-                  "codecId": "pg/timestamp-string@1",
+                  "codecId": "pg/timestamptz-string@1",
                   "kind": "scalar"
                 }
               }
@@ -365,7 +365,7 @@
               "tokenExpiresAt": {
                 "nullable": true,
                 "type": {
-                  "codecId": "pg/timestamp-string@1",
+                  "codecId": "pg/timestamptz-string@1",
                   "kind": "scalar"
                 }
               },
@@ -545,7 +545,7 @@
               "expiresAt": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/timestamp-string@1",
+                  "codecId": "pg/timestamptz-string@1",
                   "kind": "scalar"
                 }
               },
@@ -854,8 +854,8 @@
                   "nullable": false
                 },
                 "expiresAt": {
-                  "codecId": "pg/timestamp-string@1",
-                  "nativeType": "timestamp",
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
                   "nullable": false
                 },
                 "id": {
@@ -872,8 +872,8 @@
                   "nullable": false
                 },
                 "usedAt": {
-                  "codecId": "pg/timestamp-string@1",
-                  "nativeType": "timestamp",
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
                   "nullable": true
                 }
               },
@@ -940,8 +940,8 @@
                   "nullable": true
                 },
                 "tokenExpiresAt": {
-                  "codecId": "pg/timestamp-string@1",
-                  "nativeType": "timestamp",
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
                   "nullable": true
                 },
                 "updatedAt": {
@@ -951,7 +951,17 @@
                 }
               },
               "foreignKeys": [],
-              "indexes": [],
+              "indexes": [
+                {
+                  "columns": [
+                    "provider",
+                    "providerUserId"
+                  ],
+                  "name": "OAuthCredential_provider_providerUserId_key_febec28a",
+                  "prefix": "OAuthCredential_provider_providerUserId_key",
+                  "unique": true
+                }
+              ],
               "primaryKey": {
                 "columns": [
                   "id"
@@ -1031,8 +1041,8 @@
                   "nullable": false
                 },
                 "expiresAt": {
-                  "codecId": "pg/timestamp-string@1",
-                  "nativeType": "timestamp",
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
                   "nullable": false
                 },
                 "id": {
@@ -1135,7 +1145,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "f9729875259238fb4bdc864070c1c8a0d941002f02edcc70e739c05e256c6558"
+    "storageHash": "0903885a86748f5b475cc5e990c88fbd394c8380f64d76409c1c116409485a99"
   },
   "execution": {
     "executionHash": "2fa8fc708f115b35f407671536d45525b90cfa74baf58b65452718664a8ebc07",

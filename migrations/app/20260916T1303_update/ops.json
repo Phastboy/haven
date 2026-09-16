@@ -321,40 +321,79 @@
     ]
   },
   {
-    "id": "index.AccountPlatformLink.account_platform_link_unique_9a628f2f",
-    "label": "Create index \"account_platform_link_unique_9a628f2f\" on \"AccountPlatformLink\"",
+    "id": "index.OAuthCredential.OAuthCredential_provider_providerUserId_key",
+    "label": "Create index \"OAuthCredential_provider_providerUserId_key\" on \"OAuthCredential\"",
     "operationClass": "additive",
     "target": {
       "id": "postgres",
       "details": {
         "schema": "public",
         "objectType": "index",
-        "name": "account_platform_link_unique_9a628f2f",
-        "table": "AccountPlatformLink"
+        "name": "OAuthCredential_provider_providerUserId_key",
+        "table": "OAuthCredential"
       }
     },
     "precheck": [
       {
-        "description": "ensure index \"account_platform_link_unique_9a628f2f\" does not exist",
+        "description": "ensure index \"OAuthCredential_provider_providerUserId_key\" does not exist",
         "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
         "params": [
-          "\"public\".\"account_platform_link_unique_9a628f2f\""
+          "\"public\".\"OAuthCredential_provider_providerUserId_key\""
         ]
       }
     ],
     "execute": [
       {
-        "description": "create index \"account_platform_link_unique_9a628f2f\"",
-        "sql": "CREATE UNIQUE INDEX \"account_platform_link_unique_9a628f2f\" ON \"public\".\"AccountPlatformLink\" (\"accountId\", \"platform\")",
+        "description": "create index \"OAuthCredential_provider_providerUserId_key\"",
+        "sql": "CREATE UNIQUE INDEX \"OAuthCredential_provider_providerUserId_key\" ON \"public\".\"OAuthCredential\" (\"provider\", \"providerUserId\")",
         "params": []
       }
     ],
     "postcheck": [
       {
-        "description": "verify index \"account_platform_link_unique_9a628f2f\" exists",
+        "description": "verify index \"OAuthCredential_provider_providerUserId_key\" exists",
         "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
         "params": [
-          "\"public\".\"account_platform_link_unique_9a628f2f\""
+          "\"public\".\"OAuthCredential_provider_providerUserId_key\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.AccountPlatformLink.account_platform_link_unique",
+    "label": "Create index \"account_platform_link_unique\" on \"AccountPlatformLink\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "account_platform_link_unique",
+        "table": "AccountPlatformLink"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"account_platform_link_unique\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"account_platform_link_unique\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"account_platform_link_unique\"",
+        "sql": "CREATE UNIQUE INDEX \"account_platform_link_unique\" ON \"public\".\"AccountPlatformLink\" (\"accountId\", \"platform\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"account_platform_link_unique\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"account_platform_link_unique\""
         ]
       }
     ]

@@ -156,6 +156,20 @@ export default class M extends Migration<Start, End> {
         constraint: 'Session_token_key',
         columns: ['token'],
       }),
+      this.createIndex({
+        schema: 'public',
+        table: 'OAuthCredential',
+        index: 'OAuthCredential_provider_providerUserId_key',
+        columns: ['provider', 'providerUserId'],
+        extras: { unique: true },
+      }),
+      this.createIndex({
+        schema: 'public',
+        table: 'AccountPlatformLink',
+        index: 'account_platform_link_unique',
+        columns: ['accountId', 'platform'],
+        extras: { unique: true },
+      }),
     ];
   }
 }
