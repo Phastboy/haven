@@ -1,23 +1,8 @@
 /**
- * The User entity as the domain understands it.
- * Deliberately independent of the ORM — the domain must not import from infrastructure.
+ * User domain types — derived from TypeBox schemas in user.schema.ts.
+ *
+ * Re-exported here so the rest of the domain (repository interface, use cases)
+ * can import from a single stable path without knowing about the schema file.
  */
-export interface User {
-  id: string;
-  email: string;
-  username: string | null;
-  name: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+export type { User, CreateUserData, UpdateUserData } from './user.schema';
 
-export interface CreateUserData {
-  email: string;
-  username?: string | null;
-  name?: string | null;
-}
-
-export interface UpdateUserData {
-  username?: string | null;
-  name?: string | null;
-}
