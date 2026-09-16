@@ -4,16 +4,24 @@
   "type": "module",
   "module": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "bun test",
+    "test:unit": "bun test --path-ignore-patterns 'e2e|integration'",
+    "test:integration": "bun test integration.test.ts",
+    "test:e2e": "bun test e2e.test.ts",
     "dev": "bun run --watch src/index.ts",
     "check:tsc": "tsc --noEmit",
-    "contract:emit": "prisma contract emit"
+    "contract:emit": "prisma contract emit",
+    "db:plan": "prisma migration plan",
+    "db:migrate": "prisma db migrate",
+    "db:push": "bun run contract:emit && prisma migration plan --name update && prisma db migrate"
   },
   "dependencies": {
     "@elysia/openapi": "next",
     "@prisma/orm-postgres": "^8.0.0-rc.11",
     "dotenv": "^17.4.2",
-    "elysia": "next"
+    "elysia": "next",
+    "google-auth-library": "^11.0.2",
+    "nodemailer": "^10.0.10"
   },
   "devDependencies": {
     "@prisma/cli-engine": "0.4.0",
