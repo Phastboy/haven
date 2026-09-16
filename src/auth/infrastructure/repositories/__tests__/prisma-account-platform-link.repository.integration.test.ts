@@ -53,17 +53,13 @@ describe('AccountPlatformLinkRepository Integration', () => {
 
   test('should enforce unique constraint on (accountId, platform)', async () => {
     // Attempting to create a second link for the same platform should throw
-    try {
-      await linkRepo.create({
-        accountId,
-        platformUserId: 'another-user',
-        platform: 'haven',
-      });
-      expect(true).toBe(false); // Should not reach here
-    } catch (error: any) {
-      // Just assert that an error was thrown (Prisma Unique Constraint Violation is typically P2002)
-      expect(error.code === 'P2002' || error.message.includes('Unique constraint') || error.message.includes('duplicate')).toBeTruthy();
-    }
+    const promise = linkRepo.create({
+      accountId,
+      platformUserId: 'another-user',
+      platform: 'haven',
+    });
+    
+    expect(promise).rejects.toThrow(/account_platform_link_unique/i);
   });
 
   test('should allow a different platform for the same account', async () => {

@@ -1,57 +1,59 @@
-import { expect, test, describe, afterAll, beforeAll } from 'bun:test';
+import { expect, test, describe } from 'bun:test';
 import { OAuthCredentialRepository } from '../oauth-credential.repository';
 import { AccountRepository } from '../account.repository';
 import type { Char } from '@prisma/orm-postgres/target/codec-types';
+import { db } from '../../../../prisma/db';
 
 function asId(id: string): Char<36> {
   return id as unknown as Char<36>;
 }
 
-import { db } from '../../../../prisma/db';
-
 describe('OAuthCredentialRepository Integration', () => {
   const oauthRepo = new OAuthCredentialRepository();
   const accountRepo = new AccountRepository();
   
-  const testEmail = `test-oauth-${crypto.randomUUID()}@example.com`;
-  const providerUserId = `google-${crypto.randomUUID()}`;
-  let accountId: string;
-  let credentialId: string;
-
-  beforeAll(async () => {
+  test('should create an oauth credential', async () => {
     const account = await accountRepo.create({
-      email: testEmail,
+      email: `test-oauth-${crypto.randomUUID()}@example.com`,
       emailVerified: true,
     });
-    accountId = account.id;
-  });
 
-  afterAll(async () => {
-    if (accountId) {
-      await db.orm.public.OAuthCredential.where({ accountId: asId(accountId) }).delete();
-      await db.orm.public.Account.where({ id: asId(accountId) }).delete();
-    }
-  });
-
-  test('should create an oauth credential', async () => {
+    const providerUserId = `google-${crypto.randomUUID()}`;
     const credential = await oauthRepo.create({
-      accountId,
+      accountId: account.id,
       provider: 'GOOGLE',
       providerUserId,
       accessToken: 'initial-access-token',
     });
 
     expect(credential.id).toBeDefined();
-    expect(credential.accountId).toBe(accountId);
+    expect(credential.accountId).toBe(account.id);
     expect(credential.providerUserId).toBe(providerUserId);
 
-    credentialId = credential.id;
+    await db.orm.public.OAuthCredential.where({ id: asId(credential.id) }).delete();
+    await db.orm.public.Account.where({ id: asId(account.id) }).delete();
   });
 
   test('should find oauth credential by provider and providerUserId', async () => {
-    const credential = await oauthRepo.findByProvider('GOOGLE', providerUserId);
-    expect(credential).not.toBeNull();
-    expect(credential!.id).toBe(credentialId);
+    const account = await accountRepo.create({
+      email: `test-oauth-${crypto.randomUUID()}@example.com`,
+      emailVerified: true,
+    });
+
+    const providerUserId = `google-${crypto.randomUUID()}`;
+    const credential = await oauthRepo.create({
+      accountId: account.id,
+      provider: 'GOOGLE',
+      providerUserId,
+      accessToken: 'initial-access-token',
+    });
+
+    const found = await oauthRepo.findByProvider('GOOGLE', providerUserId);
+    expect(found).not.toBeNull();
+    expect(found!.id).toBe(credential.id);
+
+    await db.orm.public.OAuthCredential.where({ id: asId(credential.id) }).delete();
+    await db.orm.public.Account.where({ id: asId(account.id) }).delete();
   });
 
   test('should return null for non-existent credential', async () => {
@@ -60,10 +62,26 @@ describe('OAuthCredentialRepository Integration', () => {
   });
 
   test('should update tokens', async () => {
-    await oauthRepo.updateTokens(credentialId, 'new-access-token', 'new-refresh-token');
+    const account = await accountRepo.create({
+      email: `test-oauth-${crypto.randomUUID()}@example.com`,
+      emailVerified: true,
+    });
+
+    const providerUserId = `google-${crypto.randomUUID()}`;
+    const credential = await oauthRepo.create({
+      accountId: account.id,
+      provider: 'GOOGLE',
+      providerUserId,
+      accessToken: 'initial-access-token',
+    });
+
+    await oauthRepo.updateTokens(credential.id, 'new-access-token', 'new-refresh-token');
     
-    const credential = await oauthRepo.findByProvider('GOOGLE', providerUserId);
-    expect(credential!.accessToken).toBe('new-access-token');
-    expect(credential!.refreshToken).toBe('new-refresh-token');
+    const updated = await oauthRepo.findByProvider('GOOGLE', providerUserId);
+    expect(updated!.accessToken).toBe('new-access-token');
+    expect(updated!.refreshToken).toBe('new-refresh-token');
+
+    await db.orm.public.OAuthCredential.where({ id: asId(credential.id) }).delete();
+    await db.orm.public.Account.where({ id: asId(account.id) }).delete();
   });
 });
