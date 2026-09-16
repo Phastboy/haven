@@ -1,16 +1,24 @@
 {
   "name": "haven",
   "version": "1.0.50",
+  "type": "module",
   "module": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/index.ts"
+    "dev": "bun run --watch src/index.ts",
+    "check:tsc": "tsc --noEmit",
+    "contract:emit": "prisma contract emit"
   },
   "dependencies": {
     "@elysia/openapi": "next",
+    "@prisma/orm-postgres": "^8.0.0-rc.11",
+    "dotenv": "^17.4.2",
     "elysia": "next"
   },
   "devDependencies": {
-    "bun-types": "latest"
+    "@prisma/cli-engine": "0.4.0",
+    "@types/bun": "^1.4.2",
+    "prisma": "^8.0.0-rc.15",
+    "typescript": "^7.0.2"
   }
 }
