@@ -1,26 +1,24 @@
 {
   "name": "haven",
-  "version": "1.0.50",
-  "type": "module",
-  "module": "src/index.js",
-  "scripts": {
-    "test": "bun run db:setup && bun test",
-    "test:unit": "bun test --path-ignore-patterns '**/*.e2e.test.ts' '**/*.integration.test.ts'",
-    "test:integration": "bun run db:setup && bun test '**/*.integration.test.ts'",
-    "test:e2e": "bun run db:setup && bun test e2e.test.ts",
-    "dev": "bun run db:setup && bun run --watch src/index.ts",
-    "check:tsc": "tsc --noEmit",
-    "db:setup": "bun run src/database/setup.ts"
-  },
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
   "dependencies": {
-    "@elysia/openapi": "next",
-    "dotenv": "^17.4.2",
     "elysia": "next",
-    "google-auth-library": "^11.0.2",
-    "nodemailer": "^10.0.10"
+    "@elysia/eden": "next",
+    "@elysia/static": "next",
+    "typebox": "*"
   },
   "devDependencies": {
-    "@types/bun": "^1.4.2",
-    "typescript": "^7.0.2"
+    "@types/bun": "^1.4.2"
+  },
+  "scripts": {
+    "dev:api": "bun run --cwd apps/api dev",
+    "dev:web": "bun run --cwd apps/web ng serve",
+    "dev": "bun run dev:api & bun run dev:web",
+    "build:web": "cd apps/web && ng build",
+    "start:web": "bun apps/web/dist/web/server/server.mjs",
+    "test:api": "bun run --cwd apps/api test"
   }
 }
