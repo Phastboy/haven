@@ -4,11 +4,11 @@
   "type": "module",
   "module": "src/index.js",
   "scripts": {
-    "test": "bun test",
+    "test": "bun run db:setup && bun test",
     "test:unit": "bun test --path-ignore-patterns '**/*.e2e.test.ts' '**/*.integration.test.ts'",
-    "test:integration": "bun test integration.test.ts",
-    "test:e2e": "bun test e2e.test.ts",
-    "dev": "bun run --watch src/index.ts",
+    "test:integration": "bun run db:setup && bun test '**/*.integration.test.ts'",
+    "test:e2e": "bun run db:setup && bun test e2e.test.ts",
+    "dev": "bun run db:setup && bun run --watch src/index.ts",
     "check:tsc": "tsc --noEmit",
     "db:setup": "bun run src/database/setup.ts"
   },
