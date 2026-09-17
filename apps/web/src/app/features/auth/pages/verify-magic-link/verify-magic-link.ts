@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
@@ -17,17 +18,23 @@ export default class VerifyMagicLink implements OnInit {
   private router = inject(Router);
   private api = inject(ApiService);
   private messageService = inject(MessageService);
+  private platformId = inject(PLATFORM_ID);
 
   verifying = signal(true);
   errorMsg = signal('');
+  private hasVerified = false;
 
   ngOnInit() {
+    if (!isPlatformBrowser(this.platformId)) return;
     this.route.queryParams.subscribe(async params => {
+      if (this.hasVerified) return;
+      
       const token = params['token'];
       if (!token) {
         this.fail('Invalid or missing magic link token.');
         return;
       }
+      this.hasVerified = true;
 
       try {
         const { data, error } = await this.api.auth['magic-link'].verify.post({ token });
@@ -42,8 +49,8 @@ export default class VerifyMagicLink implements OnInit {
           this.fail(detail);
         } else if (data) {
           // Success!
-          const sessionId = typeof data === 'object' && data !== null && 'id' in data ? String(data.id) : String(data);
-          localStorage.setItem('token', sessionId);
+          const sessionToken = typeof data === 'object' && data !== null && 'token' in data ? String(data.token) : String(data);
+          localStorage.setItem('token', sessionToken);
           this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Successfully logged in!' });
           this.router.navigate(['/']); // Redirect to home
         }
