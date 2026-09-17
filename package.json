@@ -10,23 +10,17 @@
     "test:e2e": "bun test e2e.test.ts",
     "dev": "bun run --watch src/index.ts",
     "check:tsc": "tsc --noEmit",
-    "contract:emit": "prisma contract emit",
-    "db:plan": "prisma migration plan",
-    "db:migrate": "prisma db migrate",
-    "db:push": "bun run contract:emit && prisma migration plan --name update && prisma db migrate --advance-ref db"
+    "db:setup": "bun run src/database/setup.ts"
   },
   "dependencies": {
     "@elysia/openapi": "next",
-    "@prisma/orm-postgres": "^8.0.0-rc.11",
     "dotenv": "^17.4.2",
     "elysia": "next",
     "google-auth-library": "^11.0.2",
     "nodemailer": "^10.0.10"
   },
   "devDependencies": {
-    "@prisma/cli-engine": "0.4.0",
     "@types/bun": "^1.4.2",
-    "prisma": "^8.0.0-rc.15",
     "typescript": "^7.0.2"
   }
 }
