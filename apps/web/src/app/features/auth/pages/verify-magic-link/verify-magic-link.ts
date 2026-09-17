@@ -5,6 +5,7 @@ import { MessageService } from 'primeng/api';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ButtonModule } from 'primeng/button';
 import { ApiService } from '../../../../services/api.service';
+import { CookieService } from '../../../../core/services/cookie.service';
 
 @Component({
   selector: 'app-verify-magic-link',
@@ -19,6 +20,7 @@ export default class VerifyMagicLink implements OnInit {
   private api = inject(ApiService);
   private messageService = inject(MessageService);
   private platformId = inject(PLATFORM_ID);
+  private cookieService = inject(CookieService);
 
   verifying = signal(true);
   errorMsg = signal('');
@@ -50,7 +52,7 @@ export default class VerifyMagicLink implements OnInit {
         } else if (data) {
           // Success!
           const sessionToken = typeof data === 'object' && data !== null && 'token' in data ? String(data.token) : String(data);
-          localStorage.setItem('token', sessionToken);
+          this.cookieService.set('token', sessionToken, { path: '/', sameSite: 'Lax' });
           this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Successfully logged in!' });
           this.router.navigate(['/']); // Redirect to home
         }
