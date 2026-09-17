@@ -59,7 +59,7 @@ describe('AccountPlatformLinkRepository Integration', () => {
       platform: 'haven',
     });
     
-    expect(promise).rejects.toThrow(/account_platform_link_unique/i);
+    await expect(promise).rejects.toMatchObject({ code: 'P2002' });
   });
 
   test('should allow a different platform for the same account', async () => {
