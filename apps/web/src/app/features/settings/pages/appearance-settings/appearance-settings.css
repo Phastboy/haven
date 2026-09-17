@@ -1,0 +1,42 @@
+.appearance-container {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.settings-panel {
+  background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 12px;
+  padding: 2rem;
+}
+
+h2 {
+  margin: 0 0 0.5rem 0;
+  color: var(--p-text-color);
+  font-family: var(--font-display, inherit);
+  font-size: 1.5rem;
+}
+
+.description {
+  color: var(--p-text-muted-color);
+  margin-bottom: 2rem;
+  font-size: 0.95rem;
+}
+
+.setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 0;
+  border-top: 1px solid var(--p-content-border-color);
+}
+
+.setting-label {
+  font-weight: 500;
+  color: var(--p-text-color);
+}
+
+.ml-2 {
+  margin-left: 0.5rem;
+}
