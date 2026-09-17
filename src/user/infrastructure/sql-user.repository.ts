@@ -1,6 +1,7 @@
 import { db } from '../../database/db';
 import type { IUserRepository } from '../domain/user.repository';
 import type { User, CreateUserData, UpdateUserData } from '../domain/user.entity';
+import { NotFoundError } from '../../shared/errors';
 
 export class SqlUserRepository implements IUserRepository {
   async findById(id: string): Promise<User | null> {
@@ -62,7 +63,7 @@ export class SqlUserRepository implements IUserRepository {
       return res[0];
     });
 
-    if (!row) throw new Error(`User ${id} disappeared during update`);
+    if (!row) throw new NotFoundError('User', id);
     return this.toEntity(row);
   }
 

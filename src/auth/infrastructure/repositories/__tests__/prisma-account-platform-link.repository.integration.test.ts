@@ -55,7 +55,11 @@ describe('AccountPlatformLinkRepository Integration', () => {
       platform: 'haven',
     });
     
-    await expect(promise).rejects.toMatchObject({ code: 'ERR_POSTGRES_SERVER_ERROR' });
+    await expect(promise).rejects.toMatchObject({ 
+      code: 'ERR_POSTGRES_SERVER_ERROR',
+      errno: '23505',
+      constraint: 'account_platform_link_unique'
+    });
   });
 
   test('should allow a different platform for the same account', async () => {
