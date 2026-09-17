@@ -45,7 +45,8 @@ export class SqlUserRepository implements IUserRepository {
     // We can use a transaction or build the query object. 
     // For simplicity, let's just do dynamic query building. Actually, standard Postgres allows COALESCE or just updating the exact fields.
     // Let's do a simple approach.
-    const row = await db.transaction(async (tx) => {
+    const tx = db.begin();
+    try {
       let query = 'UPDATE "User" SET ';
       const values: any[] = [];
       const parts = [];
@@ -59,11 +60,15 @@ export class SqlUserRepository implements IUserRepository {
       values.push(id);
       
       const res = await tx.unsafe(query, values);
-      return res[0];
-    });
-
-    if (!row) throw new Error(`User ${id} disappeared during update`);
-    return this.toEntity(row);
+      const row = res[0];
+      await tx.commit();
+      
+      if (!row) throw new Error(`User ${id} disappeared during update`);
+      return this.toEntity(row);
+    } catch (e) {
+      await tx.rollback();
+      throw e;
+    }
   }
 
   async delete(id: string): Promise<void> {
