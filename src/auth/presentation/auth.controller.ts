@@ -22,7 +22,7 @@ import { ConsoleEmailService } from '../infrastructure/services/console-email.se
 import { IEmailService } from '../domain/ports/IEmailService';
 
 import { CreateUserUseCase } from '../../user/application/create-user.usecase';
-import { PrismaUserRepository } from '../../user/infrastructure/prisma-user.repository';
+import { SqlUserRepository } from '../../user/infrastructure/sql-user.repository';
 
 const env = process.env['NODE_ENV'] || 'development';
 const emailService: IEmailService = 
@@ -45,7 +45,7 @@ const linkPlatformUC = new LinkPlatformUseCase(platformLinkRepo);
 
 import { ConflictError } from '../../shared/errors';
 
-const userRepo = new PrismaUserRepository();
+const userRepo = new SqlUserRepository();
 const createUserUC = new CreateUserUseCase(userRepo);
 
 export const authController = new Elysia({ prefix: '/auth', name: 'auth-controller', tags: ['Auth'] })
