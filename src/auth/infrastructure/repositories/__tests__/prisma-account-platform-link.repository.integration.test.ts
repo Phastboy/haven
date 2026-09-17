@@ -1,13 +1,9 @@
 import { expect, test, describe, afterAll, beforeAll } from 'bun:test';
 import { AccountPlatformLinkRepository } from '../account-platform-link.repository';
 import { AccountRepository } from '../account.repository';
-import type { Char } from '@prisma/orm-postgres/target/codec-types';
 
-function asId(id: string): Char<36> {
-  return id as unknown as Char<36>;
-}
 
-import { db } from '../../../../prisma/db';
+import { db } from '../../../../database/db';
 
 describe('AccountPlatformLinkRepository Integration', () => {
   const linkRepo = new AccountPlatformLinkRepository();
@@ -27,8 +23,8 @@ describe('AccountPlatformLinkRepository Integration', () => {
 
   afterAll(async () => {
     if (accountId) {
-      await db.orm.public.AccountPlatformLink.where({ accountId: asId(accountId) }).delete();
-      await db.orm.public.Account.where({ id: asId(accountId) }).delete();
+      await db`DELETE FROM "AccountPlatformLink" WHERE "accountId" = ${accountId}`;
+      await db`DELETE FROM "Account" WHERE "id" = ${accountId}`;
     }
   });
 
@@ -59,7 +55,7 @@ describe('AccountPlatformLinkRepository Integration', () => {
       platform: 'haven',
     });
     
-    await expect(promise).rejects.toMatchObject({ code: 'P2002' });
+    await expect(promise).rejects.toMatchObject({ code: 'ERR_POSTGRES_SERVER_ERROR' });
   });
 
   test('should allow a different platform for the same account', async () => {

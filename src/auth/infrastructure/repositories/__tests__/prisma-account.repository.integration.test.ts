@@ -1,11 +1,9 @@
 import { expect, test, describe } from 'bun:test';
 import { AccountRepository } from '../account.repository';
-import type { Char } from '@prisma/orm-postgres/target/codec-types';
-import { db } from '../../../../prisma/db';
 
-function asId(id: string): Char<36> {
-  return id as unknown as Char<36>;
-}
+import { db } from '../../../../database/db';
+
+
 
 describe('AccountRepository Integration', () => {
   const repo = new AccountRepository();
@@ -21,7 +19,7 @@ describe('AccountRepository Integration', () => {
     expect(account.email).toBe(testEmail);
     expect(account.emailVerified).toBe(false);
 
-    await db.orm.public.Account.where({ id: asId(account.id) }).delete();
+    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
   });
 
   test('should find account by email', async () => {
@@ -35,7 +33,7 @@ describe('AccountRepository Integration', () => {
     expect(found).not.toBeNull();
     expect(found!.id).toBe(account.id);
 
-    await db.orm.public.Account.where({ id: asId(account.id) }).delete();
+    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
   });
 
   test('should return null for non-existent email', async () => {
@@ -54,7 +52,7 @@ describe('AccountRepository Integration', () => {
     expect(found).not.toBeNull();
     expect(found!.email).toBe(testEmail);
 
-    await db.orm.public.Account.where({ id: asId(account.id) }).delete();
+    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
   });
 
   test('should mark email as verified', async () => {
@@ -68,6 +66,6 @@ describe('AccountRepository Integration', () => {
     const updated = await repo.findById(account.id);
     expect(updated!.emailVerified).toBe(true);
 
-    await db.orm.public.Account.where({ id: asId(account.id) }).delete();
+    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
   });
 });

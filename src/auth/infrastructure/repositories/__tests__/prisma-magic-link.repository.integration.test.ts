@@ -1,12 +1,8 @@
 import { expect, test, describe, afterAll } from 'bun:test';
 import { MagicLinkRepository } from '../magic-link.repository';
-import type { Char } from '@prisma/orm-postgres/target/codec-types';
 
-function asId(id: string): Char<36> {
-  return id as unknown as Char<36>;
-}
 
-import { db } from '../../../../prisma/db';
+import { db } from '../../../../database/db';
 
 describe('MagicLinkRepository Integration', () => {
   const repo = new MagicLinkRepository();
@@ -16,7 +12,7 @@ describe('MagicLinkRepository Integration', () => {
 
   afterAll(async () => {
     if (magicLinkId) {
-      await db.orm.public.MagicLink.where({ id: asId(magicLinkId) }).delete();
+      await db`DELETE FROM "MagicLink" WHERE "id" = ${magicLinkId}`;
     }
   });
 
