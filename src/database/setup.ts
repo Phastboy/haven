@@ -20,24 +20,18 @@ async function setup() {
       .sort();
 
     const executedRows = await db`SELECT name FROM "_Migrations"`;
-    const executedMigrations = new Set(executedRows.map((r) => r.name));
+    const executedMigrations = new Set(executedRows.map((r: any) => r.name));
 
     for (const file of files) {
       if (!executedMigrations.has(file)) {
         console.log(`Running migration: ${file}`);
         const sql = readFileSync(join(migrationsDir, file), 'utf-8');
         
-        const tx = db.begin();
-        try {
+        await db.begin(async (tx) => {
           await tx.unsafe(sql);
           await tx`INSERT INTO "_Migrations" (name) VALUES (${file})`;
-          await tx.commit();
-          console.log(`Migration ${file} applied successfully.`);
-        } catch (err) {
-          await tx.rollback();
-          console.error(`Failed to apply migration ${file}:`, err);
-          throw err;
-        }
+        });
+        console.log(`Migration ${file} applied successfully.`);
       }
     }
 
