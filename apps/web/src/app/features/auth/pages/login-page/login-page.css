@@ -94,3 +94,29 @@
   flex-direction: column;
   gap: 0.4rem;
 }
+
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: var(--p-text-muted-color);
+  font-size: 0.85rem;
+  margin: 1.5rem 0;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--p-content-border-color);
+}
+
+.divider span {
+  padding: 0 0.75rem;
+}
+
+.google-btn-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}

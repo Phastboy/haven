@@ -1,4 +1,4 @@
-import { Component, signal, inject } from '@angular/core';
+import { Component, signal, inject, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { email, form, FormField, required, submit } from '@angular/forms/signals';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
@@ -7,6 +7,9 @@ import { FloatLabelModule } from 'primeng/floatlabel';
 import { MessageModule } from 'primeng/message';
 import { MessageService } from 'primeng/api';
 import { ApiService } from '../../../../services/api.service';
+import { GoogleAuthService } from '../../../../core/services/google-auth.service';
+import { CookieService } from '../../../../core/services/cookie.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-login-page',
@@ -22,9 +25,14 @@ import { ApiService } from '../../../../services/api.service';
   templateUrl: './login-page.html',
   styleUrl: './login-page.css'
 })
-export default class LoginPage {
+export default class LoginPage implements AfterViewInit {
   private api = inject(ApiService);
   private messageService = inject(MessageService);
+  private googleAuth = inject(GoogleAuthService);
+  private cookieService = inject(CookieService);
+  private router = inject(Router);
+
+  @ViewChild('googleBtnContainer') googleBtnContainer!: ElementRef<HTMLElement>;
 
   loading = signal(false);
   model = signal({ email: '' });
@@ -60,5 +68,27 @@ export default class LoginPage {
         this.loading.set(false);
       }
     });
+  }
+
+  ngAfterViewInit() {
+    this.googleAuth.renderButton(this.googleBtnContainer.nativeElement, this.handleGoogleCallback.bind(this));
+  }
+
+  private async handleGoogleCallback(response: any) {
+    if (!response.credential) return;
+
+    try {
+      const { data, error } = await this.api.auth.google.login.post({ idToken: response.credential });
+      if (error) {
+        this.messageService.add({ severity: 'error', summary: 'Login Failed', detail: 'Google login failed' });
+      } else if (data) {
+        const sessionToken = typeof data === 'object' && data !== null && 'token' in data ? String(data.token) : String(data);
+        this.cookieService.set('token', sessionToken, { path: '/', sameSite: 'Lax' });
+        this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Successfully logged in with Google!' });
+        this.router.navigate(['/']);
+      }
+    } catch (e) {
+      this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Network error occurred during Google login' });
+    }
   }
 }
