@@ -146,7 +146,7 @@ describe('LoginWithGoogleUseCase', () => {
 
     mockOauthRepo.findByProvider.mockResolvedValueOnce(null);
 
-    expect(useCase.execute('unverified-id-token')).rejects.toThrow('Email must be verified to link a new Google account');
+    await expect(useCase.execute('unverified-id-token')).rejects.toThrow('Email must be verified to link a new Google account');
     
     expect(mockAccountRepo.findByEmail).not.toHaveBeenCalled();
     expect(mockAccountRepo.create).not.toHaveBeenCalled();
