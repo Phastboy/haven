@@ -5,7 +5,7 @@ import { authController } from "./auth";
 
 import { configController } from "./config.controller";
 
-const app = new Elysia()
+const app = new Elysia({ prefix: '/api' })
   .use(openapi())
   .use(configController)
   .use(createUserPlugin())
