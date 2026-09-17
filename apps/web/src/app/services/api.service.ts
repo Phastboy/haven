@@ -1,4 +1,4 @@
-import { Injectable, inject, PLATFORM_ID } from '@angular/core';
+import { inject, PLATFORM_ID, Service } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { treaty } from '@elysia/eden';
 import type { App } from '@haven/api';
@@ -13,7 +13,7 @@ import type { App } from '@haven/api';
  * - Eden Treaty uses browser-native `fetch` and ES6 `Proxy`. It runs after
  *   hydration on the client. Guard any localStorage access with isPlatformBrowser.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class ApiService {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -23,7 +23,7 @@ export class ApiService {
    * - Server (SSR): reads from process.env for internal service-to-service calls
    */
   private readonly baseUrl = this.isBrowser
-    ? (globalThis.window?.location?.origin ?? 'http://localhost:3000')
+    ? (globalThis.window?.location?.origin ?? '')
     : (process.env['API_URL'] ?? 'http://localhost:3000');
 
   private readonly client = treaty<App>(this.baseUrl, {
@@ -46,11 +46,11 @@ export class ApiService {
   // ---------------------------------------------------------------------------
 
   /** Auth routes: magic-link, google, logout, me */
-  readonly auth = this.client.auth;
+  readonly auth = this.client.api.auth;
 
   /** User CRUD routes */
-  readonly users = this.client.users;
+  readonly users = this.client.api.users;
 
   /** Config endpoint (googleClientId, etc.) */
-  readonly config = this.client.config;
+  readonly config = this.client.api.config;
 }
