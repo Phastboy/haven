@@ -1,13 +1,96 @@
-.login-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 80vh;
-  padding: 1rem;
+/* login-page.css */
+:host {
+  --font-display: 'Fraunces', Georgia, serif;
+  display: block;
 }
-.form-wrapper {
+
+/* No background here on purpose — the page inherits whatever
+   surface/scheme the shell around it is set to. This component
+   only lays things out. */
+.scene {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+}
+
+.panel {
+  width: 100%;
+  max-width: 380px;
+  background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 14px;
+  padding: 2.5rem 2.25rem;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 2.25rem;
+}
+
+.brand-mark {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--p-primary-color);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--p-primary-color) 22%, transparent);
+  animation: pulse 2.8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--p-primary-color) 22%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-mark {
+    animation: none;
+  }
+}
+
+.brand-name {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: var(--p-text-color);
+}
+
+.intro {
+  margin-bottom: 2rem;
+}
+
+.intro h1 {
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 500;
+  color: var(--p-text-color);
+  margin: 0 0 0.6rem;
+  line-height: 1.15;
+}
+
+.intro p {
+  font-size: 0.9rem;
+  color: var(--p-text-muted-color);
+  line-height: 1.5;
+  margin: 0;
+  max-width: 30ch;
+}
+
+.form {
   display: flex;
   flex-direction: column;
-  gap: 1.75rem;
-  margin-top: 1.5rem;
+  gap: 1.5rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
 }
