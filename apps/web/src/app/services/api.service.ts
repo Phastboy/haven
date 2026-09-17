@@ -2,6 +2,7 @@ import { inject, PLATFORM_ID, Service } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { treaty } from '@elysia/eden';
 import type { App } from '@haven/api';
+import { environment } from '../../environments/environment';
 
 /**
  * ApiService — End-to-end type-safe API client powered by Elysia Eden Treaty.
@@ -19,11 +20,11 @@ export class ApiService {
 
   /**
    * API base URL:
-   * - Browser: reads from environment or falls back to localhost:3000
+   * - Browser: reads from environment
    * - Server (SSR): reads from process.env for internal service-to-service calls
    */
   private readonly baseUrl = this.isBrowser
-    ? (globalThis.window?.location?.origin ?? '')
+    ? environment.apiUrl
     : (process.env['API_URL'] ?? 'http://localhost:3000');
 
   private readonly client = treaty<App>(this.baseUrl, {
