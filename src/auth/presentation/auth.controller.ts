@@ -66,23 +66,21 @@ export const authController = new Elysia({ prefix: '/auth', name: 'auth-controll
     const ipAddress = request.headers.get('x-forwarded-for') || undefined;
     const session = await verifyMagicLinkUC.execute(body.token, userAgent, ipAddress);
 
-    try {
-      const account = await accountRepo.findById(session.accountId);
-      if (account) {
+    const account = await accountRepo.findById(session.accountId);
+    if (account) {
+      try {
         const user = await createUserUC.execute({ email: account.email, username: account.email.split('@')[0] ?? null });
         await linkPlatformUC.execute(account.id, user.id, 'haven_platform');
-      }
-    } catch (e) {
-      if (e instanceof ConflictError) {
-        const account = await accountRepo.findById(session.accountId);
-        if (account) {
+      } catch (e) {
+        if (e instanceof ConflictError) {
           const existingUser = await userRepo.findByEmail(account.email);
           if (existingUser) {
             await linkPlatformUC.execute(account.id, existingUser.id, 'haven_platform');
           }
+        } else {
+          console.error(JSON.stringify({ code: 'PROVISIONING_ERROR', context: 'magic_link_verify' }));
+          throw e;
         }
-      } else {
-        console.log('Error in user/link creation (Magic Link):', e);
       }
     }
 
@@ -96,26 +94,24 @@ export const authController = new Elysia({ prefix: '/auth', name: 'auth-controll
     const ipAddress = request.headers.get('x-forwarded-for') || undefined;
     const session = await loginWithGoogleUC.execute(body.idToken, userAgent, ipAddress);
 
-    try {
-      const account = await accountRepo.findById(session.accountId);
-      if (account) {
+    const account = await accountRepo.findById(session.accountId);
+    if (account) {
+      try {
         const user = await createUserUC.execute({ 
           email: account.email, 
           username: account.email.split('@')[0] ?? null,
         });
         await linkPlatformUC.execute(account.id, user.id, 'haven_platform');
-      }
-    } catch (e) {
-      if (e instanceof ConflictError) {
-        const account = await accountRepo.findById(session.accountId);
-        if (account) {
+      } catch (e) {
+        if (e instanceof ConflictError) {
           const existingUser = await userRepo.findByEmail(account.email);
           if (existingUser) {
             await linkPlatformUC.execute(account.id, existingUser.id, 'haven_platform');
           }
+        } else {
+          console.error(JSON.stringify({ code: 'PROVISIONING_ERROR', context: 'google_login' }));
+          throw e;
         }
-      } else {
-        console.log('Error in user/link creation (Google):', e);
       }
     }
 
