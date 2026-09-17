@@ -5,7 +5,7 @@ import { GetUserUseCase } from '../application/get-user.usecase';
 import { ListUsersUseCase } from '../application/list-users.usecase';
 import { UpdateUserUseCase } from '../application/update-user.usecase';
 import { DeleteUserUseCase } from '../application/delete-user.usecase';
-import { PrismaUserRepository } from '../infrastructure/prisma-user.repository';
+import { SqlUserRepository } from '../infrastructure/sql-user.repository';
 import { CreateUserBody, UpdateUserBody, UserIdParam } from './user.dto';
 
 /**
@@ -16,7 +16,7 @@ import { CreateUserBody, UpdateUserBody, UserIdParam } from './user.dto';
  * handler is the actual function. They are separate positional arguments.
  */
 export function createUserPlugin() {
-  const repository = new PrismaUserRepository();
+  const repository = new SqlUserRepository();
 
   const createUser = new CreateUserUseCase(repository);
   const getUser = new GetUserUseCase(repository);
