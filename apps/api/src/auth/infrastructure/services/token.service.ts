@@ -6,7 +6,7 @@ export class TokenService {
   constructor() {
     this.secret = process.env['TOKEN_SECRET'] || '';
     if (!this.secret) {
-      console.warn('WARNING: TOKEN_SECRET is not set. Token hashing will be insecure.');
+      throw new Error('CRITICAL: TOKEN_SECRET environment variable is not set. Token hashing requires a secure secret.');
     }
   }
 

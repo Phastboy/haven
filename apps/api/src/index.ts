@@ -24,10 +24,11 @@ const app = new Elysia({ prefix: '/api' })
   .get("/", () => "Hello Elysia");
 
 export type App = typeof app;
+const port = process.env['PORT'] ?? 3000;
 
 app.listen(
     {
-      port: 3000,
+      port,
       hostname: "0.0.0.0",
     },
     () => {
