@@ -1,12 +1,10 @@
 import { expect, test, describe } from 'bun:test';
 import { OAuthCredentialRepository } from '../oauth-credential.repository';
 import { AccountRepository } from '../account.repository';
-import type { Char } from '@prisma/orm-postgres/target/codec-types';
-import { db } from '../../../../prisma/db';
 
-function asId(id: string): Char<36> {
-  return id as unknown as Char<36>;
-}
+import { db } from '../../../../database/db';
+
+
 
 describe('OAuthCredentialRepository Integration', () => {
   const oauthRepo = new OAuthCredentialRepository();
@@ -30,8 +28,8 @@ describe('OAuthCredentialRepository Integration', () => {
     expect(credential.accountId).toBe(account.id);
     expect(credential.providerUserId).toBe(providerUserId);
 
-    await db.orm.public.OAuthCredential.where({ id: asId(credential.id) }).delete();
-    await db.orm.public.Account.where({ id: asId(account.id) }).delete();
+    await db`DELETE FROM "OAuthCredential" WHERE "id" = ${credential.id}`;
+    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
   });
 
   test('should find oauth credential by provider and providerUserId', async () => {
@@ -52,8 +50,8 @@ describe('OAuthCredentialRepository Integration', () => {
     expect(found).not.toBeNull();
     expect(found!.id).toBe(credential.id);
 
-    await db.orm.public.OAuthCredential.where({ id: asId(credential.id) }).delete();
-    await db.orm.public.Account.where({ id: asId(account.id) }).delete();
+    await db`DELETE FROM "OAuthCredential" WHERE "id" = ${credential.id}`;
+    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
   });
 
   test('should return null for non-existent credential', async () => {
@@ -81,7 +79,7 @@ describe('OAuthCredentialRepository Integration', () => {
     expect(updated!.accessToken).toBe('new-access-token');
     expect(updated!.refreshToken).toBe('new-refresh-token');
 
-    await db.orm.public.OAuthCredential.where({ id: asId(credential.id) }).delete();
-    await db.orm.public.Account.where({ id: asId(account.id) }).delete();
+    await db`DELETE FROM "OAuthCredential" WHERE "id" = ${credential.id}`;
+    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
   });
 });

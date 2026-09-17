@@ -1,12 +1,10 @@
 import { expect, test, describe } from 'bun:test';
 import { SessionRepository } from '../session.repository';
 import { AccountRepository } from '../account.repository';
-import type { Char } from '@prisma/orm-postgres/target/codec-types';
-import { db } from '../../../../prisma/db';
 
-function asId(id: string): Char<36> {
-  return id as unknown as Char<36>;
-}
+import { db } from '../../../../database/db';
+
+
 
 describe('SessionRepository Integration', () => {
   const sessionRepo = new SessionRepository();
@@ -32,8 +30,8 @@ describe('SessionRepository Integration', () => {
     expect(session.accountId).toBe(account.id);
     expect(session.token).toBe(testToken);
 
-    await db.orm.public.Session.where({ id: asId(session.id) }).delete();
-    await db.orm.public.Account.where({ id: asId(account.id) }).delete();
+    await db`DELETE FROM "Session" WHERE "id" = ${session.id}`;
+    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
   });
 
   test('should find session by token with account included', async () => {
@@ -56,8 +54,8 @@ describe('SessionRepository Integration', () => {
     expect(found!.account).toBeDefined();
     expect(found!.account.email).toBe(account.email);
 
-    await db.orm.public.Session.where({ id: asId(session.id) }).delete();
-    await db.orm.public.Account.where({ id: asId(account.id) }).delete();
+    await db`DELETE FROM "Session" WHERE "id" = ${session.id}`;
+    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
   });
 
   test('should delete session by token', async () => {
@@ -68,7 +66,7 @@ describe('SessionRepository Integration', () => {
 
     const testToken = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 100000).toISOString();
-    const session = await sessionRepo.create({
+    await sessionRepo.create({
       accountId: account.id,
       token: testToken,
       expiresAt,
@@ -78,7 +76,7 @@ describe('SessionRepository Integration', () => {
     const found = await sessionRepo.findByToken(testToken);
     expect(found).toBeNull();
 
-    await db.orm.public.Account.where({ id: asId(account.id) }).delete();
+    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
   });
 
   test('should delete expired sessions', async () => {
@@ -115,7 +113,7 @@ describe('SessionRepository Integration', () => {
     expect(checkExpired).toBeNull();
     expect(checkValid).not.toBeNull();
 
-    await db.orm.public.Session.where({ id: asId(validSession.id) }).delete();
-    await db.orm.public.Account.where({ id: asId(account.id) }).delete();
+    await db`DELETE FROM "Session" WHERE "id" = ${validSession.id}`;
+    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
   });
 });

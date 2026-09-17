@@ -1,7 +1,7 @@
 import { expect, test, describe, beforeAll, afterAll, mock } from 'bun:test';
 import { Elysia } from 'elysia';
 import { authController } from '../auth.controller';
-import { db } from '../../../prisma/db';
+import { db } from '../../../database/db';
 import { OAuth2Client } from 'google-auth-library';
 
 describe('Google OAuth E2E', () => {
@@ -32,12 +32,12 @@ describe('Google OAuth E2E', () => {
     OAuth2Client.prototype.verifyIdToken = originalVerifyIdToken;
 
     // Cleanup
-    const account = await db.orm.public.Account.where({ email: testEmail }).first();
+    const account = await db`SELECT * FROM "Account" WHERE "email" = ${testEmail}`.then(res => res[0] || null);
     if (account) {
-      await db.orm.public.Session.where({ accountId: account.id }).delete();
-      await db.orm.public.OAuthCredential.where({ accountId: account.id }).delete();
-      await db.orm.public.AccountPlatformLink.where({ accountId: account.id }).delete();
-      await db.orm.public.Account.where({ id: account.id }).delete();
+      await db`DELETE FROM "Session" WHERE "accountId" = ${account.id}`;
+      await db`DELETE FROM "OAuthCredential" WHERE "accountId" = ${account.id}`;
+      await db`DELETE FROM "AccountPlatformLink" WHERE "accountId" = ${account.id}`;
+      await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
     }
   });
 
@@ -58,15 +58,15 @@ describe('Google OAuth E2E', () => {
     expect(body.token).toBeDefined();
     
     // Verify DB records
-    const account = await db.orm.public.Account.where({ email: testEmail }).first();
+    const account = await db`SELECT * FROM "Account" WHERE "email" = ${testEmail}`.then(res => res[0] || null);
     expect(account).not.toBeNull();
     expect(account!.emailVerified).toBe(true);
 
-    const oauth = await db.orm.public.OAuthCredential.where({ accountId: account!.id, provider: 'GOOGLE' }).first();
+    const oauth = await db`SELECT * FROM "OAuthCredential" WHERE "accountId" = ${account!.id} AND "provider" = 'GOOGLE'`.then(res => res[0] || null);
     expect(oauth).not.toBeNull();
     expect(oauth!.providerUserId).toBe(googleId);
 
-    const platformLink = await db.orm.public.AccountPlatformLink.where({ accountId: account!.id, platform: 'haven_platform' }).first();
+    const platformLink = await db`SELECT * FROM "AccountPlatformLink" WHERE "accountId" = ${account!.id} AND "platform" = 'haven_platform'`.then(res => res[0] || null);
     expect(platformLink).not.toBeNull();
   });
 });
