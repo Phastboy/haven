@@ -12,7 +12,7 @@ import { environment } from '../../environments/environment';
  * - `import type { App }` is erased at build time — zero backend code ships
  *   in the browser or SSR bundle.
  * - Eden Treaty uses browser-native `fetch` and ES6 `Proxy`. It runs after
- *   hydration on the client. Guard any localStorage access with isPlatformBrowser.
+ *   hydration on the client. Guard localStorage access with isPlatformBrowser.
  */
 @Service()
 export class ApiService {
@@ -24,7 +24,7 @@ export class ApiService {
    * - Server (SSR): reads from process.env for internal service-to-service calls
    */
   private readonly baseUrl = this.isBrowser
-    ? environment.apiUrl
+    ? (environment.apiUrl || window.location.origin)
     : (process.env['API_URL'] ?? 'http://localhost:3000');
 
   private readonly client = treaty<App>(this.baseUrl, {
