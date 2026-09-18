@@ -8,6 +8,10 @@ import { DeleteUserUseCase } from '../application/delete-user.usecase';
 import { SqlUserRepository } from '../infrastructure/sql-user.repository';
 import { UpdateUserBody, UserIdParam } from './user.dto';
 import { requireAuth } from '../../auth/presentation/middleware/session.middleware';
+import { UnauthorizedError } from '../../auth/domain/errors';
+import { GetSessionUseCase } from '../../auth/application/use-cases/get-session.use-case';
+import { SessionRepository } from '../../auth/infrastructure/repositories/session.repository';
+import { tokenService } from '../../auth/infrastructure/services/token.service';
 
 /**
  * Factory function that wires the full user feature as an Elysia plugin.
@@ -23,7 +27,32 @@ export function createUserPlugin() {
   const listUsers = new ListUsersUseCase(repository);
   const updateUser = new UpdateUserUseCase(repository);
 
+  const getSessionUseCase = new GetSessionUseCase(
+    new SessionRepository(),
+    tokenService
+  );
+
   return new Elysia({ prefix: '/users', tags: ['Users'] })
+    .derive(async ({ headers }: { headers: Record<string, string | undefined> }) => {
+      const authHeader = headers['authorization'];
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return { session: null, account: null };
+      }
+
+      const token = authHeader.substring(7);
+      try {
+        const sessionWithAccount = await getSessionUseCase.execute(token);
+        return {
+          session: sessionWithAccount,
+          account: sessionWithAccount.account,
+        };
+      } catch (e: unknown) {
+        if (e instanceof UnauthorizedError) {
+          return { session: null, account: null };
+        }
+        throw e;
+      }
+    })
     .error(ConflictError, ({ set, error }) => {
       set.status = 409;
       return { error: error.message };

@@ -77,7 +77,6 @@ export const authController = new Elysia({ prefix: '/auth', name: 'auth-controll
       throw e;
     }
   })
-  
   .post('/magic-link/request', {
     body: RequestMagicLinkDTO
   }, async ({ body }) => {
