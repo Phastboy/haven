@@ -8,14 +8,10 @@ import { tokenService } from '../../infrastructure/services/token.service';
 import { SessionRepository } from '../../infrastructure/repositories/session.repository';
 import * as crypto from 'crypto';
 
-type App = typeof authController;
-
 describe('Session Middleware E2E', () => {
   let testAccountId: string;
   let validRawToken: string;
   let expiredRawToken: string;
-
-  const client = treaty<App>(authController);
 
   beforeAll(async () => {
     const accountId = crypto.randomUUID();
@@ -47,48 +43,42 @@ describe('Session Middleware E2E', () => {
   });
 
   it('should successfully get the user account using a valid token', async () => {
-    const { data, error, status } = await client.auth.me.get({
-      headers: {
-        Authorization: `Bearer ${validRawToken}`
-      }
+    const req = new Request('http://localhost/auth/me', {
+      headers: { Authorization: `Bearer ${validRawToken}` }
     });
-
-    expect(status).toBe(200);
-    expect(error).toBeNull();
+    const res = await authController.handle(req);
+    expect(res.status).toBe(200);
+    const data = await res.json() as any;
     expect(data).not.toBeNull();
-    expect(data?.account).toBeDefined();
-    expect(data?.account?.id).toBe(testAccountId);
+    expect(data.account).toBeDefined();
+    expect(data.account.id).toBe(testAccountId);
   });
 
   it('should return 401 Unauthorized if no token is provided', async () => {
-    const { data, error, status } = await client.auth.me.get();
-
-    expect(status).toBe(401);
-    expect(data).toBeNull();
-    expect(error?.value).toMatchObject({ message: 'Unauthorized access' });
+    const req = new Request('http://localhost/auth/me');
+    const res = await authController.handle(req);
+    expect(res.status).toBe(401);
+    const data = await res.json() as any;
+    expect(data).toMatchObject({ message: 'Unauthorized access' });
   });
 
   it('should return 401 Unauthorized if the token is invalid', async () => {
-    const { data, error, status } = await client.auth.me.get({
-      headers: {
-        Authorization: 'Bearer invalid_garbage_token'
-      }
+    const req = new Request('http://localhost/auth/me', {
+      headers: { Authorization: 'Bearer invalid_garbage_token' }
     });
-
-    expect(status).toBe(401);
-    expect(data).toBeNull();
-    expect(error?.value).toMatchObject({ message: 'Unauthorized access' });
+    const res = await authController.handle(req);
+    expect(res.status).toBe(401);
+    const data = await res.json() as any;
+    expect(data).toMatchObject({ message: 'Unauthorized access' });
   });
 
   it('should return 401 Unauthorized if the token is expired', async () => {
-    const { data, error, status } = await client.auth.me.get({
-      headers: {
-        Authorization: `Bearer ${expiredRawToken}`
-      }
+    const req = new Request('http://localhost/auth/me', {
+      headers: { Authorization: `Bearer ${expiredRawToken}` }
     });
-
-    expect(status).toBe(401);
-    expect(data).toBeNull();
-    expect(error?.value).toMatchObject({ message: 'Unauthorized access' });
+    const res = await authController.handle(req);
+    expect(res.status).toBe(401);
+    const data = await res.json() as any;
+    expect(data).toMatchObject({ message: 'Unauthorized access' });
   });
 });
