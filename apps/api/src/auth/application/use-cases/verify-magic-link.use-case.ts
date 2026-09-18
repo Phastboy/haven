@@ -4,23 +4,27 @@ import { ISessionRepository } from '../../domain/ports/ISessionRepository';
 import { TokenService } from '../../infrastructure/services/token.service';
 import { InvalidTokenError, ExpiredTokenError } from '../../domain/errors';
 import { Session } from '../../domain/session.schema';
+import { IProfileCreator } from '../../domain/ports/IProfileCreator';
 
 export class VerifyMagicLinkUseCase {
   readonly #magicLinkRepo: IMagicLinkRepository;
   readonly #accountRepo: IAccountRepository;
   readonly #sessionRepo: ISessionRepository;
   readonly #tokenService: TokenService;
+  readonly #profileCreator: IProfileCreator;
 
   constructor(
     magicLinkRepo: IMagicLinkRepository,
     accountRepo: IAccountRepository,
     sessionRepo: ISessionRepository,
-    tokenService: TokenService
+    tokenService: TokenService,
+    profileCreator: IProfileCreator
   ) {
     this.#magicLinkRepo = magicLinkRepo;
     this.#accountRepo = accountRepo;
     this.#sessionRepo = sessionRepo;
     this.#tokenService = tokenService;
+    this.#profileCreator = profileCreator;
   }
 
   async execute(rawToken: string, userAgent?: string, ipAddress?: string): Promise<Session> {
@@ -46,6 +50,7 @@ export class VerifyMagicLinkUseCase {
         email: magicLink.email,
         emailVerified: true,
       });
+      await this.#profileCreator.createProfileForAccount(account.id);
     } else if (!account.emailVerified) {
       await this.#accountRepo.markEmailVerified(account.id);
     }

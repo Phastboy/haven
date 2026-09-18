@@ -14,9 +14,9 @@ export class SqlUserRepository implements IUserRepository {
     return row ? this.#toUser(row) : null;
   }
 
-  async findByEmail(email: string): Promise<User | null> {
+  async findByAccountId(accountId: string): Promise<User | null> {
     const row = await db.query.users.findFirst({
-      where: eq(users.email, email),
+      where: eq(users.accountId, accountId),
     });
     return row ? this.#toUser(row) : null;
   }
@@ -32,9 +32,11 @@ export class SqlUserRepository implements IUserRepository {
     const id = crypto.randomUUID();
     const rows = await db.insert(users).values({
       id,
-      email: data.email,
+      accountId: data.accountId,
       username: data.username ?? null,
       name: data.name ?? null,
+      bio: data.bio ?? null,
+      profilePictureUrl: data.profilePictureUrl ?? null,
     }).returning();
     return this.#toUser(rows[0]!);
   }
@@ -46,6 +48,8 @@ export class SqlUserRepository implements IUserRepository {
     
     if (data.username !== undefined) updates.username = data.username;
     if (data.name !== undefined) updates.name = data.name;
+    if (data.bio !== undefined) updates.bio = data.bio;
+    if (data.profilePictureUrl !== undefined) updates.profilePictureUrl = data.profilePictureUrl;
     
     // If only updatedAt is in the object, technically we can just update that or skip.
     // The previous implementation required at least one field to be updated or it checked existence.
@@ -69,9 +73,11 @@ export class SqlUserRepository implements IUserRepository {
   #toUser(row: typeof users.$inferSelect): User {
     return {
       id: row.id,
-      email: row.email,
+      accountId: row.accountId,
       username: row.username ?? null,
       name: row.name ?? null,
+      bio: row.bio ?? null,
+      profilePictureUrl: row.profilePictureUrl ?? null,
       createdAt: toIso(row.createdAt),
       updatedAt: toIso(row.updatedAt),
     };

@@ -28,6 +28,10 @@ describe('LoginWithGoogleUseCase', () => {
     verify: mock(),
   };
 
+  const mockProfileCreator = {
+    createProfileForAccount: mock(),
+  };
+
   const tokenService = new TokenService();
 
   const useCase = new LoginWithGoogleUseCase(
@@ -35,7 +39,8 @@ describe('LoginWithGoogleUseCase', () => {
     mockOauthRepo as any,
     mockSessionRepo as any,
     mockGoogleService as any,
-    tokenService
+    tokenService,
+    mockProfileCreator as any
   );
 
   beforeEach(() => {
@@ -48,6 +53,7 @@ describe('LoginWithGoogleUseCase', () => {
     mockOauthRepo.updateTokens.mockClear();
     mockSessionRepo.create.mockClear();
     mockGoogleService.verify.mockClear();
+    mockProfileCreator.createProfileForAccount.mockClear();
   });
 
   test('should create account and credential if new, and return session', async () => {
@@ -96,6 +102,7 @@ describe('LoginWithGoogleUseCase', () => {
       providerUserId: 'google-sub-1',
       accessToken: 'google-sub-1',
     });
+    expect(mockProfileCreator.createProfileForAccount).toHaveBeenCalledWith('acc-google-1');
     expect(mockSessionRepo.create).toHaveBeenCalled();
     expect(session.accountId).toBe('acc-google-1');
   });

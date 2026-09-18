@@ -8,9 +8,9 @@ export class CreateUserUseCase {
     this.#userRepository = userRepository;}
 
   async execute(data: CreateUserData): Promise<User> {
-    const existing = await this.#userRepository.findByEmail(data.email);
+    const existing = await this.#userRepository.findByAccountId(data.accountId);
     if (existing) {
-      throw new ConflictError(`A user with email "${data.email}" already exists.`);
+      throw new ConflictError(`A user profile for this account already exists.`);
     }
     return this.#userRepository.create(data);
   }

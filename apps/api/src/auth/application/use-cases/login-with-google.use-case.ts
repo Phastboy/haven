@@ -4,6 +4,7 @@ import { ISessionRepository } from '../../domain/ports/ISessionRepository';
 import { IGoogleTokenService } from '../../domain/ports/IGoogleTokenService';
 import { TokenService } from '../../infrastructure/services/token.service';
 import { Session } from '../../domain/session.schema';
+import { IProfileCreator } from '../../domain/ports/IProfileCreator';
 
 export class LoginWithGoogleUseCase {
   readonly #accountRepo: IAccountRepository;
@@ -11,19 +12,22 @@ export class LoginWithGoogleUseCase {
   readonly #sessionRepo: ISessionRepository;
   readonly #googleService: IGoogleTokenService;
   readonly #tokenService: TokenService;
+  readonly #profileCreator: IProfileCreator;
 
   constructor(
     accountRepo: IAccountRepository,
     oauthRepo: IOAuthCredentialRepository,
     sessionRepo: ISessionRepository,
     googleService: IGoogleTokenService,
-    tokenService: TokenService
+    tokenService: TokenService,
+    profileCreator: IProfileCreator
   ) {
     this.#accountRepo = accountRepo;
     this.#oauthRepo = oauthRepo;
     this.#sessionRepo = sessionRepo;
     this.#googleService = googleService;
     this.#tokenService = tokenService;
+    this.#profileCreator = profileCreator;
   }
 
   async execute(idToken: string, userAgent?: string, ipAddress?: string): Promise<Session> {
@@ -47,6 +51,7 @@ export class LoginWithGoogleUseCase {
           email: claims.email,
           emailVerified: true, // we already know it's verified here
         });
+        await this.#profileCreator.createProfileForAccount(account.id);
       } else if (!account.emailVerified) {
         await this.#accountRepo.markEmailVerified(account.id);
       }

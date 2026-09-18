@@ -3,9 +3,11 @@ import { relations } from 'drizzle-orm';
 
 export const users = pgTable('User', {
   id: varchar('id', { length: 36 }).primaryKey(),
-  email: text('email').unique().notNull(),
-  username: text('username'),
+  accountId: varchar('accountId', { length: 36 }).unique().notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+  username: text('username').unique(),
   name: text('name'),
+  bio: text('bio'),
+  profilePictureUrl: text('profilePictureUrl'),
   createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -61,6 +63,13 @@ export const accountPlatformLinks = pgTable('AccountPlatformLink', {
 export const sessionsRelations = relations(sessions, ({ one }) => ({
   account: one(accounts, {
     fields: [sessions.accountId],
+    references: [accounts.id],
+  }),
+}));
+
+export const usersRelations = relations(users, ({ one }) => ({
+  account: one(accounts, {
+    fields: [users.accountId],
     references: [accounts.id],
   }),
 }));

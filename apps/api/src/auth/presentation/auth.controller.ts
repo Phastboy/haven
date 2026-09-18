@@ -14,6 +14,8 @@ import { MagicLinkRepository } from '../infrastructure/repositories/magic-link.r
 import { AccountRepository } from '../infrastructure/repositories/account.repository';
 import { SessionRepository } from '../infrastructure/repositories/session.repository';
 import { OAuthCredentialRepository } from '../infrastructure/repositories/oauth-credential.repository';
+import { IProfileCreator } from '../domain/ports/IProfileCreator';
+import { SqlUserRepository } from '../../user/infrastructure/sql-user.repository';
 
 import { tokenService } from '../infrastructure/services/token.service';
 import { GoogleTokenService } from '../infrastructure/services/google-token.service';
@@ -38,10 +40,17 @@ const emailService = process.env['SMTP_HOST']
 
 const googleTokenService = new GoogleTokenService();
 
+const userRepo = new SqlUserRepository();
+const profileCreator: IProfileCreator = {
+  async createProfileForAccount(accountId: string) {
+    await userRepo.create({ accountId });
+  }
+};
+
 // Instantiate use cases
 const requestMagicLinkUC = new RequestMagicLinkUseCase(magicLinkRepo, emailService, tokenService);
-const verifyMagicLinkUC = new VerifyMagicLinkUseCase(magicLinkRepo, accountRepo, sessionRepo, tokenService);
-const loginWithGoogleUC = new LoginWithGoogleUseCase(accountRepo, oauthRepo, sessionRepo, googleTokenService, tokenService);
+const verifyMagicLinkUC = new VerifyMagicLinkUseCase(magicLinkRepo, accountRepo, sessionRepo, tokenService, profileCreator);
+const loginWithGoogleUC = new LoginWithGoogleUseCase(accountRepo, oauthRepo, sessionRepo, googleTokenService, tokenService, profileCreator);
 // Link platform use case is wired up but not yet exposed in any route
 // const linkPlatformUC = new LinkPlatformUseCase(linkRepo);
 const logoutUC = new LogoutUseCase(sessionRepo, tokenService);

@@ -6,7 +6,8 @@ import { ListUsersUseCase } from '../application/list-users.usecase';
 import { UpdateUserUseCase } from '../application/update-user.usecase';
 import { DeleteUserUseCase } from '../application/delete-user.usecase';
 import { SqlUserRepository } from '../infrastructure/sql-user.repository';
-import { CreateUserBody, UpdateUserBody, UserIdParam } from './user.dto';
+import { UpdateUserBody, UserIdParam } from './user.dto';
+import { requireAuth } from '../../auth/presentation/middleware/session.middleware';
 
 /**
  * Factory function that wires the full user feature as an Elysia plugin.
@@ -18,11 +19,9 @@ import { CreateUserBody, UpdateUserBody, UserIdParam } from './user.dto';
 export function createUserPlugin() {
   const repository = new SqlUserRepository();
 
-  const createUser = new CreateUserUseCase(repository);
   const getUser = new GetUserUseCase(repository);
   const listUsers = new ListUsersUseCase(repository);
   const updateUser = new UpdateUserUseCase(repository);
-  const deleteUser = new DeleteUserUseCase(repository);
 
   return new Elysia({ prefix: '/users', tags: ['Users'] })
     .error(ConflictError, ({ set, error }) => {
@@ -34,35 +33,18 @@ export function createUserPlugin() {
       return { error: error.message };
     })
 
-    .post('/',
-      { body: CreateUserBody, detail: { summary: 'Create a new user' } },
-      async ({ body, set }) => {
-        const user = await createUser.execute(body);
-        set.status = 201;
-        return user;
-      },
-    )
-
     .get('/',
-      { detail: { summary: 'List all users' } },
+      { detail: { summary: 'List all profiles' } },
       async () => listUsers.execute(),
     )
 
     .get('/:id',
-      { params: UserIdParam, detail: { summary: 'Get a user by ID' } },
+      { params: UserIdParam, detail: { summary: 'Get a profile by ID' } },
       async ({ params }) => getUser.execute(params.id),
     )
 
-    .patch('/:id',
-      { params: UserIdParam, body: UpdateUserBody, detail: { summary: 'Update a user' } },
-      async ({ params, body }) => updateUser.execute(params.id, body),
-    )
-
-    .delete('/:id',
-      { params: UserIdParam, detail: { summary: 'Delete a user' } },
-      async ({ params, set }) => {
-        await deleteUser.execute(params.id);
-        set.status = 204;
-      },
+    .patch('/me',
+      { body: UpdateUserBody, beforeHandle: [requireAuth], detail: { summary: 'Update my profile' } },
+      async ({ account, body }) => updateUser.execute(account!.id, body),
     );
 }

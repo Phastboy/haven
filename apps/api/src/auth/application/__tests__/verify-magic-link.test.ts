@@ -25,13 +25,18 @@ describe('VerifyMagicLinkUseCase', () => {
     deleteExpired: mock(),
   };
 
+  const mockProfileCreator = {
+    createProfileForAccount: mock(),
+  };
+
   const tokenService = new TokenService();
 
   const useCase = new VerifyMagicLinkUseCase(
     mockMagicLinkRepo,
     mockAccountRepo,
     mockSessionRepo,
-    tokenService
+    tokenService,
+    mockProfileCreator
   );
 
   test('should throw InvalidTokenError if magic link not found', async () => {
@@ -90,6 +95,7 @@ describe('VerifyMagicLinkUseCase', () => {
     expect(mockMagicLinkRepo.markUsed).toHaveBeenCalled();
     expect(mockAccountRepo.findByEmail).toHaveBeenCalledWith('new@example.com');
     expect(mockAccountRepo.create).toHaveBeenCalled();
+    expect(mockProfileCreator.createProfileForAccount).toHaveBeenCalledWith('acc-1');
     expect(mockSessionRepo.create).toHaveBeenCalled();
     expect(session.accountId).toBe('acc-1');
     expect(session.token).toBeDefined(); // Contains the raw token
