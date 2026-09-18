@@ -1,3 +1,4 @@
+// oxlint-disable typescript/no-explicit-any
 import { expect, test, describe, mock } from 'bun:test';
 import { VerifyMagicLinkUseCase } from '../use-cases/verify-magic-link.use-case';
 import { InvalidTokenError, ExpiredTokenError } from '../../domain/errors';

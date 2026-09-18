@@ -1,3 +1,5 @@
+// oxlint-disable typescript/no-explicit-any
+import { sql } from 'drizzle-orm';
 import { expect, test, describe } from 'bun:test';
 import { SessionRepository } from '../session.repository';
 import { AccountRepository } from '../account.repository';
@@ -30,8 +32,8 @@ describe('SessionRepository Integration', () => {
     expect(session.accountId).toBe(account.id);
     expect(session.token).toBe(testToken);
 
-    await db`DELETE FROM "Session" WHERE "id" = ${session.id}`;
-    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
+    await db.execute(sql`DELETE FROM "Session" WHERE "id" = ${session.id}`);
+    await db.execute(sql`DELETE FROM "Account" WHERE "id" = ${account.id}`);
   });
 
   test('should find session by token with account included', async () => {
@@ -54,8 +56,8 @@ describe('SessionRepository Integration', () => {
     expect(found!.account).toBeDefined();
     expect(found!.account.email).toBe(account.email);
 
-    await db`DELETE FROM "Session" WHERE "id" = ${session.id}`;
-    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
+    await db.execute(sql`DELETE FROM "Session" WHERE "id" = ${session.id}`);
+    await db.execute(sql`DELETE FROM "Account" WHERE "id" = ${account.id}`);
   });
 
   test('should delete session by token', async () => {
@@ -76,7 +78,7 @@ describe('SessionRepository Integration', () => {
     const found = await sessionRepo.findByToken(testToken);
     expect(found).toBeNull();
 
-    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
+    await db.execute(sql`DELETE FROM "Account" WHERE "id" = ${account.id}`);
   });
 
   test('should delete expired sessions', async () => {
@@ -113,7 +115,7 @@ describe('SessionRepository Integration', () => {
     expect(checkExpired).toBeNull();
     expect(checkValid).not.toBeNull();
 
-    await db`DELETE FROM "Session" WHERE "id" = ${validSession.id}`;
-    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
+    await db.execute(sql`DELETE FROM "Session" WHERE "id" = ${validSession.id}`);
+    await db.execute(sql`DELETE FROM "Account" WHERE "id" = ${account.id}`);
   });
 });

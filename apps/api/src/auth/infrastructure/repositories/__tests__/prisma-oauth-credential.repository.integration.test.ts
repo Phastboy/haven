@@ -1,3 +1,5 @@
+// oxlint-disable typescript/no-explicit-any
+import { sql } from 'drizzle-orm';
 import { expect, test, describe } from 'bun:test';
 import { OAuthCredentialRepository } from '../oauth-credential.repository';
 import { AccountRepository } from '../account.repository';
@@ -28,8 +30,8 @@ describe('OAuthCredentialRepository Integration', () => {
     expect(credential.accountId).toBe(account.id);
     expect(credential.providerUserId).toBe(providerUserId);
 
-    await db`DELETE FROM "OAuthCredential" WHERE "id" = ${credential.id}`;
-    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
+    await db.execute(sql`DELETE FROM "OAuthCredential" WHERE "id" = ${credential.id}`);
+    await db.execute(sql`DELETE FROM "Account" WHERE "id" = ${account.id}`);
   });
 
   test('should find oauth credential by provider and providerUserId', async () => {
@@ -50,8 +52,8 @@ describe('OAuthCredentialRepository Integration', () => {
     expect(found).not.toBeNull();
     expect(found!.id).toBe(credential.id);
 
-    await db`DELETE FROM "OAuthCredential" WHERE "id" = ${credential.id}`;
-    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
+    await db.execute(sql`DELETE FROM "OAuthCredential" WHERE "id" = ${credential.id}`);
+    await db.execute(sql`DELETE FROM "Account" WHERE "id" = ${account.id}`);
   });
 
   test('should return null for non-existent credential', async () => {
@@ -79,7 +81,7 @@ describe('OAuthCredentialRepository Integration', () => {
     expect(updated!.accessToken).toBe('new-access-token');
     expect(updated!.refreshToken).toBe('new-refresh-token');
 
-    await db`DELETE FROM "OAuthCredential" WHERE "id" = ${credential.id}`;
-    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
+    await db.execute(sql`DELETE FROM "OAuthCredential" WHERE "id" = ${credential.id}`);
+    await db.execute(sql`DELETE FROM "Account" WHERE "id" = ${account.id}`);
   });
 });

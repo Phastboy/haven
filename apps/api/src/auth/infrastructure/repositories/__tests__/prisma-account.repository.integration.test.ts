@@ -1,3 +1,5 @@
+// oxlint-disable typescript/no-explicit-any
+import { sql } from 'drizzle-orm';
 import { expect, test, describe } from 'bun:test';
 import { AccountRepository } from '../account.repository';
 
@@ -19,7 +21,7 @@ describe('AccountRepository Integration', () => {
     expect(account.email).toBe(testEmail);
     expect(account.emailVerified).toBe(false);
 
-    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
+    await db.execute(sql`DELETE FROM "Account" WHERE "id" = ${account.id}`);
   });
 
   test('should find account by email', async () => {
@@ -33,7 +35,7 @@ describe('AccountRepository Integration', () => {
     expect(found).not.toBeNull();
     expect(found!.id).toBe(account.id);
 
-    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
+    await db.execute(sql`DELETE FROM "Account" WHERE "id" = ${account.id}`);
   });
 
   test('should return null for non-existent email', async () => {
@@ -52,7 +54,7 @@ describe('AccountRepository Integration', () => {
     expect(found).not.toBeNull();
     expect(found!.email).toBe(testEmail);
 
-    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
+    await db.execute(sql`DELETE FROM "Account" WHERE "id" = ${account.id}`);
   });
 
   test('should mark email as verified', async () => {
@@ -66,6 +68,6 @@ describe('AccountRepository Integration', () => {
     const updated = await repo.findById(account.id);
     expect(updated!.emailVerified).toBe(true);
 
-    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
+    await db.execute(sql`DELETE FROM "Account" WHERE "id" = ${account.id}`);
   });
 });

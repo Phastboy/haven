@@ -1,3 +1,4 @@
+// oxlint-disable typescript/no-explicit-any
 import { describe, expect, it, mock } from 'bun:test';
 import { GetSessionUseCase } from '../use-cases/get-session.use-case';
 import { ISessionRepository } from '../../domain/ports/ISessionRepository';
@@ -33,7 +34,7 @@ describe('GetSessionUseCase', () => {
       deleteExpired: mock(async () => {})
     } as ISessionRepository;
 
-    const useCase = new GetSessionUseCase(mockRepo, mockTokenService);
+    const useCase = new GetSessionUseCase(mockRepo as any, mockTokenService as any);
     
     const result = await useCase.execute('raw_token');
     
@@ -45,9 +46,9 @@ describe('GetSessionUseCase', () => {
   it('should throw UnauthorizedError if session does not exist', async () => {
     const mockRepo = {
       findByToken: mock(async () => null),
-    } as unknown as ISessionRepository;
+    } as any as ISessionRepository;
 
-    const useCase = new GetSessionUseCase(mockRepo, mockTokenService);
+    const useCase = new GetSessionUseCase(mockRepo as any, mockTokenService as any);
     
     expect(useCase.execute('bad_token')).rejects.toThrow(UnauthorizedError);
   });
@@ -71,9 +72,9 @@ describe('GetSessionUseCase', () => {
     const mockRepo = {
       findByToken: mock(async () => mockSession),
       deleteByToken: mock(async () => {})
-    } as unknown as ISessionRepository;
+    } as any as ISessionRepository;
 
-    const useCase = new GetSessionUseCase(mockRepo, mockTokenService);
+    const useCase = new GetSessionUseCase(mockRepo as any, mockTokenService as any);
     
     expect(useCase.execute('expired_token')).rejects.toThrow(new UnauthorizedError('Session expired'));
     expect(mockRepo.deleteByToken).toHaveBeenCalledWith('hashed_expired_token');

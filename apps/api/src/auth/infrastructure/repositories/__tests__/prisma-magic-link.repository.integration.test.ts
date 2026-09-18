@@ -1,3 +1,5 @@
+// oxlint-disable typescript/no-explicit-any
+import { sql } from 'drizzle-orm';
 import { expect, test, describe, afterAll } from 'bun:test';
 import { MagicLinkRepository } from '../magic-link.repository';
 
@@ -12,7 +14,7 @@ describe('MagicLinkRepository Integration', () => {
 
   afterAll(async () => {
     if (magicLinkId) {
-      await db`DELETE FROM "MagicLink" WHERE "id" = ${magicLinkId}`;
+      await db.execute(sql`DELETE FROM "MagicLink" WHERE "id" = ${magicLinkId}`);
     }
   });
 

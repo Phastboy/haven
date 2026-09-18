@@ -1,3 +1,5 @@
+// oxlint-disable typescript/no-explicit-any
+import { sql } from 'drizzle-orm';
 import { expect, test, describe, beforeAll, afterAll, mock } from 'bun:test';
 import { Elysia } from 'elysia';
 import { authController } from '../auth.controller';
@@ -32,13 +34,12 @@ describe('Google OAuth E2E', () => {
     OAuth2Client.prototype.verifyIdToken = originalVerifyIdToken;
 
     // Cleanup
-    const account = await db`SELECT * FROM "Account" WHERE "email" = ${testEmail}`.then(res => res[0] || null);
-    if (account) {
-      await db`DELETE FROM "Session" WHERE "accountId" = ${account.id}`;
-      await db`DELETE FROM "OAuthCredential" WHERE "accountId" = ${account.id}`;
-      await db`DELETE FROM "AccountPlatformLink" WHERE "accountId" = ${account.id}`;
-      await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
-    }
+    const account = (await db.execute(sql`SELECT * FROM "Account" WHERE "email" = ${testEmail}`))[0] as any;
+    if (!account) return;
+    await db.execute(sql`DELETE FROM "Session" WHERE "accountId" = ${account.id}`);
+    await db.execute(sql`DELETE FROM "OAuthCredential" WHERE "accountId" = ${account.id}`);
+    await db.execute(sql`DELETE FROM "AccountPlatformLink" WHERE "accountId" = ${account.id}`);
+    await db.execute(sql`DELETE FROM "Account" WHERE "id" = ${account.id}`);
   });
 
   test('should login with google idToken and create session', async () => {
@@ -58,12 +59,12 @@ describe('Google OAuth E2E', () => {
     expect(body.token).toBeDefined();
     
     // Verify DB records
-    const account = await db`SELECT * FROM "Account" WHERE "email" = ${testEmail}`.then(res => res[0] || null);
-    expect(account).not.toBeNull();
+    const account = (await db.execute(sql`SELECT * FROM "Account" WHERE "email" = ${testEmail}`))[0] as any;
+    expect(account).toBeDefined();
     expect(account!.emailVerified).toBe(true);
 
-    const oauth = await db`SELECT * FROM "OAuthCredential" WHERE "accountId" = ${account!.id} AND "provider" = 'GOOGLE'`.then(res => res[0] || null);
-    expect(oauth).not.toBeNull();
+    const oauth = (await db.execute(sql`SELECT * FROM "OAuthCredential" WHERE "accountId" = ${account!.id} AND "provider" = 'GOOGLE'`))[0] as any;
+    expect(oauth).toBeDefined();
     expect(oauth!.providerUserId).toBe(googleId);
   });
 });

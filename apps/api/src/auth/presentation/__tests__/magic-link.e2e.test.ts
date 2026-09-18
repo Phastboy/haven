@@ -1,3 +1,5 @@
+// oxlint-disable typescript/no-explicit-any
+import { sql } from 'drizzle-orm';
 import { expect, test, describe, afterAll } from 'bun:test';
 import { Elysia } from 'elysia';
 import { authController } from '../auth.controller';
@@ -10,13 +12,13 @@ describe('Magic Link E2E', () => {
   
   afterAll(async () => {
     // Cleanup
-    const account = await db`SELECT * FROM "Account" WHERE "email" = ${testEmail}`.then(res => res[0] || null);
+    const account = (await db.execute(sql`SELECT * FROM "Account" WHERE "email" = ${testEmail}`))[0] as any;
     if (account) {
-      await db`DELETE FROM "Session" WHERE "accountId" = ${account.id}`;
-      await db`DELETE FROM "AccountPlatformLink" WHERE "accountId" = ${account.id}`;
-      await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
+      await db.execute(sql`DELETE FROM "Session" WHERE "accountId" = ${account.id}`);
+      await db.execute(sql`DELETE FROM "AccountPlatformLink" WHERE "accountId" = ${account.id}`);
+      await db.execute(sql`DELETE FROM "Account" WHERE "id" = ${account.id}`);
     }
-    await db`DELETE FROM "MagicLink" WHERE "email" = ${testEmail}`;
+    await db.execute(sql`DELETE FROM "MagicLink" WHERE "email" = ${testEmail}`);
   });
 
   test('should request a magic link', async () => {
@@ -34,8 +36,9 @@ describe('Magic Link E2E', () => {
     const body = await response.json();
     expect(body.message).toContain('If the email exists, a magic link was sent');
 
-    const magicLink = await db`SELECT * FROM "MagicLink" WHERE "email" = ${testEmail}`.then(res => res[0] || null);
-    expect(magicLink).not.toBeNull();
+    const magicLink = (await db.execute(sql`SELECT * FROM "MagicLink" WHERE "email" = ${testEmail}`))[0] as any;
+    expect(magicLink).toBeDefined();
+    expect(magicLink!.token).toBeDefined();
     expect(magicLink!.usedAt).toBeNull();
   });
 
@@ -43,7 +46,7 @@ describe('Magic Link E2E', () => {
     const rawToken = crypto.randomUUID();
     const hashedToken = tokenService.hash(rawToken);
 
-    await (async () => { const id = crypto.randomUUID(); await db`INSERT INTO "MagicLink" (id, email, token, "expiresAt") VALUES (${id}, ${testEmail}, ${hashedToken}, ${new Date(Date.now() + 1000000).toISOString()})`; return { id }; })();
+    await (async () => { const id = crypto.randomUUID(); await db.execute(sql`INSERT INTO "MagicLink" (id, email, token, "expiresAt") VALUES (${id}, ${testEmail}, ${hashedToken}, ${new Date(Date.now() + 1000000).toISOString()})`); return { id }; })();
 
     const verifyResponse = await app.handle(
       new Request(`http://localhost/auth/magic-link/verify`, {
@@ -64,8 +67,8 @@ describe('Magic Link E2E', () => {
     expect(body.token).toBeDefined();
     
     // Verify account and link were created
-    const account = await db`SELECT * FROM "Account" WHERE "email" = ${testEmail}`.then(res => res[0] || null);
-    expect(account).not.toBeNull();
+    const account = (await db.execute(sql`SELECT * FROM "Account" WHERE "email" = ${testEmail}`))[0] as any;
+    expect(account).toBeDefined();
     expect(account!.emailVerified).toBe(true);
   });
 });

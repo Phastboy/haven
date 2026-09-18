@@ -1,3 +1,5 @@
+// oxlint-disable typescript/no-explicit-any
+import { sql } from 'drizzle-orm';
 import { describe, expect, it, beforeAll, afterAll } from 'bun:test';
 import { SessionRepository } from '../session.repository';
 import { db } from '../../../../database/db';
@@ -10,14 +12,14 @@ describe('SessionRepository Integration', () => {
   beforeAll(async () => {
     const accountId = crypto.randomUUID();
     testAccountId = accountId;
-    await db`
+    await db.execute(sql`
       INSERT INTO "Account" (id, email, "emailVerified")
       VALUES (${accountId}, ${`test-${Date.now()}@test.com`}, true)
-    `;
+    `);
   });
 
   afterAll(async () => {
-    await db`DELETE FROM "Account" WHERE id = ${testAccountId}`;
+    await db.execute(sql`DELETE FROM "Account" WHERE id = ${testAccountId}`);
   });
 
   it('should create and retrieve a session by token', async () => {

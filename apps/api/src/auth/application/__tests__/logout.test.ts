@@ -1,3 +1,4 @@
+// oxlint-disable typescript/no-explicit-any
 import { expect, test, describe, mock } from 'bun:test';
 import { LogoutUseCase } from '../use-cases/logout.use-case';
 import { TokenService } from '../../infrastructure/services/token.service';

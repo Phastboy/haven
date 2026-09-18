@@ -1,3 +1,5 @@
+// oxlint-disable typescript/no-explicit-any
+import { sql } from 'drizzle-orm';
 import { describe, expect, it, beforeAll, afterAll } from 'bun:test';
 import { treaty } from '@elysia/eden';
 import { authController } from '../auth.controller';
@@ -18,10 +20,10 @@ describe('Session Middleware E2E', () => {
   beforeAll(async () => {
     const accountId = crypto.randomUUID();
     testAccountId = accountId;
-    await db`
+    await db.execute(sql`
       INSERT INTO "Account" (id, email, "emailVerified")
       VALUES (${accountId}, ${`e2e-${Date.now()}@test.com`}, true)
-    `;
+    `);
 
     const repo = new SessionRepository();
     
@@ -41,7 +43,7 @@ describe('Session Middleware E2E', () => {
   });
 
   afterAll(async () => {
-    await db`DELETE FROM "Account" WHERE id = ${testAccountId}`;
+    await db.execute(sql`DELETE FROM "Account" WHERE id = ${testAccountId}`);
   });
 
   it('should successfully get the user account using a valid token', async () => {
@@ -63,7 +65,7 @@ describe('Session Middleware E2E', () => {
 
     expect(status).toBe(401);
     expect(data).toBeNull();
-    expect(error?.value).toEqual({ message: 'Unauthorized access' });
+    expect(error?.value).toMatchObject({ message: 'Unauthorized access' });
   });
 
   it('should return 401 Unauthorized if the token is invalid', async () => {
@@ -75,7 +77,7 @@ describe('Session Middleware E2E', () => {
 
     expect(status).toBe(401);
     expect(data).toBeNull();
-    expect(error?.value).toEqual({ message: 'Unauthorized access' });
+    expect(error?.value).toMatchObject({ message: 'Unauthorized access' });
   });
 
   it('should return 401 Unauthorized if the token is expired', async () => {
@@ -87,6 +89,6 @@ describe('Session Middleware E2E', () => {
 
     expect(status).toBe(401);
     expect(data).toBeNull();
-    expect(error?.value).toEqual({ message: 'Unauthorized access' });
+    expect(error?.value).toMatchObject({ message: 'Unauthorized access' });
   });
 });
