@@ -19,6 +19,7 @@
     "dev": "bun run dev:api & bun run dev:web",
     "build:web": "cd apps/web && ng build",
     "start:web": "bun apps/web/dist/web/server/server.mjs",
-    "test:api": "bun run --cwd apps/api test"
+    "test:api": "bun run --cwd apps/api test",
+    "lint:api": "bun run --cwd apps/api lint"
   }
 }
