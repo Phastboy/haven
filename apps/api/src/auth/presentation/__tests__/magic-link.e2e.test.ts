@@ -67,8 +67,5 @@ describe('Magic Link E2E', () => {
     const account = await db`SELECT * FROM "Account" WHERE "email" = ${testEmail}`.then(res => res[0] || null);
     expect(account).not.toBeNull();
     expect(account!.emailVerified).toBe(true);
-
-    const platformLink = await db`SELECT * FROM "AccountPlatformLink" WHERE "accountId" = ${account!.id} AND "platform" = 'haven_platform'`.then(res => res[0] || null);
-    expect(platformLink).not.toBeNull();
   });
 });

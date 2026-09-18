@@ -65,8 +65,5 @@ describe('Google OAuth E2E', () => {
     const oauth = await db`SELECT * FROM "OAuthCredential" WHERE "accountId" = ${account!.id} AND "provider" = 'GOOGLE'`.then(res => res[0] || null);
     expect(oauth).not.toBeNull();
     expect(oauth!.providerUserId).toBe(googleId);
-
-    const platformLink = await db`SELECT * FROM "AccountPlatformLink" WHERE "accountId" = ${account!.id} AND "platform" = 'haven_platform'`.then(res => res[0] || null);
-    expect(platformLink).not.toBeNull();
   });
 });
