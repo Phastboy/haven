@@ -1,3 +1,4 @@
+// oxlint-disable typescript/no-explicit-any
 import { expect, test, describe } from 'bun:test';
 import { SmtpEmailService } from '../smtp-email.service';
 

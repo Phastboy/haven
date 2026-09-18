@@ -2,9 +2,11 @@ import type { IUserRepository } from '../domain/user.repository';
 import type { User } from '../domain/user.entity';
 
 export class ListUsersUseCase {
-  constructor(private readonly userRepository: IUserRepository) {}
+    readonly #userRepository: IUserRepository;
+  constructor(userRepository: IUserRepository) {
+    this.#userRepository = userRepository;}
 
   async execute(): Promise<User[]> {
-    return this.userRepository.findAll();
+    return this.#userRepository.findAll();
   }
 }

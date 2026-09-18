@@ -3,22 +3,22 @@ import { IGoogleTokenService, GoogleClaims } from '../../domain/ports/IGoogleTok
 import { UnauthorizedError } from '../../domain/errors';
 
 export class GoogleTokenService implements IGoogleTokenService {
-  private client: OAuth2Client;
-  private clientId: string;
+  #client: OAuth2Client;
+  #clientId: string;
 
   constructor() {
-    this.clientId = process.env['GOOGLE_CLIENT_ID'] || '';
-    if (!this.clientId) {
+    this.#clientId = process.env['GOOGLE_CLIENT_ID'] || '';
+    if (!this.#clientId) {
       console.warn('WARNING: GOOGLE_CLIENT_ID is not set.');
     }
-    this.client = new OAuth2Client(this.clientId);
+    this.#client = new OAuth2Client(this.#clientId);
   }
 
   async verify(idToken: string): Promise<GoogleClaims> {
     try {
-      const ticket = await this.client.verifyIdToken({
+      const ticket = await this.#client.verifyIdToken({
         idToken,
-        audience: this.clientId,
+        audience: this.#clientId,
       });
       const payload = ticket.getPayload();
       
