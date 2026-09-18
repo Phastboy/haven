@@ -1,12 +1,13 @@
 import { Elysia } from 'elysia';
 import { RequestMagicLinkDTO, VerifyMagicLinkDTO, LoginWithGoogleDTO } from './dtos/auth.dtos';
 import { authErrorPlugin } from './auth.error';
-import { authMiddleware } from './middleware/session.middleware';
+import { requireAuth } from './middleware/session.middleware';
 
 import { RequestMagicLinkUseCase } from '../application/use-cases/request-magic-link.use-case';
 import { VerifyMagicLinkUseCase } from '../application/use-cases/verify-magic-link.use-case';
 import { LoginWithGoogleUseCase } from '../application/use-cases/login-with-google.use-case';
 import { LogoutUseCase } from '../application/use-cases/logout.use-case';
+import { GetSessionUseCase } from '../application/use-cases/get-session.use-case';
 import { LinkPlatformUseCase } from '../application/use-cases/link-platform.use-case';
 
 import { MagicLinkRepository } from '../infrastructure/repositories/magic-link.repository';
@@ -19,116 +20,95 @@ import { tokenService } from '../infrastructure/services/token.service';
 import { GoogleTokenService } from '../infrastructure/services/google-token.service';
 import { SmtpEmailService } from '../infrastructure/services/smtp-email.service';
 import { ConsoleEmailService } from '../infrastructure/services/console-email.service';
-import { IEmailService } from '../domain/ports/IEmailService';
 
-import { CreateUserUseCase } from '../../user/application/create-user.usecase';
-import { SqlUserRepository } from '../../user/infrastructure/sql-user.repository';
+const getSessionUseCase = new GetSessionUseCase(
+  new SessionRepository(),
+  tokenService
+);
 
-const env = process.env['NODE_ENV'] || 'development';
-const emailService: IEmailService = 
-  (env === 'production' || process.env['SMTP_HOST']) 
-    ? new SmtpEmailService() 
-    : new ConsoleEmailService();
-
+// Instantiate repositories
 const magicLinkRepo = new MagicLinkRepository();
 const accountRepo = new AccountRepository();
 const sessionRepo = new SessionRepository();
 const oauthRepo = new OAuthCredentialRepository();
-const platformLinkRepo = new AccountPlatformLinkRepository();
-const googleService = new GoogleTokenService();
+const linkRepo = new AccountPlatformLinkRepository();
 
+// Determine which email service to use based on environment
+const emailService = process.env.SMTP_HOST
+  ? new SmtpEmailService({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT || 587),
+      secure: process.env.SMTP_SECURE === 'true',
+      user: process.env.SMTP_USER || '',
+      pass: process.env.SMTP_PASS || '',
+      from: process.env.SMTP_FROM || 'noreply@haven.com',
+    })
+  : new ConsoleEmailService();
+
+const googleTokenService = new GoogleTokenService(process.env.GOOGLE_CLIENT_ID || '');
+
+// Instantiate use cases
 const requestMagicLinkUC = new RequestMagicLinkUseCase(magicLinkRepo, emailService, tokenService);
 const verifyMagicLinkUC = new VerifyMagicLinkUseCase(magicLinkRepo, accountRepo, sessionRepo, tokenService);
-const loginWithGoogleUC = new LoginWithGoogleUseCase(accountRepo, oauthRepo, sessionRepo, googleService, tokenService);
+const loginWithGoogleUC = new LoginWithGoogleUseCase(accountRepo, oauthRepo, sessionRepo, googleTokenService, tokenService);
+const linkPlatformUC = new LinkPlatformUseCase(linkRepo);
 const logoutUC = new LogoutUseCase(sessionRepo, tokenService);
-const linkPlatformUC = new LinkPlatformUseCase(platformLinkRepo);
-
-import { ConflictError } from '../../shared/errors';
-
-const userRepo = new SqlUserRepository();
-const createUserUC = new CreateUserUseCase(userRepo);
 
 export const authController = new Elysia({ prefix: '/auth', name: 'auth-controller', tags: ['Auth'] })
   .use(authErrorPlugin)
-  .use(authMiddleware)
+  .derive(async (ctx) => {
+    const authHeader = ctx.headers['authorization'];
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return { session: null, account: null };
+    }
+    
+    const token = authHeader.substring(7);
+    try {
+      const sessionWithAccount = await getSessionUseCase.execute(token);
+      return {
+        session: sessionWithAccount,
+        account: sessionWithAccount.account,
+      };
+    } catch (e: unknown) {
+      if ((e as Error).name === 'UnauthorizedError' || e instanceof UnauthorizedError) {
+        return { session: null, account: null };
+      }
+      throw e;
+    }
+  })
   
   .post('/magic-link/request', {
     body: RequestMagicLinkDTO
   }, async ({ body }) => {
     await requestMagicLinkUC.execute(body.email);
-    return { message: 'If the email exists, a magic link was sent.' };
+    return { message: 'If the email exists, a magic link was sent to it.' };
   })
 
   .post('/magic-link/verify', {
     body: VerifyMagicLinkDTO
-  }, async ({ body, request }) => {
-    const userAgent = request.headers.get('user-agent') || undefined;
-    const ipAddress = request.headers.get('x-forwarded-for') || undefined;
-    const session = await verifyMagicLinkUC.execute(body.token, userAgent, ipAddress);
-
-    const account = await accountRepo.findById(session.accountId);
-    if (account) {
-      try {
-        const user = await createUserUC.execute({ email: account.email, username: account.email.split('@')[0] ?? null });
-        await linkPlatformUC.execute(account.id, user.id, 'haven_platform');
-      } catch (e) {
-        if (e instanceof ConflictError) {
-          const existingUser = await userRepo.findByEmail(account.email);
-          if (existingUser) {
-            await linkPlatformUC.execute(account.id, existingUser.id, 'haven_platform');
-          }
-        } else {
-          console.error(JSON.stringify({ code: 'PROVISIONING_ERROR', context: 'magic_link_verify' }));
-          throw e;
-        }
-      }
-    }
-
-    return session;
+  }, async ({ body }) => {
+    const result = await verifyMagicLinkUC.execute(body.token, body.userAgent, body.ipAddress);
+    return result;
   })
-
+  
   .post('/google/login', {
     body: LoginWithGoogleDTO
-  }, async ({ body, request }) => {
-    const userAgent = request.headers.get('user-agent') || undefined;
-    const ipAddress = request.headers.get('x-forwarded-for') || undefined;
-    const session = await loginWithGoogleUC.execute(body.idToken, userAgent, ipAddress);
-
-    const account = await accountRepo.findById(session.accountId);
-    if (account) {
-      try {
-        const user = await createUserUC.execute({ 
-          email: account.email, 
-          username: account.email.split('@')[0] ?? null,
-        });
-        await linkPlatformUC.execute(account.id, user.id, 'haven_platform');
-      } catch (e) {
-        if (e instanceof ConflictError) {
-          const existingUser = await userRepo.findByEmail(account.email);
-          if (existingUser) {
-            await linkPlatformUC.execute(account.id, existingUser.id, 'haven_platform');
-          }
-        } else {
-          console.error(JSON.stringify({ code: 'PROVISIONING_ERROR', context: 'google_login' }));
-          throw e;
-        }
-      }
-    }
-
-    return session;
+  }, async ({ body }) => {
+    const result = await loginWithGoogleUC.execute(body.idToken, body.userAgent, body.ipAddress);
+    return result;
   })
 
-  .post('/logout', async ({ headers }) => {
-    const authHeader = headers['authorization'];
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      await logoutUC.execute(token);
-    }
+  .post('/logout', {
+    beforeHandle: [requireAuth]
+  }, async ({ headers }) => {
+    const authHeader = headers['authorization']!;
+    const token = authHeader.substring(7);
+    await logoutUC.execute(token);
     return { success: true };
   })
 
   .get('/me', {
-    requireAuth: true
-  }, ({ account }: any) => {
+    beforeHandle: [requireAuth]
+  }, ({ account }) => {
     return { account };
   });
