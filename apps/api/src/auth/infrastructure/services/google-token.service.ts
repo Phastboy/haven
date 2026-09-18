@@ -34,7 +34,8 @@ export class GoogleTokenService implements IGoogleTokenService {
         ...(payload.picture ? { picture: payload.picture } : {}),
       };
     } catch (error) {
-      throw new UnauthorizedError('Invalid Google token');
+      console.error('Google verifyIdToken failed:', error);
+      throw new UnauthorizedError('Invalid Google token: ' + (error instanceof Error ? error.message : String(error)));
     }
   }
 }

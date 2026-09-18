@@ -80,7 +80,11 @@ export default class LoginPage implements AfterViewInit {
     try {
       const { data, error } = await this.api.auth.google.login.post({ idToken: response.credential });
       if (error) {
-        this.messageService.add({ severity: 'error', summary: 'Login Failed', detail: 'Google login failed' });
+        let detail = 'Google login failed';
+        if (error.value && typeof error.value === 'object' && 'message' in error.value) {
+          detail = String((error.value as any).message);
+        }
+        this.messageService.add({ severity: 'error', summary: 'Login Failed', detail });
       } else if (data) {
         const sessionToken = typeof data === 'object' && data !== null && 'token' in data ? String(data.token) : String(data);
         this.cookieService.set('token', sessionToken, { path: '/', sameSite: 'Lax' });
@@ -88,6 +92,7 @@ export default class LoginPage implements AfterViewInit {
         this.router.navigate(['/']);
       }
     } catch (e) {
+      console.error(e);
       this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Network error occurred during Google login' });
     }
   }
