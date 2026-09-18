@@ -1,0 +1,99 @@
+import { pgTable, varchar, text, boolean, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
+
+export const users = pgTable('User', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  email: text('email').unique().notNull(),
+  username: text('username'),
+  name: text('name'),
+  createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const accounts = pgTable('Account', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  email: text('email').unique().notNull(),
+  emailVerified: boolean('emailVerified').notNull().default(false),
+  createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const sessions = pgTable('Session', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  accountId: varchar('accountId', { length: 36 }).notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+  token: text('token').unique().notNull(),
+  expiresAt: timestamp('expiresAt', { withTimezone: true }).notNull(),
+  userAgent: text('userAgent'),
+  ipAddress: text('ipAddress'),
+  createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const magicLinks = pgTable('MagicLink', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  email: text('email').notNull(),
+  token: text('token').unique().notNull(),
+  expiresAt: timestamp('expiresAt', { withTimezone: true }).notNull(),
+  usedAt: timestamp('usedAt', { withTimezone: true }),
+  createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const oauthCredentials = pgTable('OAuthCredential', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  accountId: varchar('accountId', { length: 36 }).notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+  provider: text('provider').notNull(),
+  providerUserId: text('providerUserId').notNull(),
+  accessToken: text('accessToken').notNull(),
+  refreshToken: text('refreshToken'),
+  tokenExpiresAt: timestamp('tokenExpiresAt', { withTimezone: true }),
+  createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [uniqueIndex('OAuthCredential_provider_providerUserId_key').on(t.provider, t.providerUserId)]);
+
+export const accountPlatformLinks = pgTable('AccountPlatformLink', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  accountId: varchar('accountId', { length: 36 }).notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+  platformUserId: text('platformUserId').notNull(),
+  platform: text('platform').notNull(),
+  createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [uniqueIndex('account_platform_link_unique').on(t.accountId, t.platform)]);
+
+// Relations
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  account: one(accounts, {
+    fields: [sessions.accountId],
+    references: [accounts.id],
+  }),
+}));
+
+export const oauthCredentialsRelations = relations(oauthCredentials, ({ one }) => ({
+  account: one(accounts, {
+    fields: [oauthCredentials.accountId],
+    references: [accounts.id],
+  }),
+}));
+
+export const accountPlatformLinksRelations = relations(accountPlatformLinks, ({ one }) => ({
+  account: one(accounts, {
+    fields: [accountPlatformLinks.accountId],
+    references: [accounts.id],
+  }),
+}));
+
+// Inferred Types
+export type AccountRecord = typeof accounts.$inferSelect;
+export type NewAccount = typeof accounts.$inferInsert;
+
+export type SessionRecord = typeof sessions.$inferSelect;
+export type NewSession = typeof sessions.$inferInsert;
+
+export type MagicLinkRecord = typeof magicLinks.$inferSelect;
+export type NewMagicLink = typeof magicLinks.$inferInsert;
+
+export type OAuthCredentialRecord = typeof oauthCredentials.$inferSelect;
+export type NewOAuthCredential = typeof oauthCredentials.$inferInsert;
+
+export type AccountPlatformLinkRecord = typeof accountPlatformLinks.$inferSelect;
+export type NewAccountPlatformLink = typeof accountPlatformLinks.$inferInsert;
+
+export type UserRecord = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
