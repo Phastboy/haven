@@ -1,4 +1,4 @@
-import { pgTable, varchar, text, boolean, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, varchar, text, boolean, timestamp, uniqueIndex, pgEnum, integer } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const users = pgTable('User', {
@@ -8,6 +8,22 @@ export const users = pgTable('User', {
   name: text('name'),
   bio: text('bio'),
   profilePictureUrl: text('profilePictureUrl'),
+  createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const offerStatusEnum = pgEnum('OfferStatus', ['ACTIVE', 'PAUSED', 'ARCHIVED']);
+export const offerTypeEnum = pgEnum('OfferType', ['PRODUCT', 'SERVICE', 'APPOINTMENT']);
+
+export const offers = pgTable('Offer', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  userId: varchar('userId', { length: 36 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  price: integer('price').notNull().default(0), // stored in cents
+  status: offerStatusEnum('status').notNull().default('ACTIVE'),
+  offerType: offerTypeEnum('offerType').notNull().default('PRODUCT'),
+  images: text('images').array(),
   createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -67,10 +83,18 @@ export const sessionsRelations = relations(sessions, ({ one }) => ({
   }),
 }));
 
-export const usersRelations = relations(users, ({ one }) => ({
+export const usersRelations = relations(users, ({ one, many }) => ({
   account: one(accounts, {
     fields: [users.accountId],
     references: [accounts.id],
+  }),
+  offers: many(offers),
+}));
+
+export const offersRelations = relations(offers, ({ one }) => ({
+  user: one(users, {
+    fields: [offers.userId],
+    references: [users.id],
   }),
 }));
 
@@ -106,3 +130,6 @@ export type NewAccountPlatformLink = typeof accountPlatformLinks.$inferInsert;
 
 export type UserRecord = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+
+export type OfferRecord = typeof offers.$inferSelect;
+export type NewOffer = typeof offers.$inferInsert;
