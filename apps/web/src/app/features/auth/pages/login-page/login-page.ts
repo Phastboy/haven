@@ -9,7 +9,8 @@ import { MessageService } from 'primeng/api';
 import { ApiService } from '../../../../services/api.service';
 import { GoogleAuthService } from '../../../../core/services/google-auth.service';
 import { CookieService } from '../../../../core/services/cookie.service';
-import { Router } from '@angular/router';
+import { AuthService } from '../../../../core/services/auth.service';
+import { Router, ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-login-page',
@@ -30,7 +31,9 @@ export default class LoginPage implements AfterViewInit {
   private messageService = inject(MessageService);
   private googleAuth = inject(GoogleAuthService);
   private cookieService = inject(CookieService);
+  private authService = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   @ViewChild('googleBtnContainer') googleBtnContainer!: ElementRef<HTMLElement>;
 
@@ -88,8 +91,14 @@ export default class LoginPage implements AfterViewInit {
       } else if (data) {
         const sessionToken = typeof data === 'object' && data !== null && 'token' in data ? String(data.token) : String(data);
         this.cookieService.set('token', sessionToken, { path: '/', sameSite: 'Lax' });
+        
+        // Refresh auth state before redirecting
+        await this.authService.checkAuth();
+
         this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Successfully logged in with Google!' });
-        this.router.navigate(['/']);
+        
+        const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+        this.router.navigateByUrl(returnUrl);
       }
     } catch (e) {
       console.error(e);

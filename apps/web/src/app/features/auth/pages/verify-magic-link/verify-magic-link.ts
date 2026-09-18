@@ -6,6 +6,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ButtonModule } from 'primeng/button';
 import { ApiService } from '../../../../services/api.service';
 import { CookieService } from '../../../../core/services/cookie.service';
+import { AuthService } from '../../../../core/services/auth.service';
 
 @Component({
   selector: 'app-verify-magic-link',
@@ -21,6 +22,7 @@ export default class VerifyMagicLink implements OnInit {
   private messageService = inject(MessageService);
   private platformId = inject(PLATFORM_ID);
   private cookieService = inject(CookieService);
+  private authService = inject(AuthService);
 
   verifying = signal(true);
   errorMsg = signal('');
@@ -53,8 +55,14 @@ export default class VerifyMagicLink implements OnInit {
           // Success!
           const sessionToken = typeof data === 'object' && data !== null && 'token' in data ? String(data.token) : String(data);
           this.cookieService.set('token', sessionToken, { path: '/', sameSite: 'Lax' });
+          
+          // Refresh auth state before redirecting
+          await this.authService.checkAuth();
+
           this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Successfully logged in!' });
-          this.router.navigate(['/']); // Redirect to home
+          
+          const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+          this.router.navigateByUrl(returnUrl);
         }
       } catch (e) {
         this.fail('A network error occurred while verifying your link.');
