@@ -2,14 +2,16 @@ import openapi from "@elysia/openapi";
 import { Elysia } from "elysia";
 import { createUserPlugin } from "./user/presentation/user.plugin";
 import { authController } from "./auth";
+import { createOfferPlugin } from "./offer/presentation/offer.plugin";
 
 import { configController } from "./config.controller";
 
-const app = new Elysia({ prefix: '/api' })
+export const app = new Elysia({ prefix: '/api' })
   .use(openapi())
   .use(configController)
   .use(createUserPlugin())
   .use(authController)
+  .use(createOfferPlugin())
   .request(({ set }) => {
     set.headers["Access-Control-Allow-Origin"] = "*";
     set.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
@@ -26,14 +28,16 @@ const app = new Elysia({ prefix: '/api' })
 export type App = typeof app;
 const port = process.env['PORT'] ?? 3000;
 
-app.listen(
-    {
-      port,
-      hostname: "0.0.0.0",
-    },
-    () => {
-      console.log(
-        `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
-      );
-    },
-  );
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(
+      {
+        port,
+        hostname: "0.0.0.0",
+      },
+      () => {
+        console.log(
+          `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
+        );
+      },
+    );
+}
