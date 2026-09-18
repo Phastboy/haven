@@ -9,13 +9,11 @@ import { VerifyMagicLinkUseCase } from '../application/use-cases/verify-magic-li
 import { LoginWithGoogleUseCase } from '../application/use-cases/login-with-google.use-case';
 import { LogoutUseCase } from '../application/use-cases/logout.use-case';
 import { GetSessionUseCase } from '../application/use-cases/get-session.use-case';
-import { LinkPlatformUseCase } from '../application/use-cases/link-platform.use-case';
 
 import { MagicLinkRepository } from '../infrastructure/repositories/magic-link.repository';
 import { AccountRepository } from '../infrastructure/repositories/account.repository';
 import { SessionRepository } from '../infrastructure/repositories/session.repository';
 import { OAuthCredentialRepository } from '../infrastructure/repositories/oauth-credential.repository';
-import { AccountPlatformLinkRepository } from '../infrastructure/repositories/account-platform-link.repository';
 
 import { tokenService } from '../infrastructure/services/token.service';
 import { GoogleTokenService } from '../infrastructure/services/google-token.service';
@@ -32,7 +30,6 @@ const magicLinkRepo = new MagicLinkRepository();
 const accountRepo = new AccountRepository();
 const sessionRepo = new SessionRepository();
 const oauthRepo = new OAuthCredentialRepository();
-const linkRepo = new AccountPlatformLinkRepository();
 
 // Determine which email service to use based on environment
 const emailService = process.env['SMTP_HOST']
@@ -45,17 +42,18 @@ const googleTokenService = new GoogleTokenService();
 const requestMagicLinkUC = new RequestMagicLinkUseCase(magicLinkRepo, emailService, tokenService);
 const verifyMagicLinkUC = new VerifyMagicLinkUseCase(magicLinkRepo, accountRepo, sessionRepo, tokenService);
 const loginWithGoogleUC = new LoginWithGoogleUseCase(accountRepo, oauthRepo, sessionRepo, googleTokenService, tokenService);
-const linkPlatformUC = new LinkPlatformUseCase(linkRepo);
+// Link platform use case is wired up but not yet exposed in any route
+// const linkPlatformUC = new LinkPlatformUseCase(linkRepo);
 const logoutUC = new LogoutUseCase(sessionRepo, tokenService);
 
 export const authController = new Elysia({ prefix: '/auth', name: 'auth-controller', tags: ['Auth'] })
   .use(authErrorPlugin)
-  .derive(async (ctx) => {
-    const authHeader = ctx.headers['authorization'];
+  .derive(async ({ headers }: { headers: Record<string, string | undefined> }) => {
+    const authHeader = headers['authorization'];
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return { session: null, account: null };
     }
-    
+
     const token = authHeader.substring(7);
     try {
       const sessionWithAccount = await getSessionUseCase.execute(token);
@@ -64,7 +62,7 @@ export const authController = new Elysia({ prefix: '/auth', name: 'auth-controll
         account: sessionWithAccount.account,
       };
     } catch (e: unknown) {
-      if ((e as Error).name === 'UnauthorizedError' || e instanceof UnauthorizedError) {
+      if (e instanceof UnauthorizedError) {
         return { session: null, account: null };
       }
       throw e;
@@ -94,7 +92,7 @@ export const authController = new Elysia({ prefix: '/auth', name: 'auth-controll
 
   .post('/logout', {
     beforeHandle: [requireAuth]
-  }, async ({ headers }) => {
+  }, async ({ headers }: { headers: Record<string, string | undefined> }) => {
     const authHeader = headers['authorization']!;
     const token = authHeader.substring(7);
     await logoutUC.execute(token);
