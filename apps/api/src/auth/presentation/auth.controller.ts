@@ -2,6 +2,7 @@ import { Elysia } from 'elysia';
 import { RequestMagicLinkDTO, VerifyMagicLinkDTO, LoginWithGoogleDTO } from './dtos/auth.dtos';
 import { authErrorPlugin } from './auth.error';
 import { requireAuth } from './middleware/session.middleware';
+import { UnauthorizedError } from '../domain/errors';
 
 import { RequestMagicLinkUseCase } from '../application/use-cases/request-magic-link.use-case';
 import { VerifyMagicLinkUseCase } from '../application/use-cases/verify-magic-link.use-case';
@@ -34,18 +35,11 @@ const oauthRepo = new OAuthCredentialRepository();
 const linkRepo = new AccountPlatformLinkRepository();
 
 // Determine which email service to use based on environment
-const emailService = process.env.SMTP_HOST
-  ? new SmtpEmailService({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT || 587),
-      secure: process.env.SMTP_SECURE === 'true',
-      user: process.env.SMTP_USER || '',
-      pass: process.env.SMTP_PASS || '',
-      from: process.env.SMTP_FROM || 'noreply@haven.com',
-    })
+const emailService = process.env['SMTP_HOST']
+  ? new SmtpEmailService()
   : new ConsoleEmailService();
 
-const googleTokenService = new GoogleTokenService(process.env.GOOGLE_CLIENT_ID || '');
+const googleTokenService = new GoogleTokenService();
 
 // Instantiate use cases
 const requestMagicLinkUC = new RequestMagicLinkUseCase(magicLinkRepo, emailService, tokenService);
@@ -87,14 +81,14 @@ export const authController = new Elysia({ prefix: '/auth', name: 'auth-controll
   .post('/magic-link/verify', {
     body: VerifyMagicLinkDTO
   }, async ({ body }) => {
-    const result = await verifyMagicLinkUC.execute(body.token, body.userAgent, body.ipAddress);
+    const result = await verifyMagicLinkUC.execute(body.token);
     return result;
   })
   
   .post('/google/login', {
     body: LoginWithGoogleDTO
   }, async ({ body }) => {
-    const result = await loginWithGoogleUC.execute(body.idToken, body.userAgent, body.ipAddress);
+    const result = await loginWithGoogleUC.execute(body.idToken);
     return result;
   })
 
