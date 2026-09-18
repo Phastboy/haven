@@ -1,43 +1,48 @@
 import { db } from '../../../database/db';
+import { accounts } from '../../../database/schema';
+import { eq } from 'drizzle-orm';
+import { toIso } from '../../../database/map';
 import { IAccountRepository } from '../../domain/ports/IAccountRepository';
 import { Account, CreateAccountDTO } from '../../domain/account.schema';
 
 export class AccountRepository implements IAccountRepository {
   async create(data: CreateAccountDTO): Promise<Account> {
     const id = crypto.randomUUID();
-    const rows = await db`
-      INSERT INTO "Account" (id, email, "emailVerified")
-      VALUES (${id}, ${data.email}, ${data.emailVerified})
-      RETURNING *
-    `;
-    return this.toEntity(rows[0]);
+    const rows = await db.insert(accounts).values({
+      id,
+      email: data.email,
+      emailVerified: data.emailVerified
+    }).returning();
+    return this.#toAccount(rows[0]!);
   }
 
   async findById(id: string): Promise<Account | null> {
-    const rows = await db`SELECT * FROM "Account" WHERE id = ${id}`;
-    return rows.length > 0 ? this.toEntity(rows[0]) : null;
+    const row = await db.query.accounts.findFirst({
+      where: eq(accounts.id, id),
+    });
+    return row ? this.#toAccount(row) : null;
   }
 
   async findByEmail(email: string): Promise<Account | null> {
-    const rows = await db`SELECT * FROM "Account" WHERE email = ${email}`;
-    return rows.length > 0 ? this.toEntity(rows[0]) : null;
+    const row = await db.query.accounts.findFirst({
+      where: eq(accounts.email, email),
+    });
+    return row ? this.#toAccount(row) : null;
   }
 
   async markEmailVerified(id: string): Promise<void> {
-    await db`
-      UPDATE "Account"
-      SET "emailVerified" = true, "updatedAt" = CURRENT_TIMESTAMP
-      WHERE id = ${id}
-    `;
+    await db.update(accounts)
+      .set({ emailVerified: true, updatedAt: new Date() })
+      .where(eq(accounts.id, id));
   }
 
-  private toEntity(row: any): Account {
+  #toAccount(row: typeof accounts.$inferSelect): Account {
     return {
       id: row.id,
       email: row.email,
       emailVerified: row.emailVerified,
-      createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
-      updatedAt: row.updatedAt instanceof Date ? row.updatedAt.toISOString() : row.updatedAt,
+      createdAt: toIso(row.createdAt),
+      updatedAt: toIso(row.updatedAt),
     };
   }
 }

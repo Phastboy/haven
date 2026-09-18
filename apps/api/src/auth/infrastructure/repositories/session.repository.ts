@@ -1,62 +1,63 @@
 import { db } from '../../../database/db';
+import { sessions } from '../../../database/schema';
+import { eq, lt } from 'drizzle-orm';
+import { toIso } from '../../../database/map';
 import { CreateSessionDTO, ISessionRepository } from '../../domain/ports/ISessionRepository';
 import { Session, SessionWithAccount } from '../../domain/session.schema';
 
 export class SessionRepository implements ISessionRepository {
   async create(data: CreateSessionDTO): Promise<Session> {
     const id = crypto.randomUUID();
-    const rows = await db`
-      INSERT INTO "Session" (id, "accountId", token, "expiresAt", "userAgent", "ipAddress")
-      VALUES (${id}, ${data.accountId}, ${data.token}, ${data.expiresAt}, ${data.userAgent || null}, ${data.ipAddress || null})
-      RETURNING *
-    `;
-    return this.toEntity(rows[0]);
+    const rows = await db.insert(sessions).values({
+      id,
+      accountId: data.accountId,
+      token: data.token,
+      expiresAt: new Date(data.expiresAt),
+      userAgent: data.userAgent ?? null,
+      ipAddress: data.ipAddress ?? null,
+    }).returning();
+    return this.#toSession(rows[0]!);
   }
 
   async findByToken(token: string): Promise<SessionWithAccount | null> {
-    const rows = await db`
-      SELECT s.*, 
-             a.id as a_id, a.email as a_email, a."emailVerified" as "a_emailVerified", 
-             a."createdAt" as "a_createdAt", a."updatedAt" as "a_updatedAt"
-      FROM "Session" s
-      JOIN "Account" a ON s."accountId" = a.id
-      WHERE s.token = ${token}
-    `;
-    if (rows.length === 0) return null;
-    
-    const row = rows[0];
-    const session = this.toEntity(row);
+    const row = await db.query.sessions.findFirst({
+      where: eq(sessions.token, token),
+      with: {
+        account: true,
+      },
+    });
+
+    if (!row) return null;
+
     return {
-      ...session,
+      ...this.#toSession(row),
       account: {
-        id: row.a_id,
-        email: row.a_email,
-        emailVerified: row.a_emailVerified,
-        createdAt: row.a_createdAt instanceof Date ? row.a_createdAt.toISOString() : row.a_createdAt,
-        updatedAt: row.a_updatedAt instanceof Date ? row.a_updatedAt.toISOString() : row.a_updatedAt,
+        id: row.account.id,
+        email: row.account.email,
+        emailVerified: row.account.emailVerified,
+        createdAt: toIso(row.account.createdAt),
+        updatedAt: toIso(row.account.updatedAt),
       }
     };
   }
 
   async deleteByToken(token: string): Promise<void> {
-    await db`DELETE FROM "Session" WHERE token = ${token}`;
+    await db.delete(sessions).where(eq(sessions.token, token));
   }
 
   async deleteExpired(): Promise<void> {
-    const now = new Date().toISOString();
-    await db`DELETE FROM "Session" WHERE "expiresAt" < ${now}`;
+    await db.delete(sessions).where(lt(sessions.expiresAt, new Date()));
   }
 
-  private toEntity(row: any): Session {
-    const res: any = {
+  #toSession(row: typeof sessions.$inferSelect): Session {
+    return {
       id: row.id,
       accountId: row.accountId,
       token: row.token,
-      expiresAt: row.expiresAt instanceof Date ? row.expiresAt.toISOString() : row.expiresAt,
-      createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
+      expiresAt: toIso(row.expiresAt),
+      createdAt: toIso(row.createdAt),
+      ...(row.userAgent ? { userAgent: row.userAgent } : {}),
+      ...(row.ipAddress ? { ipAddress: row.ipAddress } : {}),
     };
-    if (row.userAgent) res.userAgent = row.userAgent;
-    if (row.ipAddress) res.ipAddress = row.ipAddress;
-    return res;
   }
 }
