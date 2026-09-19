@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 import { app } from "../../../index";
 import { db } from "../../../database/db";
-import { accounts, users, sessions, offers } from "../../../database/schema";
+import { accounts, users, sessions } from "../../../database/schema";
 import { randomUUID } from "crypto";
 import { eq } from "drizzle-orm";
 import { tokenService } from "../../../auth/infrastructure/services/token.service";

@@ -1,5 +1,5 @@
 import { t } from "elysia";
-import type { Static } from "@sinclair/typebox";
+import type { Static } from "typebox";
 
 export const OfferStatusSchema = t.Union([
   t.Literal("ACTIVE"),

@@ -1,4 +1,4 @@
-import { Elysia, t } from "elysia";
+import { Elysia } from "elysia";
 import { SqlFulfillmentRepository } from "../infrastructure/sql-fulfillment.repository";
 import { OrderFulfillmentAdapter } from "../infrastructure/order-fulfillment.adapter";
 import { DeliverFulfillmentUseCase } from "../application/deliver-fulfillment.usecase";
@@ -68,7 +68,7 @@ export const createFulfillmentPlugin = () => {
         throw e;
       }
     })
-    .get("/", async ({ params: { orderId }, user, session, set }) => {
+    .get("/", async ({ params: { orderId }, session, set }) => {
       const authCheck = requireAuth({ session, set } as any);
       if (authCheck) return authCheck;
 
@@ -92,7 +92,7 @@ export const createFulfillmentPlugin = () => {
         return deliverFulfillment.execute({
           orderId,
           accountId: user!.id,
-          deliveryMessage: body.message,
+          ...(body.message && { deliveryMessage: body.message }),
           autoReviewDays: 3, // Default auto-complete threshold
         });
       },

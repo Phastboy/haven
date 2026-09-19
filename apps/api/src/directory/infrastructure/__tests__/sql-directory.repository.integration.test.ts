@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 import { db } from "../../../database/db";
 import { users, accounts, offers } from "../../../database/schema";
 import { SqlDirectoryRepository } from "../sql-directory.repository";
-import { eq, inArray } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 describe("SqlDirectoryRepository Integration", () => {

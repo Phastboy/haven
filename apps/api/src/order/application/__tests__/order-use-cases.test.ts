@@ -2,7 +2,6 @@ import { describe, it, expect, mock } from "bun:test";
 import { CreateOrderUseCase } from "../create-order.usecase";
 import { UpdateOrderStatusUseCase } from "../update-order-status.usecase";
 import {
-  OrderNotFoundError,
   UnauthorizedOrderActionError,
   InvalidOrderStateTransitionError,
   SelfOrderNotAllowedError,

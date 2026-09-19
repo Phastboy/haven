@@ -42,7 +42,7 @@ export class CreateOrderUseCase {
       requesterId: params.requesterId,
       price: offer.price,
       quantity: params.quantity,
-      message: params.message,
+      ...(params.message && { message: params.message }),
     });
   }
 }

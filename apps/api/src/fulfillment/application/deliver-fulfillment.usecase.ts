@@ -2,7 +2,6 @@ import { IFulfillmentRepository } from "../domain/fulfillment.repository";
 import { IOrderFulfillmentService } from "./order-fulfillment.service.interface";
 import { Fulfillment } from "../domain/fulfillment.schema";
 import {
-  FulfillmentNotFoundError,
   UnauthorizedFulfillmentActionError,
   InvalidFulfillmentStateTransitionError,
 } from "../domain/errors";
@@ -52,7 +51,7 @@ export class DeliverFulfillmentUseCase {
     const reviewDeadline = new Date(Date.now() + params.autoReviewDays * 24 * 60 * 60 * 1000);
 
     return this.fulfillmentRepo.updateFulfillmentStatus(fulfillment.id, "DELIVERED", {
-      deliveryMessage: params.deliveryMessage,
+      ...(params.deliveryMessage && { deliveryMessage: params.deliveryMessage }),
       reviewDeadline,
     });
   }

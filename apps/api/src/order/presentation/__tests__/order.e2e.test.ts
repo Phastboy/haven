@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 import { randomUUID } from "crypto";
 import { db } from "../../../database/db";
-import { users, accounts, sessions, offers, orders } from "../../../database/schema";
+import { users, accounts, sessions, offers } from "../../../database/schema";
 import { app } from "../../../index";
-import { eq, inArray } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 import { tokenService } from "../../../auth/infrastructure/services/token.service";
 
 describe("Order API E2E", () => {

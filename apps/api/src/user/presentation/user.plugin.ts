@@ -1,10 +1,8 @@
 import { Elysia } from "elysia";
 import { NotFoundError, ConflictError } from "../../shared/errors";
-import { CreateUserUseCase } from "../application/create-user.usecase";
 import { GetUserUseCase } from "../application/get-user.usecase";
 import { ListUsersUseCase } from "../application/list-users.usecase";
 import { UpdateUserUseCase } from "../application/update-user.usecase";
-import { DeleteUserUseCase } from "../application/delete-user.usecase";
 import { SqlUserRepository } from "../infrastructure/sql-user.repository";
 import { UpdateUserBody, UserIdParam } from "./user.dto";
 import { requireAuth } from "../../auth/presentation/middleware/session.middleware";

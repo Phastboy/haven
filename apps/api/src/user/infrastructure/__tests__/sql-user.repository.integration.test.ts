@@ -4,7 +4,6 @@ import { expect, test, describe } from "bun:test";
 import { SqlUserRepository } from "../sql-user.repository";
 import { AccountRepository } from "../../../auth/infrastructure/repositories/account.repository";
 import { db } from "../../../database/db";
-import { NotFoundError } from "../../../shared/errors";
 
 describe("SqlUserRepository Integration", () => {
   const repo = new SqlUserRepository();

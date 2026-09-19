@@ -7,7 +7,6 @@ import {
   InvalidFulfillmentStateTransitionError,
   RevisionNotApplicableError,
   UnauthorizedFulfillmentActionError,
-  FulfillmentNotFoundError,
 } from "../../domain/errors";
 
 describe("Fulfillment Use Cases", () => {
@@ -15,7 +14,7 @@ describe("Fulfillment Use Cases", () => {
     it("should throw if order is not ACCEPTED", async () => {
       const repo: any = {};
       const service = {
-        getOrderDetails: mock(async () => ({ id: "o1", status: "PENDING" })),
+        getOrderDetails: mock(async () => ({ id: "o1", status: "PENDING", requesterId: "req1", offerId: "off1" })),
         getOfferTypeAndOwner: mock(),
         updateOrderStatus: mock(),
       };
@@ -28,7 +27,7 @@ describe("Fulfillment Use Cases", () => {
     it("should throw if user is not the owner", async () => {
       const repo: any = {};
       const service = {
-        getOrderDetails: mock(async () => ({ id: "o1", status: "ACCEPTED", offerId: "off1" })),
+        getOrderDetails: mock(async () => ({ id: "o1", status: "ACCEPTED", offerId: "off1", requesterId: "req1" })),
         getOfferTypeAndOwner: mock(async () => ({ offerType: "SERVICE", ownerId: "owner1" })),
         updateOrderStatus: mock(),
       };
@@ -45,7 +44,7 @@ describe("Fulfillment Use Cases", () => {
         updateFulfillmentStatus: mock(async (id: string, status: string) => ({ id, status })),
       } as any;
       const service = {
-        getOrderDetails: mock(async () => ({ id: "o1", status: "ACCEPTED", offerId: "off1" })),
+        getOrderDetails: mock(async () => ({ id: "o1", status: "ACCEPTED", offerId: "off1", requesterId: "req1" })),
         getOfferTypeAndOwner: mock(async () => ({ offerType: "SERVICE", ownerId: "owner1" })),
         updateOrderStatus: mock(),
       };
@@ -71,7 +70,7 @@ describe("Fulfillment Use Cases", () => {
         updateFulfillmentStatus: mock(async (id: string, status: string) => ({ id, status })),
       } as any;
       const service = {
-        getOrderDetails: mock(async () => ({ id: "o1", status: "ACCEPTED", requesterId: "req1" })),
+        getOrderDetails: mock(async () => ({ id: "o1", status: "ACCEPTED", requesterId: "req1", offerId: "off1" })),
         getOfferTypeAndOwner: mock(),
         updateOrderStatus: mock(async () => {}),
       };
@@ -84,7 +83,7 @@ describe("Fulfillment Use Cases", () => {
     it("should throw if non-requester attempts to accept", async () => {
       const repo: any = {};
       const service = {
-        getOrderDetails: mock(async () => ({ id: "o1", status: "ACCEPTED", requesterId: "req1" })),
+        getOrderDetails: mock(async () => ({ id: "o1", status: "ACCEPTED", requesterId: "req1", offerId: "off1" })),
         getOfferTypeAndOwner: mock(),
         updateOrderStatus: mock(),
       };
@@ -100,10 +99,7 @@ describe("Fulfillment Use Cases", () => {
       const repo: any = {};
       const service = {
         getOrderDetails: mock(async () => ({
-          id: "o1",
-          status: "ACCEPTED",
-          requesterId: "req1",
-          offerId: "off1",
+          id: "o1", status: "ACCEPTED", requesterId: "req1", offerId: "off1"
         })),
         getOfferTypeAndOwner: mock(async () => ({ offerType: "PRODUCT", ownerId: "owner1" })),
         updateOrderStatus: mock(),

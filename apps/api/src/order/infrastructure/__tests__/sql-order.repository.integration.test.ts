@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 import { db } from "../../../database/db";
-import { accounts, offers, orders, users } from "../../../database/schema";
+import { accounts, offers, users } from "../../../database/schema";
 import { SqlOrderRepository } from "../sql-order.repository";
 import { randomUUID } from "crypto";
-import { eq, inArray } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 
 describe("SqlOrderRepository Integration", () => {
   let repository: SqlOrderRepository;

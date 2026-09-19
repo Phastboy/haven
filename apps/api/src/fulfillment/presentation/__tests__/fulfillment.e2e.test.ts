@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 import { randomUUID } from "crypto";
 import { db } from "../../../database/db";
-import { users, accounts, sessions, offers, orders, fulfillments } from "../../../database/schema";
+import { users, accounts, sessions, offers, orders } from "../../../database/schema";
 import { app } from "../../../index";
 import { eq, inArray } from "drizzle-orm";
 import { tokenService } from "../../../auth/infrastructure/services/token.service";
@@ -194,6 +194,6 @@ describe("Fulfillment API E2E", () => {
 
   it("should have cascaded COMPLETED status back to the order", async () => {
     const [order] = await db.select().from(orders).where(eq(orders.id, testOrderId));
-    expect(order.status).toBe("COMPLETED");
+    expect(order!.status).toBe("COMPLETED");
   });
 });

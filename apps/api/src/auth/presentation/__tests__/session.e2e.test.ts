@@ -1,7 +1,6 @@
 // oxlint-disable typescript/no-explicit-any
 import { sql } from "drizzle-orm";
 import { describe, expect, it, beforeAll, afterAll } from "bun:test";
-import { treaty } from "@elysia/eden";
 import { authController } from "../auth.controller";
 import { db } from "../../../database/db";
 import { tokenService } from "../../infrastructure/services/token.service";

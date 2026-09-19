@@ -1,6 +1,6 @@
-import { eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "../../database/db";
-import { orders, offers, users } from "../../database/schema";
+import { orders, offers } from "../../database/schema";
 import { IOrderRepository } from "../domain/order.repository";
 import { Order, OrderStatus } from "../domain/order.schema";
 
@@ -24,7 +24,7 @@ export class SqlOrderRepository implements IOrderRepository {
         message: data.message,
       })
       .returning();
-    return order;
+    return order!;
   }
 
   async getOrderById(id: string): Promise<Order | null> {
@@ -60,6 +60,6 @@ export class SqlOrderRepository implements IOrderRepository {
       .set({ status, updatedAt: new Date() })
       .where(eq(orders.id, id))
       .returning();
-    return order;
+    return order!;
   }
 }

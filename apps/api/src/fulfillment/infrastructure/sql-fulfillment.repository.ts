@@ -13,7 +13,7 @@ export class SqlFulfillmentRepository implements IFulfillmentRepository {
         orderId: data.orderId,
       })
       .returning();
-    return fulfillment;
+    return fulfillment!;
   }
 
   async getFulfillmentById(id: string): Promise<Fulfillment | null> {
@@ -44,7 +44,7 @@ export class SqlFulfillmentRepository implements IFulfillmentRepository {
       })
       .where(eq(fulfillments.id, id))
       .returning();
-    return fulfillment;
+    return fulfillment!;
   }
 
   async getExpiredFulfillments(currentDate: Date): Promise<Fulfillment[]> {

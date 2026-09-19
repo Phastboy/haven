@@ -1,5 +1,4 @@
 import { t } from "elysia";
-import type { Static } from "@sinclair/typebox";
 import { CreateOfferDataSchema, UpdateOfferDataSchema } from "../domain/offer.schema";
 
 export const CreateOfferBody = CreateOfferDataSchema;

@@ -28,7 +28,7 @@ export class SqlOfferRepository implements IOfferRepository {
       })
       .returning();
 
-    return this.mapToDomain(record);
+    return this.mapToDomain(record!);
   }
 
   async findById(id: string): Promise<Offer | null> {

@@ -1,6 +1,5 @@
 // oxlint-disable typescript/no-explicit-any
 import { expect, test, describe, beforeAll, afterAll } from "bun:test";
-import { treaty } from "@elysia/eden";
 import { Elysia } from "elysia";
 import { createUserPlugin } from "../user.plugin";
 import { authController } from "../../../auth/presentation/auth.controller";

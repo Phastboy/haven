@@ -85,7 +85,7 @@ export const createOrderPlugin = () => {
           offerId: body.offerId,
           requesterId: user!.id,
           quantity: body.quantity || 1,
-          message: body.message,
+          ...(body.message && { message: body.message }),
         });
         set.status = 201;
         return order;

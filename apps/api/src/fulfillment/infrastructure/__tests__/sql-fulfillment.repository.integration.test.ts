@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 import { db } from "../../../database/db";
-import { accounts, offers, orders, users, fulfillments } from "../../../database/schema";
+import { accounts, offers, orders, users } from "../../../database/schema";
 import { SqlFulfillmentRepository } from "../sql-fulfillment.repository";
 import { randomUUID } from "crypto";
-import { eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 describe("SqlFulfillmentRepository Integration", () => {
   let repository: SqlFulfillmentRepository;
@@ -87,7 +87,7 @@ describe("SqlFulfillmentRepository Integration", () => {
 
     expect(updated.status).toBe("DELIVERED");
     expect(updated.deliveryMessage).toBe("Here is your order");
-    expect(updated.reviewDeadline?.getTime()).toBe(deadline.getTime());
+    expect(new Date(updated.reviewDeadline!).getTime()).toBe(deadline.getTime());
   });
 
   it("should query expired fulfillments", async () => {
