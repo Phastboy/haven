@@ -63,20 +63,30 @@ describe("GraphQL Directory E2E", () => {
     const res = await app.handle(req);
     expect(res.status).toBe(200);
 
-    const body: any = await res.json();
+    const body = (await res.json()) as {
+      errors?: unknown[];
+      data?: {
+        activeOffers?: {
+          id: string;
+          title: string;
+          price: number;
+          user: { id: string; username: string };
+        }[];
+      };
+    };
     expect(body.errors).toBeUndefined();
     expect(body.data).toBeDefined();
 
-    const fetchedOffers = body.data.activeOffers;
+    const fetchedOffers = body.data!.activeOffers!;
     expect(Array.isArray(fetchedOffers)).toBe(true);
     expect(fetchedOffers.length).toBeGreaterThan(0);
 
-    const testOffer = fetchedOffers.find((o: any) => o.id === activeOfferId1);
+    const testOffer = fetchedOffers.find((o: { id: string }) => o.id === activeOfferId1);
     expect(testOffer).toBeDefined();
-    expect(testOffer.title).toBe("GraphQL E2E Active Offer");
-    expect(testOffer.price).toBe(3500);
-    expect(testOffer.user).toBeDefined();
-    expect(testOffer.user.id).toBe(testUserId1);
-    expect(testOffer.user.username.startsWith("graphqle2e-")).toBe(true);
+    expect(testOffer!.title).toBe("GraphQL E2E Active Offer");
+    expect(testOffer!.price).toBe(3500);
+    expect(testOffer!.user).toBeDefined();
+    expect(testOffer!.user.id).toBe(testUserId1);
+    expect(testOffer!.user.username.startsWith("graphqle2e-")).toBe(true);
   });
 });

@@ -37,7 +37,10 @@ export class OrderFulfillmentAdapter implements IOrderFulfillmentService {
   async updateOrderStatus(orderId: string, status: string): Promise<void> {
     await db
       .update(orders)
-      .set({ status: status as any, updatedAt: new Date() })
+      .set({
+        status: status as "PENDING" | "ACCEPTED" | "REJECTED" | "COMPLETED" | "CANCELLED",
+        updatedAt: new Date(),
+      })
       .where(eq(orders.id, orderId));
   }
 }

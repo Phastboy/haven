@@ -44,13 +44,11 @@ describe("Order API E2E", () => {
     await db
       .insert(accounts)
       .values({ id: requesterAccountId, email: `req-${Date.now()}@example.com` });
-    await db
-      .insert(users)
-      .values({
-        id: requesterUserId,
-        accountId: requesterAccountId,
-        username: `req-${Date.now()}`,
-      });
+    await db.insert(users).values({
+      id: requesterUserId,
+      accountId: requesterAccountId,
+      username: `req-${Date.now()}`,
+    });
 
     requesterSessionToken = randomUUID();
     const hashedReqToken = await tokenService.hash(requesterSessionToken);
@@ -97,12 +95,18 @@ describe("Order API E2E", () => {
     const res = await app.handle(req);
     expect(res.status).toBe(201);
 
-    const body: any = await res.json();
+    const body = (await res.json()) as {
+      id?: string;
+      status?: string;
+      price?: number;
+      quantity?: number;
+      [key: string]: unknown;
+    };
     expect(body.id).toBeDefined();
     expect(body.price).toBe(1500);
     expect(body.quantity).toBe(2);
     expect(body.status).toBe("PENDING");
-    testOrderId = body.id;
+    testOrderId = body.id!;
   });
 
   it("should fail to create order if user is offer owner", async () => {
@@ -124,9 +128,9 @@ describe("Order API E2E", () => {
     });
     const res = await app.handle(req);
     expect(res.status).toBe(200);
-    const body: any = await res.json();
+    const body = (await res.json()) as { id: string; status: string }[];
     expect(Array.isArray(body)).toBe(true);
-    expect(body.find((o: any) => o.id === testOrderId)).toBeDefined();
+    expect(body.find((o: { id: string }) => o.id === testOrderId)).toBeDefined();
   });
 
   it("should allow owner to view received orders", async () => {
@@ -135,9 +139,9 @@ describe("Order API E2E", () => {
     });
     const res = await app.handle(req);
     expect(res.status).toBe(200);
-    const body: any = await res.json();
+    const body = (await res.json()) as { id: string; status: string }[];
     expect(Array.isArray(body)).toBe(true);
-    expect(body.find((o: any) => o.id === testOrderId)).toBeDefined();
+    expect(body.find((o: { id: string }) => o.id === testOrderId)).toBeDefined();
   });
 
   it("should allow owner to ACCEPT the order", async () => {
@@ -151,7 +155,13 @@ describe("Order API E2E", () => {
     });
     const res = await app.handle(req);
     expect(res.status).toBe(200);
-    const body: any = await res.json();
+    const body = (await res.json()) as {
+      id?: string;
+      status?: string;
+      price?: number;
+      quantity?: number;
+      [key: string]: unknown;
+    };
     expect(body.status).toBe("ACCEPTED");
   });
 

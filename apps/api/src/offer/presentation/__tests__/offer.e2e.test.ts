@@ -83,10 +83,16 @@ describe("Offer Plugin E2E", () => {
       console.error(await res.text());
     }
     expect(res.status).toBe(201);
-    const body: any = await res.json();
+    const body = (await res.json()) as {
+      id?: string;
+      title?: string;
+      status?: string;
+      userId?: string;
+      [key: string]: unknown;
+    };
     expect(body.title).toBe("E2E Offer");
     expect(body.userId).toBe(testUserId1);
-    offerId1 = body.id;
+    offerId1 = body.id!;
   });
 
   it("should prevent unauthorized users from editing offers (PATCH /offers/:id)", async () => {
@@ -119,7 +125,13 @@ describe("Offer Plugin E2E", () => {
 
     const res = await app.handle(req);
     expect(res.status).toBe(200);
-    const body: any = await res.json();
+    const body = (await res.json()) as {
+      id?: string;
+      title?: string;
+      status?: string;
+      userId?: string;
+      [key: string]: unknown;
+    };
     expect(body.title).toBe("Updated Title E2E");
   });
 
@@ -130,7 +142,13 @@ describe("Offer Plugin E2E", () => {
 
     const res = await app.handle(req);
     expect(res.status).toBe(200);
-    const body: any = await res.json();
+    const body = (await res.json()) as {
+      id?: string;
+      title?: string;
+      status?: string;
+      userId?: string;
+      [key: string]: unknown;
+    };
     expect(body.title).toBe("Updated Title E2E");
   });
 
@@ -141,10 +159,10 @@ describe("Offer Plugin E2E", () => {
 
     const res = await app.handle(req);
     expect(res.status).toBe(200);
-    const body: any = await res.json();
+    const body = (await res.json()) as { id: string; title: string }[];
     expect(Array.isArray(body)).toBe(true);
     expect(body.length).toBeGreaterThan(0);
-    expect(body[0].title).toBe("Updated Title E2E");
+    expect(body[0]!.title).toBe("Updated Title E2E");
   });
 
   it("should prevent unauthorized users from deleting (DELETE /offers/:id)", async () => {
@@ -176,7 +194,13 @@ describe("Offer Plugin E2E", () => {
     });
     const getRes = await app.handle(getReq);
     expect(getRes.status).toBe(200);
-    const getBody: any = await getRes.json();
+    const getBody = (await getRes.json()) as {
+      id?: string;
+      title?: string;
+      status?: string;
+      userId?: string;
+      [key: string]: unknown;
+    };
     expect(getBody.status).toBe("ARCHIVED");
   });
 });

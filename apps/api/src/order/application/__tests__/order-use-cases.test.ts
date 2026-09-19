@@ -45,7 +45,8 @@ describe("Order Use Cases", () => {
     });
 
     it("should throw OfferNotActiveError if offer is not ACTIVE", async () => {
-      const mockOrderRepo: any = {};
+      const mockOrderRepo =
+        {} as unknown as import("../../domain/order.repository").IOrderRepository;
       const mockOfferService = {
         getOfferPriceAndOwnerAndStatus: mock(async () => ({
           price: 1000,
@@ -61,7 +62,8 @@ describe("Order Use Cases", () => {
     });
 
     it("should throw SelfOrderNotAllowedError if requester is owner", async () => {
-      const mockOrderRepo: any = {};
+      const mockOrderRepo =
+        {} as unknown as import("../../domain/order.repository").IOrderRepository;
       const mockOfferService = {
         getOfferPriceAndOwnerAndStatus: mock(async () => ({
           price: 1000,
@@ -84,7 +86,10 @@ describe("Order Use Cases", () => {
           async () =>
             ({ id: "o1", offerId: "offer-1", requesterId: "req-1", status: "PENDING" }) as Order,
         ),
-        updateOrderStatus: mock(async (id, status) => ({ id, status }) as any),
+        updateOrderStatus: mock(
+          async (id, status) =>
+            ({ id, status }) as unknown as import("../../domain/order.schema").Order,
+        ),
         createOrder: mock(),
         getOrdersByRequester: mock(),
         getOrdersByOfferOwner: mock(),
@@ -130,7 +135,10 @@ describe("Order Use Cases", () => {
           async () =>
             ({ id: "o1", offerId: "offer-1", requesterId: "req-1", status: "PENDING" }) as Order,
         ),
-        updateOrderStatus: mock(async (id, status) => ({ id, status }) as any),
+        updateOrderStatus: mock(
+          async (id, status) =>
+            ({ id, status }) as unknown as import("../../domain/order.schema").Order,
+        ),
         createOrder: mock(),
         getOrdersByRequester: mock(),
         getOrdersByOfferOwner: mock(),

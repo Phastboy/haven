@@ -78,7 +78,7 @@ export const createOrderPlugin = () => {
         body: createOrderBodySchema,
       },
       async ({ body, user, session, set }) => {
-        const authCheck = requireAuth({ session, set } as any);
+        const authCheck = requireAuth({ session, set });
         if (authCheck) return authCheck;
 
         const order = await createOrderUseCase.execute({
@@ -92,13 +92,13 @@ export const createOrderPlugin = () => {
       },
     )
     .get("/me", async ({ user, session, set }) => {
-      const authCheck = requireAuth({ session, set } as any);
+      const authCheck = requireAuth({ session, set });
       if (authCheck) return authCheck;
 
       return getOrdersUseCase.getRequesterOrders(user!.id);
     })
     .get("/received", async ({ user, session, set }) => {
-      const authCheck = requireAuth({ session, set } as any);
+      const authCheck = requireAuth({ session, set });
       if (authCheck) return authCheck;
 
       return getOrdersUseCase.getReceivedOrders(user!.id);
@@ -109,7 +109,7 @@ export const createOrderPlugin = () => {
         body: updateOrderStatusBodySchema,
       },
       async ({ params, body, user, session, set }) => {
-        const authCheck = requireAuth({ session, set } as any);
+        const authCheck = requireAuth({ session, set });
         if (authCheck) return authCheck;
 
         return updateOrderStatusUseCase.execute({

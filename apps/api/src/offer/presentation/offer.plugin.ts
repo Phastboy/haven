@@ -84,7 +84,7 @@ export const createOfferPlugin = () => {
         body: CreateOfferBody,
       },
       async ({ body, user, session, set }) => {
-        const authCheck = requireAuth({ session, set } as any);
+        const authCheck = requireAuth({ session, set });
         if (authCheck) return authCheck;
 
         const offer = await createOffer.execute(user!.id, body);
@@ -99,7 +99,7 @@ export const createOfferPlugin = () => {
         body: UpdateOfferBody,
       },
       async ({ params, body, user, session, set }) => {
-        const authCheck = requireAuth({ session, set } as any);
+        const authCheck = requireAuth({ session, set });
         if (authCheck) return authCheck;
 
         return updateOffer.execute(user!.id, params.id, body);
@@ -111,7 +111,7 @@ export const createOfferPlugin = () => {
         params: OfferIdParam,
       },
       async ({ params, user, session, set }) => {
-        const authCheck = requireAuth({ session, set } as any);
+        const authCheck = requireAuth({ session, set });
         if (authCheck) return authCheck;
 
         await deleteOffer.execute(user!.id, params.id);

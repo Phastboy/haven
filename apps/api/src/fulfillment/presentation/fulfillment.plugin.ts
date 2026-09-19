@@ -69,7 +69,7 @@ export const createFulfillmentPlugin = () => {
       }
     })
     .get("/", async ({ params: { orderId }, session, set }) => {
-      const authCheck = requireAuth({ session, set } as any);
+      const authCheck = requireAuth({ session, set });
       if (authCheck) return authCheck;
 
       // Ideally we would also verify if the user has access to this order (owner or requester)
@@ -86,7 +86,7 @@ export const createFulfillmentPlugin = () => {
         body: deliverFulfillmentBodySchema,
       },
       async ({ params: { orderId }, body, user, session, set }) => {
-        const authCheck = requireAuth({ session, set } as any);
+        const authCheck = requireAuth({ session, set });
         if (authCheck) return authCheck;
 
         return deliverFulfillment.execute({
@@ -98,7 +98,7 @@ export const createFulfillmentPlugin = () => {
       },
     )
     .post("/accept", async ({ params: { orderId }, user, session, set }) => {
-      const authCheck = requireAuth({ session, set } as any);
+      const authCheck = requireAuth({ session, set });
       if (authCheck) return authCheck;
 
       return acceptFulfillment.execute({
@@ -112,7 +112,7 @@ export const createFulfillmentPlugin = () => {
         body: requestRevisionBodySchema,
       },
       async ({ params: { orderId }, body, user, session, set }) => {
-        const authCheck = requireAuth({ session, set } as any);
+        const authCheck = requireAuth({ session, set });
         if (authCheck) return authCheck;
 
         return requestRevision.execute({

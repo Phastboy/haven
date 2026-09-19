@@ -10,7 +10,7 @@ export const createDirectoryPlugin = () => {
 
   return yoga({
     typeDefs,
-    resolvers: resolvers as any,
+    resolvers: resolvers as never,
     context: (): GraphQLContext => {
       const userLoader = new DataLoader(async (userIds: readonly string[]) => {
         const users = await repository.getUsersByIds([...userIds]);

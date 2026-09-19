@@ -44,13 +44,11 @@ describe("Fulfillment API E2E", () => {
     await db
       .insert(accounts)
       .values({ id: requesterAccountId, email: `f-req-${Date.now()}@example.com` });
-    await db
-      .insert(users)
-      .values({
-        id: requesterUserId,
-        accountId: requesterAccountId,
-        username: `freq-${Date.now()}`,
-      });
+    await db.insert(users).values({
+      id: requesterUserId,
+      accountId: requesterAccountId,
+      username: `freq-${Date.now()}`,
+    });
 
     requesterSessionToken = randomUUID();
     const hashedReqToken = await tokenService.hash(requesterSessionToken);
@@ -117,7 +115,12 @@ describe("Fulfillment API E2E", () => {
     });
     const res = await app.handle(req);
     expect(res.status).toBe(200);
-    const body: any = await res.json();
+    const body = (await res.json()) as {
+      id?: string;
+      status?: string;
+      deliveryMessage?: string;
+      [key: string]: unknown;
+    };
     expect(body.status).toBe("DELIVERED");
     expect(body.deliveryMessage).toBe("Here is your work");
   });
@@ -128,7 +131,12 @@ describe("Fulfillment API E2E", () => {
     });
     const res = await app.handle(req);
     expect(res.status).toBe(200);
-    const body: any = await res.json();
+    const body = (await res.json()) as {
+      id?: string;
+      status?: string;
+      deliveryMessage?: string;
+      [key: string]: unknown;
+    };
     expect(body.status).toBe("DELIVERED");
   });
 
@@ -162,7 +170,12 @@ describe("Fulfillment API E2E", () => {
     );
     const res = await app.handle(req);
     expect(res.status).toBe(200);
-    const body: any = await res.json();
+    const body = (await res.json()) as {
+      id?: string;
+      status?: string;
+      deliveryMessage?: string;
+      [key: string]: unknown;
+    };
     expect(body.status).toBe("REVISION_REQUESTED");
   });
 
@@ -177,7 +190,12 @@ describe("Fulfillment API E2E", () => {
     });
     const res = await app.handle(req);
     expect(res.status).toBe(200);
-    const body: any = await res.json();
+    const body = (await res.json()) as {
+      id?: string;
+      status?: string;
+      deliveryMessage?: string;
+      [key: string]: unknown;
+    };
     expect(body.status).toBe("DELIVERED");
   });
 
@@ -188,7 +206,12 @@ describe("Fulfillment API E2E", () => {
     });
     const res = await app.handle(req);
     expect(res.status).toBe(200);
-    const body: any = await res.json();
+    const body = (await res.json()) as {
+      id?: string;
+      status?: string;
+      deliveryMessage?: string;
+      [key: string]: unknown;
+    };
     expect(body.status).toBe("COMPLETED");
   });
 

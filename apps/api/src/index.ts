@@ -25,7 +25,7 @@ export const app = new Elysia({ prefix: "/api" })
     set.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
     set.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
   })
-  .options("/*", ({ set }: { set: any }) => {
+  .options("/*", ({ set }: { set: { headers: Record<string, string> } }) => {
     set.headers["Access-Control-Allow-Origin"] = "*";
     set.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
     set.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";

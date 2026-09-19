@@ -51,7 +51,7 @@ export class RequestRevisionUseCase {
     // A revision request removes the deadline until owner delivers again
     return this.fulfillmentRepo.updateFulfillmentStatus(fulfillment.id, "REVISION_REQUESTED", {
       deliveryMessage: `Revision Requested: ${params.reason}`,
-      reviewDeadline: null as any, // Hack for Drizzle typing, or undefined if the repo handles null. Let's make repo handle null.
+      reviewDeadline: null as unknown as Date, // Hack for Drizzle typing, or undefined if the repo handles null. Let's make repo handle null.
     });
   }
 }
