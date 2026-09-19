@@ -1,6 +1,6 @@
-import { IOfferRepository } from '../domain/offer.repository';
-import { Offer } from '../domain/offer.schema';
-import { OfferNotFoundError } from '../domain/errors';
+import { IOfferRepository } from "../domain/offer.repository";
+import { Offer } from "../domain/offer.schema";
+import { OfferNotFoundError } from "../domain/errors";
 
 export class GetOfferUseCase {
   constructor(private readonly repository: IOfferRepository) {}

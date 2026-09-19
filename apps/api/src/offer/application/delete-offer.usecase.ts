@@ -1,5 +1,5 @@
-import { IOfferRepository } from '../domain/offer.repository';
-import { OfferNotFoundError, UnauthorizedOfferActionError } from '../domain/errors';
+import { IOfferRepository } from "../domain/offer.repository";
+import { OfferNotFoundError, UnauthorizedOfferActionError } from "../domain/errors";
 
 export class DeleteOfferUseCase {
   constructor(private readonly repository: IOfferRepository) {}

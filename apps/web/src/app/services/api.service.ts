@@ -1,9 +1,9 @@
-import { inject, PLATFORM_ID, Service } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
-import { treaty } from '@elysia/eden';
-import type { App } from '@haven/api';
-import { environment } from '../../environments/environment';
-import { CookieService } from '../core/services/cookie.service';
+import { inject, PLATFORM_ID, Service } from "@angular/core";
+import { isPlatformBrowser } from "@angular/common";
+import { treaty } from "@elysia/eden";
+import type { App } from "@haven/api";
+import { environment } from "../../environments/environment";
+import { CookieService } from "../core/services/cookie.service";
 
 /**
  * ApiService — End-to-end type-safe API client powered by Elysia Eden Treaty.
@@ -22,13 +22,13 @@ export class ApiService {
   private readonly cookieService = inject(CookieService);
 
   private readonly baseUrl = this.isBrowser
-    ? (environment.apiUrl || window.location.origin)
-    : (process.env['API_URL'] ?? 'http://localhost:3000');
+    ? environment.apiUrl || window.location.origin
+    : (process.env["API_URL"] ?? "http://localhost:3000");
 
   private readonly client = treaty<App>(this.baseUrl, {
     onRequest: (_path, options) => {
       // The cookie service works on both browser and SSR if configured
-      const token = this.cookieService.get('token');
+      const token = this.cookieService.get("token");
       if (token) {
         options.headers = {
           ...options.headers,

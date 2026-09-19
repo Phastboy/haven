@@ -1,4 +1,4 @@
-import { DirectoryOffer, DirectoryUser } from './directory.schema';
+import { DirectoryOffer, DirectoryUser } from "./directory.schema";
 
 export interface IDirectoryRepository {
   getActiveOffers(limit?: number, offset?: number): Promise<DirectoryOffer[]>;

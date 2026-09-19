@@ -1,4 +1,4 @@
-import { Session, SessionWithAccount } from '../session.schema';
+import { Session, SessionWithAccount } from "../session.schema";
 
 export interface CreateSessionDTO {
   accountId: string;

@@ -10,7 +10,7 @@ export class RequestMagicLinkUseCase {
   constructor(
     magicLinkRepo: IMagicLinkRepository,
     emailService: IEmailService,
-    tokenService: TokenService
+    tokenService: TokenService,
   ) {
     this.#magicLinkRepo = magicLinkRepo;
     this.#emailService = emailService;
@@ -37,7 +37,7 @@ export class RequestMagicLinkUseCase {
     // So we don't create account here.
 
     const baseUrl = process.env["MAGIC_LINK_BASE_URL"];
-    if(!baseUrl) throw new Error("MAGIC_LINK_BASE_URL not set");
+    if (!baseUrl) throw new Error("MAGIC_LINK_BASE_URL not set");
 
     // Include email and rawToken in the link so frontend can pass it to backend
     const link = `${baseUrl}/auth/magic-login?token=${rawToken}&email=${encodeURIComponent(email)}`;

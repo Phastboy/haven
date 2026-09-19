@@ -10,7 +10,7 @@ import { createAutoCompletePlugin } from "./scheduler/auto-complete.plugin";
 
 import { configController } from "./config.controller";
 
-export const app = new Elysia({ prefix: '/api' })
+export const app = new Elysia({ prefix: "/api" })
   .use(openapi())
   .use(configController)
   .use(createUserPlugin())
@@ -34,18 +34,16 @@ export const app = new Elysia({ prefix: '/api' })
   .get("/", () => "Hello Elysia");
 
 export type App = typeof app;
-const port = process.env['PORT'] ?? 3000;
+const port = process.env["PORT"] ?? 3000;
 
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV !== "test") {
   app.listen(
-      {
-        port,
-        hostname: "0.0.0.0",
-      },
-      () => {
-        console.log(
-          `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
-        );
-      },
-    );
+    {
+      port,
+      hostname: "0.0.0.0",
+    },
+    () => {
+      console.log(`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`);
+    },
+  );
 }

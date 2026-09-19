@@ -1,18 +1,16 @@
 // oxlint-disable typescript/no-explicit-any
-import { sql } from 'drizzle-orm';
-import { expect, test, describe } from 'bun:test';
-import { SessionRepository } from '../session.repository';
-import { AccountRepository } from '../account.repository';
+import { sql } from "drizzle-orm";
+import { expect, test, describe } from "bun:test";
+import { SessionRepository } from "../session.repository";
+import { AccountRepository } from "../account.repository";
 
-import { db } from '../../../../database/db';
+import { db } from "../../../../database/db";
 
-
-
-describe('SessionRepository Integration', () => {
+describe("SessionRepository Integration", () => {
   const sessionRepo = new SessionRepository();
   const accountRepo = new AccountRepository();
-  
-  test('should create a session', async () => {
+
+  test("should create a session", async () => {
     const account = await accountRepo.create({
       email: `test-session-${crypto.randomUUID()}@example.com`,
       emailVerified: true,
@@ -24,8 +22,8 @@ describe('SessionRepository Integration', () => {
       accountId: account.id,
       token: testToken,
       expiresAt,
-      userAgent: 'integration-test',
-      ipAddress: '127.0.0.1'
+      userAgent: "integration-test",
+      ipAddress: "127.0.0.1",
     });
 
     expect(session.id).toBeDefined();
@@ -36,7 +34,7 @@ describe('SessionRepository Integration', () => {
     await db.execute(sql`DELETE FROM "Account" WHERE "id" = ${account.id}`);
   });
 
-  test('should find session by token with account included', async () => {
+  test("should find session by token with account included", async () => {
     const account = await accountRepo.create({
       email: `test-session-${crypto.randomUUID()}@example.com`,
       emailVerified: true,
@@ -60,7 +58,7 @@ describe('SessionRepository Integration', () => {
     await db.execute(sql`DELETE FROM "Account" WHERE "id" = ${account.id}`);
   });
 
-  test('should delete session by token', async () => {
+  test("should delete session by token", async () => {
     const account = await accountRepo.create({
       email: `test-session-${crypto.randomUUID()}@example.com`,
       emailVerified: true,
@@ -81,7 +79,7 @@ describe('SessionRepository Integration', () => {
     await db.execute(sql`DELETE FROM "Account" WHERE "id" = ${account.id}`);
   });
 
-  test('should delete expired sessions', async () => {
+  test("should delete expired sessions", async () => {
     const account = await accountRepo.create({
       email: `test-session-${crypto.randomUUID()}@example.com`,
       emailVerified: true,
@@ -90,21 +88,21 @@ describe('SessionRepository Integration', () => {
     // Create an expired session
     const expiredToken = crypto.randomUUID();
     const pastDate = new Date(Date.now() - 100000).toISOString();
-    
+
     await sessionRepo.create({
       accountId: account.id,
       token: expiredToken,
-      expiresAt: pastDate
+      expiresAt: pastDate,
     });
 
     // Create a valid session
     const validToken = crypto.randomUUID();
     const futureDate = new Date(Date.now() + 100000).toISOString();
-    
+
     const validSession = await sessionRepo.create({
       accountId: account.id,
       token: validToken,
-      expiresAt: futureDate
+      expiresAt: futureDate,
     });
 
     await sessionRepo.deleteExpired();

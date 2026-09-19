@@ -1,5 +1,5 @@
-import { t } from 'elysia';
-import type { Static } from 'typebox';
+import { t } from "elysia";
+import type { Static } from "typebox";
 
 /**
  * Domain-level TypeBox schemas.

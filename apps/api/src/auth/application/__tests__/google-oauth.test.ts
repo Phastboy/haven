@@ -1,9 +1,9 @@
 // oxlint-disable typescript/no-explicit-any
-import { expect, test, describe, mock, beforeEach } from 'bun:test';
-import { LoginWithGoogleUseCase } from '../use-cases/login-with-google.use-case';
-import { TokenService } from '../../infrastructure/services/token.service';
+import { expect, test, describe, mock, beforeEach } from "bun:test";
+import { LoginWithGoogleUseCase } from "../use-cases/login-with-google.use-case";
+import { TokenService } from "../../infrastructure/services/token.service";
 
-describe('LoginWithGoogleUseCase', () => {
+describe("LoginWithGoogleUseCase", () => {
   const mockAccountRepo = {
     create: mock(),
     findById: mock(),
@@ -40,7 +40,7 @@ describe('LoginWithGoogleUseCase', () => {
     mockSessionRepo as any,
     mockGoogleService as any,
     tokenService,
-    mockProfileCreator as any
+    mockProfileCreator as any,
   );
 
   beforeEach(() => {
@@ -56,106 +56,108 @@ describe('LoginWithGoogleUseCase', () => {
     mockProfileCreator.createProfileForAccount.mockClear();
   });
 
-  test('should create account and credential if new, and return session', async () => {
+  test("should create account and credential if new, and return session", async () => {
     mockGoogleService.verify.mockResolvedValueOnce({
-      sub: 'google-sub-1',
-      email: 'google@example.com',
+      sub: "google-sub-1",
+      email: "google@example.com",
       email_verified: true,
-      name: 'Google User',
+      name: "Google User",
     });
 
     mockOauthRepo.findByProvider.mockResolvedValueOnce(null);
     mockAccountRepo.findByEmail.mockResolvedValueOnce(null);
     mockAccountRepo.create.mockResolvedValueOnce({
-      id: 'acc-google-1',
-      email: 'google@example.com',
+      id: "acc-google-1",
+      email: "google@example.com",
       emailVerified: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
 
     mockOauthRepo.create.mockResolvedValueOnce({
-      id: 'cred-1',
-      accountId: 'acc-google-1',
-      provider: 'GOOGLE',
-      providerUserId: 'google-sub-1',
-      accessToken: 'google-sub-1', // claims.sub is stored
+      id: "cred-1",
+      accountId: "acc-google-1",
+      provider: "GOOGLE",
+      providerUserId: "google-sub-1",
+      accessToken: "google-sub-1", // claims.sub is stored
     });
 
     mockSessionRepo.create.mockResolvedValueOnce({
-      id: 'sess-google-1',
-      accountId: 'acc-google-1',
-      token: 'hashed-session',
+      id: "sess-google-1",
+      accountId: "acc-google-1",
+      token: "hashed-session",
       expiresAt: new Date().toISOString(),
       userAgent: undefined,
       ipAddress: undefined,
       createdAt: new Date().toISOString(),
     });
 
-    const session = await useCase.execute('id-token-xyz');
+    const session = await useCase.execute("id-token-xyz");
 
-    expect(mockGoogleService.verify).toHaveBeenCalledWith('id-token-xyz');
+    expect(mockGoogleService.verify).toHaveBeenCalledWith("id-token-xyz");
     expect(mockAccountRepo.create).toHaveBeenCalled();
     expect(mockOauthRepo.create).toHaveBeenCalledWith({
-      accountId: 'acc-google-1',
-      provider: 'GOOGLE',
-      providerUserId: 'google-sub-1',
-      accessToken: 'google-sub-1',
+      accountId: "acc-google-1",
+      provider: "GOOGLE",
+      providerUserId: "google-sub-1",
+      accessToken: "google-sub-1",
     });
-    expect(mockProfileCreator.createProfileForAccount).toHaveBeenCalledWith('acc-google-1');
+    expect(mockProfileCreator.createProfileForAccount).toHaveBeenCalledWith("acc-google-1");
     expect(mockSessionRepo.create).toHaveBeenCalled();
-    expect(session.accountId).toBe('acc-google-1');
+    expect(session.accountId).toBe("acc-google-1");
   });
 
-  test('should reuse existing account and credential if found', async () => {
+  test("should reuse existing account and credential if found", async () => {
     mockGoogleService.verify.mockResolvedValueOnce({
-      sub: 'google-sub-1',
-      email: 'google@example.com',
+      sub: "google-sub-1",
+      email: "google@example.com",
       email_verified: true,
-      name: 'Google User',
+      name: "Google User",
     });
 
     mockOauthRepo.findByProvider.mockResolvedValueOnce({
-      id: 'cred-1',
-      accountId: 'acc-google-1',
-      provider: 'GOOGLE',
-      providerUserId: 'google-sub-1',
-      accessToken: 'google-sub-1',
+      id: "cred-1",
+      accountId: "acc-google-1",
+      provider: "GOOGLE",
+      providerUserId: "google-sub-1",
+      accessToken: "google-sub-1",
     });
 
     mockAccountRepo.findById.mockResolvedValueOnce({
-      id: 'acc-google-1',
-      email: 'google@example.com',
+      id: "acc-google-1",
+      email: "google@example.com",
       emailVerified: true,
     });
 
     mockSessionRepo.create.mockResolvedValueOnce({
-      id: 'sess-google-2',
-      accountId: 'acc-google-1',
-      token: 'hashed-session-2',
+      id: "sess-google-2",
+      accountId: "acc-google-1",
+      token: "hashed-session-2",
       expiresAt: new Date().toISOString(),
     });
 
-    const session = await useCase.execute('new-id-token');
+    const session = await useCase.execute("new-id-token");
 
-    expect(mockGoogleService.verify).toHaveBeenCalledWith('new-id-token');
-    expect(mockAccountRepo.findById).toHaveBeenCalledWith('acc-google-1');
+    expect(mockGoogleService.verify).toHaveBeenCalledWith("new-id-token");
+    expect(mockAccountRepo.findById).toHaveBeenCalledWith("acc-google-1");
     expect(mockOauthRepo.updateTokens).not.toHaveBeenCalled();
     expect(mockSessionRepo.create).toHaveBeenCalled();
-    expect(session.accountId).toBe('acc-google-1');
+    expect(session.accountId).toBe("acc-google-1");
   });
 
-  test('should throw error if email is unverified and no existing credential is linked', async () => {
+  test("should throw error if email is unverified and no existing credential is linked", async () => {
     mockGoogleService.verify.mockResolvedValueOnce({
-      sub: 'google-sub-unverified',
-      email: 'hacker@example.com',
+      sub: "google-sub-unverified",
+      email: "hacker@example.com",
       email_verified: false,
     });
 
     mockOauthRepo.findByProvider.mockResolvedValueOnce(null);
 
-    await expect(useCase.execute('unverified-id-token')).rejects.toThrow('Email must be verified to link a new Google account');
-    
+    await expect(useCase.execute("unverified-id-token")).rejects.toThrow(
+      "Email must be verified to link a new Google account",
+    );
+
     expect(mockAccountRepo.findByEmail).not.toHaveBeenCalled();
     expect(mockAccountRepo.create).not.toHaveBeenCalled();
     expect(mockOauthRepo.create).not.toHaveBeenCalled();

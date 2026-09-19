@@ -1,21 +1,21 @@
 // oxlint-disable typescript/no-explicit-any
-import { sql } from 'drizzle-orm';
-import { expect, test, describe, beforeAll, afterAll, mock } from 'bun:test';
-import { Elysia } from 'elysia';
-import { authController } from '../auth.controller';
-import { db } from '../../../database/db';
-import { OAuth2Client } from 'google-auth-library';
+import { sql } from "drizzle-orm";
+import { expect, test, describe, beforeAll, afterAll, mock } from "bun:test";
+import { Elysia } from "elysia";
+import { authController } from "../auth.controller";
+import { db } from "../../../database/db";
+import { OAuth2Client } from "google-auth-library";
 
-describe('Google OAuth E2E', () => {
+describe("Google OAuth E2E", () => {
   const app = new Elysia().use(authController);
   const testEmail = `e2e-google-${crypto.randomUUID()}@example.com`;
   const googleId = `google-id-${crypto.randomUUID()}`;
-  
+
   let originalVerifyIdToken: any;
 
   beforeAll(() => {
     originalVerifyIdToken = OAuth2Client.prototype.verifyIdToken;
-    
+
     // Mock the verifyIdToken method
     OAuth2Client.prototype.verifyIdToken = mock(async () => {
       return {
@@ -23,9 +23,9 @@ describe('Google OAuth E2E', () => {
           sub: googleId,
           email: testEmail,
           email_verified: true,
-          name: 'Test Google User',
-          picture: 'https://example.com/photo.jpg',
-        })
+          name: "Test Google User",
+          picture: "https://example.com/photo.jpg",
+        }),
       };
     }) as any;
   });
@@ -34,7 +34,9 @@ describe('Google OAuth E2E', () => {
     OAuth2Client.prototype.verifyIdToken = originalVerifyIdToken;
 
     // Cleanup
-    const account = (await db.execute(sql`SELECT * FROM "Account" WHERE "email" = ${testEmail}`))[0] as any;
+    const account = (
+      await db.execute(sql`SELECT * FROM "Account" WHERE "email" = ${testEmail}`)
+    )[0] as any;
     if (!account) return;
     await db.execute(sql`DELETE FROM "Session" WHERE "accountId" = ${account.id}`);
     await db.execute(sql`DELETE FROM "OAuthCredential" WHERE "accountId" = ${account.id}`);
@@ -42,28 +44,34 @@ describe('Google OAuth E2E', () => {
     await db.execute(sql`DELETE FROM "Account" WHERE "id" = ${account.id}`);
   });
 
-  test('should login with google idToken and create session', async () => {
+  test("should login with google idToken and create session", async () => {
     const response = await app.handle(
-      new Request('http://localhost/auth/google/login', {
-        method: 'POST',
+      new Request("http://localhost/auth/google/login", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ idToken: 'mocked-id-token' }),
-      })
+        body: JSON.stringify({ idToken: "mocked-id-token" }),
+      }),
     );
 
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.id).toBeDefined();
     expect(body.token).toBeDefined();
-    
+
     // Verify DB records
-    const account = (await db.execute(sql`SELECT * FROM "Account" WHERE "email" = ${testEmail}`))[0] as any;
+    const account = (
+      await db.execute(sql`SELECT * FROM "Account" WHERE "email" = ${testEmail}`)
+    )[0] as any;
     expect(account).toBeDefined();
     expect(account!.emailVerified).toBe(true);
 
-    const oauth = (await db.execute(sql`SELECT * FROM "OAuthCredential" WHERE "accountId" = ${account!.id} AND "provider" = 'GOOGLE'`))[0] as any;
+    const oauth = (
+      await db.execute(
+        sql`SELECT * FROM "OAuthCredential" WHERE "accountId" = ${account!.id} AND "provider" = 'GOOGLE'`,
+      )
+    )[0] as any;
     expect(oauth).toBeDefined();
     expect(oauth!.providerUserId).toBe(googleId);
   });

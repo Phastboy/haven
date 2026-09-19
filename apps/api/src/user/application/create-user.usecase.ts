@@ -1,11 +1,12 @@
-import { ConflictError } from '../../shared/errors';
-import type { IUserRepository } from '../domain/user.repository';
-import type { User, CreateUserData } from '../domain/user.entity';
+import { ConflictError } from "../../shared/errors";
+import type { IUserRepository } from "../domain/user.repository";
+import type { User, CreateUserData } from "../domain/user.entity";
 
 export class CreateUserUseCase {
-    readonly #userRepository: IUserRepository;
+  readonly #userRepository: IUserRepository;
   constructor(userRepository: IUserRepository) {
-    this.#userRepository = userRepository;}
+    this.#userRepository = userRepository;
+  }
 
   async execute(data: CreateUserData): Promise<User> {
     const existing = await this.#userRepository.findByAccountId(data.accountId);

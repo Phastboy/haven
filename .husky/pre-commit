@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "[Husky] Running pre-commit checks..."
+
+echo "-> Type Checking (API)..."
+bun run check:tsc:api
+
+echo "-> Linting & Formatting staged files..."
+bunx lint-staged

@@ -68,12 +68,8 @@
           "name": "AccountPlatformLink_accountId_Account_id_fk",
           "tableFrom": "AccountPlatformLink",
           "tableTo": "Account",
-          "columnsFrom": [
-            "accountId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["accountId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -129,9 +125,7 @@
         "Account_email_unique": {
           "name": "Account_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -187,9 +181,7 @@
         "MagicLink_token_unique": {
           "name": "MagicLink_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -285,12 +277,8 @@
           "name": "OAuthCredential_accountId_Account_id_fk",
           "tableFrom": "OAuthCredential",
           "tableTo": "Account",
-          "columnsFrom": [
-            "accountId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["accountId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -379,12 +367,8 @@
           "name": "Offer_userId_User_id_fk",
           "tableFrom": "Offer",
           "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -449,12 +433,8 @@
           "name": "Session_accountId_Account_id_fk",
           "tableFrom": "Session",
           "tableTo": "Account",
-          "columnsFrom": [
-            "accountId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["accountId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -464,9 +444,7 @@
         "Session_token_unique": {
           "name": "Session_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -534,12 +512,8 @@
           "name": "User_accountId_Account_id_fk",
           "tableFrom": "User",
           "tableTo": "Account",
-          "columnsFrom": [
-            "accountId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["accountId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -549,16 +523,12 @@
         "User_accountId_unique": {
           "name": "User_accountId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "accountId"
-          ]
+          "columns": ["accountId"]
         },
         "User_username_unique": {
           "name": "User_username_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "username"
-          ]
+          "columns": ["username"]
         }
       },
       "policies": {},
@@ -570,20 +540,12 @@
     "public.OfferStatus": {
       "name": "OfferStatus",
       "schema": "public",
-      "values": [
-        "ACTIVE",
-        "PAUSED",
-        "ARCHIVED"
-      ]
+      "values": ["ACTIVE", "PAUSED", "ARCHIVED"]
     },
     "public.OfferType": {
       "name": "OfferType",
       "schema": "public",
-      "values": [
-        "PRODUCT",
-        "SERVICE",
-        "APPOINTMENT"
-      ]
+      "values": ["PRODUCT", "SERVICE", "APPOINTMENT"]
     }
   },
   "schemas": {},

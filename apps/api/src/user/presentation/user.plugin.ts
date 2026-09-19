@@ -1,17 +1,17 @@
-import { Elysia } from 'elysia';
-import { NotFoundError, ConflictError } from '../../shared/errors';
-import { CreateUserUseCase } from '../application/create-user.usecase';
-import { GetUserUseCase } from '../application/get-user.usecase';
-import { ListUsersUseCase } from '../application/list-users.usecase';
-import { UpdateUserUseCase } from '../application/update-user.usecase';
-import { DeleteUserUseCase } from '../application/delete-user.usecase';
-import { SqlUserRepository } from '../infrastructure/sql-user.repository';
-import { UpdateUserBody, UserIdParam } from './user.dto';
-import { requireAuth } from '../../auth/presentation/middleware/session.middleware';
-import { UnauthorizedError } from '../../auth/domain/errors';
-import { GetSessionUseCase } from '../../auth/application/use-cases/get-session.use-case';
-import { SessionRepository } from '../../auth/infrastructure/repositories/session.repository';
-import { tokenService } from '../../auth/infrastructure/services/token.service';
+import { Elysia } from "elysia";
+import { NotFoundError, ConflictError } from "../../shared/errors";
+import { CreateUserUseCase } from "../application/create-user.usecase";
+import { GetUserUseCase } from "../application/get-user.usecase";
+import { ListUsersUseCase } from "../application/list-users.usecase";
+import { UpdateUserUseCase } from "../application/update-user.usecase";
+import { DeleteUserUseCase } from "../application/delete-user.usecase";
+import { SqlUserRepository } from "../infrastructure/sql-user.repository";
+import { UpdateUserBody, UserIdParam } from "./user.dto";
+import { requireAuth } from "../../auth/presentation/middleware/session.middleware";
+import { UnauthorizedError } from "../../auth/domain/errors";
+import { GetSessionUseCase } from "../../auth/application/use-cases/get-session.use-case";
+import { SessionRepository } from "../../auth/infrastructure/repositories/session.repository";
+import { tokenService } from "../../auth/infrastructure/services/token.service";
 
 /**
  * Factory function that wires the full user feature as an Elysia plugin.
@@ -27,15 +27,12 @@ export function createUserPlugin() {
   const listUsers = new ListUsersUseCase(repository);
   const updateUser = new UpdateUserUseCase(repository);
 
-  const getSessionUseCase = new GetSessionUseCase(
-    new SessionRepository(),
-    tokenService
-  );
+  const getSessionUseCase = new GetSessionUseCase(new SessionRepository(), tokenService);
 
-  return new Elysia({ prefix: '/users', tags: ['Users'] })
+  return new Elysia({ prefix: "/users", tags: ["Users"] })
     .derive(async ({ headers }: { headers: Record<string, string | undefined> }) => {
-      const authHeader = headers['authorization'];
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      const authHeader = headers["authorization"];
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return { session: null, account: null };
       }
 
@@ -62,18 +59,21 @@ export function createUserPlugin() {
       return { error: error.message };
     })
 
-    .get('/',
-      { detail: { summary: 'List all profiles' } },
-      async () => listUsers.execute(),
-    )
+    .get("/", { detail: { summary: "List all profiles" } }, async () => listUsers.execute())
 
-    .get('/:id',
-      { params: UserIdParam, detail: { summary: 'Get a profile by ID' } },
+    .get(
+      "/:id",
+      { params: UserIdParam, detail: { summary: "Get a profile by ID" } },
       async ({ params }) => getUser.execute(params.id),
     )
 
-    .patch('/me',
-      { body: UpdateUserBody, beforeHandle: [requireAuth], detail: { summary: 'Update my profile' } },
+    .patch(
+      "/me",
+      {
+        body: UpdateUserBody,
+        beforeHandle: [requireAuth],
+        detail: { summary: "Update my profile" },
+      },
       async ({ account, body }) => updateUser.execute(account!.id, body),
     );
 }

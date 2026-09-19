@@ -1,18 +1,21 @@
-import { db } from '../../../database/db';
-import { accounts } from '../../../database/schema';
-import { eq } from 'drizzle-orm';
-import { toIso } from '../../../database/map';
-import { IAccountRepository } from '../../domain/ports/IAccountRepository';
-import { Account, CreateAccountDTO } from '../../domain/account.schema';
+import { db } from "../../../database/db";
+import { accounts } from "../../../database/schema";
+import { eq } from "drizzle-orm";
+import { toIso } from "../../../database/map";
+import { IAccountRepository } from "../../domain/ports/IAccountRepository";
+import { Account, CreateAccountDTO } from "../../domain/account.schema";
 
 export class AccountRepository implements IAccountRepository {
   async create(data: CreateAccountDTO): Promise<Account> {
     const id = crypto.randomUUID();
-    const rows = await db.insert(accounts).values({
-      id,
-      email: data.email,
-      emailVerified: data.emailVerified
-    }).returning();
+    const rows = await db
+      .insert(accounts)
+      .values({
+        id,
+        email: data.email,
+        emailVerified: data.emailVerified,
+      })
+      .returning();
     return this.#toAccount(rows[0]!);
   }
 
@@ -31,7 +34,8 @@ export class AccountRepository implements IAccountRepository {
   }
 
   async markEmailVerified(id: string): Promise<void> {
-    await db.update(accounts)
+    await db
+      .update(accounts)
       .set({ emailVerified: true, updatedAt: new Date() })
       .where(eq(accounts.id, id));
   }

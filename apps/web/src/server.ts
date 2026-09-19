@@ -1,12 +1,12 @@
-import { AngularAppEngine, createRequestHandler } from '@angular/ssr';
-import { isMainModule } from '@angular/ssr/node';
-import { Elysia } from 'elysia';
-import { staticPlugin } from '@elysia/static';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { AngularAppEngine, createRequestHandler } from "@angular/ssr";
+import { isMainModule } from "@angular/ssr/node";
+import { Elysia } from "elysia";
+import { staticPlugin } from "@elysia/static";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const serverDistFolder = dirname(fileURLToPath(import.meta.url));
-const browserDistFolder = resolve(serverDistFolder, '../browser');
+const browserDistFolder = resolve(serverDistFolder, "../browser");
 const angularAppEngine = new AngularAppEngine();
 
 export function app() {
@@ -17,7 +17,7 @@ export function app() {
      */
     .use(
       staticPlugin({
-        prefix: '',
+        prefix: "",
         assets: browserDistFolder,
         alwaysStatic: true,
       }),
@@ -27,11 +27,11 @@ export function app() {
      * c.request is already a Web-standard Request — AngularAppEngine.handle() accepts it directly.
      * The returned Response is Web-standard — Elysia returns it natively.
      */
-    .get('/*', async (c) => {
+    .get("/*", async (c) => {
       const response = await angularAppEngine.handle(c.request, {
-        server: 'elysia',
+        server: "elysia",
       });
-      return response ?? new Response('Not Found', { status: 404 });
+      return response ?? new Response("Not Found", { status: 404 });
     });
 
   return server;
@@ -43,7 +43,7 @@ const server = app();
  * Start the Elysia server when run directly (e.g. `bun dist/web/server/server.mjs`).
  */
 if (isMainModule(import.meta.url)) {
-  const port = Number(process.env['PORT'] ?? 4000);
+  const port = Number(process.env["PORT"] ?? 4000);
   server.listen(port);
   console.log(`Angular SSR on Elysia → http://localhost:${port}`);
 }

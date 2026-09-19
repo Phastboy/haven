@@ -1,10 +1,11 @@
-import { t, Static } from 'elysia';
+import { t } from "elysia";
+import type { Static } from "@sinclair/typebox";
 
 export const fulfillmentStatusSchema = t.Union([
-  t.Literal('PENDING'),
-  t.Literal('DELIVERED'),
-  t.Literal('REVISION_REQUESTED'),
-  t.Literal('COMPLETED'),
+  t.Literal("PENDING"),
+  t.Literal("DELIVERED"),
+  t.Literal("REVISION_REQUESTED"),
+  t.Literal("COMPLETED"),
 ]);
 
 export const fulfillmentSchema = t.Object({

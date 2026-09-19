@@ -1,21 +1,24 @@
-import { db } from '../../../database/db';
-import { sessions } from '../../../database/schema';
-import { eq, lt } from 'drizzle-orm';
-import { toIso } from '../../../database/map';
-import { CreateSessionDTO, ISessionRepository } from '../../domain/ports/ISessionRepository';
-import { Session, SessionWithAccount } from '../../domain/session.schema';
+import { db } from "../../../database/db";
+import { sessions } from "../../../database/schema";
+import { eq, lt } from "drizzle-orm";
+import { toIso } from "../../../database/map";
+import { CreateSessionDTO, ISessionRepository } from "../../domain/ports/ISessionRepository";
+import { Session, SessionWithAccount } from "../../domain/session.schema";
 
 export class SessionRepository implements ISessionRepository {
   async create(data: CreateSessionDTO): Promise<Session> {
     const id = crypto.randomUUID();
-    const rows = await db.insert(sessions).values({
-      id,
-      accountId: data.accountId,
-      token: data.token,
-      expiresAt: new Date(data.expiresAt),
-      userAgent: data.userAgent ?? null,
-      ipAddress: data.ipAddress ?? null,
-    }).returning();
+    const rows = await db
+      .insert(sessions)
+      .values({
+        id,
+        accountId: data.accountId,
+        token: data.token,
+        expiresAt: new Date(data.expiresAt),
+        userAgent: data.userAgent ?? null,
+        ipAddress: data.ipAddress ?? null,
+      })
+      .returning();
     return this.#toSession(rows[0]!);
   }
 
@@ -37,7 +40,7 @@ export class SessionRepository implements ISessionRepository {
         emailVerified: row.account.emailVerified,
         createdAt: toIso(row.account.createdAt),
         updatedAt: toIso(row.account.updatedAt),
-      }
+      },
     };
   }
 

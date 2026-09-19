@@ -1,6 +1,6 @@
-import { IOfferRepository } from '../domain/offer.repository';
-import { UpdateOfferData, Offer } from '../domain/offer.schema';
-import { OfferNotFoundError, UnauthorizedOfferActionError } from '../domain/errors';
+import { IOfferRepository } from "../domain/offer.repository";
+import { UpdateOfferData, Offer } from "../domain/offer.schema";
+import { OfferNotFoundError, UnauthorizedOfferActionError } from "../domain/errors";
 
 export class UpdateOfferUseCase {
   constructor(private readonly repository: IOfferRepository) {}

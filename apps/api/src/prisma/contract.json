@@ -82,12 +82,8 @@
               "oauthCredentials": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "accountId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["accountId"]
                 },
                 "to": {
                   "model": "OAuthCredential",
@@ -97,12 +93,8 @@
               "platformLinks": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "accountId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["accountId"]
                 },
                 "to": {
                   "model": "AccountPlatformLink",
@@ -112,12 +104,8 @@
               "sessions": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "accountId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["accountId"]
                 },
                 "to": {
                   "model": "Session",
@@ -196,12 +184,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "accountId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["accountId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Account",
@@ -382,12 +366,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "accountId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["accountId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Account",
@@ -485,12 +465,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "authorId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["authorId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "User",
@@ -586,12 +562,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "accountId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["accountId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Account",
@@ -679,12 +651,8 @@
               "posts": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "authorId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["authorId"]
                 },
                 "to": {
                   "model": "Post",
@@ -768,15 +736,11 @@
               "foreignKeys": [],
               "indexes": [],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ]
+                "columns": ["id"]
               },
               "uniques": [
                 {
-                  "columns": [
-                    "email"
-                  ]
+                  "columns": ["email"]
                 }
               ]
             },
@@ -821,19 +785,14 @@
               "foreignKeys": [],
               "indexes": [
                 {
-                  "columns": [
-                    "accountId",
-                    "platform"
-                  ],
+                  "columns": ["accountId", "platform"],
                   "name": "account_platform_link_unique_9a628f2f",
                   "prefix": "account_platform_link_unique",
                   "unique": true
                 }
               ],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ]
+                "columns": ["id"]
               },
               "uniques": []
             },
@@ -880,15 +839,11 @@
               "foreignKeys": [],
               "indexes": [],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ]
+                "columns": ["id"]
               },
               "uniques": [
                 {
-                  "columns": [
-                    "token"
-                  ]
+                  "columns": ["token"]
                 }
               ]
             },
@@ -953,19 +908,14 @@
               "foreignKeys": [],
               "indexes": [
                 {
-                  "columns": [
-                    "provider",
-                    "providerUserId"
-                  ],
+                  "columns": ["provider", "providerUserId"],
                   "name": "OAuthCredential_provider_providerUserId_key_febec28a",
                   "prefix": "OAuthCredential_provider_providerUserId_key",
                   "unique": true
                 }
               ],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ]
+                "columns": ["id"]
               },
               "uniques": []
             },
@@ -1015,9 +965,7 @@
               "foreignKeys": [],
               "indexes": [],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ]
+                "columns": ["id"]
               },
               "uniques": []
             },
@@ -1072,15 +1020,11 @@
               "foreignKeys": [],
               "indexes": [],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ]
+                "columns": ["id"]
               },
               "uniques": [
                 {
-                  "columns": [
-                    "token"
-                  ]
+                  "columns": ["token"]
                 }
               ]
             },
@@ -1127,15 +1071,11 @@
               "foreignKeys": [],
               "indexes": [],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ]
+                "columns": ["id"]
               },
               "uniques": [
                 {
-                  "columns": [
-                    "email"
-                  ]
+                  "columns": ["email"]
                 }
               ]
             }

@@ -1,15 +1,18 @@
-import { eq, lt, and } from 'drizzle-orm';
-import { db } from '../../database/db';
-import { fulfillments } from '../../database/schema';
-import { IFulfillmentRepository } from '../domain/fulfillment.repository';
-import { Fulfillment, FulfillmentStatus } from '../domain/fulfillment.schema';
+import { eq, lt, and } from "drizzle-orm";
+import { db } from "../../database/db";
+import { fulfillments } from "../../database/schema";
+import { IFulfillmentRepository } from "../domain/fulfillment.repository";
+import { Fulfillment, FulfillmentStatus } from "../domain/fulfillment.schema";
 
 export class SqlFulfillmentRepository implements IFulfillmentRepository {
   async createFulfillment(data: { id: string; orderId: string }): Promise<Fulfillment> {
-    const [fulfillment] = await db.insert(fulfillments).values({
-      id: data.id,
-      orderId: data.orderId,
-    }).returning();
+    const [fulfillment] = await db
+      .insert(fulfillments)
+      .values({
+        id: data.id,
+        orderId: data.orderId,
+      })
+      .returning();
     return fulfillment;
   }
 
@@ -19,16 +22,20 @@ export class SqlFulfillmentRepository implements IFulfillmentRepository {
   }
 
   async getFulfillmentByOrderId(orderId: string): Promise<Fulfillment | null> {
-    const [fulfillment] = await db.select().from(fulfillments).where(eq(fulfillments.orderId, orderId));
+    const [fulfillment] = await db
+      .select()
+      .from(fulfillments)
+      .where(eq(fulfillments.orderId, orderId));
     return fulfillment || null;
   }
 
   async updateFulfillmentStatus(
     id: string,
     status: FulfillmentStatus,
-    options?: { deliveryMessage?: string; reviewDeadline?: Date }
+    options?: { deliveryMessage?: string; reviewDeadline?: Date },
   ): Promise<Fulfillment> {
-    const [fulfillment] = await db.update(fulfillments)
+    const [fulfillment] = await db
+      .update(fulfillments)
       .set({
         status,
         ...(options?.deliveryMessage !== undefined && { deliveryMessage: options.deliveryMessage }),
@@ -41,13 +48,11 @@ export class SqlFulfillmentRepository implements IFulfillmentRepository {
   }
 
   async getExpiredFulfillments(currentDate: Date): Promise<Fulfillment[]> {
-    return db.select()
+    return db
+      .select()
       .from(fulfillments)
       .where(
-        and(
-          eq(fulfillments.status, 'DELIVERED'),
-          lt(fulfillments.reviewDeadline, currentDate)
-        )
+        and(eq(fulfillments.status, "DELIVERED"), lt(fulfillments.reviewDeadline, currentDate)),
       );
   }
 }

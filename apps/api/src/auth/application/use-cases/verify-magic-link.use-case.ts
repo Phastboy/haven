@@ -1,10 +1,10 @@
-import { IMagicLinkRepository } from '../../domain/ports/IMagicLinkRepository';
-import { IAccountRepository } from '../../domain/ports/IAccountRepository';
-import { ISessionRepository } from '../../domain/ports/ISessionRepository';
-import { TokenService } from '../../infrastructure/services/token.service';
-import { InvalidTokenError, ExpiredTokenError } from '../../domain/errors';
-import { Session } from '../../domain/session.schema';
-import { IProfileCreator } from '../../domain/ports/IProfileCreator';
+import { IMagicLinkRepository } from "../../domain/ports/IMagicLinkRepository";
+import { IAccountRepository } from "../../domain/ports/IAccountRepository";
+import { ISessionRepository } from "../../domain/ports/ISessionRepository";
+import { TokenService } from "../../infrastructure/services/token.service";
+import { InvalidTokenError, ExpiredTokenError } from "../../domain/errors";
+import { Session } from "../../domain/session.schema";
+import { IProfileCreator } from "../../domain/ports/IProfileCreator";
 
 export class VerifyMagicLinkUseCase {
   readonly #magicLinkRepo: IMagicLinkRepository;
@@ -18,7 +18,7 @@ export class VerifyMagicLinkUseCase {
     accountRepo: IAccountRepository,
     sessionRepo: ISessionRepository,
     tokenService: TokenService,
-    profileCreator: IProfileCreator
+    profileCreator: IProfileCreator,
   ) {
     this.#magicLinkRepo = magicLinkRepo;
     this.#accountRepo = accountRepo;
@@ -58,7 +58,7 @@ export class VerifyMagicLinkUseCase {
     const sessionRawToken = this.#tokenService.generate(64);
     const sessionHashedToken = this.#tokenService.hash(sessionRawToken);
 
-    const ttlDays = Number(process.env['SESSION_TTL_DAYS']) || 30;
+    const ttlDays = Number(process.env["SESSION_TTL_DAYS"]) || 30;
     const sessionExpiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000).toISOString();
 
     const session = await this.#sessionRepo.create({

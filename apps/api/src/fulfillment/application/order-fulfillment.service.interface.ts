@@ -5,7 +5,7 @@ export interface IOrderFulfillmentService {
     offerId: string;
     status: string;
   } | null>;
-  
+
   getOfferTypeAndOwner(offerId: string): Promise<{
     offerType: string;
     ownerId: string;

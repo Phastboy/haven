@@ -1,6 +1,6 @@
 /* login-page.css */
 :host {
-  --font-display: 'Fraunces', Georgia, serif;
+  --font-display: "Fraunces", Georgia, serif;
   display: block;
 }
 
@@ -106,7 +106,7 @@
 
 .divider::before,
 .divider::after {
-  content: '';
+  content: "";
   flex: 1;
   border-bottom: 1px solid var(--p-content-border-color);
 }

@@ -1,4 +1,4 @@
-import type { User, CreateUserData, UpdateUserData } from './user.entity';
+import type { User, CreateUserData, UpdateUserData } from "./user.entity";
 
 /**
  * The contract any data source must fulfill to serve the User use cases.

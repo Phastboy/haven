@@ -1,9 +1,9 @@
-import { Injectable, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
-import { ApiService } from '../../services/api.service';
-import { CookieService } from './cookie.service';
+import { Injectable, inject, signal } from "@angular/core";
+import { Router } from "@angular/router";
+import { ApiService } from "../../services/api.service";
+import { CookieService } from "./cookie.service";
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class AuthService {
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
@@ -14,8 +14,8 @@ export class AuthService {
 
   async checkAuth(): Promise<boolean> {
     this.loading.set(true);
-    const token = this.cookieService.get('token');
-    
+    const token = this.cookieService.get("token");
+
     if (!token) {
       this.user.set(null);
       this.loading.set(false);
@@ -31,11 +31,11 @@ export class AuthService {
         return true;
       }
     } catch (e) {
-      console.error('Auth check failed:', e);
+      console.error("Auth check failed:", e);
     }
-    
+
     this.user.set(null);
-    this.cookieService.delete('token', { path: '/' });
+    this.cookieService.delete("token", { path: "/" });
     this.loading.set(false);
     return false;
   }
@@ -44,11 +44,11 @@ export class AuthService {
     try {
       await this.api.auth.logout.post();
     } catch (e) {
-      console.error('Logout error:', e);
+      console.error("Logout error:", e);
     } finally {
       this.user.set(null);
-      this.cookieService.delete('token', { path: '/' });
-      this.router.navigate(['/auth/login']);
+      this.cookieService.delete("token", { path: "/" });
+      this.router.navigate(["/auth/login"]);
     }
   }
 }

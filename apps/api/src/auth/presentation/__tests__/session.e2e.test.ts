@@ -1,14 +1,14 @@
 // oxlint-disable typescript/no-explicit-any
-import { sql } from 'drizzle-orm';
-import { describe, expect, it, beforeAll, afterAll } from 'bun:test';
-import { treaty } from '@elysia/eden';
-import { authController } from '../auth.controller';
-import { db } from '../../../database/db';
-import { tokenService } from '../../infrastructure/services/token.service';
-import { SessionRepository } from '../../infrastructure/repositories/session.repository';
-import * as crypto from 'crypto';
+import { sql } from "drizzle-orm";
+import { describe, expect, it, beforeAll, afterAll } from "bun:test";
+import { treaty } from "@elysia/eden";
+import { authController } from "../auth.controller";
+import { db } from "../../../database/db";
+import { tokenService } from "../../infrastructure/services/token.service";
+import { SessionRepository } from "../../infrastructure/repositories/session.repository";
+import * as crypto from "crypto";
 
-describe('Session Middleware E2E', () => {
+describe("Session Middleware E2E", () => {
   let testAccountId: string;
   let validRawToken: string;
   let expiredRawToken: string;
@@ -22,7 +22,7 @@ describe('Session Middleware E2E', () => {
     `);
 
     const repo = new SessionRepository();
-    
+
     validRawToken = tokenService.generate(64);
     await repo.create({
       accountId,
@@ -42,43 +42,43 @@ describe('Session Middleware E2E', () => {
     await db.execute(sql`DELETE FROM "Account" WHERE id = ${testAccountId}`);
   });
 
-  it('should successfully get the user account using a valid token', async () => {
-    const req = new Request('http://localhost/auth/me', {
-      headers: { Authorization: `Bearer ${validRawToken}` }
+  it("should successfully get the user account using a valid token", async () => {
+    const req = new Request("http://localhost/auth/me", {
+      headers: { Authorization: `Bearer ${validRawToken}` },
     });
     const res = await authController.handle(req);
     expect(res.status).toBe(200);
-    const data = await res.json() as any;
+    const data = (await res.json()) as any;
     expect(data).not.toBeNull();
     expect(data.account).toBeDefined();
     expect(data.account.id).toBe(testAccountId);
   });
 
-  it('should return 401 Unauthorized if no token is provided', async () => {
-    const req = new Request('http://localhost/auth/me');
+  it("should return 401 Unauthorized if no token is provided", async () => {
+    const req = new Request("http://localhost/auth/me");
     const res = await authController.handle(req);
     expect(res.status).toBe(401);
-    const data = await res.json() as any;
-    expect(data).toMatchObject({ message: 'Unauthorized access' });
+    const data = (await res.json()) as any;
+    expect(data).toMatchObject({ message: "Unauthorized access" });
   });
 
-  it('should return 401 Unauthorized if the token is invalid', async () => {
-    const req = new Request('http://localhost/auth/me', {
-      headers: { Authorization: 'Bearer invalid_garbage_token' }
+  it("should return 401 Unauthorized if the token is invalid", async () => {
+    const req = new Request("http://localhost/auth/me", {
+      headers: { Authorization: "Bearer invalid_garbage_token" },
     });
     const res = await authController.handle(req);
     expect(res.status).toBe(401);
-    const data = await res.json() as any;
-    expect(data).toMatchObject({ message: 'Unauthorized access' });
+    const data = (await res.json()) as any;
+    expect(data).toMatchObject({ message: "Unauthorized access" });
   });
 
-  it('should return 401 Unauthorized if the token is expired', async () => {
-    const req = new Request('http://localhost/auth/me', {
-      headers: { Authorization: `Bearer ${expiredRawToken}` }
+  it("should return 401 Unauthorized if the token is expired", async () => {
+    const req = new Request("http://localhost/auth/me", {
+      headers: { Authorization: `Bearer ${expiredRawToken}` },
     });
     const res = await authController.handle(req);
     expect(res.status).toBe(401);
-    const data = await res.json() as any;
-    expect(data).toMatchObject({ message: 'Unauthorized access' });
+    const data = (await res.json()) as any;
+    expect(data).toMatchObject({ message: "Unauthorized access" });
   });
 });

@@ -1,12 +1,12 @@
-import { describe, it, expect, beforeAll, afterAll } from 'bun:test';
-import { randomUUID } from 'crypto';
-import { db } from '../../../database/db';
-import { users, accounts, sessions, offers, orders } from '../../../database/schema';
-import { app } from '../../../index';
-import { eq, inArray } from 'drizzle-orm';
-import { tokenService } from '../../../auth/infrastructure/services/token.service';
+import { describe, it, expect, beforeAll, afterAll } from "bun:test";
+import { randomUUID } from "crypto";
+import { db } from "../../../database/db";
+import { users, accounts, sessions, offers, orders } from "../../../database/schema";
+import { app } from "../../../index";
+import { eq, inArray } from "drizzle-orm";
+import { tokenService } from "../../../auth/infrastructure/services/token.service";
 
-describe('Order API E2E', () => {
+describe("Order API E2E", () => {
   let ownerAccountId: string;
   let ownerUserId: string;
   let ownerSessionToken: string;
@@ -22,31 +22,43 @@ describe('Order API E2E', () => {
     // 1. Setup Owner
     ownerAccountId = randomUUID();
     ownerUserId = randomUUID();
-    await db.insert(accounts).values({ id: ownerAccountId, email: `owner-${Date.now()}@example.com` });
-    await db.insert(users).values({ id: ownerUserId, accountId: ownerAccountId, username: `owner-${Date.now()}` });
-    
+    await db
+      .insert(accounts)
+      .values({ id: ownerAccountId, email: `owner-${Date.now()}@example.com` });
+    await db
+      .insert(users)
+      .values({ id: ownerUserId, accountId: ownerAccountId, username: `owner-${Date.now()}` });
+
     ownerSessionToken = randomUUID();
     const hashedOwnerToken = await tokenService.hash(ownerSessionToken);
     await db.insert(sessions).values({
       id: randomUUID(),
       accountId: ownerAccountId,
       token: hashedOwnerToken,
-      expiresAt: new Date(Date.now() + 1000000)
+      expiresAt: new Date(Date.now() + 1000000),
     });
 
     // 2. Setup Requester
     requesterAccountId = randomUUID();
     requesterUserId = randomUUID();
-    await db.insert(accounts).values({ id: requesterAccountId, email: `req-${Date.now()}@example.com` });
-    await db.insert(users).values({ id: requesterUserId, accountId: requesterAccountId, username: `req-${Date.now()}` });
-    
+    await db
+      .insert(accounts)
+      .values({ id: requesterAccountId, email: `req-${Date.now()}@example.com` });
+    await db
+      .insert(users)
+      .values({
+        id: requesterUserId,
+        accountId: requesterAccountId,
+        username: `req-${Date.now()}`,
+      });
+
     requesterSessionToken = randomUUID();
     const hashedReqToken = await tokenService.hash(requesterSessionToken);
     await db.insert(sessions).values({
       id: randomUUID(),
       accountId: requesterAccountId,
       token: hashedReqToken,
-      expiresAt: new Date(Date.now() + 1000000)
+      expiresAt: new Date(Date.now() + 1000000),
     });
 
     // 3. Setup Offer
@@ -54,9 +66,9 @@ describe('Order API E2E', () => {
     await db.insert(offers).values({
       id: testOfferId,
       userId: ownerUserId,
-      title: 'E2E Offer',
+      title: "E2E Offer",
       price: 1500,
-      status: 'ACTIVE'
+      status: "ACTIVE",
     });
   });
 
@@ -69,46 +81,46 @@ describe('Order API E2E', () => {
     }
   });
 
-  it('should successfully create a new order as requester', async () => {
-    const req = new Request('http://localhost/api/orders', {
-      method: 'POST',
+  it("should successfully create a new order as requester", async () => {
+    const req = new Request("http://localhost/api/orders", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${requesterSessionToken}`
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${requesterSessionToken}`,
       },
       body: JSON.stringify({
         offerId: testOfferId,
         quantity: 2,
-        message: 'I want this'
-      })
+        message: "I want this",
+      }),
     });
     const res = await app.handle(req);
     expect(res.status).toBe(201);
-    
+
     const body: any = await res.json();
     expect(body.id).toBeDefined();
     expect(body.price).toBe(1500);
     expect(body.quantity).toBe(2);
-    expect(body.status).toBe('PENDING');
+    expect(body.status).toBe("PENDING");
     testOrderId = body.id;
   });
 
-  it('should fail to create order if user is offer owner', async () => {
-    const req = new Request('http://localhost/api/orders', {
-      method: 'POST',
+  it("should fail to create order if user is offer owner", async () => {
+    const req = new Request("http://localhost/api/orders", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${ownerSessionToken}`
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${ownerSessionToken}`,
       },
-      body: JSON.stringify({ offerId: testOfferId })
+      body: JSON.stringify({ offerId: testOfferId }),
     });
     const res = await app.handle(req);
     expect(res.status).toBe(400); // SelfOrderNotAllowedError
   });
 
-  it('should allow requester to view their outgoing orders', async () => {
-    const req = new Request('http://localhost/api/orders/me', {
-      headers: { 'Authorization': `Bearer ${requesterSessionToken}` }
+  it("should allow requester to view their outgoing orders", async () => {
+    const req = new Request("http://localhost/api/orders/me", {
+      headers: { Authorization: `Bearer ${requesterSessionToken}` },
     });
     const res = await app.handle(req);
     expect(res.status).toBe(200);
@@ -117,9 +129,9 @@ describe('Order API E2E', () => {
     expect(body.find((o: any) => o.id === testOrderId)).toBeDefined();
   });
 
-  it('should allow owner to view received orders', async () => {
-    const req = new Request('http://localhost/api/orders/received', {
-      headers: { 'Authorization': `Bearer ${ownerSessionToken}` }
+  it("should allow owner to view received orders", async () => {
+    const req = new Request("http://localhost/api/orders/received", {
+      headers: { Authorization: `Bearer ${ownerSessionToken}` },
     });
     const res = await app.handle(req);
     expect(res.status).toBe(200);
@@ -128,29 +140,29 @@ describe('Order API E2E', () => {
     expect(body.find((o: any) => o.id === testOrderId)).toBeDefined();
   });
 
-  it('should allow owner to ACCEPT the order', async () => {
+  it("should allow owner to ACCEPT the order", async () => {
     const req = new Request(`http://localhost/api/orders/${testOrderId}/status`, {
-      method: 'PATCH',
+      method: "PATCH",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${ownerSessionToken}`
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${ownerSessionToken}`,
       },
-      body: JSON.stringify({ status: 'ACCEPTED' })
+      body: JSON.stringify({ status: "ACCEPTED" }),
     });
     const res = await app.handle(req);
     expect(res.status).toBe(200);
     const body: any = await res.json();
-    expect(body.status).toBe('ACCEPTED');
+    expect(body.status).toBe("ACCEPTED");
   });
 
-  it('should not allow requester to CANCEL an ACCEPTED order', async () => {
+  it("should not allow requester to CANCEL an ACCEPTED order", async () => {
     const req = new Request(`http://localhost/api/orders/${testOrderId}/status`, {
-      method: 'PATCH',
+      method: "PATCH",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${requesterSessionToken}`
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${requesterSessionToken}`,
       },
-      body: JSON.stringify({ status: 'CANCELLED' })
+      body: JSON.stringify({ status: "CANCELLED" }),
     });
     const res = await app.handle(req);
     expect(res.status).toBe(400); // InvalidOrderStateTransitionError

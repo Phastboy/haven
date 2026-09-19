@@ -1,12 +1,11 @@
 // oxlint-disable typescript/no-explicit-any
-import { sql } from 'drizzle-orm';
-import { expect, test, describe, afterAll } from 'bun:test';
-import { MagicLinkRepository } from '../magic-link.repository';
+import { sql } from "drizzle-orm";
+import { expect, test, describe, afterAll } from "bun:test";
+import { MagicLinkRepository } from "../magic-link.repository";
 
+import { db } from "../../../../database/db";
 
-import { db } from '../../../../database/db';
-
-describe('MagicLinkRepository Integration', () => {
+describe("MagicLinkRepository Integration", () => {
   const repo = new MagicLinkRepository();
   const testEmail = `test-ml-${crypto.randomUUID()}@example.com`;
   const testToken = crypto.randomUUID();
@@ -18,7 +17,7 @@ describe('MagicLinkRepository Integration', () => {
     }
   });
 
-  test('should create a magic link', async () => {
+  test("should create a magic link", async () => {
     const expiresAt = new Date(Date.now() + 900000).toISOString(); // 15 mins
     const magicLink = await repo.create({
       email: testEmail,
@@ -33,21 +32,21 @@ describe('MagicLinkRepository Integration', () => {
     magicLinkId = magicLink.id;
   });
 
-  test('should find magic link by token', async () => {
+  test("should find magic link by token", async () => {
     const magicLink = await repo.findByToken(testToken);
     expect(magicLink).not.toBeNull();
     expect(magicLink!.id).toBe(magicLinkId);
   });
 
-  test('should return null for non-existent token', async () => {
-    const magicLink = await repo.findByToken('does-not-exist');
+  test("should return null for non-existent token", async () => {
+    const magicLink = await repo.findByToken("does-not-exist");
     expect(magicLink).toBeNull();
   });
 
-  test('should mark magic link as used', async () => {
+  test("should mark magic link as used", async () => {
     const usedAt = new Date().toISOString();
     await repo.markUsed(magicLinkId, usedAt);
-    
+
     const magicLink = await repo.findByToken(testToken);
     expect(magicLink!.usedAt).toBeDefined();
     expect(magicLink!.usedAt).not.toBeNull();

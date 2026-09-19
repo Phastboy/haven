@@ -1,16 +1,15 @@
 // oxlint-disable typescript/no-explicit-any
-import { sql } from 'drizzle-orm';
-import { expect, test, describe, afterAll, beforeAll } from 'bun:test';
-import { AccountPlatformLinkRepository } from '../account-platform-link.repository';
-import { AccountRepository } from '../account.repository';
+import { sql } from "drizzle-orm";
+import { expect, test, describe, afterAll, beforeAll } from "bun:test";
+import { AccountPlatformLinkRepository } from "../account-platform-link.repository";
+import { AccountRepository } from "../account.repository";
 
+import { db } from "../../../../database/db";
 
-import { db } from '../../../../database/db';
-
-describe('AccountPlatformLinkRepository Integration', () => {
+describe("AccountPlatformLinkRepository Integration", () => {
   const linkRepo = new AccountPlatformLinkRepository();
   const accountRepo = new AccountRepository();
-  
+
   const testEmail = `test-link-${crypto.randomUUID()}@example.com`;
   const platformUserId = `platform-user-${crypto.randomUUID()}`;
   let accountId: string;
@@ -30,43 +29,43 @@ describe('AccountPlatformLinkRepository Integration', () => {
     }
   });
 
-  test('should create an account platform link', async () => {
+  test("should create an account platform link", async () => {
     const link = await linkRepo.create({
       accountId,
       platformUserId,
-      platform: 'haven',
+      platform: "haven",
     });
 
     expect(link.id).toBeDefined();
     expect(link.accountId).toBe(accountId);
     expect(link.platformUserId).toBe(platformUserId);
-    expect(link.platform).toBe('haven');
+    expect(link.platform).toBe("haven");
   });
 
-  test('should find link by account and platform', async () => {
-    const link = await linkRepo.findByAccountAndPlatform(accountId, 'haven');
+  test("should find link by account and platform", async () => {
+    const link = await linkRepo.findByAccountAndPlatform(accountId, "haven");
     expect(link).not.toBeNull();
     expect(link!.platformUserId).toBe(platformUserId);
   });
 
-  test('should enforce unique constraint on (accountId, platform)', async () => {
+  test("should enforce unique constraint on (accountId, platform)", async () => {
     // Attempting to create a second link for the same platform should throw
     const promise = linkRepo.create({
       accountId,
-      platformUserId: 'another-user',
-      platform: 'haven',
+      platformUserId: "another-user",
+      platform: "haven",
     });
-    
+
     await expect(promise).rejects.toThrow();
   });
 
-  test('should allow a different platform for the same account', async () => {
+  test("should allow a different platform for the same account", async () => {
     const link = await linkRepo.create({
       accountId,
-      platformUserId: 'another-user-external',
-      platform: 'external-app',
+      platformUserId: "another-user-external",
+      platform: "external-app",
     });
-    
-    expect(link.platform).toBe('external-app');
+
+    expect(link.platform).toBe("external-app");
   });
 });

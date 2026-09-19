@@ -1,5 +1,9 @@
-import { IDirectoryRepository, DirectoryOffer, DirectoryUser } from '../../domain/directory.repository';
-import DataLoader from 'dataloader';
+import {
+  IDirectoryRepository,
+  DirectoryOffer,
+  DirectoryUser,
+} from "../../domain/directory.repository";
+import DataLoader from "dataloader";
 
 export interface GraphQLContext {
   repository: IDirectoryRepository;

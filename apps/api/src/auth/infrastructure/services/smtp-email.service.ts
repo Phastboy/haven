@@ -1,5 +1,5 @@
-import { IEmailService } from '../../domain/ports/IEmailService';
-import * as nodemailer from 'nodemailer';
+import { IEmailService } from "../../domain/ports/IEmailService";
+import * as nodemailer from "nodemailer";
 
 export class SmtpEmailService implements IEmailService {
   #transporter: nodemailer.Transporter;
@@ -7,14 +7,14 @@ export class SmtpEmailService implements IEmailService {
 
   constructor() {
     this.#transporter = nodemailer.createTransport({
-      host: process.env['SMTP_HOST'],
-      port: Number(process.env['SMTP_PORT']) || 587,
+      host: process.env["SMTP_HOST"],
+      port: Number(process.env["SMTP_PORT"]) || 587,
       auth: {
-        user: process.env['SMTP_USER'],
-        pass: process.env['SMTP_PASS'],
+        user: process.env["SMTP_USER"],
+        pass: process.env["SMTP_PASS"],
       },
     });
-    this.#fromEmail = process.env['EMAIL_FROM'] || 'noreply@haven.app';
+    this.#fromEmail = process.env["EMAIL_FROM"] || "noreply@haven.app";
   }
 
   async send(to: string, subject: string, body: string): Promise<void> {

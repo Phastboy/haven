@@ -1,11 +1,12 @@
-import { t, Static } from 'elysia';
+import { t } from "elysia";
+import type { Static } from "@sinclair/typebox";
 
 export const orderStatusSchema = t.Union([
-  t.Literal('PENDING'),
-  t.Literal('ACCEPTED'),
-  t.Literal('REJECTED'),
-  t.Literal('CANCELLED'),
-  t.Literal('COMPLETED'),
+  t.Literal("PENDING"),
+  t.Literal("ACCEPTED"),
+  t.Literal("REJECTED"),
+  t.Literal("CANCELLED"),
+  t.Literal("COMPLETED"),
 ]);
 
 export const orderSchema = t.Object({
