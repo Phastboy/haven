@@ -1,4 +1,3 @@
-// oxlint-disable typescript/no-explicit-any
 import { expect, test, describe, mock, beforeEach } from "bun:test";
 import { CreateUserUseCase } from "../create-user.usecase";
 import { UpdateUserUseCase } from "../update-user.usecase";

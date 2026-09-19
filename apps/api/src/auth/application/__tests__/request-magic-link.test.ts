@@ -1,4 +1,3 @@
-// oxlint-disable typescript/no-explicit-any
 import { expect, test, describe, mock } from "bun:test";
 import { RequestMagicLinkUseCase } from "../use-cases/request-magic-link.use-case";
 import { TokenService } from "../../infrastructure/services/token.service";

@@ -1,4 +1,3 @@
-// oxlint-disable typescript/no-explicit-any
 import { sql } from "drizzle-orm";
 import { expect, test, describe, beforeAll, afterAll, mock } from "bun:test";
 import { Elysia } from "elysia";
@@ -11,7 +10,7 @@ describe("Google OAuth E2E", () => {
   const testEmail = `e2e-google-${crypto.randomUUID()}@example.com`;
   const googleId = `google-id-${crypto.randomUUID()}`;
 
-  let originalVerifyIdToken: any;
+  let originalVerifyIdToken: typeof OAuth2Client.prototype.verifyIdToken;
 
   beforeAll(() => {
     originalVerifyIdToken = OAuth2Client.prototype.verifyIdToken;

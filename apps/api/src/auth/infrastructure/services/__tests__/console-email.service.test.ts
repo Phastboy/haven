@@ -1,4 +1,3 @@
-// oxlint-disable typescript/no-explicit-any
 import { expect, test, describe, spyOn } from "bun:test";
 import { ConsoleEmailService } from "../console-email.service";
 

@@ -1,4 +1,3 @@
-// oxlint-disable typescript/no-explicit-any
 import { sql } from "drizzle-orm";
 import { expect, test, describe, afterAll } from "bun:test";
 import { Elysia } from "elysia";

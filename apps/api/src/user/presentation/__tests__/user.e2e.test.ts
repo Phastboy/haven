@@ -1,4 +1,3 @@
-// oxlint-disable typescript/no-explicit-any
 import { expect, test, describe, beforeAll, afterAll } from "bun:test";
 import { Elysia } from "elysia";
 import { createUserPlugin } from "../user.plugin";

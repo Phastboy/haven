@@ -1,4 +1,3 @@
-// oxlint-disable typescript/no-explicit-any
 import { describe, expect, it, mock } from "bun:test";
 import { GetSessionUseCase } from "../use-cases/get-session.use-case";
 import { ISessionRepository } from "../../domain/ports/ISessionRepository";

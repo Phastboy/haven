@@ -1,4 +1,3 @@
-// oxlint-disable typescript/no-explicit-any
 import { sql } from "drizzle-orm";
 import { describe, expect, it, beforeAll, afterAll } from "bun:test";
 import { authController } from "../auth.controller";

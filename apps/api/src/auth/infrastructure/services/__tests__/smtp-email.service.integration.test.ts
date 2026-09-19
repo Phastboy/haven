@@ -1,4 +1,3 @@
-// oxlint-disable typescript/no-explicit-any
 import { expect, test, describe } from "bun:test";
 import { SmtpEmailService } from "../smtp-email.service";
 
@@ -19,7 +18,8 @@ describe("SmtpEmailService Integration", () => {
         "This is an integration test.",
       );
       expect(true).toBe(true);
-    } catch (e: any) {
+    } catch (err) {
+      const e = err as { message?: string };
       if (
         e.message &&
         (e.message.includes("socket") ||

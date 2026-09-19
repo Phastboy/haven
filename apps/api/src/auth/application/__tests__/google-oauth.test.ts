@@ -1,4 +1,3 @@
-// oxlint-disable typescript/no-explicit-any
 import { expect, test, describe, mock, beforeEach } from "bun:test";
 import { LoginWithGoogleUseCase } from "../use-cases/login-with-google.use-case";
 import { TokenService } from "../../infrastructure/services/token.service";

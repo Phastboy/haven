@@ -1,4 +1,3 @@
-// oxlint-disable typescript/no-explicit-any
 import { describe, expect, it } from "bun:test";
 import { TokenService } from "../token.service";
 import * as crypto from "crypto";
