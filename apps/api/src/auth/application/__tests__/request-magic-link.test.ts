@@ -17,8 +17,8 @@ describe("RequestMagicLinkUseCase", () => {
   const tokenService = new TokenService();
 
   const useCase = new RequestMagicLinkUseCase(
-    mockMagicLinkRepo as any,
-    mockEmailService as any,
+    mockMagicLinkRepo as unknown as import("../../domain/ports/IMagicLinkRepository").IMagicLinkRepository,
+    mockEmailService as unknown as import("../../domain/ports/IEmailService").IEmailService,
     tokenService,
   );
 

@@ -47,17 +47,17 @@ describe("Session Middleware E2E", () => {
     });
     const res = await authController.handle(req);
     expect(res.status).toBe(200);
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as { token?: string; [key: string]: unknown };
     expect(data).not.toBeNull();
-    expect(data.account).toBeDefined();
-    expect(data.account.id).toBe(testAccountId);
+    expect((data as unknown as { account: unknown }).account).toBeDefined();
+    expect((data as unknown as { account: { id: string } }).account.id).toBe(testAccountId);
   });
 
   it("should return 401 Unauthorized if no token is provided", async () => {
     const req = new Request("http://localhost/auth/me");
     const res = await authController.handle(req);
     expect(res.status).toBe(401);
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as { token?: string; [key: string]: unknown };
     expect(data).toMatchObject({ message: "Unauthorized access" });
   });
 
@@ -67,7 +67,7 @@ describe("Session Middleware E2E", () => {
     });
     const res = await authController.handle(req);
     expect(res.status).toBe(401);
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as { token?: string; [key: string]: unknown };
     expect(data).toMatchObject({ message: "Unauthorized access" });
   });
 
@@ -77,7 +77,7 @@ describe("Session Middleware E2E", () => {
     });
     const res = await authController.handle(req);
     expect(res.status).toBe(401);
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as { token?: string; [key: string]: unknown };
     expect(data).toMatchObject({ message: "Unauthorized access" });
   });
 });

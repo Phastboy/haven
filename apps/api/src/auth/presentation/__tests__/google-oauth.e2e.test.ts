@@ -27,7 +27,7 @@ describe("Google OAuth E2E", () => {
           picture: "https://example.com/photo.jpg",
         }),
       };
-    }) as any;
+    }) as unknown as typeof OAuth2Client.prototype.verifyIdToken;
   });
 
   afterAll(async () => {
@@ -36,7 +36,7 @@ describe("Google OAuth E2E", () => {
     // Cleanup
     const account = (
       await db.execute(sql`SELECT * FROM "Account" WHERE "email" = ${testEmail}`)
-    )[0] as any;
+    )[0] as unknown as { id: string; emailVerified: boolean; providerUserId: string };
     if (!account) return;
     await db.execute(sql`DELETE FROM "Session" WHERE "accountId" = ${account.id}`);
     await db.execute(sql`DELETE FROM "OAuthCredential" WHERE "accountId" = ${account.id}`);
@@ -63,16 +63,16 @@ describe("Google OAuth E2E", () => {
     // Verify DB records
     const account = (
       await db.execute(sql`SELECT * FROM "Account" WHERE "email" = ${testEmail}`)
-    )[0] as any;
+    )[0] as unknown as { id: string; emailVerified: boolean; providerUserId: string };
     expect(account).toBeDefined();
-    expect(account!.emailVerified).toBe(true);
+    expect((account as unknown as { emailVerified: boolean }).emailVerified).toBe(true);
 
     const oauth = (
       await db.execute(
-        sql`SELECT * FROM "OAuthCredential" WHERE "accountId" = ${account!.id} AND "provider" = 'GOOGLE'`,
+        sql`SELECT * FROM "OAuthCredential" WHERE "accountId" = ${(account as unknown as { id: string }).id} AND "provider" = 'GOOGLE'`,
       )
-    )[0] as any;
+    )[0] as unknown as { id: string; emailVerified: boolean; providerUserId: string };
     expect(oauth).toBeDefined();
-    expect(oauth!.providerUserId).toBe(googleId);
+    expect((oauth as unknown as { providerUserId: string }).providerUserId).toBe(googleId);
   });
 });

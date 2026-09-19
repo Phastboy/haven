@@ -14,7 +14,7 @@ describe("Magic Link E2E", () => {
     // Cleanup
     const account = (
       await db.execute(sql`SELECT * FROM "Account" WHERE "email" = ${testEmail}`)
-    )[0] as any;
+    )[0] as unknown as { id: string; emailVerified: boolean; token: string; usedAt: Date | null };
     if (account) {
       await db.execute(sql`DELETE FROM "Session" WHERE "accountId" = ${account.id}`);
       await db.execute(sql`DELETE FROM "AccountPlatformLink" WHERE "accountId" = ${account.id}`);
@@ -40,10 +40,10 @@ describe("Magic Link E2E", () => {
 
     const magicLink = (
       await db.execute(sql`SELECT * FROM "MagicLink" WHERE "email" = ${testEmail}`)
-    )[0] as any;
+    )[0] as unknown as { id: string; emailVerified: boolean; token: string; usedAt: Date | null };
     expect(magicLink).toBeDefined();
     expect(magicLink!.token).toBeDefined();
-    expect(magicLink!.usedAt).toBeNull();
+    expect((magicLink as unknown as { usedAt: Date | null }).usedAt).toBeNull();
   });
 
   test("should verify a magic link and create a session", async () => {
@@ -79,8 +79,8 @@ describe("Magic Link E2E", () => {
     // Verify account and link were created
     const account = (
       await db.execute(sql`SELECT * FROM "Account" WHERE "email" = ${testEmail}`)
-    )[0] as any;
+    )[0] as unknown as { id: string; emailVerified: boolean; token: string; usedAt: Date | null };
     expect(account).toBeDefined();
-    expect(account!.emailVerified).toBe(true);
+    expect((account as unknown as { emailVerified: boolean }).emailVerified).toBe(true);
   });
 });

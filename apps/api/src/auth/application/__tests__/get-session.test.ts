@@ -14,7 +14,10 @@ describe("GetSessionUseCase", () => {
 
   const tokenService = new TokenService();
 
-  const useCase = new GetSessionUseCase(mockSessionRepo as any, tokenService);
+  const useCase = new GetSessionUseCase(
+    mockSessionRepo as unknown as import("../../domain/ports/ISessionRepository").ISessionRepository,
+    tokenService,
+  );
 
   test("should throw UnauthorizedError if session not found", async () => {
     mockSessionRepo.findByToken.mockResolvedValueOnce(null);

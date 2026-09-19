@@ -13,7 +13,10 @@ describe("LogoutUseCase", () => {
 
   const tokenService = new TokenService();
 
-  const useCase = new LogoutUseCase(mockSessionRepo as any, tokenService);
+  const useCase = new LogoutUseCase(
+    mockSessionRepo as unknown as import("../../domain/ports/ISessionRepository").ISessionRepository,
+    tokenService,
+  );
 
   test("should delete session by hashed token", async () => {
     mockSessionRepo.deleteByToken.mockResolvedValueOnce(undefined);

@@ -35,12 +35,12 @@ describe("LoginWithGoogleUseCase", () => {
   const tokenService = new TokenService();
 
   const useCase = new LoginWithGoogleUseCase(
-    mockAccountRepo as any,
-    mockOauthRepo as any,
-    mockSessionRepo as any,
-    mockGoogleService as any,
+    mockAccountRepo as unknown as import("../../domain/ports/IAccountRepository").IAccountRepository,
+    mockOauthRepo as unknown as import("../../domain/ports/IOAuthCredentialRepository").IOAuthCredentialRepository,
+    mockSessionRepo as unknown as import("../../domain/ports/ISessionRepository").ISessionRepository,
+    mockGoogleService as unknown as import("../../domain/ports/IGoogleTokenService").IGoogleTokenService,
     tokenService,
-    mockProfileCreator as any,
+    mockProfileCreator as unknown as import("../../domain/ports/IProfileCreator").IProfileCreator,
   );
 
   beforeEach(() => {
