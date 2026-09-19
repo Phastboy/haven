@@ -3,6 +3,7 @@ import { Elysia } from "elysia";
 import { createUserPlugin } from "./user/presentation/user.plugin";
 import { authController } from "./auth";
 import { createOfferPlugin } from "./offer/presentation/offer.plugin";
+import { createDirectoryPlugin } from "./directory/presentation/graphql.plugin";
 
 import { configController } from "./config.controller";
 
@@ -12,6 +13,7 @@ export const app = new Elysia({ prefix: '/api' })
   .use(createUserPlugin())
   .use(authController)
   .use(createOfferPlugin())
+  .use(createDirectoryPlugin())
   .request(({ set }) => {
     set.headers["Access-Control-Allow-Origin"] = "*";
     set.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";

@@ -18,7 +18,9 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@elysia/graphql-yoga": "^2.0.0-beta.1",
     "@elysia/openapi": "next",
+    "dataloader": "^2.2.3",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "google-auth-library": "^11.1.0",
