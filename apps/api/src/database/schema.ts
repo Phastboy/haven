@@ -28,6 +28,20 @@ export const offers = pgTable('Offer', {
   updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const orderStatusEnum = pgEnum('OrderStatus', ['PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED', 'COMPLETED']);
+
+export const orders = pgTable('Order', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  offerId: varchar('offerId', { length: 36 }).notNull().references(() => offers.id, { onDelete: 'cascade' }),
+  requesterId: varchar('requesterId', { length: 36 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  price: integer('price').notNull(), // stored in cents (snapshot of offer price at time of order)
+  quantity: integer('quantity').notNull().default(1),
+  status: orderStatusEnum('status').notNull().default('PENDING'),
+  message: text('message'),
+  createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const accounts = pgTable('Account', {
   id: varchar('id', { length: 36 }).primaryKey(),
   email: text('email').unique().notNull(),
@@ -89,11 +103,24 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     references: [accounts.id],
   }),
   offers: many(offers),
+  orders: many(orders),
 }));
 
-export const offersRelations = relations(offers, ({ one }) => ({
+export const offersRelations = relations(offers, ({ one, many }) => ({
   user: one(users, {
     fields: [offers.userId],
+    references: [users.id],
+  }),
+  orders: many(orders),
+}));
+
+export const ordersRelations = relations(orders, ({ one }) => ({
+  offer: one(offers, {
+    fields: [orders.offerId],
+    references: [offers.id],
+  }),
+  requester: one(users, {
+    fields: [orders.requesterId],
     references: [users.id],
   }),
 }));
@@ -133,3 +160,6 @@ export type NewUser = typeof users.$inferInsert;
 
 export type OfferRecord = typeof offers.$inferSelect;
 export type NewOffer = typeof offers.$inferInsert;
+
+export type OrderRecord = typeof orders.$inferSelect;
+export type NewOrder = typeof orders.$inferInsert;
