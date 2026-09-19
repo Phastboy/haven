@@ -5,6 +5,8 @@ import { authController } from "./auth";
 import { createOfferPlugin } from "./offer/presentation/offer.plugin";
 import { createDirectoryPlugin } from "./directory/presentation/graphql.plugin";
 import { createOrderPlugin } from "./order/presentation/order.plugin";
+import { createFulfillmentPlugin } from "./fulfillment/presentation/fulfillment.plugin";
+import { createAutoCompletePlugin } from "./scheduler/auto-complete.plugin";
 
 import { configController } from "./config.controller";
 
@@ -16,6 +18,8 @@ export const app = new Elysia({ prefix: '/api' })
   .use(createOfferPlugin())
   .use(createDirectoryPlugin())
   .use(createOrderPlugin())
+  .use(createFulfillmentPlugin())
+  .use(createAutoCompletePlugin())
   .request(({ set }) => {
     set.headers["Access-Control-Allow-Origin"] = "*";
     set.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";

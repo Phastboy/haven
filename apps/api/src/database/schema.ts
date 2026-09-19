@@ -42,6 +42,18 @@ export const orders = pgTable('Order', {
   updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const fulfillmentStatusEnum = pgEnum('FulfillmentStatus', ['PENDING', 'DELIVERED', 'REVISION_REQUESTED', 'COMPLETED']);
+
+export const fulfillments = pgTable('Fulfillment', {
+  id: varchar('id', { length: 36 }).primaryKey(),
+  orderId: varchar('orderId', { length: 36 }).notNull().unique().references(() => orders.id, { onDelete: 'cascade' }),
+  status: fulfillmentStatusEnum('status').notNull().default('PENDING'),
+  deliveryMessage: text('deliveryMessage'),
+  reviewDeadline: timestamp('reviewDeadline', { withTimezone: true }),
+  createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const accounts = pgTable('Account', {
   id: varchar('id', { length: 36 }).primaryKey(),
   email: text('email').unique().notNull(),
@@ -123,6 +135,17 @@ export const ordersRelations = relations(orders, ({ one }) => ({
     fields: [orders.requesterId],
     references: [users.id],
   }),
+  fulfillment: one(fulfillments, {
+    fields: [orders.id],
+    references: [fulfillments.orderId],
+  }),
+}));
+
+export const fulfillmentsRelations = relations(fulfillments, ({ one }) => ({
+  order: one(orders, {
+    fields: [fulfillments.orderId],
+    references: [orders.id],
+  }),
 }));
 
 export const oauthCredentialsRelations = relations(oauthCredentials, ({ one }) => ({
@@ -163,3 +186,6 @@ export type NewOffer = typeof offers.$inferInsert;
 
 export type OrderRecord = typeof orders.$inferSelect;
 export type NewOrder = typeof orders.$inferInsert;
+
+export type FulfillmentRecord = typeof fulfillments.$inferSelect;
+export type NewFulfillment = typeof fulfillments.$inferInsert;
