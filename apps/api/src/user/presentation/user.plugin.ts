@@ -73,5 +73,18 @@ export function createUserPlugin() {
         detail: { summary: "Update my profile" },
       },
       async ({ account, body }) => updateUser.execute(account!.id, body),
+    )
+
+    .get(
+      "/me",
+      {
+        beforeHandle: [requireAuth],
+        detail: { summary: "Get my profile" },
+      },
+      async ({ account }) => {
+        const user = await repository.findByAccountId(account!.id);
+        if (!user) throw new NotFoundError("User", account!.id);
+        return user;
+      },
     );
 }
