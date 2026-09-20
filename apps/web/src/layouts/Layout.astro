@@ -39,9 +39,18 @@ if (token) {
 					</a>
 					{user ? (
 						<>
-							<a href="/my-offers" class="text-zinc-400 hover:text-white transition-colors">
-								My Offers
-							</a>
+							<div class="relative group py-2">
+								<button class="text-zinc-400 group-hover:text-white transition-colors flex items-center gap-1 outline-none">
+									Dashboard
+									<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-70 group-hover:opacity-100"><path d="m6 9 6 6 6-6"/></svg>
+								</button>
+								<div class="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-40 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden">
+									<div class="py-1">
+										<a href="/my-offers" class="block px-4 py-2 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition-colors">My Offers</a>
+										<a href="/matches" class="block px-4 py-2 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition-colors">Matches</a>
+									</div>
+								</div>
+							</div>
 							<a href="/profile" class="text-zinc-400 hover:text-white transition-colors">
 								Profile
 							</a>
