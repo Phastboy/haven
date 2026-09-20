@@ -10,6 +10,7 @@ import { createAutoCompletePlugin } from "./scheduler/auto-complete.plugin";
 
 import { configController } from "./config.controller";
 import { createMessagePlugin } from "./message/presentation/message.plugin";
+import { createWsPlugin } from "./shared/presentation/ws.plugin";
 import { NodeEventEmitterAdapter } from "./shared/infrastructure/node-event-bus.adapter";
 import { SqlMessageRepository } from "./message/infrastructure/sql-message.repository";
 import { CreateThreadUseCase } from "./message/application/create-thread.usecase";
@@ -28,6 +29,28 @@ eventBus.subscribe("order.accepted", async (payload) => {
   }
 });
 
+// Broadcast real-time notifications to users
+eventBus.subscribe("order.requested", (payload) => {
+  app.server?.publish(
+    `user:${payload.ownerId}`,
+    JSON.stringify({ type: "NOTIFICATION", data: { message: "Someone requested your offer!" } }),
+  );
+});
+
+eventBus.subscribe("order.accepted", (payload) => {
+  app.server?.publish(
+    `user:${payload.requesterId}`,
+    JSON.stringify({ type: "NOTIFICATION", data: { message: "Your request was accepted!" } }),
+  );
+});
+
+eventBus.subscribe("message.created", (payload) => {
+  app.server?.publish(
+    `user:${payload.receiverId}`,
+    JSON.stringify({ type: "NEW_MESSAGE", data: payload.message }),
+  );
+});
+
 export const app = new Elysia({ prefix: "/api" })
   .use(openapi())
   .use(configController)
@@ -37,8 +60,9 @@ export const app = new Elysia({ prefix: "/api" })
   .use(createDirectoryPlugin())
   .use(createOrderPlugin(eventBus))
   .use(createFulfillmentPlugin())
-  .use(createMessagePlugin())
+  .use(createMessagePlugin(eventBus))
   .use(createAutoCompletePlugin())
+  .use(createWsPlugin())
   .request(({ set }) => {
     set.headers["Access-Control-Allow-Origin"] = "*";
     set.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";

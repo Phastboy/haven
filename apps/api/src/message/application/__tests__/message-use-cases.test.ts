@@ -50,9 +50,14 @@ describe("Message Use Cases", () => {
   });
 
   describe("SendMessageUseCase", () => {
-    it("should throw if thread not found", () => {
+    const mockEventBus = { publish: mock(), subscribe: mock() };
+
+    it("should throw ThreadNotFoundError if thread does not exist", async () => {
       mockRepo.findThreadById.mockResolvedValue(null);
-      const useCase = new SendMessageUseCase(mockRepo as unknown as SqlMessageRepository);
+      const useCase = new SendMessageUseCase(
+        mockRepo as unknown as SqlMessageRepository,
+        mockEventBus,
+      );
       expect(useCase.execute("thread1", "user1", "hello")).rejects.toThrow(ThreadNotFoundError);
     });
 
@@ -62,7 +67,10 @@ describe("Message Use Cases", () => {
         participant1Id: "user2",
         participant2Id: "user3",
       } as unknown);
-      const useCase = new SendMessageUseCase(mockRepo as unknown as SqlMessageRepository);
+      const useCase = new SendMessageUseCase(
+        mockRepo as unknown as SqlMessageRepository,
+        mockEventBus,
+      );
       expect(useCase.execute("thread1", "user1", "hello")).rejects.toThrow(
         UnauthorizedThreadAccessError,
       );
@@ -75,7 +83,10 @@ describe("Message Use Cases", () => {
         participant2Id: "user3",
       } as unknown);
       mockRepo.sendMessage.mockResolvedValue({ id: "msg1" } as unknown);
-      const useCase = new SendMessageUseCase(mockRepo as unknown as SqlMessageRepository);
+      const useCase = new SendMessageUseCase(
+        mockRepo as unknown as SqlMessageRepository,
+        mockEventBus,
+      );
 
       const msg = await useCase.execute("thread1", "user1", "hello");
       expect(msg.id).toBe("msg1");

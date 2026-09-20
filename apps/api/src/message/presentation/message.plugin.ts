@@ -15,10 +15,12 @@ import { eq } from "drizzle-orm";
 import { createThreadBodySchema, sendMessageBodySchema } from "../domain/message.schema";
 import { ThreadNotFoundError, UnauthorizedThreadAccessError } from "../domain/errors";
 
-export const createMessagePlugin = () => {
+import { IEventBus } from "../../shared/domain/event-bus.interface";
+
+export const createMessagePlugin = (eventBus: IEventBus) => {
   const repository = new SqlMessageRepository();
   const createThreadUseCase = new CreateThreadUseCase(repository);
-  const sendMessageUseCase = new SendMessageUseCase(repository);
+  const sendMessageUseCase = new SendMessageUseCase(repository, eventBus);
   const getThreadsUseCase = new GetThreadsUseCase(repository);
   const getMessagesUseCase = new GetMessagesUseCase(repository);
 
