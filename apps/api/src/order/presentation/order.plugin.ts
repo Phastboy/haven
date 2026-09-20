@@ -21,11 +21,14 @@ import {
   OfferNotActiveError,
 } from "../domain/errors";
 
-export const createOrderPlugin = () => {
+import { IEventBus } from "../../shared/domain/event-bus.interface";
+
+export const createOrderPlugin = (eventBus?: IEventBus) => {
   const repository = new SqlOrderRepository();
   const offerAdapter = new OfferAdapterService();
+
   const createOrderUseCase = new CreateOrderUseCase(repository, offerAdapter);
-  const updateOrderStatusUseCase = new UpdateOrderStatusUseCase(repository, offerAdapter);
+  const updateOrderStatusUseCase = new UpdateOrderStatusUseCase(repository, offerAdapter, eventBus);
   const getOrdersUseCase = new GetOrdersUseCase(repository);
 
   const getSessionUseCase = new GetSessionUseCase(new SessionRepository(), tokenService);

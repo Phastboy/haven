@@ -86,6 +86,31 @@ export const fulfillments = pgTable("Fulfillment", {
   updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const threads = pgTable("Thread", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  participant1Id: varchar("participant1Id", { length: 36 })
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  participant2Id: varchar("participant2Id", { length: 36 })
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const messages = pgTable("Message", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  threadId: varchar("threadId", { length: 36 })
+    .notNull()
+    .references(() => threads.id, { onDelete: "cascade" }),
+  senderId: varchar("senderId", { length: 36 })
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  readAt: timestamp("readAt", { withTimezone: true }),
+  createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const accounts = pgTable("Account", {
   id: varchar("id", { length: 36 }).primaryKey(),
   email: text("email").unique().notNull(),
@@ -164,6 +189,9 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   }),
   offers: many(offers),
   orders: many(orders),
+  threadsAsParticipant1: many(threads, { relationName: "participant1" }),
+  threadsAsParticipant2: many(threads, { relationName: "participant2" }),
+  messages: many(messages),
 }));
 
 export const offersRelations = relations(offers, ({ one, many }) => ({
@@ -193,6 +221,31 @@ export const fulfillmentsRelations = relations(fulfillments, ({ one }) => ({
   order: one(orders, {
     fields: [fulfillments.orderId],
     references: [orders.id],
+  }),
+}));
+
+export const threadsRelations = relations(threads, ({ one, many }) => ({
+  participant1: one(users, {
+    fields: [threads.participant1Id],
+    references: [users.id],
+    relationName: "participant1",
+  }),
+  participant2: one(users, {
+    fields: [threads.participant2Id],
+    references: [users.id],
+    relationName: "participant2",
+  }),
+  messages: many(messages),
+}));
+
+export const messagesRelations = relations(messages, ({ one }) => ({
+  thread: one(threads, {
+    fields: [messages.threadId],
+    references: [threads.id],
+  }),
+  sender: one(users, {
+    fields: [messages.senderId],
+    references: [users.id],
   }),
 }));
 
@@ -237,3 +290,9 @@ export type NewOrder = typeof orders.$inferInsert;
 
 export type FulfillmentRecord = typeof fulfillments.$inferSelect;
 export type NewFulfillment = typeof fulfillments.$inferInsert;
+
+export type ThreadRecord = typeof threads.$inferSelect;
+export type NewThread = typeof threads.$inferInsert;
+
+export type MessageRecord = typeof messages.$inferSelect;
+export type NewMessage = typeof messages.$inferInsert;

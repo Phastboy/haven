@@ -9,6 +9,24 @@ import { createFulfillmentPlugin } from "./fulfillment/presentation/fulfillment.
 import { createAutoCompletePlugin } from "./scheduler/auto-complete.plugin";
 
 import { configController } from "./config.controller";
+import { createMessagePlugin } from "./message/presentation/message.plugin";
+import { NodeEventEmitterAdapter } from "./shared/infrastructure/node-event-bus.adapter";
+import { SqlMessageRepository } from "./message/infrastructure/sql-message.repository";
+import { CreateThreadUseCase } from "./message/application/create-thread.usecase";
+
+const eventBus = new NodeEventEmitterAdapter();
+
+// Set up cross-domain event listeners
+eventBus.subscribe("order.accepted", async (payload) => {
+  const messageRepo = new SqlMessageRepository();
+  const createThreadUseCase = new CreateThreadUseCase(messageRepo);
+  try {
+    await createThreadUseCase.execute(payload.requesterId, payload.ownerId);
+    console.log(`[EventBus] Thread auto-created for order ${payload.orderId}`);
+  } catch (error) {
+    console.error(`[EventBus] Error creating thread for order ${payload.orderId}:`, error);
+  }
+});
 
 export const app = new Elysia({ prefix: "/api" })
   .use(openapi())
@@ -17,8 +35,9 @@ export const app = new Elysia({ prefix: "/api" })
   .use(authController)
   .use(createOfferPlugin())
   .use(createDirectoryPlugin())
-  .use(createOrderPlugin())
+  .use(createOrderPlugin(eventBus))
   .use(createFulfillmentPlugin())
+  .use(createMessagePlugin())
   .use(createAutoCompletePlugin())
   .request(({ set }) => {
     set.headers["Access-Control-Allow-Origin"] = "*";
