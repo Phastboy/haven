@@ -3,6 +3,9 @@
   "version": "1.0.50",
   "type": "module",
   "module": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
   "scripts": {
     "test": "bun run db:push && bun test",
     "test:unit": "bun test --path-ignore-patterns '**/*.e2e.test.ts' '**/*.integration.test.ts'",
@@ -18,9 +21,9 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "@elysia/cron": "^2.0.0-beta.1",
-    "@elysia/graphql-yoga": "^2.0.0-beta.1",
-    "@elysia/openapi": "next",
+    "@elysia/cron": "2.0.0-beta.1",
+    "@elysia/graphql-yoga": "2.0.0-beta.1",
+    "@elysia/openapi": "2.0.0-beta.4",
     "dataloader": "^2.2.3",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
@@ -31,7 +34,6 @@
   "devDependencies": {
     "drizzle-kit": "^0.31.10",
     "oxlint": "^1.83.0",
-    "tslib": "^2.8.1",
-    "typescript": "^7.0.2"
+    "tslib": "^2.8.1"
   }
 }
