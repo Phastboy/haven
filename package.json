@@ -19,10 +19,8 @@
   "scripts": {
     "prepare": "husky",
     "format": "oxfmt src/ apps/",
-    "check:tsc:api": "bun run --cwd apps/api check:tsc",
-    "dev:api": "bun run --cwd apps/api dev",
-    "dev:web": "bun run --cwd apps/web ng serve",
-    "dev": "bun run dev:api & bun run dev:web",
+    "dev": "bun run --parallel --filter '*' dev",
+    "typecheck": "bun run --filter '*' typecheck",
     "build:web": "cd apps/web && ng build",
     "start:web": "bun apps/web/dist/web/server/server.mjs",
     "test:api": "bun run --cwd apps/api test",

@@ -9,7 +9,7 @@
     "test:integration": "bun run db:push --force && bun test '**/*.integration.test.ts'",
     "test:e2e": "bun run db:push --force && bun test e2e.test.ts",
     "dev": "bun run --watch src/index.ts",
-    "check:tsc": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "lint": "oxlint src/",
     "lint:fix": "oxlint --fix src/",
     "db:generate": "drizzle-kit generate",
