@@ -34,12 +34,15 @@ if (token) {
 					<span>Haven</span>
 				</a>
 				<div class="flex items-center gap-6 text-sm font-medium">
+					<a href="/directory" class="text-zinc-400 hover:text-white transition-colors">
+						Directory
+					</a>
 					{user ? (
 						<a href="/profile" class="text-zinc-400 hover:text-white transition-colors">
 							Profile
 						</a>
 					) : (
-						<a href="/login" class="px-4 py-2 rounded-full bg-white text-zinc-950 hover:bg-zinc-200 transition-colors shadow-sm">
+						<a href="/login" class="px-4 py-2 rounded-xl bg-white text-zinc-950 hover:bg-zinc-200 transition-colors">
 							Login
 						</a>
 					)}
