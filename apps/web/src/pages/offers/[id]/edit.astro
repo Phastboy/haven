@@ -1,0 +1,43 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import OfferForm from "../../../components/OfferForm";
+import { client } from "../../../api";
+
+const { id } = Astro.params;
+const token = Astro.cookies.get("token")?.value;
+
+if (!token || !id) {
+  return Astro.redirect("/login");
+}
+
+// Fetch current user
+const { data: authData } = await client.auth.me.get({
+  headers: { authorization: `Bearer ${token}` }
+});
+
+if (!authData?.account) {
+  return Astro.redirect("/login");
+}
+
+const { data: currentUserData } = await client.users.me.get({
+  headers: { authorization: `Bearer ${token}` }
+});
+
+// Fetch offer
+const { data: offer, error } = await client.offers({ id }).get();
+
+if (error || !offer) {
+  return Astro.redirect("/my-offers");
+}
+
+// Verify ownership
+if (!currentUserData || (currentUserData as any).id !== offer.userId) {
+  return Astro.redirect(`/offers/${offer.id}`);
+}
+---
+
+<Layout>
+  <div class="flex-1 flex flex-col p-6">
+    <OfferForm client:load token={token} initialData={offer} isEdit={true} />
+  </div>
+</Layout>

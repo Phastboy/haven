@@ -19,8 +19,7 @@ if (authError || !authData?.account) {
   return Astro.redirect("/login");
 }
 
-const accountId = authData.account.id;
-const { data: userData, error: userError } = await client.users({ id: accountId }).get({
+const { data: userData, error: userError } = await client.users.me.get({
   headers: {
     authorization: `Bearer ${token}`
   }
