@@ -1,0 +1,31 @@
+---
+import { client } from "../../api";
+
+const token = Astro.url.searchParams.get("token");
+
+if (!token) {
+  return Astro.redirect("/login?error=missing_token");
+}
+
+try {
+  const { data, error } = await client.auth["magic-link"].verify.post({ token });
+
+  if (error || !data) {
+    return Astro.redirect("/login?error=invalid_token");
+  }
+
+  const sessionToken = data.token;
+  
+  Astro.cookies.set("token", sessionToken, {
+    path: "/",
+    httpOnly: true,
+    secure: import.meta.env.PROD,
+    sameSite: "lax",
+    maxAge: 30 * 24 * 60 * 60 // 30 days
+  });
+
+  return Astro.redirect("/");
+} catch (e) {
+  return Astro.redirect("/login?error=invalid_token");
+}
+---

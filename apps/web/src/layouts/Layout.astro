@@ -1,0 +1,53 @@
+---
+import "../styles/global.css";
+import { client } from "../api";
+
+const token = Astro.cookies.get("token")?.value;
+
+let user = null;
+if (token) {
+  const { data, error } = await client.auth.me.get({
+    headers: {
+      authorization: `Bearer ${token}`
+    }
+  });
+  if (data?.account) {
+    user = data.account;
+  }
+}
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Haven</title>
+	</head>
+	<body class="min-h-screen flex flex-col">
+		<nav class="border-b border-white/5 bg-zinc-950/80 backdrop-blur-xl sticky top-0 z-50">
+			<div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+				<a href="/" class="font-bold text-xl tracking-tight flex items-center gap-2 group">
+					<div class="w-6 h-6 rounded-lg bg-brand-500 opacity-90 group-hover:opacity-100 transition-opacity"></div>
+					<span>Haven</span>
+				</a>
+				<div class="flex items-center gap-6 text-sm font-medium">
+					{user ? (
+						<a href="/profile" class="text-zinc-400 hover:text-white transition-colors">
+							Profile
+						</a>
+					) : (
+						<a href="/login" class="px-4 py-2 rounded-full bg-white text-zinc-950 hover:bg-zinc-200 transition-colors shadow-sm">
+							Login
+						</a>
+					)}
+				</div>
+			</div>
+		</nav>
+		<main class="flex-1 flex flex-col">
+			<slot />
+		</main>
+	</body>
+</html>
