@@ -22,6 +22,7 @@ const isActive = (href: string) => path === href || path.startsWith(`${href}/`);
 const tabs = [
   { href: "/directory", label: "Directory", icon: "M11 3a8 8 0 1 0 4.9 14.32L21 22l1-1-4.68-5.1A8 8 0 0 0 11 3Z" },
   { href: "/matches", label: "Matches", icon: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z" },
+  { href: "/messages", label: "Messages", icon: "M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z M22 6l-10 7L2 6" },
   { href: "/my-offers", label: "My offers", icon: "M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" },
   { href: "/profile", label: "Profile", icon: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" },
 ];
@@ -127,5 +128,6 @@ const showTabs = !bare && !!account;
         </ul>
       </nav>
     )}
+  </body>
   </body>
 </html>

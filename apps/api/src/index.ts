@@ -10,6 +10,47 @@ import { createFulfillmentPlugin } from "./fulfillment/presentation/fulfillment.
 import { createAutoCompletePlugin } from "./scheduler/auto-complete.plugin";
 
 import { configController } from "./config.controller";
+import { createMessagePlugin } from "./message/presentation/message.plugin";
+import { createWsPlugin } from "./shared/presentation/ws.plugin";
+import { NodeEventEmitterAdapter } from "./shared/infrastructure/node-event-bus.adapter";
+import { SqlMessageRepository } from "./message/infrastructure/sql-message.repository";
+import { CreateThreadUseCase } from "./message/application/create-thread.usecase";
+
+const eventBus = new NodeEventEmitterAdapter();
+
+// Set up cross-domain event listeners
+eventBus.subscribe("order.accepted", async (payload) => {
+  const messageRepo = new SqlMessageRepository();
+  const createThreadUseCase = new CreateThreadUseCase(messageRepo);
+  try {
+    await createThreadUseCase.execute(payload.requesterId, payload.ownerId);
+    console.log(`[EventBus] Thread auto-created for order ${payload.orderId}`);
+  } catch (error) {
+    console.error(`[EventBus] Error creating thread for order ${payload.orderId}:`, error);
+  }
+});
+
+// Broadcast real-time notifications to users
+eventBus.subscribe("order.requested", (payload) => {
+  app.server?.publish(
+    `user:${payload.ownerId}`,
+    JSON.stringify({ type: "NOTIFICATION", data: { message: "Someone requested your offer!" } }),
+  );
+});
+
+eventBus.subscribe("order.accepted", (payload) => {
+  app.server?.publish(
+    `user:${payload.requesterId}`,
+    JSON.stringify({ type: "NOTIFICATION", data: { message: "Your request was accepted!" } }),
+  );
+});
+
+eventBus.subscribe("message.created", (payload) => {
+  app.server?.publish(
+    `user:${payload.receiverId}`,
+    JSON.stringify({ type: "NEW_MESSAGE", data: payload.message }),
+  );
+});
 
 export const app = new Elysia({ prefix: "/api" })
   // CORS via the plugin. The hand-rolled version (a `.request` hook plus an
@@ -21,8 +62,10 @@ export const app = new Elysia({ prefix: "/api" })
   .use(createUserPlugin())
   .use(authController)
   .use(createOfferPlugin())
-  .use(createOrderPlugin())
+  .use(createOrderPlugin(eventBus))
   .use(createFulfillmentPlugin())
+  .use(createMessagePlugin(eventBus))
+  .use(createWsPlugin())
   .get("/", () => "Hello Elysia");
 
 export type App = typeof app;

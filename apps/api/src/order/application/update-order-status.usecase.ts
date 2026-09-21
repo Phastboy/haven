@@ -6,6 +6,8 @@ import {
   InvalidOrderStateTransitionError,
 } from "../domain/errors";
 
+import { IEventBus } from "../../shared/domain/event-bus.interface";
+
 export interface IOfferOwnerService {
   getOfferOwnerId(offerId: string): Promise<string | null>;
 }
@@ -14,6 +16,7 @@ export class UpdateOrderStatusUseCase {
   constructor(
     private readonly orderRepository: IOrderRepository,
     private readonly offerOwnerService: IOfferOwnerService,
+    private readonly eventBus?: IEventBus,
   ) {}
 
   async execute(params: {
@@ -72,6 +75,16 @@ export class UpdateOrderStatusUseCase {
       throw new InvalidOrderStateTransitionError("Cannot manually revert order back to PENDING.");
     }
 
-    return this.orderRepository.updateOrderStatus(order.id, params.newStatus);
+    const updatedOrder = await this.orderRepository.updateOrderStatus(order.id, params.newStatus);
+
+    if (params.newStatus === "ACCEPTED" && this.eventBus) {
+      this.eventBus.publish("order.accepted", {
+        orderId: order.id,
+        requesterId: order.requesterId,
+        ownerId: offerOwnerId,
+      });
+    }
+
+    return updatedOrder;
   }
 }

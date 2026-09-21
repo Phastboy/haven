@@ -162,6 +162,32 @@ export default function MatchCard(props: MatchCardProps) {
           </button>
         </div>
       </Show>
+
+      {/* Messages button for ACCEPTED orders */}
+      <Show when={status() === "ACCEPTED"}>
+        <div class="mt-6 pt-4 border-t border-zinc-800">
+          <a
+            href="/messages"
+            class="flex items-center justify-center w-full px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-medium transition-colors"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="mr-2"
+            >
+              <path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z" />
+            </svg>
+            Go to Messages
+          </a>
+        </div>
+      </Show>
     </div>
   );
 }
