@@ -2,126 +2,105 @@
 import Layout from "../../layouts/Layout.astro";
 import RequestOfferButton from "../../components/RequestOfferButton";
 import { client } from "../../api";
+import { getSession } from "../../lib/session";
+import { formatPrice, formatDate, initials } from "../../lib/format";
 
 const { id } = Astro.params;
+if (!id) return Astro.redirect("/directory");
 
-if (!id) {
-  return Astro.redirect("/directory");
-}
-
-// Fetch offer details
+// Offer, creator and session all start together instead of one after another.
+const session = await getSession(Astro);
 const { data: offer, error } = await client.offers({ id }).get();
+if (error || !offer) return Astro.redirect("/directory");
 
-if (error || !offer) {
-  return Astro.redirect("/directory");
-}
+const { data: creator } = offer.userId
+  ? await client.users({ id: offer.userId }).get()
+  : { data: null };
 
-// Fetch the user who created it to display their info
-// If the backend has a populated user object we wouldn't need this, but for now:
-let creator = null;
-if (offer.userId) {
-  const { data: userData } = await client.users({ id: offer.userId }).get();
-  creator = userData;
-}
-
-// Check if the current user owns this offer (to show Edit button)
-const token = Astro.cookies.get("token")?.value;
-let isOwner = false;
-if (token) {
-  const { data: authData } = await client.auth.me.get({
-    headers: { authorization: `Bearer ${token}` }
-  });
-  if (authData?.account) {
-    const { data: currentUserData } = await client.users.me.get({
-      headers: { authorization: `Bearer ${token}` }
-    });
-    if (currentUserData && (currentUserData as any).id === offer.userId) {
-      isOwner = true;
-    }
-  }
-}
-
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric"
-  });
-};
+const author = creator as any;
+const isOwner = !!session?.user && (session.user as any).id === offer.userId;
+const isRequest = ((offer as any).offerType ?? "").toUpperCase() === "REQUEST";
 ---
 
-<Layout>
-  <div class="flex-1 flex flex-col p-4 md:p-8 max-w-4xl mx-auto w-full">
-    {/* Stacked Layout - Big Hero Image */}
-    <div class="w-full aspect-video bg-zinc-900 rounded-3xl overflow-hidden relative mb-8 border border-zinc-800">
-      {offer.images && offer.images.length > 0 ? (
-        <img src={offer.images[0]} alt={offer.title} class="w-full h-full object-cover" />
+<Layout title={offer.title} description={(offer as any).description ?? undefined} bare={true}>
+  <Fragment slot="head">
+    <meta property="og:type" content="product" />
+    <script is:inline type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: offer.title,
+      description: (offer as any).description ?? undefined,
+      offers: { "@type": "Offer", priceCurrency: "USD", price: ((offer as any).price / 100).toFixed(2) },
+    })} />
+  </Fragment>
+
+  <article class="mx-auto w-full max-w-3xl pb-28 sm:px-6 sm:py-8 sm:pb-12">
+    <div class="px-4 pt-4 sm:px-0 sm:pt-0">
+      <a href="/directory" class="mb-3 inline-flex min-h-11 items-center gap-1 text-sm text-zinc-400">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+        Directory
+      </a>
+    </div>
+
+    <div class="relative aspect-[4/3] w-full overflow-hidden bg-zinc-900 sm:aspect-video sm:rounded-2xl sm:border sm:border-zinc-800">
+      {(offer as any).images?.[0] ? (
+        <img src={(offer as any).images[0]} alt="" class="h-full w-full object-cover" />
       ) : (
-        <div class="w-full h-full flex items-center justify-center bg-zinc-900">
-          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="text-zinc-800"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+        <div class="grid h-full w-full place-items-center text-zinc-800">
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true">
+            <rect width="18" height="18" x="3" y="3" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21" />
+          </svg>
         </div>
       )}
-      
-      <div class="absolute top-4 left-4 px-3 py-1.5 bg-zinc-950/80 backdrop-blur-md rounded-lg text-xs font-bold text-white uppercase tracking-wider border border-white/10">
-        {offer.offerType}
-      </div>
-      
+      <span class="absolute left-3 top-3 rounded-md bg-zinc-950/80 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider backdrop-blur">
+        {isRequest ? "Request" : "Offer"}
+      </span>
       {isOwner && (
-        <a href={`/offers/${offer.id}/edit`} class="absolute top-4 right-4 px-4 py-2 bg-brand-500 hover:bg-brand-600 rounded-xl text-sm font-medium text-white transition-colors shadow-lg">
-          Edit Offer
+        <a href={`/offers/${offer.id}/edit`} class="absolute right-3 top-3 min-h-9 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white">
+          Edit
         </a>
       )}
     </div>
 
-    {/* Details Section */}
-    <div class="flex flex-col gap-6">
-      <div class="flex flex-col md:flex-row md:items-start justify-between gap-6">
-        <div class="flex-1">
-          <h1 class="text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight mb-4">
-            {offer.title}
-          </h1>
-          
-          <div class="flex items-center gap-3 mb-8">
-            <div class="w-12 h-12 rounded-full bg-zinc-800 overflow-hidden border border-zinc-700">
-              {creator?.profilePictureUrl ? (
-                <img src={creator.profilePictureUrl} alt={creator.name || creator.username} class="w-full h-full object-cover" />
-              ) : (
-                <div class="w-full h-full flex items-center justify-center text-zinc-500 font-medium text-lg uppercase">
-                  {(creator?.name || creator?.username || "A")[0]}
-                </div>
-              )}
-            </div>
-            <div>
-              <p class="text-white font-medium">{creator?.name || creator?.username || "Anonymous"}</p>
-              <p class="text-zinc-500 text-sm">Listed on {formatDate(offer.createdAt)}</p>
-            </div>
-          </div>
-        </div>
+    <div class="px-4 sm:px-0">
+      <h1 class="mt-5 text-2xl font-bold leading-tight tracking-tight sm:text-4xl">{offer.title}</h1>
+      <p class="mt-2 text-2xl font-bold sm:hidden">{formatPrice((offer as any).price)}</p>
 
-        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 md:min-w-[280px]">
-          <div class="text-zinc-400 text-sm font-medium uppercase tracking-wider mb-1">Price</div>
-          <div class="text-4xl font-bold text-white mb-6">
-            ${(offer.price / 100).toFixed(2)}
-          </div>
-          
-          {!isOwner && (
-            <RequestOfferButton 
-              client:load 
-              offerId={offer.id} 
-              offerTitle={offer.title} 
-              providerName={creator?.name?.split(" ")[0] || "Provider"} 
-              token={token} 
-            />
-          )}
+      <div class="mt-5 flex items-center gap-3 border-y border-zinc-800 py-4">
+        <div class="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full border border-zinc-700 bg-zinc-800 font-medium uppercase text-zinc-400">
+          {author?.profilePictureUrl
+            ? <img src={author.profilePictureUrl} alt="" class="h-full w-full object-cover" />
+            : initials(author?.name, author?.username)}
         </div>
+        <div class="min-w-0">
+          <p class="truncate font-medium">{author?.name || author?.username || "Anonymous"}</p>
+          <p class="text-sm text-zinc-500">Listed {formatDate((offer as any).createdAt)}</p>
+        </div>
+        <p class="ml-auto hidden text-3xl font-bold sm:block">{formatPrice((offer as any).price)}</p>
       </div>
 
-      <div class="prose prose-invert max-w-none">
-        <h2 class="text-xl font-bold text-white mb-4 border-b border-zinc-800 pb-2">About this offer</h2>
-        <div class="text-zinc-300 text-lg leading-relaxed whitespace-pre-wrap">
-          {offer.description || "No description provided."}
+      <h2 class="mt-6 text-sm font-semibold uppercase tracking-wider text-zinc-400">About this offer</h2>
+      <p class="mt-2 whitespace-pre-wrap leading-relaxed text-zinc-300">
+        {(offer as any).description || "No description provided."}
+      </p>
+
+      {!isOwner && session && (
+        <div class="mt-8 hidden sm:block">
+          <RequestOfferButton client:visible offerId={offer.id} offerTitle={offer.title} providerName={author?.name?.split(" ")[0] || "the provider"} />
         </div>
-      </div>
+      )}
     </div>
-  </div>
+  </article>
+
+  {!isOwner && (
+    <div class="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-zinc-950/95 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl sm:hidden">
+      {session ? (
+        <RequestOfferButton client:load offerId={offer.id} offerTitle={offer.title} providerName={author?.name?.split(" ")[0] || "the provider"} />
+      ) : (
+        <a href="/login" class="flex min-h-12 items-center justify-center rounded-xl bg-brand-500 text-base font-medium text-white">
+          Log in to request
+        </a>
+      )}
+    </div>
+  )}
 </Layout>

@@ -20,6 +20,7 @@
       "name": "@haven/api",
       "version": "1.0.50",
       "dependencies": {
+        "@elysia/cors": "2.0.0-beta.1",
         "@elysia/cron": "2.0.0-beta.1",
         "@elysia/graphql-yoga": "2.0.0-beta.1",
         "@elysia/openapi": "2.0.0-beta.4",
@@ -149,6 +150,8 @@
     "@cto.af/wtf8": ["@cto.af/wtf8@0.0.5", "", {}, "sha512-LfUFi+Vv4eDzj+XAtR89e3wwjXA/NZjUSwU5NhwbBrLecxPaBYFy3exCuc1j+D4UZeOVdqlsl8G7LmOt18V0tg=="],
 
     "@drizzle-team/brocli": ["@drizzle-team/brocli@0.10.2", "", {}, "sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w=="],
+
+    "@elysia/cors": ["@elysia/cors@2.0.0-beta.1", "", { "peerDependencies": { "elysia": ">= 2.0.0-beta.1" } }, "sha512-dHb21xI4Dm7wcf5+rWLiLSwJARLAewnOzRjRk0wRMfBiLGA1t/CXsblzKUtwYRFhQCteUEGdhEace+6PF0UUKw=="],
 
     "@elysia/cron": ["@elysia/cron@2.0.0-beta.1", "", { "dependencies": { "croner": "^6.0.3" }, "peerDependencies": { "elysia": ">= 2.0.0-beta.1" } }, "sha512-7n/EJeXuwZ+e45qoJgENCephqNureuM/TLksCxqKnubmixbJR8RT68TsPjczFv7MA1wLNMkeVdTx24xr/FMsjg=="],
 

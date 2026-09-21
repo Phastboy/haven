@@ -1,3 +1,4 @@
+import { cors } from "@elysia/cors";
 import openapi from "@elysia/openapi";
 import { Elysia } from "elysia";
 import { createUserPlugin } from "./user/presentation/user.plugin";
@@ -11,29 +12,26 @@ import { createAutoCompletePlugin } from "./scheduler/auto-complete.plugin";
 import { configController } from "./config.controller";
 
 export const app = new Elysia({ prefix: "/api" })
+  // CORS via the plugin. The hand-rolled version (a `.request` hook plus an
+  // `options("/*")` catch-all) silently collapsed the whole app type to `any`,
+  // which is what killed Eden's autocompletion in apps/web.
+  .use(cors({ origin: process.env["WEB_ORIGIN"] ?? true, credentials: true }))
   .use(openapi())
   .use(configController)
   .use(createUserPlugin())
   .use(authController)
   .use(createOfferPlugin())
-  .use(createDirectoryPlugin())
   .use(createOrderPlugin())
   .use(createFulfillmentPlugin())
-  .use(createAutoCompletePlugin())
-  .request(({ set }) => {
-    set.headers["Access-Control-Allow-Origin"] = "*";
-    set.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
-    set.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
-  })
-  .options("/*", ({ set }: { set: { headers: Record<string, string> } }) => {
-    set.headers["Access-Control-Allow-Origin"] = "*";
-    set.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
-    set.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
-    return new Response(null, { status: 204 });
-  })
   .get("/", () => "Hello Elysia");
 
 export type App = typeof app;
+
+// Registered after `App` is captured: both erase the inferred route map
+// (croner's `Cron` type is not nameable; the GraphQL plugin returns `any`),
+// and that erasure propagates to `treaty<App>` in apps/web.
+app.use(createDirectoryPlugin());
+app.use(createAutoCompletePlugin());
 const port = process.env["PORT"] ?? 3000;
 
 if (process.env.NODE_ENV !== "test") {

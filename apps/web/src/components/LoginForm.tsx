@@ -1,5 +1,5 @@
 import { createSignal } from "solid-js";
-import { client } from "../api";
+import { api } from "../lib/browser-api";
 
 export default function LoginForm() {
   const [email, setEmail] = createSignal("");
@@ -15,7 +15,7 @@ export default function LoginForm() {
     setError("");
 
     try {
-      const { error: apiError } = await client.auth["magic-link"].request.post({
+      const { error: apiError } = await api.auth["magic-link"].request.post({
         email: email(),
       });
 
@@ -77,10 +77,14 @@ export default function LoginForm() {
           id="email"
           type="email"
           required
+          inputmode="email"
+          autocomplete="email"
+          autocapitalize="none"
+          spellcheck={false}
           placeholder="you@example.com"
           value={email()}
           onInput={(e) => setEmail(e.currentTarget.value)}
-          class="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all text-white placeholder:text-zinc-600"
+          class="w-full px-4 py-3 text-base bg-zinc-950 border border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all text-white placeholder:text-zinc-600"
           disabled={loading()}
         />
       </div>

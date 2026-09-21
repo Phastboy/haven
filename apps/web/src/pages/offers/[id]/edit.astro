@@ -38,6 +38,6 @@ if (!currentUserData || (currentUserData as any).id !== offer.userId) {
 
 <Layout>
   <div class="flex-1 flex flex-col p-6">
-    <OfferForm client:load token={token} initialData={offer} isEdit={true} />
+    <OfferForm client:load initialData={offer} isEdit={true} />
   </div>
 </Layout>

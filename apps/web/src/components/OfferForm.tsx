@@ -1,5 +1,5 @@
 import { createSignal } from "solid-js";
-import { client } from "../api";
+import { api } from "../lib/browser-api";
 
 export default function OfferForm(props: { token: string; initialData?: any; isEdit?: boolean }) {
   const [title, setTitle] = createSignal(props.initialData?.title || "");
@@ -29,17 +29,9 @@ export default function OfferForm(props: { token: string; initialData?: any; isE
 
       let result;
       if (props.isEdit) {
-        result = await client.offers[props.initialData.id].patch(payload, {
-          headers: {
-            authorization: `Bearer ${props.token}`,
-          },
-        });
+        result = await api.offers[props.initialData.id].patch(payload);
       } else {
-        result = await client.offers.post(payload, {
-          headers: {
-            authorization: `Bearer ${props.token}`,
-          },
-        });
+        result = await api.offers.post(payload);
       }
 
       if (result.error) {
@@ -80,7 +72,7 @@ export default function OfferForm(props: { token: string; initialData?: any; isE
               value={title()}
               onInput={(e) => setTitle(e.currentTarget.value)}
               placeholder="E.g. Professional Web Design"
-              class="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all text-white placeholder:text-zinc-600"
+              class="w-full px-4 py-3 text-base bg-zinc-950 border border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all text-white placeholder:text-zinc-600"
               disabled={loading()}
             />
           </div>
@@ -95,7 +87,7 @@ export default function OfferForm(props: { token: string; initialData?: any; isE
               value={description()}
               onInput={(e) => setDescription(e.currentTarget.value)}
               placeholder="Describe what you are offering in detail..."
-              class="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all text-white placeholder:text-zinc-600 resize-none"
+              class="w-full px-4 py-3 text-base bg-zinc-950 border border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all text-white placeholder:text-zinc-600 resize-none"
               disabled={loading()}
             ></textarea>
           </div>
@@ -110,6 +102,7 @@ export default function OfferForm(props: { token: string; initialData?: any; isE
                 <input
                   id="price"
                   type="number"
+                  inputmode="decimal"
                   step="0.01"
                   min="0"
                   required
@@ -131,7 +124,7 @@ export default function OfferForm(props: { token: string; initialData?: any; isE
                 required
                 value={offerType()}
                 onChange={(e) => setOfferType(e.currentTarget.value)}
-                class="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all text-white appearance-none cursor-pointer"
+                class="w-full px-4 py-3 text-base bg-zinc-950 border border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all text-white appearance-none cursor-pointer"
                 disabled={loading()}
               >
                 <option value="PRODUCT">Product</option>
@@ -151,7 +144,7 @@ export default function OfferForm(props: { token: string; initialData?: any; isE
               value={imageUrl()}
               onInput={(e) => setImageUrl(e.currentTarget.value)}
               placeholder="https://example.com/image.jpg"
-              class="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all text-white placeholder:text-zinc-600"
+              class="w-full px-4 py-3 text-base bg-zinc-950 border border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all text-white placeholder:text-zinc-600"
               disabled={loading()}
             />
             <p class="text-xs text-zinc-500">

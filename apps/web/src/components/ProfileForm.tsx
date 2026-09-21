@@ -1,5 +1,5 @@
 import { createSignal } from "solid-js";
-import { client } from "../api";
+import { api } from "../lib/browser-api";
 
 export default function ProfileForm(props: { user: any; token: string }) {
   const [username, setUsername] = createSignal(props.user.username || "");
@@ -20,19 +20,12 @@ export default function ProfileForm(props: { user: any; token: string }) {
     setSuccess(false);
 
     try {
-      const { data, error: apiError } = await client.users.me.patch(
-        {
-          username: username() || null,
-          name: name() || null,
-          bio: bio() || null,
-          profilePictureUrl: profilePictureUrl() || null,
-        },
-        {
-          headers: {
-            authorization: `Bearer ${props.token}`,
-          },
-        },
-      );
+      const { data, error: apiError } = await api.users.me.patch({
+        username: username() || null,
+        name: name() || null,
+        bio: bio() || null,
+        profilePictureUrl: profilePictureUrl() || null,
+      });
 
       if (apiError) {
         setError((apiError.value as any)?.error || "Failed to update profile");
@@ -70,7 +63,7 @@ export default function ProfileForm(props: { user: any; token: string }) {
               type="email"
               disabled
               value={props.user.email}
-              class="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-500 cursor-not-allowed"
+              class="w-full px-4 py-3 text-base bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-500 cursor-not-allowed"
             />
           </div>
 
@@ -84,7 +77,7 @@ export default function ProfileForm(props: { user: any; token: string }) {
                 type="text"
                 value={username()}
                 onInput={(e) => setUsername(e.currentTarget.value)}
-                class="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all text-white placeholder:text-zinc-600"
+                class="w-full px-4 py-3 text-base bg-zinc-950 border border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all text-white placeholder:text-zinc-600"
                 disabled={loading()}
               />
             </div>
@@ -97,7 +90,7 @@ export default function ProfileForm(props: { user: any; token: string }) {
                 type="text"
                 value={name()}
                 onInput={(e) => setName(e.currentTarget.value)}
-                class="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all text-white placeholder:text-zinc-600"
+                class="w-full px-4 py-3 text-base bg-zinc-950 border border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all text-white placeholder:text-zinc-600"
                 disabled={loading()}
               />
             </div>
@@ -112,7 +105,7 @@ export default function ProfileForm(props: { user: any; token: string }) {
               rows="4"
               value={bio()}
               onInput={(e) => setBio(e.currentTarget.value)}
-              class="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all text-white placeholder:text-zinc-600 resize-none"
+              class="w-full px-4 py-3 text-base bg-zinc-950 border border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all text-white placeholder:text-zinc-600 resize-none"
               disabled={loading()}
             ></textarea>
           </div>
@@ -126,7 +119,7 @@ export default function ProfileForm(props: { user: any; token: string }) {
               type="url"
               value={profilePictureUrl()}
               onInput={(e) => setProfilePictureUrl(e.currentTarget.value)}
-              class="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all text-white placeholder:text-zinc-600"
+              class="w-full px-4 py-3 text-base bg-zinc-950 border border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all text-white placeholder:text-zinc-600"
               disabled={loading()}
             />
           </div>

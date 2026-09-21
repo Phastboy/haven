@@ -1,9 +1,9 @@
 import { createSignal, Show } from "solid-js";
-import { client } from "../api";
+import { api } from "../lib/browser-api";
+import { formatPrice, formatDate } from "../lib/format";
 
 interface MatchCardProps {
   order: any;
-  token: string;
   isReceived: boolean;
 }
 
@@ -17,14 +17,7 @@ export default function MatchCard(props: MatchCardProps) {
     setError("");
 
     try {
-      const result = await client.orders[props.order.id].status.patch(
-        { status: newStatus },
-        {
-          headers: {
-            authorization: `Bearer ${props.token}`,
-          },
-        },
-      );
+      const result = await api.orders[props.order.id].status.patch({ status: newStatus });
 
       if (result.error) {
         setError((result.error.value as any)?.error || `Failed to update status`);
@@ -126,7 +119,8 @@ export default function MatchCard(props: MatchCardProps) {
           >
             <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
           </svg>
-          <span class="font-medium">Amount:</span> ${(props.order.price / 100).toFixed(2)}
+          <span class="font-medium">Amount:</span>{" "}
+          {formatPrice(props.order.price ?? props.order.offer?.price)}
         </div>
       </div>
 

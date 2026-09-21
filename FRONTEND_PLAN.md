@@ -54,3 +54,18 @@ We use a "True Zero" iterative approach, verifying the build at every micro-step
   - **Login Form (`LoginForm.tsx`)**:  that hits `api.auth.magicLink.request.post()`.
   - **Login Page (`login.astro`)**: Hosts the interactive React Island.
   - **Verify Page (`verify.astro`)**: Server-only route that grabs the token from the URL (`?token=XYZ`), validates it if needed, sets the secure cookie via `Astro.cookies.set()`, and instantly redirects to `/`.
+
+---
+
+## Notes from the frontend pass (Stage 1–4 review)
+
+Fixed:
+- Session token no longer passed into islands (`src/pages/api/[...path].ts` proxy).
+- Mobile: real bottom tab bar, `initial-scale=1`, safe-area padding, 44px targets.
+- `getSession` replaces the per-page `auth.me` → `users.me` waterfall.
+- Eden types restored (see README: cron plugin annotation + CORS plugin).
+
+Not done yet:
+- Stage 5 (messaging) and Stage 6 (realtime) — no WebSocket work at all.
+- Directory still uses raw `fetch` for GraphQL, so those fields are unchecked.
+- Image upload (offers take a URL).

@@ -36,6 +36,6 @@ describe("RequestMagicLinkUseCase", () => {
     const sendCall = mockEmailService.send.mock.calls[0]!;
     expect(sendCall[0]).toBe("test@example.com");
     expect(sendCall[1]).toBe("Your Magic Login Link");
-    expect(sendCall[2]).toContain("http://localhost:4200/auth/magic-login");
+    expect(sendCall[2]).toContain("http://192.168.0.50:4200/auth/magic-login");
   });
 });

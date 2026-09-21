@@ -1,11 +1,10 @@
 import { createSignal, Show } from "solid-js";
-import { client } from "../api";
+import { api } from "../lib/browser-api";
 
 interface RequestOfferButtonProps {
   offerId: string;
   offerTitle: string;
   providerName: string;
-  token: string;
 }
 
 export default function RequestOfferButton(props: RequestOfferButtonProps) {
@@ -27,11 +26,7 @@ export default function RequestOfferButton(props: RequestOfferButtonProps) {
         message: message() || undefined,
       };
 
-      const result = await (client.orders as any).post(payload, {
-        headers: {
-          authorization: `Bearer ${props.token}`,
-        },
-      });
+      const result = await (api.orders as any).post(payload);
 
       if (result.error) {
         setError((result.error.value as any)?.error || "Failed to submit request");
@@ -123,7 +118,7 @@ export default function RequestOfferButton(props: RequestOfferButtonProps) {
                     value={message()}
                     onInput={(e) => setMessage(e.currentTarget.value)}
                     placeholder="Introduce yourself or add any specific requests..."
-                    class="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all text-white placeholder:text-zinc-600 resize-none"
+                    class="w-full px-4 py-3 text-base bg-zinc-950 border border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all text-white placeholder:text-zinc-600 resize-none"
                     disabled={loading()}
                   ></textarea>
                 </div>
@@ -133,7 +128,7 @@ export default function RequestOfferButton(props: RequestOfferButtonProps) {
                     type="button"
                     onClick={() => setIsOpen(false)}
                     disabled={loading()}
-                    class="flex-1 px-4 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50"
+                    class="flex-1 px-4 py-3 text-base bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50"
                   >
                     Cancel
                   </button>
