@@ -12,6 +12,13 @@ export class FulfillmentNotFoundError extends FulfillmentError {
   }
 }
 
+export class OrderNotFoundForFulfillmentError extends FulfillmentError {
+  constructor() {
+    super("Order not found.");
+    this.name = "OrderNotFoundForFulfillmentError";
+  }
+}
+
 export class UnauthorizedFulfillmentActionError extends FulfillmentError {
   constructor(
     message: string = "You are not authorized to perform this action on this fulfillment.",

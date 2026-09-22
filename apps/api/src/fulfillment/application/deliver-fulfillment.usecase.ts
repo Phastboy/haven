@@ -4,6 +4,7 @@ import { Fulfillment } from "../domain/fulfillment.schema";
 import {
   UnauthorizedFulfillmentActionError,
   InvalidFulfillmentStateTransitionError,
+  OrderNotFoundForFulfillmentError,
 } from "../domain/errors";
 import { randomUUID } from "crypto";
 
@@ -21,7 +22,7 @@ export class DeliverFulfillmentUseCase {
   }): Promise<Fulfillment> {
     const order = await this.orderFulfillmentService.getOrderDetails(params.orderId);
     if (!order) {
-      throw new Error("Order not found.");
+      throw new OrderNotFoundForFulfillmentError();
     }
 
     if (order.status !== "ACCEPTED") {

@@ -21,6 +21,7 @@ import {
   UnauthorizedFulfillmentActionError,
   InvalidFulfillmentStateTransitionError,
   RevisionNotApplicableError,
+  OrderNotFoundForFulfillmentError,
 } from "../domain/errors";
 
 export const createFulfillmentPlugin = () => {
@@ -35,6 +36,10 @@ export const createFulfillmentPlugin = () => {
 
   return new Elysia({ prefix: "/orders/:orderId/fulfillment", tags: ["Fulfillment"] })
     .error(FulfillmentNotFoundError, ({ set, error }) => {
+      set.status = 404;
+      return { error: error.message };
+    })
+    .error(OrderNotFoundForFulfillmentError, ({ set, error }) => {
       set.status = 404;
       return { error: error.message };
     })
@@ -89,9 +94,14 @@ export const createFulfillmentPlugin = () => {
         const authCheck = requireAuth({ session, set });
         if (authCheck) return authCheck;
 
+        if (!user) {
+          set.status = 404;
+          return { error: "User profile not found." };
+        }
+
         return deliverFulfillment.execute({
           orderId,
-          accountId: user!.id,
+          accountId: user.id,
           ...(body.message && { deliveryMessage: body.message }),
           autoReviewDays: 3, // Default auto-complete threshold
         });
@@ -101,9 +111,14 @@ export const createFulfillmentPlugin = () => {
       const authCheck = requireAuth({ session, set });
       if (authCheck) return authCheck;
 
+      if (!user) {
+        set.status = 404;
+        return { error: "User profile not found." };
+      }
+
       return acceptFulfillment.execute({
         orderId,
-        accountId: user!.id,
+        accountId: user.id,
       });
     })
     .post(
@@ -115,9 +130,14 @@ export const createFulfillmentPlugin = () => {
         const authCheck = requireAuth({ session, set });
         if (authCheck) return authCheck;
 
+        if (!user) {
+          set.status = 404;
+          return { error: "User profile not found." };
+        }
+
         return requestRevision.execute({
           orderId,
-          accountId: user!.id,
+          accountId: user.id,
           reason: body.reason,
         });
       },
