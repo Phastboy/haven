@@ -7,7 +7,7 @@ export class DeleteOfferUseCase {
   async execute(userId: string, offerId: string): Promise<void> {
     const existing = await this.repository.findById(offerId);
     if (!existing) {
-      throw new OfferNotFoundError(offerId);
+      throw new OfferNotFoundError();
     }
 
     if (existing.userId !== userId) {

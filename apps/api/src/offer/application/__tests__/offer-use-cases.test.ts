@@ -25,6 +25,7 @@ class MockOfferRepository implements IOfferRepository {
   create = mock(async () => mockOffer);
   findById = mock(async (id: string) => (id === "offer-1" ? mockOffer : null));
   findByUserId = mock(async () => [mockOffer]);
+  findActiveByUserId = mock(async () => [mockOffer]);
   update = mock(async () => mockOffer);
   delete = mock(async () => true);
 }
@@ -98,11 +99,25 @@ describe("Offer Use Cases", () => {
   });
 
   describe("ListUserOffersUseCase", () => {
-    it("should list offers for a user", async () => {
+    it("should call findByUserId when requester is the owner", async () => {
+      const useCase = new ListUserOffersUseCase(repository);
+      const result = await useCase.execute("user-1", "user-1");
+      expect(result).toEqual([mockOffer]);
+      expect(repository.findByUserId).toHaveBeenCalledWith("user-1");
+    });
+
+    it("should call findActiveByUserId for a third-party requester", async () => {
+      const useCase = new ListUserOffersUseCase(repository);
+      const result = await useCase.execute("user-1", "user-2");
+      expect(result).toEqual([mockOffer]);
+      expect(repository.findActiveByUserId).toHaveBeenCalledWith("user-1");
+    });
+
+    it("should call findActiveByUserId for an unauthenticated requester", async () => {
       const useCase = new ListUserOffersUseCase(repository);
       const result = await useCase.execute("user-1");
       expect(result).toEqual([mockOffer]);
-      expect(repository.findByUserId).toHaveBeenCalledWith("user-1");
+      expect(repository.findActiveByUserId).toHaveBeenCalledWith("user-1");
     });
   });
 });

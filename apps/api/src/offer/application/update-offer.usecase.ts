@@ -8,7 +8,7 @@ export class UpdateOfferUseCase {
   async execute(userId: string, offerId: string, data: UpdateOfferData): Promise<Offer> {
     const existing = await this.repository.findById(offerId);
     if (!existing) {
-      throw new OfferNotFoundError(offerId);
+      throw new OfferNotFoundError();
     }
 
     if (existing.userId !== userId) {
@@ -17,7 +17,7 @@ export class UpdateOfferUseCase {
 
     const updated = await this.repository.update(offerId, data);
     if (!updated) {
-      throw new OfferNotFoundError(offerId); // Should not happen, but for safety
+      throw new OfferNotFoundError(); // Should not happen, but for safety
     }
 
     return updated;

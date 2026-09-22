@@ -8,7 +8,7 @@ export class GetOfferUseCase {
   async execute(offerId: string): Promise<Offer> {
     const existing = await this.repository.findById(offerId);
     if (!existing) {
-      throw new OfferNotFoundError(offerId);
+      throw new OfferNotFoundError();
     }
     return existing;
   }

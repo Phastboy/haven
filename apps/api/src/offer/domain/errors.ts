@@ -6,8 +6,8 @@ export class OfferError extends Error {
 }
 
 export class OfferNotFoundError extends OfferError {
-  constructor(id: string) {
-    super(`Offer with ID ${id} not found`);
+  constructor() {
+    super("Offer not found.");
     this.name = "OfferNotFoundError";
   }
 }

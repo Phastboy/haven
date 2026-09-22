@@ -9,7 +9,7 @@ import {
 import { db } from "../../database/db";
 import { offers } from "../../database/schema";
 import { randomUUID } from "crypto";
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 
 export class SqlOfferRepository implements IOfferRepository {
   async create(userId: string, data: CreateOfferData): Promise<Offer> {
@@ -39,6 +39,14 @@ export class SqlOfferRepository implements IOfferRepository {
 
   async findByUserId(userId: string): Promise<Offer[]> {
     const records = await db.select().from(offers).where(eq(offers.userId, userId));
+    return records.map(this.mapToDomain);
+  }
+
+  async findActiveByUserId(userId: string): Promise<Offer[]> {
+    const records = await db
+      .select()
+      .from(offers)
+      .where(and(eq(offers.userId, userId), ne(offers.status, "ARCHIVED")));
     return records.map(this.mapToDomain);
   }
 

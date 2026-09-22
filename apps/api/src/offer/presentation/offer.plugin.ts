@@ -65,8 +65,13 @@ export const createOfferPlugin = () => {
       {
         params: OfferIdParam,
       },
-      async ({ params }) => {
-        return getOffer.execute(params.id);
+      async ({ params, user }) => {
+        const offer = await getOffer.execute(params.id);
+        // Archived offers are invisible to everyone except their owner.
+        if (offer.status === "ARCHIVED" && offer.userId !== user?.id) {
+          throw new OfferNotFoundError();
+        }
+        return offer;
       },
     )
     .get(
@@ -74,8 +79,9 @@ export const createOfferPlugin = () => {
       {
         params: UserIdParam,
       },
-      async ({ params }) => {
-        return listUserOffers.execute(params.userId);
+      async ({ params, user }) => {
+        // Pass the requester's user.id so the use-case can decide visibility.
+        return listUserOffers.execute(params.userId, user?.id);
       },
     )
     .post(
