@@ -53,6 +53,14 @@ eventBus.subscribe("message.created", (payload) => {
 });
 
 export const app = new Elysia({ prefix: "/api" })
+  // Global last-resort error handler — must be first so it catches everything.
+  // Individual plugin .error() handlers take precedence (Elysia resolves inner-first).
+  // This ensures no raw SQL, stack traces, or Postgres internals ever reach the client.
+  .error(({ error, set }) => {
+    console.error("[unhandled error]", error);
+    set.status = 500;
+    return { error: "Internal server error." };
+  })
   // CORS via the plugin. The hand-rolled version (a `.request` hook plus an
   // `options("/*")` catch-all) silently collapsed the whole app type to `any`,
   // which is what killed Eden's autocompletion in apps/web.
