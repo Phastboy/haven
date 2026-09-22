@@ -48,13 +48,16 @@ export function createUserPlugin() {
         throw e;
       }
     })
-    .error(ConflictError, ({ set, error }) => {
-      set.status = 409;
-      return { error: error.message };
-    })
-    .error(NotFoundError, ({ set, error }) => {
-      set.status = 404;
-      return { error: error.message };
+    .error(({ error, set }) => {
+      if (error instanceof ConflictError || error.name === "ConflictError") {
+        set.status = 409;
+        return { error: error.message };
+      }
+      if (error instanceof NotFoundError || error.name === "NotFoundError") {
+        set.status = 404;
+        return { error: error.message };
+      }
+      return;
     })
 
     .get("/", { detail: { summary: "List all profiles" } }, async () => listUsers.execute())

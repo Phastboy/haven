@@ -27,13 +27,19 @@ export const createOfferPlugin = () => {
   const getSessionUseCase = new GetSessionUseCase(new SessionRepository(), tokenService);
 
   return new Elysia({ prefix: "/offers", tags: ["Offers"] })
-    .error(OfferNotFoundError, ({ set, error }) => {
-      set.status = 404;
-      return { error: error.message };
-    })
-    .error(UnauthorizedOfferActionError, ({ set, error }) => {
-      set.status = 403;
-      return { error: error.message };
+    .error(({ error, set }) => {
+      if (error instanceof OfferNotFoundError || error.name === "OfferNotFoundError") {
+        set.status = 404;
+        return { error: error.message };
+      }
+      if (
+        error instanceof UnauthorizedOfferActionError ||
+        error.name === "UnauthorizedOfferActionError"
+      ) {
+        set.status = 403;
+        return { error: error.message };
+      }
+      return;
     })
     .derive(async ({ headers }: { headers: Record<string, string | undefined> }) => {
       const authHeader = headers["authorization"];

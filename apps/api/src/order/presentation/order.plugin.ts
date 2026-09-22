@@ -36,33 +36,42 @@ export const createOrderPlugin = (eventBus?: IEventBus) => {
   const getSessionUseCase = new GetSessionUseCase(new SessionRepository(), tokenService);
 
   return new Elysia({ prefix: "/orders", tags: ["Orders"] })
-    .error(OrderNotFoundError, ({ set, error }) => {
-      set.status = 404;
-      return { error: error.message };
-    })
-    .error(UnauthorizedOrderActionError, ({ set, error }) => {
-      set.status = 403;
-      return { error: error.message };
-    })
-    .error(InvalidOrderStateTransitionError, ({ set, error }) => {
-      set.status = 400;
-      return { error: error.message };
-    })
-    .error(SelfOrderNotAllowedError, ({ set, error }) => {
-      set.status = 400;
-      return { error: error.message };
-    })
-    .error(OfferNotActiveError, ({ set, error }) => {
-      set.status = 400;
-      return { error: error.message };
-    })
-    .error(OfferNotFoundError, ({ set, error }) => {
-      set.status = 404;
-      return { error: error.message };
-    })
-    .error(DuplicateOrderError, ({ set, error }) => {
-      set.status = 409;
-      return { error: error.message };
+    .error(({ error, set }) => {
+      if (error instanceof OrderNotFoundError || error.name === "OrderNotFoundError") {
+        set.status = 404;
+        return { error: error.message };
+      }
+      if (
+        error instanceof UnauthorizedOrderActionError ||
+        error.name === "UnauthorizedOrderActionError"
+      ) {
+        set.status = 403;
+        return { error: error.message };
+      }
+      if (
+        error instanceof InvalidOrderStateTransitionError ||
+        error.name === "InvalidOrderStateTransitionError"
+      ) {
+        set.status = 400;
+        return { error: error.message };
+      }
+      if (error instanceof SelfOrderNotAllowedError || error.name === "SelfOrderNotAllowedError") {
+        set.status = 400;
+        return { error: error.message };
+      }
+      if (error instanceof OfferNotActiveError || error.name === "OfferNotActiveError") {
+        set.status = 400;
+        return { error: error.message };
+      }
+      if (error instanceof OfferNotFoundError || error.name === "OfferNotFoundError") {
+        set.status = 404;
+        return { error: error.message };
+      }
+      if (error instanceof DuplicateOrderError || error.name === "DuplicateOrderError") {
+        set.status = 409;
+        return { error: error.message };
+      }
+      return;
     })
     .derive(async ({ headers }: { headers: Record<string, string | undefined> }) => {
       const authHeader = headers["authorization"];

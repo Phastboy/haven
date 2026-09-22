@@ -57,7 +57,7 @@ describe("Session Middleware E2E", () => {
     const res = await authController.handle(req);
     expect(res.status).toBe(401);
     const data = (await res.json()) as { token?: string; [key: string]: unknown };
-    expect(data).toMatchObject({ message: "Unauthorized access" });
+    expect(data).toMatchObject({ error: "Unauthorized access" });
   });
 
   it("should return 401 Unauthorized if the token is invalid", async () => {
@@ -67,7 +67,7 @@ describe("Session Middleware E2E", () => {
     const res = await authController.handle(req);
     expect(res.status).toBe(401);
     const data = (await res.json()) as { token?: string; [key: string]: unknown };
-    expect(data).toMatchObject({ message: "Unauthorized access" });
+    expect(data).toMatchObject({ error: "Unauthorized access" });
   });
 
   it("should return 401 Unauthorized if the token is expired", async () => {
@@ -77,6 +77,6 @@ describe("Session Middleware E2E", () => {
     const res = await authController.handle(req);
     expect(res.status).toBe(401);
     const data = (await res.json()) as { token?: string; [key: string]: unknown };
-    expect(data).toMatchObject({ message: "Unauthorized access" });
+    expect(data).toMatchObject({ error: "Unauthorized access" });
   });
 });

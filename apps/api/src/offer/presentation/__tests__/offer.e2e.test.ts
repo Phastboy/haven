@@ -188,13 +188,21 @@ describe("Offer Plugin E2E", () => {
     const res = await app.handle(req);
     expect(res.status).toBe(204);
 
-    // Verify it was marked as ARCHIVED
+    // Archived offer is invisible to unauthenticated callers — expect 404
     const getReq = new Request(`http://localhost/api/offers/${offerId1}`, {
       method: "GET",
     });
     const getRes = await app.handle(getReq);
-    expect(getRes.status).toBe(200);
-    const getBody = (await getRes.json()) as {
+    expect(getRes.status).toBe(404);
+
+    // But the owner can still see it (it's a soft-delete / archive)
+    const ownerGetReq = new Request(`http://localhost/api/offers/${offerId1}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${rawToken1}` },
+    });
+    const ownerGetRes = await app.handle(ownerGetReq);
+    expect(ownerGetRes.status).toBe(200);
+    const getBody = (await ownerGetRes.json()) as {
       id?: string;
       title?: string;
       status?: string;

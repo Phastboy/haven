@@ -35,25 +35,40 @@ export const createFulfillmentPlugin = () => {
   const getSessionUseCase = new GetSessionUseCase(new SessionRepository(), tokenService);
 
   return new Elysia({ prefix: "/orders/:orderId/fulfillment", tags: ["Fulfillment"] })
-    .error(FulfillmentNotFoundError, ({ set, error }) => {
-      set.status = 404;
-      return { error: error.message };
-    })
-    .error(OrderNotFoundForFulfillmentError, ({ set, error }) => {
-      set.status = 404;
-      return { error: error.message };
-    })
-    .error(UnauthorizedFulfillmentActionError, ({ set, error }) => {
-      set.status = 403;
-      return { error: error.message };
-    })
-    .error(InvalidFulfillmentStateTransitionError, ({ set, error }) => {
-      set.status = 400;
-      return { error: error.message };
-    })
-    .error(RevisionNotApplicableError, ({ set, error }) => {
-      set.status = 400;
-      return { error: error.message };
+    .error(({ error, set }) => {
+      if (error instanceof FulfillmentNotFoundError || error.name === "FulfillmentNotFoundError") {
+        set.status = 404;
+        return { error: error.message };
+      }
+      if (
+        error instanceof OrderNotFoundForFulfillmentError ||
+        error.name === "OrderNotFoundForFulfillmentError"
+      ) {
+        set.status = 404;
+        return { error: error.message };
+      }
+      if (
+        error instanceof UnauthorizedFulfillmentActionError ||
+        error.name === "UnauthorizedFulfillmentActionError"
+      ) {
+        set.status = 403;
+        return { error: error.message };
+      }
+      if (
+        error instanceof InvalidFulfillmentStateTransitionError ||
+        error.name === "InvalidFulfillmentStateTransitionError"
+      ) {
+        set.status = 400;
+        return { error: error.message };
+      }
+      if (
+        error instanceof RevisionNotApplicableError ||
+        error.name === "RevisionNotApplicableError"
+      ) {
+        set.status = 400;
+        return { error: error.message };
+      }
+      return;
     })
     .derive(async ({ headers }: { headers: Record<string, string | undefined> }) => {
       const authHeader = headers["authorization"];

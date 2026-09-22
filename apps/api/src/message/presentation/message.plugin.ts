@@ -32,21 +32,27 @@ export const createMessagePlugin = (eventBus: IEventBus) => {
   const getSessionUseCase = new GetSessionUseCase(new SessionRepository(), tokenService);
 
   return new Elysia({ prefix: "/messages", tags: ["Messages"] })
-    .error(ThreadNotFoundError, ({ set, error }) => {
-      set.status = 404;
-      return { error: error.message };
-    })
-    .error(UnauthorizedThreadAccessError, ({ set, error }) => {
-      set.status = 403;
-      return { error: error.message };
-    })
-    .error(ParticipantNotFoundError, ({ set, error }) => {
-      set.status = 404;
-      return { error: error.message };
-    })
-    .error(SelfThreadError, ({ set, error }) => {
-      set.status = 400;
-      return { error: error.message };
+    .error(({ error, set }) => {
+      if (error instanceof ThreadNotFoundError || error.name === "ThreadNotFoundError") {
+        set.status = 404;
+        return { error: error.message };
+      }
+      if (
+        error instanceof UnauthorizedThreadAccessError ||
+        error.name === "UnauthorizedThreadAccessError"
+      ) {
+        set.status = 403;
+        return { error: error.message };
+      }
+      if (error instanceof ParticipantNotFoundError || error.name === "ParticipantNotFoundError") {
+        set.status = 404;
+        return { error: error.message };
+      }
+      if (error instanceof SelfThreadError || error.name === "SelfThreadError") {
+        set.status = 400;
+        return { error: error.message };
+      }
+      return;
     })
     .derive(async ({ headers }: { headers: Record<string, string | undefined> }) => {
       const authHeader = headers["authorization"];
