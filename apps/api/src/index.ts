@@ -72,6 +72,17 @@ export const app = new Elysia({ prefix: "/api" })
   // This ensures no raw SQL, stack traces, or Postgres internals ever reach the
   // client for errors that no plugin handler claimed.
   .error(({ error, set }) => {
+    // Elysia raises its own NotFound for unmatched routes — pass it through cleanly.
+    const asAny = error as unknown as Record<string, unknown>;
+    if (
+      asAny["code"] === "not-found" ||
+      (error instanceof Error &&
+        "status" in error &&
+        (error as unknown as { status: number }).status === 404)
+    ) {
+      set.status = 404;
+      return { error: "Not found." };
+    }
     console.error("[unhandled error]", error);
     set.status = 500;
     return { error: "Internal server error." };
