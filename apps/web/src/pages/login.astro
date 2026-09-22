@@ -9,7 +9,13 @@ if (errorParam === "invalid_token") {
   errorMessage = "The magic link is invalid or has expired. Please request a new one.";
 } else if (errorParam === "missing_token") {
   errorMessage = "No token provided. Please request a magic link.";
+} else if (errorParam === "google_failed") {
+  errorMessage = "Google sign-in failed. Please try again.";
 }
+
+// PUBLIC_GOOGLE_CLIENT_ID is exposed by Vite at build/SSR time.
+// It's safe to pass to the client — Google OAuth client IDs are public by design.
+const googleClientId = import.meta.env.PUBLIC_GOOGLE_CLIENT_ID ?? "";
 ---
 
 <Layout>
@@ -21,7 +27,7 @@ if (errorParam === "invalid_token") {
             H
           </div>
           <h1 class="text-3xl font-bold text-white mb-2 tracking-tight">Welcome to Haven</h1>
-          <p class="text-zinc-400 text-sm">Sign in with a magic link. No passwords needed.</p>
+          <p class="text-zinc-400 text-sm">Sign in with a magic link or Google.</p>
         </div>
 
         {errorMessage && (
@@ -30,10 +36,10 @@ if (errorParam === "invalid_token") {
           </div>
         )}
 
-        <LoginForm client:load />
+        <LoginForm googleClientId={googleClientId} client:load />
       </div>
     </div>
-    
+
     <p class="mt-8 text-center text-xs text-zinc-500 max-w-sm">
       By signing in, you agree to our Terms of Service and Privacy Policy.
     </p>

@@ -9,7 +9,6 @@ import { createOrderPlugin } from "./order/presentation/order.plugin";
 import { createFulfillmentPlugin } from "./fulfillment/presentation/fulfillment.plugin";
 import { createAutoCompletePlugin } from "./scheduler/auto-complete.plugin";
 
-import { configController } from "./config.controller";
 import { createMessagePlugin } from "./message/presentation/message.plugin";
 import { createWsPlugin } from "./shared/presentation/ws.plugin";
 import { NodeEventEmitterAdapter } from "./shared/infrastructure/node-event-bus.adapter";
@@ -58,7 +57,6 @@ export const app = new Elysia({ prefix: "/api" })
   // which is what killed Eden's autocompletion in apps/web.
   .use(cors({ origin: process.env["WEB_ORIGIN"] ?? true, credentials: true }))
   .use(openapi())
-  .use(configController)
   .use(createUserPlugin())
   .use(authController)
   .use(createOfferPlugin())

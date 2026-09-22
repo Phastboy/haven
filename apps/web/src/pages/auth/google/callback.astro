@@ -1,0 +1,49 @@
+---
+/**
+ * /auth/google/callback
+ *
+ * Receives the Google idToken from the LoginForm (posted as a regular HTML form),
+ * exchanges it for a Haven session token, sets the httpOnly cookie, then redirects.
+ *
+ * Using a form POST instead of fetch keeps the session cookie flow identical to
+ * the magic-link path: the cookie is set server-side and never exposed to JS.
+ */
+import { client } from "../../api";
+
+if (Astro.request.method !== "POST") {
+  return Astro.redirect("/login");
+}
+
+let idToken: string | null = null;
+
+try {
+  const formData = await Astro.request.formData();
+  idToken = formData.get("idToken") as string | null;
+} catch {
+  return Astro.redirect("/login?error=google_failed");
+}
+
+if (!idToken) {
+  return Astro.redirect("/login?error=google_failed");
+}
+
+try {
+  const { data, error } = await client.auth.google.login.post({ idToken });
+
+  if (error || !data) {
+    return Astro.redirect("/login?error=google_failed");
+  }
+
+  Astro.cookies.set("token", data.token, {
+    path: "/",
+    httpOnly: true,
+    secure: import.meta.env.PROD,
+    sameSite: "lax",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  });
+
+  return Astro.redirect("/");
+} catch {
+  return Astro.redirect("/login?error=google_failed");
+}
+---
