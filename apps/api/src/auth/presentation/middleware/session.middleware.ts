@@ -5,7 +5,7 @@ export const requireAuth = (context: {
 }) => {
   if (!context.session) {
     context.set.status = 401;
-    return { message: "Unauthorized access" };
+    return { error: "Unauthorized access" };
   }
   return;
 };
