@@ -33,9 +33,23 @@ export class InvalidOrderStateTransitionError extends OrderError {
   }
 }
 
+export class OfferNotFoundError extends OrderError {
+  constructor() {
+    super("Offer not found.");
+    this.name = "OfferNotFoundError";
+  }
+}
+
 export class OfferNotActiveError extends OrderError {
   constructor() {
     super("The requested offer is no longer active.");
     this.name = "OfferNotActiveError";
+  }
+}
+
+export class DuplicateOrderError extends OrderError {
+  constructor() {
+    super("You already have a pending order for this offer.");
+    this.name = "DuplicateOrderError";
   }
 }
