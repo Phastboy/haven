@@ -87,7 +87,12 @@ export const createOfferPlugin = () => {
         const authCheck = requireAuth({ session, set });
         if (authCheck) return authCheck;
 
-        const offer = await createOffer.execute(user!.id, body);
+        if (!user) {
+          set.status = 404;
+          return { error: "User profile not found." };
+        }
+
+        const offer = await createOffer.execute(user.id, body);
         set.status = 201;
         return offer;
       },

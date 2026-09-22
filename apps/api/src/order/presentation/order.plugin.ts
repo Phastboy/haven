@@ -84,9 +84,14 @@ export const createOrderPlugin = (eventBus?: IEventBus) => {
         const authCheck = requireAuth({ session, set });
         if (authCheck) return authCheck;
 
+        if (!user) {
+          set.status = 404;
+          return { error: "User profile not found." };
+        }
+
         const order = await createOrderUseCase.execute({
           offerId: body.offerId,
-          requesterId: user!.id,
+          requesterId: user.id,
           quantity: body.quantity || 1,
           ...(body.message && { message: body.message }),
         });
@@ -98,13 +103,23 @@ export const createOrderPlugin = (eventBus?: IEventBus) => {
       const authCheck = requireAuth({ session, set });
       if (authCheck) return authCheck;
 
-      return getOrdersUseCase.getRequesterOrders(user!.id);
+      if (!user) {
+        set.status = 404;
+        return { error: "User profile not found." };
+      }
+
+      return getOrdersUseCase.getRequesterOrders(user.id);
     })
     .get("/received", async ({ user, session, set }) => {
       const authCheck = requireAuth({ session, set });
       if (authCheck) return authCheck;
 
-      return getOrdersUseCase.getReceivedOrders(user!.id);
+      if (!user) {
+        set.status = 404;
+        return { error: "User profile not found." };
+      }
+
+      return getOrdersUseCase.getReceivedOrders(user.id);
     })
     .patch(
       "/:id/status",
