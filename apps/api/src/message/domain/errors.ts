@@ -18,3 +18,17 @@ export class MessageNotFoundError extends Error {
     this.name = "MessageNotFoundError";
   }
 }
+
+export class ParticipantNotFoundError extends Error {
+  constructor() {
+    super("Participant not found.");
+    this.name = "ParticipantNotFoundError";
+  }
+}
+
+export class SelfThreadError extends Error {
+  constructor() {
+    super("Cannot create a thread with yourself.");
+    this.name = "SelfThreadError";
+  }
+}

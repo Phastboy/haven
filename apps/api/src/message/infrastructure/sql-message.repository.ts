@@ -3,6 +3,16 @@ import { threads, messages, ThreadRecord, MessageRecord } from "../../database/s
 import { eq, or, and, desc, asc } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
+/** Narrows an unknown catch value to a DB error object with a code field. */
+function isDbError(e: unknown): e is { code: string } {
+  return (
+    typeof e === "object" &&
+    e !== null &&
+    "code" in e &&
+    typeof (e as Record<string, unknown>)["code"] === "string"
+  );
+}
+
 export interface ThreadWithParticipants extends ThreadRecord {
   participant1: { id: string; name: string | null; profilePictureUrl: string | null };
   participant2: { id: string; name: string | null; profilePictureUrl: string | null };
@@ -29,15 +39,23 @@ export class SqlMessageRepository {
   }
 
   async createThread(participant1Id: string, participant2Id: string): Promise<ThreadRecord> {
-    const [thread] = await db
-      .insert(threads)
-      .values({
-        id: randomUUID(),
-        participant1Id,
-        participant2Id,
-      })
-      .returning();
-    return thread!;
+    try {
+      const [thread] = await db
+        .insert(threads)
+        .values({
+          id: randomUUID(),
+          participant1Id,
+          participant2Id,
+        })
+        .returning();
+      return thread!;
+    } catch (e: unknown) {
+      if (isDbError(e) && e.code === "23503") {
+        const { ParticipantNotFoundError } = await import("../domain/errors");
+        throw new ParticipantNotFoundError();
+      }
+      throw e;
+    }
   }
 
   async getUserThreads(userId: string): Promise<ThreadWithParticipants[]> {

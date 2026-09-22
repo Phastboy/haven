@@ -13,7 +13,12 @@ import { db } from "../../database/db";
 import { users } from "../../database/schema";
 import { eq } from "drizzle-orm";
 import { createThreadBodySchema, sendMessageBodySchema } from "../domain/message.schema";
-import { ThreadNotFoundError, UnauthorizedThreadAccessError } from "../domain/errors";
+import {
+  ThreadNotFoundError,
+  UnauthorizedThreadAccessError,
+  ParticipantNotFoundError,
+  SelfThreadError,
+} from "../domain/errors";
 
 import { IEventBus } from "../../shared/domain/event-bus.interface";
 
@@ -33,6 +38,14 @@ export const createMessagePlugin = (eventBus: IEventBus) => {
     })
     .error(UnauthorizedThreadAccessError, ({ set, error }) => {
       set.status = 403;
+      return { error: error.message };
+    })
+    .error(ParticipantNotFoundError, ({ set, error }) => {
+      set.status = 404;
+      return { error: error.message };
+    })
+    .error(SelfThreadError, ({ set, error }) => {
+      set.status = 400;
       return { error: error.message };
     })
     .derive(async ({ headers }: { headers: Record<string, string | undefined> }) => {
@@ -60,7 +73,12 @@ export const createMessagePlugin = (eventBus: IEventBus) => {
       const authCheck = requireAuth({ session, set });
       if (authCheck) return authCheck;
 
-      return getThreadsUseCase.execute(user!.id);
+      if (!user) {
+        set.status = 404;
+        return { error: "User profile not found." };
+      }
+
+      return getThreadsUseCase.execute(user.id);
     })
     .post(
       "/threads",
@@ -71,7 +89,12 @@ export const createMessagePlugin = (eventBus: IEventBus) => {
         const authCheck = requireAuth({ session, set });
         if (authCheck) return authCheck;
 
-        const thread = await createThreadUseCase.execute(user!.id, body.participantId);
+        if (!user) {
+          set.status = 404;
+          return { error: "User profile not found." };
+        }
+
+        const thread = await createThreadUseCase.execute(user.id, body.participantId);
         set.status = 201;
         return thread;
       },
@@ -80,7 +103,12 @@ export const createMessagePlugin = (eventBus: IEventBus) => {
       const authCheck = requireAuth({ session, set });
       if (authCheck) return authCheck;
 
-      return getMessagesUseCase.execute(params.threadId, user!.id);
+      if (!user) {
+        set.status = 404;
+        return { error: "User profile not found." };
+      }
+
+      return getMessagesUseCase.execute(params.threadId, user.id);
     })
     .post(
       "/threads/:threadId",
@@ -91,7 +119,12 @@ export const createMessagePlugin = (eventBus: IEventBus) => {
         const authCheck = requireAuth({ session, set });
         if (authCheck) return authCheck;
 
-        const message = await sendMessageUseCase.execute(params.threadId, user!.id, body.content);
+        if (!user) {
+          set.status = 404;
+          return { error: "User profile not found." };
+        }
+
+        const message = await sendMessageUseCase.execute(params.threadId, user.id, body.content);
         set.status = 201;
         return message;
       },
