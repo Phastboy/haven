@@ -19,6 +19,8 @@ import {
   InvalidOrderStateTransitionError,
   SelfOrderNotAllowedError,
   OfferNotActiveError,
+  OfferNotFoundError,
+  DuplicateOrderError,
 } from "../domain/errors";
 
 import { IEventBus } from "../../shared/domain/event-bus.interface";
@@ -52,6 +54,14 @@ export const createOrderPlugin = (eventBus?: IEventBus) => {
     })
     .error(OfferNotActiveError, ({ set, error }) => {
       set.status = 400;
+      return { error: error.message };
+    })
+    .error(OfferNotFoundError, ({ set, error }) => {
+      set.status = 404;
+      return { error: error.message };
+    })
+    .error(DuplicateOrderError, ({ set, error }) => {
+      set.status = 409;
       return { error: error.message };
     })
     .derive(async ({ headers }: { headers: Record<string, string | undefined> }) => {

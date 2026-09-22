@@ -6,6 +6,7 @@ import {
   InvalidOrderStateTransitionError,
   SelfOrderNotAllowedError,
   OfferNotActiveError,
+  DuplicateOrderError,
 } from "../../domain/errors";
 import { Order } from "../../domain/order.schema";
 
@@ -21,6 +22,7 @@ describe("Order Use Cases", () => {
         getOrdersByRequester: mock(),
         getOrdersByOfferOwner: mock(),
         updateOrderStatus: mock(),
+        findPendingByRequesterAndOffer: mock(async () => null),
       };
       const mockOfferService = {
         getOfferPriceAndOwnerAndStatus: mock(async () => ({
@@ -77,6 +79,35 @@ describe("Order Use Cases", () => {
         useCase.execute({ offerId: "offer-1", requesterId: "req-1", quantity: 1 }),
       ).rejects.toThrow(SelfOrderNotAllowedError);
     });
+
+    it("should throw DuplicateOrderError if a PENDING order already exists", async () => {
+      const existingOrder = {
+        id: "existing-order",
+        offerId: "offer-1",
+        requesterId: "req-1",
+        status: "PENDING",
+      } as Order;
+      const mockOrderRepo = {
+        createOrder: mock(),
+        getOrderById: mock(),
+        getOrdersByRequester: mock(),
+        getOrdersByOfferOwner: mock(),
+        updateOrderStatus: mock(),
+        findPendingByRequesterAndOffer: mock(async () => existingOrder),
+      };
+      const mockOfferService = {
+        getOfferPriceAndOwnerAndStatus: mock(async () => ({
+          price: 1000,
+          ownerId: "owner-123",
+          status: "ACTIVE",
+        })),
+      };
+
+      const useCase = new CreateOrderUseCase(mockOrderRepo, mockOfferService);
+      await expect(
+        useCase.execute({ offerId: "offer-1", requesterId: "req-1", quantity: 1 }),
+      ).rejects.toThrow(DuplicateOrderError);
+    });
   });
 
   describe("UpdateOrderStatusUseCase", () => {
@@ -93,6 +124,7 @@ describe("Order Use Cases", () => {
         createOrder: mock(),
         getOrdersByRequester: mock(),
         getOrdersByOfferOwner: mock(),
+        findPendingByRequesterAndOffer: mock(),
       };
       const mockOfferOwnerService = {
         getOfferOwnerId: mock(async () => "owner-123"),
@@ -118,6 +150,7 @@ describe("Order Use Cases", () => {
         createOrder: mock(),
         getOrdersByRequester: mock(),
         getOrdersByOfferOwner: mock(),
+        findPendingByRequesterAndOffer: mock(),
       };
       const mockOfferOwnerService = {
         getOfferOwnerId: mock(async () => "owner-123"),
@@ -142,6 +175,7 @@ describe("Order Use Cases", () => {
         createOrder: mock(),
         getOrdersByRequester: mock(),
         getOrdersByOfferOwner: mock(),
+        findPendingByRequesterAndOffer: mock(),
       };
       const mockOfferOwnerService = {
         getOfferOwnerId: mock(async () => "owner-123"),
@@ -167,6 +201,7 @@ describe("Order Use Cases", () => {
         createOrder: mock(),
         getOrdersByRequester: mock(),
         getOrdersByOfferOwner: mock(),
+        findPendingByRequesterAndOffer: mock(),
       };
       const mockOfferOwnerService = {
         getOfferOwnerId: mock(async () => "owner-123"),

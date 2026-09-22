@@ -1,7 +1,12 @@
 import { randomUUID } from "crypto";
 import { IOrderRepository } from "../domain/order.repository";
 import { Order } from "../domain/order.schema";
-import { SelfOrderNotAllowedError, OfferNotActiveError } from "../domain/errors";
+import {
+  SelfOrderNotAllowedError,
+  OfferNotActiveError,
+  OfferNotFoundError,
+  DuplicateOrderError,
+} from "../domain/errors";
 
 export interface IOfferService {
   getOfferPriceAndOwnerAndStatus(
@@ -24,7 +29,7 @@ export class CreateOrderUseCase {
     const offer = await this.offerService.getOfferPriceAndOwnerAndStatus(params.offerId);
 
     if (!offer) {
-      throw new Error("Offer not found.");
+      throw new OfferNotFoundError();
     }
 
     if (offer.status !== "ACTIVE") {
@@ -33,6 +38,14 @@ export class CreateOrderUseCase {
 
     if (offer.ownerId === params.requesterId) {
       throw new SelfOrderNotAllowedError();
+    }
+
+    const existing = await this.orderRepository.findPendingByRequesterAndOffer(
+      params.requesterId,
+      params.offerId,
+    );
+    if (existing) {
+      throw new DuplicateOrderError();
     }
 
     const orderId = randomUUID();

@@ -17,4 +17,6 @@ export interface IOrderRepository {
   getOrdersByOfferOwner(ownerId: string): Promise<Order[]>;
 
   updateOrderStatus(id: string, status: OrderStatus): Promise<Order>;
+
+  findPendingByRequesterAndOffer(requesterId: string, offerId: string): Promise<Order | null>;
 }

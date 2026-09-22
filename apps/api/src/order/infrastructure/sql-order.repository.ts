@@ -1,8 +1,9 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "../../database/db";
 import { orders, offers } from "../../database/schema";
 import { IOrderRepository } from "../domain/order.repository";
 import { Order, OrderStatus } from "../domain/order.schema";
+import { InvalidOrderStateTransitionError } from "../domain/errors";
 
 export class SqlOrderRepository implements IOrderRepository {
   async createOrder(data: {
@@ -55,11 +56,44 @@ export class SqlOrderRepository implements IOrderRepository {
   }
 
   async updateOrderStatus(id: string, status: OrderStatus): Promise<Order> {
+    // Atomic conditional update: only succeeds if the order is currently PENDING.
+    // This prevents a race condition where two concurrent ACCEPT requests both
+    // read status=PENDING before either write completes.
     const [order] = await db
       .update(orders)
       .set({ status, updatedAt: new Date() })
-      .where(eq(orders.id, id))
+      .where(and(eq(orders.id, id), eq(orders.status, "PENDING")))
       .returning();
-    return order!;
+
+    if (!order) {
+      // Race was lost — fetch the current state and surface a proper domain error.
+      const current = await this.getOrderById(id);
+      if (!current) {
+        // Should not happen (use-case already validated the order exists), but be safe.
+        throw new InvalidOrderStateTransitionError("Order not found.");
+      }
+      throw new InvalidOrderStateTransitionError(
+        `Cannot transition from ${current.status} to ${status}: order is no longer PENDING.`,
+      );
+    }
+
+    return order;
+  }
+
+  async findPendingByRequesterAndOffer(
+    requesterId: string,
+    offerId: string,
+  ): Promise<Order | null> {
+    const [order] = await db
+      .select()
+      .from(orders)
+      .where(
+        and(
+          eq(orders.requesterId, requesterId),
+          eq(orders.offerId, offerId),
+          eq(orders.status, "PENDING"),
+        ),
+      );
+    return order || null;
   }
 }
