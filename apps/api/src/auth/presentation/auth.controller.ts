@@ -127,11 +127,18 @@ export const authController = new Elysia({
     {
       beforeHandle: [requireAuth],
     },
-    async ({ headers }: { headers: Record<string, string | undefined> }) => {
+    async ({
+      headers,
+      set,
+    }: {
+      headers: Record<string, string | undefined>;
+      set: { status?: number | string };
+    }) => {
       const authHeader = headers["authorization"]!;
       const token = authHeader.substring(7);
       await logoutUC.execute(token);
-      return { success: true };
+      set.status = 204;
+      return;
     },
   )
 
