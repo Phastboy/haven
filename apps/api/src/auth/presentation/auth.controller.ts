@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
 import { RequestMagicLinkDTO, VerifyMagicLinkDTO, LoginWithGoogleDTO } from "./dtos/auth.dtos";
-import { authErrorPlugin } from "./auth.error";
 import { requireAuth } from "./middleware/session.middleware";
 import { UnauthorizedError } from "../domain/errors";
 
@@ -68,7 +67,6 @@ export const authController = new Elysia({
   name: "auth-controller",
   tags: ["Auth"],
 })
-  .use(authErrorPlugin)
   .derive(async ({ headers }: { headers: Record<string, string | undefined> }) => {
     const authHeader = headers["authorization"];
     if (!authHeader || !authHeader.startsWith("Bearer ")) {

@@ -13,12 +13,6 @@ import { db } from "../../database/db";
 import { users } from "../../database/schema";
 import { eq } from "drizzle-orm";
 import { createThreadBodySchema, sendMessageBodySchema } from "../domain/message.schema";
-import {
-  ThreadNotFoundError,
-  UnauthorizedThreadAccessError,
-  ParticipantNotFoundError,
-  SelfThreadError,
-} from "../domain/errors";
 
 import type { IEventBus } from "../../shared/domain/event-bus.interface";
 
@@ -32,28 +26,6 @@ export const createMessagePlugin = (eventBus: IEventBus) => {
   const getSessionUseCase = new GetSessionUseCase(new SessionRepository(), tokenService);
 
   return new Elysia({ prefix: "/messages", tags: ["Messages"] })
-    .error(({ error, set }) => {
-      if (error instanceof ThreadNotFoundError || error.name === "ThreadNotFoundError") {
-        set.status = 404;
-        return { error: error.message };
-      }
-      if (
-        error instanceof UnauthorizedThreadAccessError ||
-        error.name === "UnauthorizedThreadAccessError"
-      ) {
-        set.status = 403;
-        return { error: error.message };
-      }
-      if (error instanceof ParticipantNotFoundError || error.name === "ParticipantNotFoundError") {
-        set.status = 404;
-        return { error: error.message };
-      }
-      if (error instanceof SelfThreadError || error.name === "SelfThreadError") {
-        set.status = 400;
-        return { error: error.message };
-      }
-      return;
-    })
     .derive(async ({ headers }: { headers: Record<string, string | undefined> }) => {
       const authHeader = headers["authorization"];
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -76,8 +48,7 @@ export const createMessagePlugin = (eventBus: IEventBus) => {
       }
     })
     .get("/threads", async ({ user, session, set }) => {
-      const authCheck = requireAuth({ session, set });
-      if (authCheck) return authCheck;
+      requireAuth({ session, set });
 
       if (!user) {
         set.status = 404;
@@ -92,8 +63,7 @@ export const createMessagePlugin = (eventBus: IEventBus) => {
         body: createThreadBodySchema,
       },
       async ({ body, user, session, set }) => {
-        const authCheck = requireAuth({ session, set });
-        if (authCheck) return authCheck;
+        requireAuth({ session, set });
 
         if (!user) {
           set.status = 404;
@@ -106,8 +76,7 @@ export const createMessagePlugin = (eventBus: IEventBus) => {
       },
     )
     .get("/threads/:threadId", async ({ params, user, session, set }) => {
-      const authCheck = requireAuth({ session, set });
-      if (authCheck) return authCheck;
+      requireAuth({ session, set });
 
       if (!user) {
         set.status = 404;
@@ -122,8 +91,7 @@ export const createMessagePlugin = (eventBus: IEventBus) => {
         body: sendMessageBodySchema,
       },
       async ({ params, body, user, session, set }) => {
-        const authCheck = requireAuth({ session, set });
-        if (authCheck) return authCheck;
+        requireAuth({ session, set });
 
         if (!user) {
           set.status = 404;

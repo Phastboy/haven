@@ -1,5 +1,5 @@
 import { Elysia } from "elysia";
-import { NotFoundError, ConflictError } from "../../shared/errors";
+import { NotFoundError } from "../../shared/errors";
 import { GetUserUseCase } from "../application/get-user.usecase";
 import { ListUsersUseCase } from "../application/list-users.usecase";
 import { UpdateUserUseCase } from "../application/update-user.usecase";
@@ -47,17 +47,6 @@ export function createUserPlugin() {
         }
         throw e;
       }
-    })
-    .error(({ error, set }) => {
-      if (error instanceof ConflictError || error.name === "ConflictError") {
-        set.status = 409;
-        return { error: error.message };
-      }
-      if (error instanceof NotFoundError || error.name === "NotFoundError") {
-        set.status = 404;
-        return { error: error.message };
-      }
-      return;
     })
 
     .get("/", { detail: { summary: "List all profiles" } }, async () => listUsers.execute())
