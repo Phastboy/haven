@@ -1,4 +1,5 @@
 import { expect, test, describe, mock } from "bun:test";
+import type { ISessionRepository } from "../../domain/ports/ISessionRepository";
 import { LogoutUseCase } from "../use-cases/logout.use-case";
 import { TokenService } from "../../infrastructure/services/token.service";
 
@@ -12,10 +13,7 @@ describe("LogoutUseCase", () => {
 
   const tokenService = new TokenService();
 
-  const useCase = new LogoutUseCase(
-    mockSessionRepo as unknown as import("../../domain/ports/ISessionRepository").ISessionRepository,
-    tokenService,
-  );
+  const useCase = new LogoutUseCase(mockSessionRepo as unknown as ISessionRepository, tokenService);
 
   test("should delete session by hashed token", async () => {
     mockSessionRepo.deleteByToken.mockResolvedValueOnce(undefined);

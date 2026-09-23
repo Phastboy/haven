@@ -1,3 +1,8 @@
+import type { IAccountRepository } from "../../domain/ports/IAccountRepository";
+import type { IOAuthCredentialRepository } from "../../domain/ports/IOAuthCredentialRepository";
+import type { ISessionRepository } from "../../domain/ports/ISessionRepository";
+import type { IGoogleTokenService } from "../../domain/ports/IGoogleTokenService";
+import type { IProfileCreator } from "../../domain/ports/IProfileCreator";
 import { expect, test, describe, mock, beforeEach } from "bun:test";
 import { LoginWithGoogleUseCase } from "../use-cases/login-with-google.use-case";
 import { TokenService } from "../../infrastructure/services/token.service";
@@ -34,12 +39,12 @@ describe("LoginWithGoogleUseCase", () => {
   const tokenService = new TokenService();
 
   const useCase = new LoginWithGoogleUseCase(
-    mockAccountRepo as unknown as import("../../domain/ports/IAccountRepository").IAccountRepository,
-    mockOauthRepo as unknown as import("../../domain/ports/IOAuthCredentialRepository").IOAuthCredentialRepository,
-    mockSessionRepo as unknown as import("../../domain/ports/ISessionRepository").ISessionRepository,
-    mockGoogleService as unknown as import("../../domain/ports/IGoogleTokenService").IGoogleTokenService,
+    mockAccountRepo as unknown as IAccountRepository,
+    mockOauthRepo as unknown as IOAuthCredentialRepository,
+    mockSessionRepo as unknown as ISessionRepository,
+    mockGoogleService as unknown as IGoogleTokenService,
     tokenService,
-    mockProfileCreator as unknown as import("../../domain/ports/IProfileCreator").IProfileCreator,
+    mockProfileCreator as unknown as IProfileCreator,
   );
 
   beforeEach(() => {

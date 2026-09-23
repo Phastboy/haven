@@ -1,4 +1,5 @@
 import { describe, expect, it, mock } from "bun:test";
+import type { TokenService } from "../../infrastructure/services/token.service";
 import { GetSessionUseCase } from "../use-cases/get-session.use-case";
 import type { ISessionRepository } from "../../domain/ports/ISessionRepository";
 import { UnauthorizedError } from "../../domain/errors";
@@ -8,7 +9,7 @@ describe("GetSessionUseCase", () => {
   const mockTokenService = {
     hash: mock((token: string) => `hashed_${token}`),
     generate: mock(() => "raw_token"),
-  } as unknown as import("../../infrastructure/services/token.service").TokenService;
+  } as unknown as TokenService;
 
   it("should successfully return an active session", async () => {
     const mockSession: SessionWithAccount = {
@@ -34,8 +35,8 @@ describe("GetSessionUseCase", () => {
     } as ISessionRepository;
 
     const useCase = new GetSessionUseCase(
-      mockRepo as unknown as import("../../domain/ports/ISessionRepository").ISessionRepository,
-      mockTokenService as unknown as import("../../infrastructure/services/token.service").TokenService,
+      mockRepo as unknown as ISessionRepository,
+      mockTokenService as unknown as TokenService,
     );
 
     const result = await useCase.execute("raw_token");
@@ -48,11 +49,11 @@ describe("GetSessionUseCase", () => {
   it("should throw UnauthorizedError if session does not exist", async () => {
     const mockRepo = {
       findByToken: mock(async () => null),
-    } as unknown as import("../../domain/ports/ISessionRepository").ISessionRepository;
+    } as unknown as ISessionRepository;
 
     const useCase = new GetSessionUseCase(
-      mockRepo as unknown as import("../../domain/ports/ISessionRepository").ISessionRepository,
-      mockTokenService as unknown as import("../../infrastructure/services/token.service").TokenService,
+      mockRepo as unknown as ISessionRepository,
+      mockTokenService as unknown as TokenService,
     );
 
     expect(useCase.execute("bad_token")).rejects.toThrow(UnauthorizedError);
@@ -77,11 +78,11 @@ describe("GetSessionUseCase", () => {
     const mockRepo = {
       findByToken: mock(async () => mockSession),
       deleteByToken: mock(async () => {}),
-    } as unknown as import("../../domain/ports/ISessionRepository").ISessionRepository;
+    } as unknown as ISessionRepository;
 
     const useCase = new GetSessionUseCase(
-      mockRepo as unknown as import("../../domain/ports/ISessionRepository").ISessionRepository,
-      mockTokenService as unknown as import("../../infrastructure/services/token.service").TokenService,
+      mockRepo as unknown as ISessionRepository,
+      mockTokenService as unknown as TokenService,
     );
 
     expect(useCase.execute("expired_token")).rejects.toThrow(

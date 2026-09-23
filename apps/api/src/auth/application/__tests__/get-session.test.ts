@@ -1,4 +1,5 @@
 import { expect, test, describe, mock } from "bun:test";
+import type { ISessionRepository } from "../../domain/ports/ISessionRepository";
 import { GetSessionUseCase } from "../use-cases/get-session.use-case";
 import { TokenService } from "../../infrastructure/services/token.service";
 import { UnauthorizedError } from "../../domain/errors";
@@ -14,7 +15,7 @@ describe("GetSessionUseCase", () => {
   const tokenService = new TokenService();
 
   const useCase = new GetSessionUseCase(
-    mockSessionRepo as unknown as import("../../domain/ports/ISessionRepository").ISessionRepository,
+    mockSessionRepo as unknown as ISessionRepository,
     tokenService,
   );
 

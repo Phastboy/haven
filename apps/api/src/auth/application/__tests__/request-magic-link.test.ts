@@ -1,4 +1,6 @@
 import { expect, test, describe, mock } from "bun:test";
+import type { IMagicLinkRepository } from "../../domain/ports/IMagicLinkRepository";
+import type { IEmailService } from "../../domain/ports/IEmailService";
 import { RequestMagicLinkUseCase } from "../use-cases/request-magic-link.use-case";
 import { TokenService } from "../../infrastructure/services/token.service";
 
@@ -16,8 +18,8 @@ describe("RequestMagicLinkUseCase", () => {
   const tokenService = new TokenService();
 
   const useCase = new RequestMagicLinkUseCase(
-    mockMagicLinkRepo as unknown as import("../../domain/ports/IMagicLinkRepository").IMagicLinkRepository,
-    mockEmailService as unknown as import("../../domain/ports/IEmailService").IEmailService,
+    mockMagicLinkRepo as unknown as IMagicLinkRepository,
+    mockEmailService as unknown as IEmailService,
     tokenService,
   );
 
