@@ -8,7 +8,7 @@
  * Using a form POST instead of fetch keeps the session cookie flow identical to
  * the magic-link path: the cookie is set server-side and never exposed to JS.
  */
-import { client } from "../../api";
+import { client } from "../../../api";
 
 if (Astro.request.method !== "POST") {
   return Astro.redirect("/login");
