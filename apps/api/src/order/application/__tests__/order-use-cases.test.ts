@@ -1,3 +1,4 @@
+import type { IOrderRepository } from "../../domain/order.repository";
 import { describe, it, expect, mock } from "bun:test";
 import { CreateOrderUseCase } from "../create-order.usecase";
 import { UpdateOrderStatusUseCase } from "../update-order-status.usecase";
@@ -47,8 +48,7 @@ describe("Order Use Cases", () => {
     });
 
     it("should throw OfferNotActiveError if offer is not ACTIVE", async () => {
-      const mockOrderRepo =
-        {} as unknown as import("../../domain/order.repository").IOrderRepository;
+      const mockOrderRepo = {} as unknown as IOrderRepository;
       const mockOfferService = {
         getOfferPriceAndOwnerAndStatus: mock(async () => ({
           price: 1000,
@@ -64,8 +64,7 @@ describe("Order Use Cases", () => {
     });
 
     it("should throw SelfOrderNotAllowedError if requester is owner", async () => {
-      const mockOrderRepo =
-        {} as unknown as import("../../domain/order.repository").IOrderRepository;
+      const mockOrderRepo = {} as unknown as IOrderRepository;
       const mockOfferService = {
         getOfferPriceAndOwnerAndStatus: mock(async () => ({
           price: 1000,
@@ -117,10 +116,7 @@ describe("Order Use Cases", () => {
           async () =>
             ({ id: "o1", offerId: "offer-1", requesterId: "req-1", status: "PENDING" }) as Order,
         ),
-        updateOrderStatus: mock(
-          async (id, status) =>
-            ({ id, status }) as unknown as import("../../domain/order.schema").Order,
-        ),
+        updateOrderStatus: mock(async (id, status) => ({ id, status }) as unknown as Order),
         createOrder: mock(),
         getOrdersByRequester: mock(),
         getOrdersByOfferOwner: mock(),
@@ -168,10 +164,7 @@ describe("Order Use Cases", () => {
           async () =>
             ({ id: "o1", offerId: "offer-1", requesterId: "req-1", status: "PENDING" }) as Order,
         ),
-        updateOrderStatus: mock(
-          async (id, status) =>
-            ({ id, status }) as unknown as import("../../domain/order.schema").Order,
-        ),
+        updateOrderStatus: mock(async (id, status) => ({ id, status }) as unknown as Order),
         createOrder: mock(),
         getOrdersByRequester: mock(),
         getOrdersByOfferOwner: mock(),

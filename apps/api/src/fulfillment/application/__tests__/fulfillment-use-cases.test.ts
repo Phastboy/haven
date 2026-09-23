@@ -1,3 +1,5 @@
+import type { Mock } from "bun:test";
+import type { IFulfillmentRepository } from "../../domain/fulfillment.repository";
 import { describe, it, expect, mock } from "bun:test";
 import { DeliverFulfillmentUseCase } from "../deliver-fulfillment.usecase";
 import { AcceptFulfillmentUseCase } from "../accept-fulfillment.usecase";
@@ -12,8 +14,7 @@ import {
 describe("Fulfillment Use Cases", () => {
   describe("DeliverFulfillmentUseCase", () => {
     it("should throw if order is not ACCEPTED", async () => {
-      const repo =
-        {} as unknown as import("../../domain/fulfillment.repository").IFulfillmentRepository;
+      const repo = {} as unknown as IFulfillmentRepository;
       const service = {
         getOrderDetails: mock(async () => ({
           id: "o1",
@@ -31,8 +32,7 @@ describe("Fulfillment Use Cases", () => {
     });
 
     it("should throw if user is not the owner", async () => {
-      const repo =
-        {} as unknown as import("../../domain/fulfillment.repository").IFulfillmentRepository;
+      const repo = {} as unknown as IFulfillmentRepository;
       const service = {
         getOrderDetails: mock(async () => ({
           id: "o1",
@@ -57,7 +57,7 @@ describe("Fulfillment Use Cases", () => {
           status: "PENDING",
         })),
         updateFulfillmentStatus: mock(async (id: string, status: string) => ({ id, status })),
-      } as unknown as import("../../domain/fulfillment.repository").IFulfillmentRepository;
+      } as unknown as IFulfillmentRepository;
       const service = {
         getOrderDetails: mock(async () => ({
           id: "o1",
@@ -76,8 +76,7 @@ describe("Fulfillment Use Cases", () => {
       });
       expect(result.status).toBe("DELIVERED");
       expect(
-        (repo.updateFulfillmentStatus as import("bun:test").Mock<(...args: unknown[]) => unknown>)
-          .mock.calls.length,
+        (repo.updateFulfillmentStatus as Mock<(...args: unknown[]) => unknown>).mock.calls.length,
       ).toBe(1);
     });
   });
@@ -91,7 +90,7 @@ describe("Fulfillment Use Cases", () => {
           orderId: "o1",
         })),
         updateFulfillmentStatus: mock(async (id: string, status: string) => ({ id, status })),
-      } as unknown as import("../../domain/fulfillment.repository").IFulfillmentRepository;
+      } as unknown as IFulfillmentRepository;
       const service = {
         getOrderDetails: mock(async () => ({
           id: "o1",
@@ -109,8 +108,7 @@ describe("Fulfillment Use Cases", () => {
     });
 
     it("should throw if non-requester attempts to accept", async () => {
-      const repo =
-        {} as unknown as import("../../domain/fulfillment.repository").IFulfillmentRepository;
+      const repo = {} as unknown as IFulfillmentRepository;
       const service = {
         getOrderDetails: mock(async () => ({
           id: "o1",
@@ -130,8 +128,7 @@ describe("Fulfillment Use Cases", () => {
 
   describe("RequestRevisionUseCase", () => {
     it("should throw RevisionNotApplicableError if not a SERVICE", async () => {
-      const repo =
-        {} as unknown as import("../../domain/fulfillment.repository").IFulfillmentRepository;
+      const repo = {} as unknown as IFulfillmentRepository;
       const service = {
         getOrderDetails: mock(async () => ({
           id: "o1",
@@ -157,7 +154,7 @@ describe("Fulfillment Use Cases", () => {
           { id: "f2", orderId: "o2", status: "DELIVERED" },
         ]),
         updateFulfillmentStatus: mock(async () => {}),
-      } as unknown as import("../../domain/fulfillment.repository").IFulfillmentRepository;
+      } as unknown as IFulfillmentRepository;
       const service = {
         getOrderDetails: mock(),
         getOfferTypeAndOwner: mock(),
@@ -168,8 +165,7 @@ describe("Fulfillment Use Cases", () => {
 
       expect(count).toBe(2);
       expect(
-        (repo.updateFulfillmentStatus as import("bun:test").Mock<(...args: unknown[]) => unknown>)
-          .mock.calls.length,
+        (repo.updateFulfillmentStatus as Mock<(...args: unknown[]) => unknown>).mock.calls.length,
       ).toBe(2);
       expect(service.updateOrderStatus.mock.calls.length).toBe(2);
     });

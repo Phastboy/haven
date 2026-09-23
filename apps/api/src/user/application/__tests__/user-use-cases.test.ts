@@ -1,3 +1,4 @@
+import type { IUserRepository } from "../../domain/user.repository";
 import { expect, test, describe, mock, beforeEach } from "bun:test";
 import { CreateUserUseCase } from "../create-user.usecase";
 import { UpdateUserUseCase } from "../update-user.usecase";
@@ -26,9 +27,7 @@ describe("User Use Cases", () => {
   });
 
   describe("CreateUserUseCase", () => {
-    const useCase = new CreateUserUseCase(
-      mockUserRepo as unknown as import("../../domain/user.repository").IUserRepository,
-    );
+    const useCase = new CreateUserUseCase(mockUserRepo as unknown as IUserRepository);
 
     test("should throw ConflictError if profile already exists for accountId", async () => {
       mockUserRepo.findByAccountId.mockResolvedValueOnce({ id: "existing-id" });
@@ -46,9 +45,7 @@ describe("User Use Cases", () => {
   });
 
   describe("UpdateUserUseCase", () => {
-    const useCase = new UpdateUserUseCase(
-      mockUserRepo as unknown as import("../../domain/user.repository").IUserRepository,
-    );
+    const useCase = new UpdateUserUseCase(mockUserRepo as unknown as IUserRepository);
 
     test("should throw NotFoundError if user not found by accountId", async () => {
       mockUserRepo.findByAccountId.mockResolvedValueOnce(null);
@@ -66,9 +63,7 @@ describe("User Use Cases", () => {
   });
 
   describe("GetUserUseCase", () => {
-    const useCase = new GetUserUseCase(
-      mockUserRepo as unknown as import("../../domain/user.repository").IUserRepository,
-    );
+    const useCase = new GetUserUseCase(mockUserRepo as unknown as IUserRepository);
 
     test("should throw NotFoundError if user not found by id", async () => {
       mockUserRepo.findById.mockResolvedValueOnce(null);
@@ -83,9 +78,7 @@ describe("User Use Cases", () => {
   });
 
   describe("ListUsersUseCase", () => {
-    const useCase = new ListUsersUseCase(
-      mockUserRepo as unknown as import("../../domain/user.repository").IUserRepository,
-    );
+    const useCase = new ListUsersUseCase(mockUserRepo as unknown as IUserRepository);
 
     test("should return array of users", async () => {
       mockUserRepo.findAll.mockResolvedValueOnce([{ id: "user-1" }]);
@@ -95,9 +88,7 @@ describe("User Use Cases", () => {
   });
 
   describe("DeleteUserUseCase", () => {
-    const useCase = new DeleteUserUseCase(
-      mockUserRepo as unknown as import("../../domain/user.repository").IUserRepository,
-    );
+    const useCase = new DeleteUserUseCase(mockUserRepo as unknown as IUserRepository);
 
     test("should delete user by id", async () => {
       mockUserRepo.findById.mockResolvedValueOnce({ id: "user-1" });
