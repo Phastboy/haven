@@ -1,4 +1,4 @@
-import { createSignal, Show } from "solid-js";
+import { createSignal, createEffect, Show } from "solid-js";
 import { api } from "../lib/browser-api";
 import { formatPrice, formatDate } from "../lib/format";
 
@@ -11,6 +11,15 @@ export default function MatchCard(props: MatchCardProps) {
   const [status, setStatus] = createSignal(props.order.status);
   const [loading, setLoading] = createSignal(false);
   const [error, setError] = createSignal("");
+  const [fulfillment, setFulfillment] = createSignal<any>(null);
+
+  createEffect(() => {
+    if (status() === "ACCEPTED" || status() === "COMPLETED") {
+      api.orders[props.order.id].fulfillment.get().then((res) => {
+        if (res.data) setFulfillment(res.data);
+      });
+    }
+  });
 
   const updateStatus = async (newStatus: "ACCEPTED" | "REJECTED" | "CANCELLED" | "COMPLETED") => {
     setLoading(true);
@@ -31,7 +40,70 @@ export default function MatchCard(props: MatchCardProps) {
     }
   };
 
+  const deliverFulfillment = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const result = await api.orders[props.order.id].fulfillment.deliver.post({
+        message: "Delivered via Haven.",
+      });
+      if (result.error) {
+        setError((result.error.value as any)?.error || "Failed to deliver");
+      } else {
+        setFulfillment(result.data);
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const acceptFulfillment = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const result = await api.orders[props.order.id].fulfillment.accept.post();
+      if (result.error) {
+        setError((result.error.value as any)?.error || "Failed to accept");
+      } else {
+        setStatus("COMPLETED");
+        setFulfillment({ ...fulfillment(), status: "COMPLETED" });
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const requestRevision = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const result = await api.orders[props.order.id].fulfillment["request-revision"].post({
+        reason: "Please revise.",
+      });
+      if (result.error) {
+        setError((result.error.value as any)?.error || "Failed to request revision");
+      } else {
+        setFulfillment(result.data);
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const statusColor = (s: string) => {
+    const fStatus = fulfillment()?.status;
+    if (s === "COMPLETED" || fStatus === "COMPLETED")
+      return "bg-brand-500/10 text-brand-500 border-brand-500/20";
+    if (fStatus === "DELIVERED") return "bg-purple-500/10 text-purple-500 border-purple-500/20";
+    if (fStatus === "REVISION_REQUESTED")
+      return "bg-orange-500/10 text-orange-500 border-orange-500/20";
+
     switch (s) {
       case "PENDING":
         return "bg-yellow-500/10 text-yellow-500 border-yellow-500/20";
@@ -40,11 +112,17 @@ export default function MatchCard(props: MatchCardProps) {
       case "REJECTED":
       case "CANCELLED":
         return "bg-red-500/10 text-red-500 border-red-500/20";
-      case "COMPLETED":
-        return "bg-brand-500/10 text-brand-500 border-brand-500/20";
       default:
         return "bg-zinc-800 text-zinc-400 border-zinc-700";
     }
+  };
+
+  const displayStatus = () => {
+    const fStatus = fulfillment()?.status;
+    if (status() === "COMPLETED" || fStatus === "COMPLETED") return "COMPLETED";
+    if (fStatus === "DELIVERED") return "DELIVERED";
+    if (fStatus === "REVISION_REQUESTED") return "REVISING";
+    return status();
   };
 
   return (
@@ -89,7 +167,7 @@ export default function MatchCard(props: MatchCardProps) {
         </div>
 
         <span class={`px-3 py-1 rounded-full text-xs font-bold border ${statusColor(status())}`}>
-          {status()}
+          {displayStatus()}
         </span>
       </div>
 
@@ -163,8 +241,52 @@ export default function MatchCard(props: MatchCardProps) {
         </div>
       </Show>
 
-      {/* Messages button for ACCEPTED orders */}
-      <Show when={status() === "ACCEPTED"}>
+      {/* Provider Actions for Accepted Orders */}
+      <Show when={props.isReceived && status() === "ACCEPTED"}>
+        <div class="mt-6 pt-4 border-t border-zinc-800">
+          {(!fulfillment() ||
+            fulfillment().status === "PENDING" ||
+            fulfillment().status === "REVISION_REQUESTED") && (
+            <button
+              onClick={deliverFulfillment}
+              disabled={loading()}
+              class="w-full px-4 py-2.5 bg-purple-500 hover:bg-purple-600 text-white rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
+            >
+              Deliver Order
+            </button>
+          )}
+          {fulfillment()?.status === "DELIVERED" && (
+            <p class="text-sm text-zinc-400 text-center font-medium">
+              Waiting for requester to accept delivery.
+            </p>
+          )}
+        </div>
+      </Show>
+
+      {/* Requester Actions for Delivered Orders */}
+      <Show
+        when={!props.isReceived && status() === "ACCEPTED" && fulfillment()?.status === "DELIVERED"}
+      >
+        <div class="mt-6 flex gap-3 pt-4 border-t border-zinc-800">
+          <button
+            onClick={requestRevision}
+            disabled={loading()}
+            class="flex-1 px-4 py-2.5 bg-zinc-800 hover:bg-orange-500/20 hover:text-orange-400 text-zinc-300 rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
+          >
+            Request Revision
+          </button>
+          <button
+            onClick={acceptFulfillment}
+            disabled={loading()}
+            class="flex-1 px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
+          >
+            Accept Delivery
+          </button>
+        </div>
+      </Show>
+
+      {/* Messages button for ACCEPTED / COMPLETED orders */}
+      <Show when={status() === "ACCEPTED" || status() === "COMPLETED"}>
         <div class="mt-6 pt-4 border-t border-zinc-800">
           <a
             href="/messages"
