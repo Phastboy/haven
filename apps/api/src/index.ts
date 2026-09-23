@@ -1,5 +1,5 @@
 import { cors } from "@elysia/cors";
-import openapi from "@elysia/openapi";
+import openapi, { fromTypes } from "@elysia/openapi";
 import { Elysia } from "elysia";
 import { createUserPlugin } from "./user/presentation/user.plugin";
 import { authController } from "./auth";
@@ -56,7 +56,11 @@ export const app = new Elysia({ prefix: "/api" })
   // `options("/*")` catch-all) silently collapsed the whole app type to `any`,
   // which is what killed Eden's autocompletion in apps/web.
   .use(cors({ origin: process.env["WEB_ORIGIN"] ?? true, credentials: true }))
-  .use(openapi())
+  .use(
+    openapi({
+      references: fromTypes(),
+    }),
+  )
   .use(createUserPlugin())
   .use(authController)
   .use(createOfferPlugin())
