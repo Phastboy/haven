@@ -1,0 +1,766 @@
+commit dc40ff5bf63fef78f7a0f934e9153d62bbf9c705
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-22 09:30:56 +0100
+
+    fix(api): silence NotFound spam in global error handler — return clean 404 JSON for unmatched routes
+
+commit 3b37bdff4ab3d9018292fb15f4c305653dbeb121
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-22 09:28:15 +0100
+
+    chore: add issues document
+
+commit 871c0ee9ee0f512e4a8de86db009232a27545c57
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-22 09:20:47 +0100
+
+    fix(tests): fix 10 failing tests — correct error handler dispatch order and update stale assertions
+
+commit 25c8daf65c2c1d7885ed65ca8dc141245bb47b95
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-22 08:59:13 +0100
+
+    feat(config): gate /config with Ed25519 request-signature — only signed web client can fetch config
+
+commit 545eb7ac834193a2f35a27bd6c10191908d2468a
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-22 08:55:28 +0100
+
+    feat(offer): gate ARCHIVED visibility — owner-only access via findActiveByUserId
+
+commit b620bfeecd213fa7e48c631db73c0bcad8dfc98e
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-22 08:40:50 +0100
+
+    fix(message): handle unknown participant and self-threads in message plugin
+
+commit 95cea43726e1fe4874f32e3c34a1ee488dceafcf
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-22 04:02:13 +0100
+
+    fix(fulfillment): throw typed error when order not found in DeliverFulfillmentUseCase
+
+commit 4bebe1f5916e43ae3a0723fcb7010a78ed8bb28c
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-22 03:58:33 +0100
+
+    fix(order): fix 500 errors and race conditions in order domain
+
+commit b4df1be7a9a78ea8c8001aaf04b58f936a8b8d2a
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-22 03:46:05 +0100
+
+    feat(order): add OfferNotFoundError and DuplicateOrderError domain errors
+
+commit da1f46b8948a9b48e179ba37c8cfa91deaf471cc
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-22 03:45:47 +0100
+
+    fix(offer,order): guard missing user profile in routes — prevent crash on partial signup
+
+commit 0608a529c7af2bc2543974022aa432a427e0865b
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-22 03:44:35 +0100
+
+    feat(api): add global error hook — sanitise unhandled 500 response bodies
+
+commit 0174582125d3855f1d96cfb88d441a5632888b96
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-22 03:44:20 +0100
+
+    fix(auth): logout returns 204 No Content
+
+commit 7ab18291d6b8863c29041d0fce55d832a34920cb
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-22 03:44:08 +0100
+
+    fix(auth): return { error } from authErrorPlugin handlers
+
+commit 811f987b888468dfa75c7fe497e169e57b7ab954
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-22 03:42:13 +0100
+
+    fix(tsconfig): exclude audit/ scripts from typecheck
+    
+    fix(auth): return { error } from requireAuth middleware
+
+commit 94384bb50c320227c227c136a98580b264b6396a
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-21 11:42:15 +0100
+
+    fix: fix typepo in layout
+
+commit cd7485c54fa94ca82b60cf90f2282e41593417fe
+Merge: fb87738 b237bb2
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-21 11:24:23 +0100
+
+    Merge branch 'feat/stage-6-realtime' into feat/platform
+
+commit fb877387835bacd5ba188c38a56aea9247df05ad
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-21 11:04:38 +0100
+
+    fix(cors): resolve api cross-origin and update frontend auth
+
+commit b237bb20ee4bc0dc88d7f25ba5c96056cb5cd30b
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-20 17:52:00 +0100
+
+    feat(api): implement stage 6 backend websockets
+
+commit cea0ea819d28e994fb98e542235f109df029597c
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-20 17:37:17 +0100
+
+    feat: complete stage 5 messaging (backend and frontend)
+
+commit 0010870cc890e49abcb871e46d3a84af02a9f35d
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-20 17:04:12 +0100
+
+    feat(web): update navigation to include Dashboard dropdown
+
+commit b9075c255eb59087b19f811090df1058b818d27b
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-20 17:04:01 +0100
+
+    feat(web): add matches dashboard and wire up RequestOfferButton
+
+commit a1acee474db1dcd90631fcb0e147b7862da8edb9
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-20 17:03:49 +0100
+
+    feat(web): create MatchCard and RequestOfferButton components
+
+commit 040735c18ef52874c6620761bbe15b57df72363c
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-20 16:54:01 +0100
+
+    feat(web): implement offers dashboard and management pages
+
+commit 5fefcba42206616eae328a4b3d9be2d8960414dc
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-20 16:53:49 +0100
+
+    feat(web): create reusable OfferForm component for creating and editing offers
+
+commit 8a450b8dd83bdd5e136271b15d42644a31671943
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-20 16:53:38 +0100
+
+    feat(web): add My Offers link to navigation for authenticated users
+
+commit 237fbb55f1e84ed351d6fa60b4e594c51fedc936
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-20 16:53:28 +0100
+
+    feat(api): add GET /users/me endpoint to fetch current user profile
+
+commit cc17f3f16afd2086f92b643f7bbd231c8c3d9cd3
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-20 16:16:09 +0100
+
+    feat(web): implement community directory with fluid grid and SSR GraphQL
+
+commit 2664c189759ffda8d6a7c8a3786872e85347d2e5
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-20 16:15:59 +0100
+
+    feat(web): implement profile management page and form
+
+commit 094649eb184a8cde3537308b10cf20c6a7ca42cf
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-20 16:15:49 +0100
+
+    feat(web): add directory link to navigation
+
+commit 7fe2144a950fccc273cd2a963476365fb02fcdd6
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-20 16:15:38 +0100
+
+    chore(web): export GRAPHQL_URL in api client
+
+commit 09e27cd8b00e6588756d24acf65ce825923a3d9f
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-20 15:40:25 +0100
+
+    feat(web): implement frontend auth stage 1 (magic link, layout shell)
+
+commit 0e8fea6f07ea37469d7611db3c21eb294753f603
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-20 15:40:15 +0100
+
+    chore(web): configure astro for server-side rendering with bun adapter
+
+commit 560efbdf36aae324d5b082728a58dade2e859c9f
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-20 15:40:05 +0100
+
+    docs: add frontend implementation plan
+
+commit f7556950472c5c9e4de80e3bbb664b0e2e335cdc
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-20 15:01:05 +0100
+
+    chore: pin elysia to a particular version
+
+commit a6598557d8babb7559373c7bc54ec29ac8f2f345
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-20 13:41:53 +0100
+
+    feat: bootstrap frontend
+
+commit 4c049b4003de976e31666803b9df3c0a7f1af225
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-19 14:15:53 +0100
+
+    fix(build): add tslib to api to resolve angular-compiler error for eden treaty imports
+
+commit f3e411795122ab898de6556197c36f61bf481da2
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-19 13:40:49 +0100
+
+    fix(lint): remove all oxlint-disable comments and fix newly uncovered explicit any usages
+
+commit c7fb981146cb923782a2085943deae902ccfeb5a
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-19 13:36:42 +0100
+
+    fix(lint): squash remaining explicit any usages in auth and user domains
+
+commit a896ac82de46b22ad5c9f72c1654fb1d895bf9f8
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-19 13:29:36 +0100
+
+    fix(lint): squash all explicit any usages across codebase
+
+commit b827b419f3dc8dc635e46b8dd989bee55dc76eb4
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-19 13:21:45 +0100
+
+    fix(tsc): resolve strict type checking errors across codebase
+
+commit 47636cdc67885b88cacddd3db657ca169b7e5fa0
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-19 13:09:26 +0100
+
+    chore(quality): integrate husky, oxfmt, lint-staged, and pre-commit tsc checks
+
+commit d20bbd0f145cf95935f882290f8d49408171c3a3
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-19 12:55:25 +0100
+
+    chore(devops): setup docker and github actions
+
+commit cdab799b59b5ebcc050a0b822bf90b02e93bfc37
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-19 12:13:32 +0100
+
+    feat(fulfillment): implement fulfillment lifecycle and auto-complete cron
+
+commit d32358b00e77a7d5d7880e5a7723fc34ef44a91d
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-19 11:39:55 +0100
+
+    feat(order): implement order lifecycle and apis
+
+commit 465199d53ea271e571485f3de0a6dc80a7326a8e
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-19 11:23:46 +0100
+
+    feat(directory): implement graphql directory feed
+
+commit f28606f5e730d643256bf22e2a4a91293eef97ee
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-18 19:54:25 +0100
+
+    feat(offer): implement offer plugin endpoints and e2e tests
+
+commit 4206b78a36fe60d66cdba2d9d6dceda10269fff9
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-18 19:54:13 +0100
+
+    feat(offer): implement offer use cases with unit tests
+
+commit 9d7958a440fd4d71126796d7ba579a13237be9a1
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-18 19:54:03 +0100
+
+    feat(offer): implement offer domain and sql repository with tests
+
+commit 8e60e29b0a8d77190ddcf7865fd43fa2b6fcaac6
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-18 19:53:55 +0100
+
+    feat(database): add offer table schema and migrations
+
+commit 61471c365e8f4e5af5048a555b052a24f8bc1610
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-18 19:26:07 +0100
+
+    fix(auth): workaround Elysia derivation bug in presentation layer
+
+commit a03b8291c38003a00f0ca6dcc9287af1390e3032
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-18 19:26:00 +0100
+
+    test: add unit, integration, and e2e tests for User profiles
+
+commit 497a1955899488d91ceb61c777f78899dca65281
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-18 18:48:10 +0100
+
+    feat(user): implement user profiles linked to accounts (stage 2)
+
+commit 7c274ce76f3dc3d3015ce3a2468ba3ae86d2b53e
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-18 18:30:06 +0100
+
+    test: migrate test suites to use drizzle orm and fix mock type casts
+
+commit df4a6de7d9041db5a4e15053e765b6b3a1193afd
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-18 18:29:52 +0100
+
+    refactor: update presentation layer for strict types and elysia derivation
+
+commit c9ab76469cf21d5e8fff0564435f49c5097a32e3
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-18 18:29:39 +0100
+
+    refactor: rewrite repositories to use drizzle ORM and ecmascript # fields
+
+commit 4d8c130c80b52a974a121dde3b19e177969d38c2
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-18 18:29:29 +0100
+
+    refactor: replace typescript private with ecmascript # fields in use-cases and services
+
+commit 6b0cf8cc5ba9e256ad1ebe9c87ee4f0df424bc41
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-18 18:29:20 +0100
+
+    feat: define drizzle schema and configure postgres connection
+
+commit 72b5e77fa2ada614d129643a7f699a1dbe172d17
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-18 18:29:12 +0100
+
+    chore: setup drizzle, oxlint, and strict type-checking
+
+commit 842e0d466b61157b92390aed683ddaa42b54922b
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-18 16:12:35 +0100
+
+    fix: resolve treaty static analysis TS errors in auth.controller and auth.service
+
+commit a8d8703fbc06aff44ee680c07ceadfbc51a7c7f8
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-18 15:59:29 +0100
+
+    feat: add frontend auth guards and homepage UI with logout
+
+commit 57084dddee2177858bd0bbd7b1ae1ddb0029a0e8
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-18 15:59:22 +0100
+
+    refactor: resolve Elysia beta macro issue by hoisting derive logic and removing any types
+
+commit ed4f0485316cc3f6d7fb3dcf665730de4c0aed66
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-18 15:59:14 +0100
+
+    test: add session integration and e2e test suite
+
+commit 6a26433e286889b6f33f2b6a5617e1f114be82aa
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-18 15:59:07 +0100
+
+    test: update auth e2e tests and token service mock behavior
+
+commit b59e39c6683fe0fc8d00834be1ff525ad8a0e8fd
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-18 10:50:04 +0100
+
+    fix: improve error logging for google auth
+
+commit 479c5e31725425285919b9c8ac9e6415e789fb8e
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 18:11:14 +0100
+
+    feat: implement native google auth integration
+
+commit 33bd73f490b01217d73727d12b598acf23e8b9b0
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 17:47:48 +0100
+
+    feat: implement advanced theme settings page
+
+commit e041a002008f3dbbc825641c636d1e8f7fce59a8
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 17:24:13 +0100
+
+    style(login): update login page styling and layout
+
+commit 957845909337ba9771d5a36a7a47d81abd77a426
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 17:13:18 +0100
+
+    feat: migrate auth token storage from localStorage to CookieService
+
+commit 183be0eb62f30d4e63c5bc65ba98723c90fda89b
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 16:38:09 +0100
+
+    fix: resolve double-verification race condition and elysia error mapping
+
+commit 8bccd4a6e271efcaa669e92b5f960154b3c29659
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 16:18:36 +0100
+
+    fix(api): require MAGIC_LINK_BASE_URL when generating magic link
+
+commit 8522f145846aa03997b8e9121b2a0bf8cc80f126
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 16:06:16 +0100
+
+    fix(api): restore console email guardrail and configure via .env
+
+commit 63b55886eea59e2c0a65e89c6ec8827fa2ad4216
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 16:03:41 +0100
+
+    feat(web): add magic link auth feature with signal forms
+
+commit 56cb08e4c7d8ce39257b41ab6f9271e5442ab2af
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 16:03:41 +0100
+
+    chore(web): update app routing, styles, and ui framework setup
+
+commit 2875ebac8bee8fad8bbbfd09c69523cdf45535b7
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 16:03:41 +0100
+
+    refactor(web): improve type safety in api service
+
+commit 2bcf164adcd10edc568e4af97a76a971ea3014d7
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 16:03:41 +0100
+
+    fix(web): remove broken animations provider
+
+commit a3d823ff78ce6631858cf6379cbf5de27b8b109b
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 16:03:41 +0100
+
+    fix(api): ensure magic link logs to console when smtp is unset
+
+commit ad9281c940c558dd621946dc8a1ca612daeb301f
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 14:11:29 +0100
+
+    feat(web): setup angular environments and update api service
+
+commit 4bcc45c5e851eaddf6d9718261aaebde8ad62c99
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 14:11:29 +0100
+
+    fix(web): update proxy routes, ssr allowed hosts, and launch config
+
+commit a1999f178d8721210cd4801006e9491044a62b29
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 14:11:28 +0100
+
+    fix(api): fail-fast on unset token secret and align default port
+
+commit d6086ebd2eb4c480ad9e08d2cd45f30a10e3ca55
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 13:14:01 +0100
+
+    fix(web): correct proxy config and prefix backend routes with /api
+
+commit 4beca2e6b3b5d77c94c06af3b2029de6d9466452
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 12:30:08 +0100
+
+    feat(web): add angular v22 app with ssr, tailwind, and elysia server integration
+
+commit a6091c87437a827e051afb33d48fff08f06ece67
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 12:30:01 +0100
+
+    chore: setup bun workspace and hoisted dependencies
+
+commit a016f07a08453f087e78e40c008baf95c0b64c7e
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 12:29:56 +0100
+
+    chore(api): move backend source code to apps/api directory
+
+commit 2aa300581c5a3fe08f1da8bf55c78952d9439e16
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 10:11:30 +0100
+
+    fix: address PR review feedback for db errors
+
+commit 18cf2e3d31eee139ed586325b4057b00a551fdfe
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 10:04:13 +0100
+
+    fix(db): correct Bun SQL transaction syntax and compilation errors
+
+commit f4e989b168453e5df3bb6a4cc8881c2ba0e68580
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 10:02:23 +0100
+
+    chore: remove prisma agent artifact
+
+commit 96632c6a34d77c0957bfd9933d5730bb2fe4e057
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 10:01:30 +0100
+
+    chore: auto-run db setup in dev and tests
+
+commit 1e75840362475e392765b038bc2ef5fb575a448b
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 10:01:24 +0100
+
+    fix(user): use correct Bun SQL transaction API
+
+commit 13c654a27fab322b5c35db70d70a42bf806007f1
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 10:01:16 +0100
+
+    feat(db): remove old schema.sql file
+
+commit fc63afb19120c5284fc6f7d700875b07ef3babd6
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 10:01:07 +0100
+
+    feat(db): implement versioned migration runner
+
+commit 270518df1d55e26ef12aec24ed8b0bc29c7c22e3
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 10:00:57 +0100
+
+    docs: remove stale prisma skills and docs
+
+commit 529a9a6f08f60e8270033792abcd9f1c6aec3bae
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 09:24:57 +0100
+
+    test: update integration and e2e tests for raw sql
+
+commit 44cb53919ce426afc7f4279b4907ada6c3790b11
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 09:24:50 +0100
+
+    refactor(repo): migrate repositories to raw sql
+
+commit 32617e989dd9fd64fdb33709cb5ce702bc3a6477
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 09:24:43 +0100
+
+    feat(db): add raw sql setup and schema
+
+commit d8ad3f9e809dd24d504f4322a7256f78f48ca8d1
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 09:24:36 +0100
+
+    build(deps): remove prisma dependencies
+
+commit ce26c54cb7bff07394e60cabd4dfd97d92828f2a
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 09:24:29 +0100
+
+    chore(env): update database port to avoid local conflict
+
+commit 1c35c81d12c3e7bfbae63c93c3f72d09bf5ce58c
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 08:48:34 +0100
+
+    fix(auth): sanitize error logs and propagate non-conflict errors during user provisioning
+
+commit 70da20494f79fda8ad0d8405e2acc9961b63cffb
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 08:48:31 +0100
+
+    test(auth): assert P2002 error code on unique constraint rejection
+
+commit a91f406a5b1bdb76beb17e2df58ea40be5222e53
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 08:48:28 +0100
+
+    test(auth): await rejects assertion in google oauth test
+
+commit ee5d24b9740bbd9aec2a7c442624edf8e3fd41e3
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-17 08:48:26 +0100
+
+    docs: replace SMTP credentials with empty placeholders in .env.example
+
+commit 9e3b1a8aef60b840f829eeb4e55d8062ad641385
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-16 18:55:39 +0100
+
+    fix(auth): harden authentication use cases, magic link atomicity, and controller error handling
+
+commit d914cf6545287f24181e8134bd9f66030297165c
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-16 18:55:30 +0100
+
+    chore(auth): harden prisma schema with temporal strings and composite indexes
+
+commit 1ae850eb6376fb4434ba0e625e7f026c372a1c6e
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-16 18:55:20 +0100
+
+    chore(auth): self-contain repository tests and refine service configurations
+
+commit ecb4a7186f06e5fbecac203255ce2fcb2d91c947
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-16 16:12:05 +0100
+
+    feat(config): expose prime_ui_license and export App type
+
+commit 6ecedc426d8af7aeda02ad027ab4264775a8f0d2
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-16 15:57:05 +0100
+
+    feat(config): add config endpoint to serve public variables
+
+commit 8a3d843c92223879ac912050f389fdd133aed66b
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-16 15:28:14 +0100
+
+    chore: commit missing auth barrel file
+
+commit 523d33bdbec1c592595abd83fb2688413815a7f0
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-16 15:16:09 +0100
+
+    fix(auth): group auth endpoints under Auth tag in OpenAPI UI
+
+commit 2cef29300d6cae7dc6a244328f8cab031ccf685f
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-16 15:12:24 +0100
+
+    feat(auth): hook up auth presentation and integration
+
+commit dfae403148545cf8b6d2be96cf06b0be1065a673
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-16 15:12:24 +0100
+
+    feat(auth): add auth infrastructure adapters
+
+commit 6d9888746f4f9286227d643ab15c41c37c7270db
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-16 15:12:24 +0100
+
+    feat(auth): add auth domain and use-cases
+
+commit 8c7951f3a767e6fc7b2970a123832f1a93a2f994
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-16 15:12:24 +0100
+
+    chore(db): add auth models and migrations to prisma contract
+
+commit ce3ced746afd4a0d293779d5e0eed261de084161
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-16 15:12:24 +0100
+
+    chore: update dependencies and user repo
+
+commit a4f6dc8f1855254021f9ca1c2287f50a3f531620
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-16 12:06:29 +0100
+
+    feat: add prisma 8 configuration and contract
+
+commit 11fc0d395ceaa5f7a56bbee822eed2f19d5bfc97
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-16 12:06:22 +0100
+
+    chore: add project configuration and docs
+
+commit 1834806d467128f3c42f01d90fad2109048db3d6
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-16 12:06:08 +0100
+
+    chore: update dependencies
+
+commit 8e2c15ded1a8f5964e8d58da9b8c133c53cdeb7d
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-16 12:06:01 +0100
+
+    chore: update typescript configuration
+
+commit 38fb0e610888282e9013e6c807bc0ca3fb478287
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-16 12:05:53 +0100
+
+    chore: update gitignore rules
+
+commit 8677296358617221fa723281af0da9ccaab27396
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-16 11:05:51 +0100
+
+    refactor: leverage TypeBox schemas as single source of truth for domain types
+    
+    - Add user.schema.ts with domain-level TypeBox schemas (no HTTP constraints)
+    - Derive User, CreateUserData, UpdateUserData via Static<typeof Schema> — no more
+      manual interfaces that can silently drift from the runtime schema
+    - user.entity.ts becomes a thin re-export; all downstream imports unchanged
+    - user.dto.ts imports domain schemas and wraps them with HTTP constraints
+      (format:'email', minLength, descriptions) at the presentation boundary
+    - UserResponse reuses UserSchema directly — single definition, no duplication
+
+commit 80563da7263cfec55551e5c2efec66cf67265da4
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-16 10:51:50 +0100
+
+    feat: add user presentation layer (DTOs, Elysia plugin) and wire to app
+
+commit 3366b65912031164dd0aea6e29cbe72f41912ffc
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-16 10:38:55 +0100
+
+    feat: add Prisma 8 user repository implementation
+
+commit 8395c10798f179671289fdd0c3af928e36599f80
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-16 10:38:37 +0100
+
+    feat: add user application layer (create/get/list/update/delete use cases)
+
+commit ba7decc88437fdb6c383cb5729b530fe60dbc19f
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-16 10:38:01 +0100
+
+    feat: add user domain layer (entity + repository interface)
+
+commit ea1a43919847eae886f5e07c0e5562bbf4a523d5
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-16 10:37:41 +0100
+
+    feat: add shared domain error classes
+
+commit 7b2fa13d8a0f4ea45f1c2c1ed09fa4bda9d913c6
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-16 10:37:27 +0100
+
+    chore: add docker-compose for local postgres development
+
+commit a9105706dda40c58e7ad96abfd15d5734d0898fd
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-16 08:27:48 +0100
+
+    chore: switch to elysia
+
+commit 4ca28499ccd55708576b142336798f7966899312
+Author: Hammed Anuoluwapo Pelumi <stationphast@gmail.com>
+Date:   2026-09-13 11:27:35 +0100
+
+    Initial commit from create-prisma

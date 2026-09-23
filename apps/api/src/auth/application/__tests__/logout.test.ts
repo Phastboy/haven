@@ -1,8 +1,8 @@
-import { expect, test, describe, mock } from 'bun:test';
-import { LogoutUseCase } from '../use-cases/logout.use-case';
-import { TokenService } from '../../infrastructure/services/token.service';
+import { expect, test, describe, mock } from "bun:test";
+import { LogoutUseCase } from "../use-cases/logout.use-case";
+import { TokenService } from "../../infrastructure/services/token.service";
 
-describe('LogoutUseCase', () => {
+describe("LogoutUseCase", () => {
   const mockSessionRepo = {
     deleteByToken: mock(),
     create: mock(),
@@ -13,18 +13,18 @@ describe('LogoutUseCase', () => {
   const tokenService = new TokenService();
 
   const useCase = new LogoutUseCase(
-    mockSessionRepo as any,
-    tokenService
+    mockSessionRepo as unknown as import("../../domain/ports/ISessionRepository").ISessionRepository,
+    tokenService,
   );
 
-  test('should delete session by hashed token', async () => {
+  test("should delete session by hashed token", async () => {
     mockSessionRepo.deleteByToken.mockResolvedValueOnce(undefined);
-    
-    await useCase.execute('raw-token');
-    
+
+    await useCase.execute("raw-token");
+
     expect(mockSessionRepo.deleteByToken).toHaveBeenCalled();
     const hashArg = mockSessionRepo.deleteByToken.mock.calls[0]![0];
-    expect(hashArg).not.toBe('raw-token');
-    expect(hashArg).toBe(tokenService.hash('raw-token'));
+    expect(hashArg).not.toBe("raw-token");
+    expect(hashArg).toBe(tokenService.hash("raw-token"));
   });
 });

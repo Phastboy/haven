@@ -16,8 +16,8 @@ describe("RequestMagicLinkUseCase", () => {
   const tokenService = new TokenService();
 
   const useCase = new RequestMagicLinkUseCase(
-    mockMagicLinkRepo as any,
-    mockEmailService as any,
+    mockMagicLinkRepo as unknown as import("../../domain/ports/IMagicLinkRepository").IMagicLinkRepository,
+    mockEmailService as unknown as import("../../domain/ports/IEmailService").IEmailService,
     tokenService,
   );
 
@@ -36,6 +36,6 @@ describe("RequestMagicLinkUseCase", () => {
     const sendCall = mockEmailService.send.mock.calls[0]!;
     expect(sendCall[0]).toBe("test@example.com");
     expect(sendCall[1]).toBe("Your Magic Login Link");
-    expect(sendCall[2]).toContain("http://localhost:4200/auth/magic-login");
+    expect(sendCall[2]).toContain("http://192.168.0.50:4200/auth/magic-login");
   });
 });

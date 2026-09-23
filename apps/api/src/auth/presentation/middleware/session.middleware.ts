@@ -1,10 +1,11 @@
-import { Context } from 'elysia';
-import { SessionWithAccount } from '../../domain/session.schema';
-
-export const requireAuth = ({ session, set }: Context & { session?: SessionWithAccount | null }) => {
-  if (!session) {
-    set.status = 401;
-    return { message: 'Unauthorized access' };
+import { SessionWithAccount } from "../../domain/session.schema";
+export const requireAuth = (context: {
+  session?: SessionWithAccount | null;
+  set: { status?: number | string; [key: string]: unknown };
+}) => {
+  if (!context.session) {
+    context.set.status = 401;
+    return { error: "Unauthorized access" };
   }
   return;
 };

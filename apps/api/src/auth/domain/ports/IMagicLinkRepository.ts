@@ -1,4 +1,4 @@
-import { MagicLink } from '../magic-link.schema';
+import { MagicLink } from "../magic-link.schema";
 
 export interface CreateMagicLinkDTO {
   email: string;

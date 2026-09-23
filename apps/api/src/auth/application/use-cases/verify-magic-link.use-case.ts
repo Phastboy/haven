@@ -1,21 +1,35 @@
-import { IMagicLinkRepository } from '../../domain/ports/IMagicLinkRepository';
-import { IAccountRepository } from '../../domain/ports/IAccountRepository';
-import { ISessionRepository } from '../../domain/ports/ISessionRepository';
-import { TokenService } from '../../infrastructure/services/token.service';
-import { InvalidTokenError, ExpiredTokenError } from '../../domain/errors';
-import { Session } from '../../domain/session.schema';
+import { IMagicLinkRepository } from "../../domain/ports/IMagicLinkRepository";
+import { IAccountRepository } from "../../domain/ports/IAccountRepository";
+import { ISessionRepository } from "../../domain/ports/ISessionRepository";
+import { TokenService } from "../../infrastructure/services/token.service";
+import { InvalidTokenError, ExpiredTokenError } from "../../domain/errors";
+import { Session } from "../../domain/session.schema";
+import { IProfileCreator } from "../../domain/ports/IProfileCreator";
 
 export class VerifyMagicLinkUseCase {
+  readonly #magicLinkRepo: IMagicLinkRepository;
+  readonly #accountRepo: IAccountRepository;
+  readonly #sessionRepo: ISessionRepository;
+  readonly #tokenService: TokenService;
+  readonly #profileCreator: IProfileCreator;
+
   constructor(
-    private magicLinkRepo: IMagicLinkRepository,
-    private accountRepo: IAccountRepository,
-    private sessionRepo: ISessionRepository,
-    private tokenService: TokenService
-  ) {}
+    magicLinkRepo: IMagicLinkRepository,
+    accountRepo: IAccountRepository,
+    sessionRepo: ISessionRepository,
+    tokenService: TokenService,
+    profileCreator: IProfileCreator,
+  ) {
+    this.#magicLinkRepo = magicLinkRepo;
+    this.#accountRepo = accountRepo;
+    this.#sessionRepo = sessionRepo;
+    this.#tokenService = tokenService;
+    this.#profileCreator = profileCreator;
+  }
 
   async execute(rawToken: string, userAgent?: string, ipAddress?: string): Promise<Session> {
-    const hashedToken = this.tokenService.hash(rawToken);
-    const magicLink = await this.magicLinkRepo.findByToken(hashedToken);
+    const hashedToken = this.#tokenService.hash(rawToken);
+    const magicLink = await this.#magicLinkRepo.findByToken(hashedToken);
 
     if (!magicLink || magicLink.usedAt) {
       throw new InvalidTokenError();
@@ -25,28 +39,29 @@ export class VerifyMagicLinkUseCase {
       throw new ExpiredTokenError();
     }
 
-    const marked = await this.magicLinkRepo.markUsed(magicLink.id, new Date().toISOString());
+    const marked = await this.#magicLinkRepo.markUsed(magicLink.id, new Date().toISOString());
     if (!marked) {
       throw new InvalidTokenError();
     }
 
-    let account = await this.accountRepo.findByEmail(magicLink.email);
+    let account = await this.#accountRepo.findByEmail(magicLink.email);
     if (!account) {
-      account = await this.accountRepo.create({
+      account = await this.#accountRepo.create({
         email: magicLink.email,
         emailVerified: true,
       });
+      await this.#profileCreator.createProfileForAccount(account.id);
     } else if (!account.emailVerified) {
-      await this.accountRepo.markEmailVerified(account.id);
+      await this.#accountRepo.markEmailVerified(account.id);
     }
 
-    const sessionRawToken = this.tokenService.generate(64);
-    const sessionHashedToken = this.tokenService.hash(sessionRawToken);
+    const sessionRawToken = this.#tokenService.generate(64);
+    const sessionHashedToken = this.#tokenService.hash(sessionRawToken);
 
-    const ttlDays = Number(process.env['SESSION_TTL_DAYS']) || 30;
+    const ttlDays = Number(process.env["SESSION_TTL_DAYS"]) || 30;
     const sessionExpiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000).toISOString();
 
-    const session = await this.sessionRepo.create({
+    const session = await this.#sessionRepo.create({
       accountId: account.id,
       token: sessionHashedToken,
       expiresAt: sessionExpiresAt,

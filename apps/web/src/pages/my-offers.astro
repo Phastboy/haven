@@ -1,0 +1,78 @@
+---
+import Layout from "../layouts/Layout.astro";
+import OfferCard from "../components/OfferCard.astro";
+import { client } from "../api";
+import { requireSession, authHeaders } from "../lib/session";
+
+const guard = await requireSession(Astro);
+if (guard.redirect) return guard.redirect;
+const session = guard.session;
+if (!session.user) return Astro.redirect("/profile");
+
+const { data, error } = await client.offers
+  .user({ userId: (session.user as any).id })
+  .get({ headers: authHeaders(session.token) });
+
+const offers = (Array.isArray(data) ? data : []).map((offer: any) => ({ ...offer, user: session.user }));
+---
+
+<Layout title="My offers" bare={false}>
+  <div class="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-10">
+    <header class="mb-5 flex items-start justify-between gap-3">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight sm:text-4xl">My offers</h1>
+        <p class="mt-1 text-sm text-zinc-400 sm:text-base">Your listings in the directory.</p>
+      </div>
+      <a
+        href="/offers/new"
+        class="hidden min-h-11 items-center rounded-xl bg-brand-500 px-5 text-sm font-medium text-white sm:inline-flex"
+      >
+        New offer
+      </a>
+    </header>
+
+    {error && (
+      <p class="mb-6 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
+        Failed to load your offers.
+      </p>
+    )}
+
+    {offers.length === 0 && !error ? (
+      <div class="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-8 text-center">
+        <h2 class="text-lg font-medium">No offers yet</h2>
+        <p class="mx-auto mt-1 max-w-sm text-sm text-zinc-400">
+          Share a skill, a service or something you make, and the community can request it.
+        </p>
+        <a href="/offers/new" class="mt-5 inline-block min-h-11 rounded-xl bg-white px-5 py-3 text-sm font-medium text-zinc-950">
+          Create your first offer
+        </a>
+      </div>
+    ) : (
+      <ul class="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] sm:gap-5">
+        {offers.map((offer: any, i: number) => (
+          <li class="relative">
+            <OfferCard offer={offer} priority={i < 4} />
+            <a
+              href={`/offers/${offer.id}/edit`}
+              aria-label={`Edit ${offer.title}`}
+              class="absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-lg border border-white/10 bg-zinc-950/70 text-white backdrop-blur"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+              </svg>
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+  <a
+    href="/offers/new"
+    aria-label="Create a new offer"
+    class="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-4 z-30 grid h-14 w-14 place-items-center rounded-full bg-brand-500 text-white shadow-lg shadow-brand-500/25 sm:hidden"
+  >
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  </a>
+</Layout>

@@ -1,5 +1,5 @@
-import { t } from 'elysia';
-import type { Static } from 'typebox';
+import { t } from "elysia";
+import type { Static } from "typebox";
 
 /**
  * Domain-level TypeBox schemas.
@@ -18,22 +18,28 @@ import type { Static } from 'typebox';
 
 export const UserSchema = t.Object({
   id: t.String(),
-  email: t.String(),
+  accountId: t.String(),
   username: t.Union([t.String(), t.Null()]),
   name: t.Union([t.String(), t.Null()]),
+  bio: t.Union([t.String(), t.Null()]),
+  profilePictureUrl: t.Union([t.String(), t.Null()]),
   createdAt: t.String(),
   updatedAt: t.String(),
 });
 
 export const CreateUserDataSchema = t.Object({
-  email: t.String(),
+  accountId: t.String(),
   username: t.Optional(t.Union([t.String(), t.Null()])),
   name: t.Optional(t.Union([t.String(), t.Null()])),
+  bio: t.Optional(t.Union([t.String(), t.Null()])),
+  profilePictureUrl: t.Optional(t.Union([t.String(), t.Null()])),
 });
 
 export const UpdateUserDataSchema = t.Object({
   username: t.Optional(t.Union([t.String(), t.Null()])),
   name: t.Optional(t.Union([t.String(), t.Null()])),
+  bio: t.Optional(t.Union([t.String(), t.Null()])),
+  profilePictureUrl: t.Optional(t.Union([t.String(), t.Null()])),
 });
 
 /** The full user record as the domain works with it. */

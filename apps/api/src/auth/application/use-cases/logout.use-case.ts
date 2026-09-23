@@ -1,14 +1,17 @@
-import { ISessionRepository } from '../../domain/ports/ISessionRepository';
-import { TokenService } from '../../infrastructure/services/token.service';
+import { ISessionRepository } from "../../domain/ports/ISessionRepository";
+import { TokenService } from "../../infrastructure/services/token.service";
 
 export class LogoutUseCase {
-  constructor(
-    private sessionRepo: ISessionRepository,
-    private tokenService: TokenService
-  ) {}
+  readonly #sessionRepo: ISessionRepository;
+  readonly #tokenService: TokenService;
+
+  constructor(sessionRepo: ISessionRepository, tokenService: TokenService) {
+    this.#sessionRepo = sessionRepo;
+    this.#tokenService = tokenService;
+  }
 
   async execute(rawToken: string): Promise<void> {
-    const hashedToken = this.tokenService.hash(rawToken);
-    await this.sessionRepo.deleteByToken(hashedToken);
+    const hashedToken = this.#tokenService.hash(rawToken);
+    await this.#sessionRepo.deleteByToken(hashedToken);
   }
 }

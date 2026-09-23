@@ -1,0 +1,83 @@
+---
+import Layout from "../layouts/Layout.astro";
+import MatchCard from "../components/MatchCard";
+import { client } from "../api";
+import { requireSession, authHeaders } from "../lib/session";
+
+const guard = await requireSession(Astro);
+if (guard.redirect) return guard.redirect;
+const session = guard.session;
+const headers = authHeaders(session.token);
+
+const [sentRes, receivedRes] = await Promise.all([
+  client.orders.me.get({ headers }),
+  client.orders.received.get({ headers }),
+]);
+
+const byNewest = (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+const sent = [...((sentRes.data as any[]) ?? [])].sort(byNewest);
+const received = [...((receivedRes.data as any[]) ?? [])].sort(byNewest);
+
+const tab = Astro.url.searchParams.get("tab") === "sent" ? "sent" : "received";
+const orders = tab === "sent" ? sent : received;
+const pending = received.filter((o: any) => o.status === "PENDING").length;
+
+const tabs = [
+  { key: "received", label: "Received", count: pending },
+  { key: "sent", label: "Sent", count: 0 },
+];
+---
+
+<Layout title="Matches">
+  <div class="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-10">
+    <header class="mb-4">
+      <h1 class="text-2xl font-bold tracking-tight sm:text-4xl">Matches</h1>
+      <p class="mt-1 text-sm text-zinc-400 sm:text-base">Requests you have sent and received.</p>
+    </header>
+    <div role="tablist" class="mb-6 grid grid-cols-2 gap-1 rounded-xl bg-zinc-900 p-1">
+      {tabs.map((t) => (
+        <a
+          role="tab"
+          aria-selected={tab === t.key}
+          href={`?tab=${t.key}`}
+          class:list={[
+            "flex min-h-10 items-center justify-center gap-2 rounded-lg text-sm font-medium transition-colors",
+            tab === t.key ? "bg-zinc-800 text-white" : "text-zinc-400",
+          ]}
+        >
+          {t.label}
+          {t.count > 0 && (
+            <span class="grid h-5 min-w-5 place-items-center rounded-full bg-brand-500 px-1 text-[11px] font-bold text-white">
+              {t.count}
+            </span>
+          )}
+        </a>
+      ))}
+    </div>
+
+    {orders.length === 0 ? (
+      <div class="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-8 text-center">
+        <h2 class="text-lg font-medium">{tab === "received" ? "No requests yet" : "You haven't requested anything"}</h2>
+        <p class="mx-auto mt-1 max-w-sm text-sm text-zinc-400">
+          {tab === "received"
+            ? "When someone requests one of your offers, it shows up here."
+            : "Browse the directory to find what you need."}
+        </p>
+        {tab === "sent" && (
+          <a href="/directory" class="mt-5 inline-block min-h-11 rounded-xl bg-white px-5 py-3 text-sm font-medium text-zinc-950">
+            Explore the directory
+          </a>
+        )}
+      </div>
+    ) : (
+      <ul class="grid gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
+        {orders.map((order: any, i: number) => (
+          <li>
+            {/* Only the first cards hydrate immediately; the rest wait until scrolled to. */}
+            <MatchCard client:visible order={order} isReceived={tab === "received"} />
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+</Layout>

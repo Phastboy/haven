@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: oklch(97% 0.02 280);
+  --color-brand-100: oklch(93% 0.04 280);
+  --color-brand-200: oklch(86% 0.08 280);
+  --color-brand-300: oklch(77% 0.12 280);
+  --color-brand-400: oklch(66% 0.17 280);
+  --color-brand-500: oklch(55% 0.22 280);
+  --color-brand-600: oklch(47% 0.19 280);
+  --color-brand-700: oklch(39% 0.15 280);
+  --color-brand-800: oklch(33% 0.12 280);
+  --color-brand-900: oklch(28% 0.1 280);
+  --color-brand-950: oklch(20% 0.07 280);
+}
+
+@layer base {
+  body {
+    @apply bg-zinc-950 text-zinc-50 antialiased selection:bg-brand-500/30 selection:text-brand-100;
+  }
+}

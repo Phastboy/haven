@@ -1,0 +1,106 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import RequestOfferButton from "../../components/RequestOfferButton";
+import { client } from "../../api";
+import { getSession } from "../../lib/session";
+import { formatPrice, formatDate, initials } from "../../lib/format";
+
+const { id } = Astro.params;
+if (!id) return Astro.redirect("/directory");
+
+// Offer, creator and session all start together instead of one after another.
+const session = await getSession(Astro);
+const { data: offer, error } = await client.offers({ id }).get();
+if (error || !offer) return Astro.redirect("/directory");
+
+const { data: creator } = offer.userId
+  ? await client.users({ id: offer.userId }).get()
+  : { data: null };
+
+const author = creator as any;
+const isOwner = !!session?.user && (session.user as any).id === offer.userId;
+const isRequest = ((offer as any).offerType ?? "").toUpperCase() === "REQUEST";
+---
+
+<Layout title={offer.title} description={(offer as any).description ?? undefined} bare={true}>
+  <Fragment slot="head">
+    <meta property="og:type" content="product" />
+    <script is:inline type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: offer.title,
+      description: (offer as any).description ?? undefined,
+      offers: { "@type": "Offer", priceCurrency: "USD", price: ((offer as any).price / 100).toFixed(2) },
+    })} />
+  </Fragment>
+
+  <article class="mx-auto w-full max-w-3xl pb-28 sm:px-6 sm:py-8 sm:pb-12">
+    <div class="px-4 pt-4 sm:px-0 sm:pt-0">
+      <a href="/directory" class="mb-3 inline-flex min-h-11 items-center gap-1 text-sm text-zinc-400">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+        Directory
+      </a>
+    </div>
+
+    <div class="relative aspect-[4/3] w-full overflow-hidden bg-zinc-900 sm:aspect-video sm:rounded-2xl sm:border sm:border-zinc-800">
+      {(offer as any).images?.[0] ? (
+        <img src={(offer as any).images[0]} alt="" class="h-full w-full object-cover" />
+      ) : (
+        <div class="grid h-full w-full place-items-center text-zinc-800">
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true">
+            <rect width="18" height="18" x="3" y="3" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21" />
+          </svg>
+        </div>
+      )}
+      <span class="absolute left-3 top-3 rounded-md bg-zinc-950/80 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider backdrop-blur">
+        {isRequest ? "Request" : "Offer"}
+      </span>
+      {isOwner && (
+        <a href={`/offers/${offer.id}/edit`} class="absolute right-3 top-3 min-h-9 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white">
+          Edit
+        </a>
+      )}
+    </div>
+
+    <div class="px-4 sm:px-0">
+      <h1 class="mt-5 text-2xl font-bold leading-tight tracking-tight sm:text-4xl">{offer.title}</h1>
+      <p class="mt-2 text-2xl font-bold sm:hidden">{formatPrice((offer as any).price)}</p>
+
+      <div class="mt-5 flex items-center gap-3 border-y border-zinc-800 py-4">
+        <div class="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full border border-zinc-700 bg-zinc-800 font-medium uppercase text-zinc-400">
+          {author?.profilePictureUrl
+            ? <img src={author.profilePictureUrl} alt="" class="h-full w-full object-cover" />
+            : initials(author?.name, author?.username)}
+        </div>
+        <div class="min-w-0">
+          <p class="truncate font-medium">{author?.name || author?.username || "Anonymous"}</p>
+          <p class="text-sm text-zinc-500">Listed {formatDate((offer as any).createdAt)}</p>
+        </div>
+        <p class="ml-auto hidden text-3xl font-bold sm:block">{formatPrice((offer as any).price)}</p>
+      </div>
+
+      <h2 class="mt-6 text-sm font-semibold uppercase tracking-wider text-zinc-400">About this offer</h2>
+      <p class="mt-2 whitespace-pre-wrap leading-relaxed text-zinc-300">
+        {(offer as any).description || "No description provided."}
+      </p>
+
+      {!isOwner && session && (
+        <div class="mt-8 hidden sm:block">
+          <RequestOfferButton client:visible offerId={offer.id} offerTitle={offer.title} providerName={author?.name?.split(" ")[0] || "the provider"} />
+        </div>
+      )}
+    </div>
+  </article>
+
+  {!isOwner && (
+    <div class="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-zinc-950/95 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl sm:hidden">
+      {session ? (
+        <RequestOfferButton client:load offerId={offer.id} offerTitle={offer.title} providerName={author?.name?.split(" ")[0] || "the provider"} />
+      ) : (
+        <a href="/login" class="flex min-h-12 items-center justify-center rounded-xl bg-brand-500 text-base font-medium text-white">
+          Log in to request
+        </a>
+      )}
+    </div>
+  )}
+</Layout>

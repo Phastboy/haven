@@ -1,0 +1,47 @@
+---
+import Layout from "../layouts/Layout.astro";
+import LoginForm from "../components/LoginForm";
+
+const errorParam = Astro.url.searchParams.get("error");
+let errorMessage = "";
+
+if (errorParam === "invalid_token") {
+  errorMessage = "The magic link is invalid or has expired. Please request a new one.";
+} else if (errorParam === "missing_token") {
+  errorMessage = "No token provided. Please request a magic link.";
+} else if (errorParam === "google_failed") {
+  errorMessage = "Google sign-in failed. Please try again.";
+}
+
+// PUBLIC_GOOGLE_CLIENT_ID is exposed by Vite at build/SSR time.
+// It's safe to pass to the client — Google OAuth client IDs are public by design.
+const googleClientId = import.meta.env.PUBLIC_GOOGLE_CLIENT_ID ?? "";
+---
+
+<Layout>
+  <div class="flex-1 flex flex-col justify-center items-center p-6">
+    <div class="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+      <div class="p-8 sm:p-10">
+        <div class="text-center mb-8">
+          <div class="w-12 h-12 bg-brand-500 rounded-xl mx-auto mb-6 flex items-center justify-center text-white font-bold text-xl">
+            H
+          </div>
+          <h1 class="text-3xl font-bold text-white mb-2 tracking-tight">Welcome to Haven</h1>
+          <p class="text-zinc-400 text-sm">Sign in with a magic link or Google.</p>
+        </div>
+
+        {errorMessage && (
+          <div class="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400 text-center">
+            {errorMessage}
+          </div>
+        )}
+
+        <LoginForm googleClientId={googleClientId} client:load />
+      </div>
+    </div>
+
+    <p class="mt-8 text-center text-xs text-zinc-500 max-w-sm">
+      By signing in, you agree to our Terms of Service and Privacy Policy.
+    </p>
+  </div>
+</Layout>

@@ -1,12 +1,15 @@
-import { Elysia } from 'elysia';
-import { NotFoundError, ConflictError } from '../../shared/errors';
-import { CreateUserUseCase } from '../application/create-user.usecase';
-import { GetUserUseCase } from '../application/get-user.usecase';
-import { ListUsersUseCase } from '../application/list-users.usecase';
-import { UpdateUserUseCase } from '../application/update-user.usecase';
-import { DeleteUserUseCase } from '../application/delete-user.usecase';
-import { SqlUserRepository } from '../infrastructure/sql-user.repository';
-import { CreateUserBody, UpdateUserBody, UserIdParam } from './user.dto';
+import { Elysia } from "elysia";
+import { NotFoundError, ConflictError } from "../../shared/errors";
+import { GetUserUseCase } from "../application/get-user.usecase";
+import { ListUsersUseCase } from "../application/list-users.usecase";
+import { UpdateUserUseCase } from "../application/update-user.usecase";
+import { SqlUserRepository } from "../infrastructure/sql-user.repository";
+import { UpdateUserBody, UserIdParam } from "./user.dto";
+import { requireAuth } from "../../auth/presentation/middleware/session.middleware";
+import { UnauthorizedError } from "../../auth/domain/errors";
+import { GetSessionUseCase } from "../../auth/application/use-cases/get-session.use-case";
+import { SessionRepository } from "../../auth/infrastructure/repositories/session.repository";
+import { tokenService } from "../../auth/infrastructure/services/token.service";
 
 /**
  * Factory function that wires the full user feature as an Elysia plugin.
@@ -18,51 +21,73 @@ import { CreateUserBody, UpdateUserBody, UserIdParam } from './user.dto';
 export function createUserPlugin() {
   const repository = new SqlUserRepository();
 
-  const createUser = new CreateUserUseCase(repository);
   const getUser = new GetUserUseCase(repository);
   const listUsers = new ListUsersUseCase(repository);
   const updateUser = new UpdateUserUseCase(repository);
-  const deleteUser = new DeleteUserUseCase(repository);
 
-  return new Elysia({ prefix: '/users', tags: ['Users'] })
-    .error(ConflictError, ({ set, error }) => {
-      set.status = 409;
-      return { error: error.message };
+  const getSessionUseCase = new GetSessionUseCase(new SessionRepository(), tokenService);
+
+  return new Elysia({ prefix: "/users", tags: ["Users"] })
+    .derive(async ({ headers }: { headers: Record<string, string | undefined> }) => {
+      const authHeader = headers["authorization"];
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return { session: null, account: null };
+      }
+
+      const token = authHeader.substring(7);
+      try {
+        const sessionWithAccount = await getSessionUseCase.execute(token);
+        return {
+          session: sessionWithAccount,
+          account: sessionWithAccount.account,
+        };
+      } catch (e: unknown) {
+        if (e instanceof UnauthorizedError) {
+          return { session: null, account: null };
+        }
+        throw e;
+      }
     })
-    .error(NotFoundError, ({ set, error }) => {
-      set.status = 404;
-      return { error: error.message };
+    .error(({ error, set }) => {
+      if (error instanceof ConflictError || error.name === "ConflictError") {
+        set.status = 409;
+        return { error: error.message };
+      }
+      if (error instanceof NotFoundError || error.name === "NotFoundError") {
+        set.status = 404;
+        return { error: error.message };
+      }
+      return;
     })
 
-    .post('/',
-      { body: CreateUserBody, detail: { summary: 'Create a new user' } },
-      async ({ body, set }) => {
-        const user = await createUser.execute(body);
-        set.status = 201;
-        return user;
-      },
-    )
+    .get("/", { detail: { summary: "List all profiles" } }, async () => listUsers.execute())
 
-    .get('/',
-      { detail: { summary: 'List all users' } },
-      async () => listUsers.execute(),
-    )
-
-    .get('/:id',
-      { params: UserIdParam, detail: { summary: 'Get a user by ID' } },
+    .get(
+      "/:id",
+      { params: UserIdParam, detail: { summary: "Get a profile by ID" } },
       async ({ params }) => getUser.execute(params.id),
     )
 
-    .patch('/:id',
-      { params: UserIdParam, body: UpdateUserBody, detail: { summary: 'Update a user' } },
-      async ({ params, body }) => updateUser.execute(params.id, body),
+    .patch(
+      "/me",
+      {
+        body: UpdateUserBody,
+        beforeHandle: [requireAuth],
+        detail: { summary: "Update my profile" },
+      },
+      async ({ account, body }) => updateUser.execute(account!.id, body),
     )
 
-    .delete('/:id',
-      { params: UserIdParam, detail: { summary: 'Delete a user' } },
-      async ({ params, set }) => {
-        await deleteUser.execute(params.id);
-        set.status = 204;
+    .get(
+      "/me",
+      {
+        beforeHandle: [requireAuth],
+        detail: { summary: "Get my profile" },
+      },
+      async ({ account }) => {
+        const user = await repository.findByAccountId(account!.id);
+        if (!user) throw new NotFoundError("User", account!.id);
+        return user;
       },
     );
 }

@@ -1,14 +1,13 @@
-import { expect, test, describe } from 'bun:test';
-import { AccountRepository } from '../account.repository';
+import { sql } from "drizzle-orm";
+import { expect, test, describe } from "bun:test";
+import { AccountRepository } from "../account.repository";
 
-import { db } from '../../../../database/db';
+import { db } from "../../../../database/db";
 
-
-
-describe('AccountRepository Integration', () => {
+describe("AccountRepository Integration", () => {
   const repo = new AccountRepository();
 
-  test('should create a new account', async () => {
+  test("should create a new account", async () => {
     const testEmail = `test-${crypto.randomUUID()}@example.com`;
     const account = await repo.create({
       email: testEmail,
@@ -19,10 +18,10 @@ describe('AccountRepository Integration', () => {
     expect(account.email).toBe(testEmail);
     expect(account.emailVerified).toBe(false);
 
-    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
+    await db.execute(sql`DELETE FROM "Account" WHERE "id" = ${account.id}`);
   });
 
-  test('should find account by email', async () => {
+  test("should find account by email", async () => {
     const testEmail = `test-${crypto.randomUUID()}@example.com`;
     const account = await repo.create({
       email: testEmail,
@@ -33,15 +32,15 @@ describe('AccountRepository Integration', () => {
     expect(found).not.toBeNull();
     expect(found!.id).toBe(account.id);
 
-    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
+    await db.execute(sql`DELETE FROM "Account" WHERE "id" = ${account.id}`);
   });
 
-  test('should return null for non-existent email', async () => {
-    const account = await repo.findByEmail('does-not-exist@example.com');
+  test("should return null for non-existent email", async () => {
+    const account = await repo.findByEmail("does-not-exist@example.com");
     expect(account).toBeNull();
   });
 
-  test('should find account by id', async () => {
+  test("should find account by id", async () => {
     const testEmail = `test-${crypto.randomUUID()}@example.com`;
     const account = await repo.create({
       email: testEmail,
@@ -52,10 +51,10 @@ describe('AccountRepository Integration', () => {
     expect(found).not.toBeNull();
     expect(found!.email).toBe(testEmail);
 
-    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
+    await db.execute(sql`DELETE FROM "Account" WHERE "id" = ${account.id}`);
   });
 
-  test('should mark email as verified', async () => {
+  test("should mark email as verified", async () => {
     const testEmail = `test-${crypto.randomUUID()}@example.com`;
     const account = await repo.create({
       email: testEmail,
@@ -66,6 +65,6 @@ describe('AccountRepository Integration', () => {
     const updated = await repo.findById(account.id);
     expect(updated!.emailVerified).toBe(true);
 
-    await db`DELETE FROM "Account" WHERE "id" = ${account.id}`;
+    await db.execute(sql`DELETE FROM "Account" WHERE "id" = ${account.id}`);
   });
 });

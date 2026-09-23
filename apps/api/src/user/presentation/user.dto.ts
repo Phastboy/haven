@@ -1,9 +1,5 @@
-import { t } from 'elysia';
-import {
-  UserSchema,
-  CreateUserDataSchema,
-  UpdateUserDataSchema,
-} from '../domain/user.schema';
+import { t } from "elysia";
+import { UserSchema, CreateUserDataSchema, UpdateUserDataSchema } from "../domain/user.schema";
 
 /**
  * HTTP-layer TypeBox schemas.
@@ -16,23 +12,15 @@ import {
  * shape and the domain entity shape are intentionally the same at this stage.
  */
 
-export const CreateUserBody = t.Object({
-  email: t.String({ format: 'email', description: 'User email address' }),
-  username: t.Optional(
-    t.Union([t.String({ minLength: 2, description: 'Optional username' }), t.Null()]),
-  ),
-  name: t.Optional(
-    t.Union([t.String({ minLength: 1, description: 'Optional display name' }), t.Null()]),
-  ),
-});
-
 export const UpdateUserBody = t.Object({
   username: t.Optional(t.Union([t.String({ minLength: 2 }), t.Null()])),
   name: t.Optional(t.Union([t.String({ minLength: 1 }), t.Null()])),
+  bio: t.Optional(t.Union([t.String({ maxLength: 500 }), t.Null()])),
+  profilePictureUrl: t.Optional(t.Union([t.String({ format: "uri" }), t.Null()])),
 });
 
 export const UserIdParam = t.Object({
-  id: t.String({ description: 'User UUID' }),
+  id: t.String({ description: "User UUID" }),
 });
 
 /**

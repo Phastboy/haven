@@ -1,0 +1,29 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { getSession } from "../lib/session";
+
+const session = await getSession(Astro);
+if (session) return Astro.redirect("/directory");
+---
+
+<Layout description="Offer what you know, request what you need. Haven is a community directory for skills and services.">
+  <div class="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-5 py-12 text-center sm:py-20">
+    <p class="mx-auto mb-5 w-fit rounded-full border border-brand-500/20 bg-brand-500/10 px-3 py-1 text-xs font-medium text-brand-300">
+      Welcome to Haven
+    </p>
+    <h1 class="text-[2rem] font-bold leading-[1.1] tracking-tight sm:text-6xl">
+      The community for <span class="text-brand-400">skills &amp; services</span>
+    </h1>
+    <p class="mx-auto mt-4 max-w-xl text-base leading-relaxed text-zinc-400 sm:mt-6 sm:text-xl">
+      Offer what you know, request what you need, and connect with people nearby.
+    </p>
+    <div class="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:justify-center">
+      <a href="/login" class="flex min-h-12 items-center justify-center rounded-xl bg-brand-500 px-8 text-base font-medium text-white">
+        Get started
+      </a>
+      <a href="/directory" class="flex min-h-12 items-center justify-center rounded-xl border border-zinc-800 px-8 text-base font-medium text-zinc-200">
+        Browse the directory
+      </a>
+    </div>
+  </div>
+</Layout>

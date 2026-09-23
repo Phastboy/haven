@@ -1,7 +1,7 @@
-import { t } from 'elysia';
+import { t } from "elysia";
 
 export const RequestMagicLinkDTO = t.Object({
-  email: t.String({ format: 'email' }),
+  email: t.String({ format: "email" }),
 });
 
 export const VerifyMagicLinkDTO = t.Object({
