@@ -3,6 +3,7 @@ import "../styles/global.css";
 import { getSession } from "../lib/session";
 import { initials } from "../lib/format";
 import { Toaster } from "solid-toaster";
+import { NotificationProvider } from "../components/NotificationProvider";
 
 interface Props {
   title?: string;
@@ -131,5 +132,6 @@ const showTabs = !bare && !!account;
     )}
 
     <Toaster client:load position="bottom-right" />
+    {session?.token && <NotificationProvider client:only="solid" token={session.token} />}
   </body>
 </html>
