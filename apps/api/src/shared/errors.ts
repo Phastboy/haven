@@ -1,20 +1,19 @@
-export class NotFoundError extends Error {
+import { DomainError } from "./domain/errors";
+
+export class NotFoundError extends DomainError {
   constructor(resource: string, id: string) {
-    super(`${resource} with id "${id}" was not found.`);
-    this.name = "NotFoundError";
+    super("not_found", "Not Found", 404, `${resource} with id "${id}" was not found.`);
   }
 }
 
-export class ConflictError extends Error {
+export class ConflictError extends DomainError {
   constructor(message: string) {
-    super(message);
-    this.name = "ConflictError";
+    super("conflict", "Conflict", 409, message);
   }
 }
 
-export class ValidationError extends Error {
+export class ValidationError extends DomainError {
   constructor(message: string) {
-    super(message);
-    this.name = "ValidationError";
+    super("validation_error", "Validation Failed", 422, message);
   }
 }

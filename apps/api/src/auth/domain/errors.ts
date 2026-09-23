@@ -1,34 +1,36 @@
-export class AuthError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "AuthError";
+import { DomainError } from "../../shared/domain/errors";
+
+export class AuthError extends DomainError {
+  constructor(
+    message: string,
+    status: number = 401,
+    type: string = "auth_error",
+    title: string = "Authentication Error",
+  ) {
+    super(type, title, status, message);
   }
 }
 
 export class InvalidTokenError extends AuthError {
   constructor(message: string = "Invalid or used token") {
-    super(message);
-    this.name = "InvalidTokenError";
+    super(message, 401, "invalid_token", "Invalid Token");
   }
 }
 
 export class ExpiredTokenError extends AuthError {
   constructor(message: string = "Token has expired") {
-    super(message);
-    this.name = "ExpiredTokenError";
+    super(message, 401, "expired_token", "Token Expired");
   }
 }
 
 export class UnauthorizedError extends AuthError {
   constructor(message: string = "Unauthorized access") {
-    super(message);
-    this.name = "UnauthorizedError";
+    super(message, 401, "unauthorized", "Unauthorized");
   }
 }
 
 export class AccountNotFoundError extends AuthError {
   constructor(message: string = "Account not found") {
-    super(message);
-    this.name = "AccountNotFoundError";
+    super(message, 404, "account_not_found", "Account Not Found");
   }
 }
