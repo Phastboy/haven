@@ -1,4 +1,4 @@
-import { AccountPlatformLink } from "../account-platform-link.schema";
+import type { AccountPlatformLink } from "../account-platform-link.schema";
 
 export interface CreateAccountPlatformLinkDTO {
   accountId: string;

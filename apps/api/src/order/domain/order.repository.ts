@@ -1,4 +1,4 @@
-import { Order, OrderStatus } from "./order.schema";
+import type { Order, OrderStatus } from "./order.schema";
 
 export interface IOrderRepository {
   createOrder(data: {

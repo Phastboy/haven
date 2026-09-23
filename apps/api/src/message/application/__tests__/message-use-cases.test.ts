@@ -3,7 +3,7 @@ import { CreateThreadUseCase } from "../create-thread.usecase";
 import { SendMessageUseCase } from "../send-message.usecase";
 import { GetThreadsUseCase } from "../get-threads.usecase";
 import { GetMessagesUseCase } from "../get-messages.usecase";
-import { SqlMessageRepository } from "../../infrastructure/sql-message.repository";
+import type { SqlMessageRepository } from "../../infrastructure/sql-message.repository";
 import { ThreadNotFoundError, UnauthorizedThreadAccessError } from "../../domain/errors";
 
 describe("Message Use Cases", () => {

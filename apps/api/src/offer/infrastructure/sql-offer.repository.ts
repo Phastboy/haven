@@ -1,5 +1,5 @@
-import { IOfferRepository } from "../domain/offer.repository";
-import {
+import type { IOfferRepository } from "../domain/offer.repository";
+import type {
   Offer,
   CreateOfferData,
   UpdateOfferData,

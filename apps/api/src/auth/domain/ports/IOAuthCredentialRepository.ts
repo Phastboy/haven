@@ -1,4 +1,4 @@
-import { OAuthCredential } from "../oauth-credential.schema";
+import type { OAuthCredential } from "../oauth-credential.schema";
 
 export interface CreateOAuthCredentialDTO {
   accountId: string;

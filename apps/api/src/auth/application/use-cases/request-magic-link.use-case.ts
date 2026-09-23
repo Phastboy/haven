@@ -1,6 +1,6 @@
-import { IMagicLinkRepository } from "../../domain/ports/IMagicLinkRepository";
-import { IEmailService } from "../../domain/ports/IEmailService";
-import { TokenService } from "../../infrastructure/services/token.service";
+import type { IMagicLinkRepository } from "../../domain/ports/IMagicLinkRepository";
+import type { IEmailService } from "../../domain/ports/IEmailService";
+import type { TokenService } from "../../infrastructure/services/token.service";
 
 export class RequestMagicLinkUseCase {
   readonly #magicLinkRepo: IMagicLinkRepository;

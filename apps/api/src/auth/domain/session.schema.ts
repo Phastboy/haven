@@ -1,4 +1,5 @@
-import { Type, Static } from "typebox";
+import type { Static } from "typebox";
+import { Type } from "typebox";
 import { AccountSchema } from "./account.schema";
 
 export const SessionSchema = Type.Object({

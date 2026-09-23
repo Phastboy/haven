@@ -1,5 +1,5 @@
-import { IOfferRepository } from "../domain/offer.repository";
-import { CreateOfferData, Offer } from "../domain/offer.schema";
+import type { IOfferRepository } from "../domain/offer.repository";
+import type { CreateOfferData, Offer } from "../domain/offer.schema";
 
 export class CreateOfferUseCase {
   constructor(private readonly repository: IOfferRepository) {}

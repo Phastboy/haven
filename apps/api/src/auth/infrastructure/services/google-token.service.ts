@@ -1,5 +1,5 @@
 import { OAuth2Client } from "google-auth-library";
-import { IGoogleTokenService, GoogleClaims } from "../../domain/ports/IGoogleTokenService";
+import type { IGoogleTokenService, GoogleClaims } from "../../domain/ports/IGoogleTokenService";
 import { UnauthorizedError } from "../../domain/errors";
 
 export class GoogleTokenService implements IGoogleTokenService {

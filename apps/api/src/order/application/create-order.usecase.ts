@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
-import { IOrderRepository } from "../domain/order.repository";
-import { Order } from "../domain/order.schema";
+import type { IOrderRepository } from "../domain/order.repository";
+import type { Order } from "../domain/order.schema";
 import {
   SelfOrderNotAllowedError,
   OfferNotActiveError,

@@ -1,5 +1,5 @@
-import { SqlMessageRepository } from "../infrastructure/sql-message.repository";
-import { ThreadRecord } from "../../database/schema";
+import type { SqlMessageRepository } from "../infrastructure/sql-message.repository";
+import type { ThreadRecord } from "../../database/schema";
 import { SelfThreadError } from "../domain/errors";
 
 export class CreateThreadUseCase {

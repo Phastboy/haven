@@ -2,7 +2,7 @@ import { yoga } from "@elysia/graphql-yoga";
 import { typeDefs } from "./graphql/schema";
 import { resolvers } from "./graphql/resolvers";
 import { SqlDirectoryRepository } from "../infrastructure/sql-directory.repository";
-import { GraphQLContext } from "./graphql/context";
+import type { GraphQLContext } from "./graphql/context";
 import DataLoader from "dataloader";
 
 export const createDirectoryPlugin = () => {

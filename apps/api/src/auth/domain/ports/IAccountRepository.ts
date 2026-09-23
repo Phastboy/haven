@@ -1,4 +1,4 @@
-import { Account, CreateAccountDTO } from "../account.schema";
+import type { Account, CreateAccountDTO } from "../account.schema";
 
 export interface IAccountRepository {
   create(data: CreateAccountDTO): Promise<Account>;

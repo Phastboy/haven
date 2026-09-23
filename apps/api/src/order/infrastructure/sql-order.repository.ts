@@ -1,8 +1,8 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "../../database/db";
 import { orders, offers } from "../../database/schema";
-import { IOrderRepository } from "../domain/order.repository";
-import { Order, OrderStatus } from "../domain/order.schema";
+import type { IOrderRepository } from "../domain/order.repository";
+import type { Order, OrderStatus } from "../domain/order.schema";
 import { InvalidOrderStateTransitionError } from "../domain/errors";
 
 export class SqlOrderRepository implements IOrderRepository {

@@ -1,10 +1,10 @@
-import { IMagicLinkRepository } from "../../domain/ports/IMagicLinkRepository";
-import { IAccountRepository } from "../../domain/ports/IAccountRepository";
-import { ISessionRepository } from "../../domain/ports/ISessionRepository";
-import { TokenService } from "../../infrastructure/services/token.service";
+import type { IMagicLinkRepository } from "../../domain/ports/IMagicLinkRepository";
+import type { IAccountRepository } from "../../domain/ports/IAccountRepository";
+import type { ISessionRepository } from "../../domain/ports/ISessionRepository";
+import type { TokenService } from "../../infrastructure/services/token.service";
 import { InvalidTokenError, ExpiredTokenError } from "../../domain/errors";
-import { Session } from "../../domain/session.schema";
-import { IProfileCreator } from "../../domain/ports/IProfileCreator";
+import type { Session } from "../../domain/session.schema";
+import type { IProfileCreator } from "../../domain/ports/IProfileCreator";
 
 export class VerifyMagicLinkUseCase {
   readonly #magicLinkRepo: IMagicLinkRepository;

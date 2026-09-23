@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "../../database/db";
 import { orders, offers } from "../../database/schema";
-import { IOrderFulfillmentService } from "../application/order-fulfillment.service.interface";
+import type { IOrderFulfillmentService } from "../application/order-fulfillment.service.interface";
 
 export class OrderFulfillmentAdapter implements IOrderFulfillmentService {
   async getOrderDetails(

@@ -1,5 +1,6 @@
 import { db } from "../../database/db";
-import { threads, messages, ThreadRecord, MessageRecord } from "../../database/schema";
+import type { ThreadRecord, MessageRecord } from "../../database/schema";
+import { threads, messages } from "../../database/schema";
 import { eq, or, and, desc, asc } from "drizzle-orm";
 import { randomUUID } from "crypto";
 

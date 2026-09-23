@@ -1,8 +1,8 @@
 import { eq, lt, and } from "drizzle-orm";
 import { db } from "../../database/db";
 import { fulfillments } from "../../database/schema";
-import { IFulfillmentRepository } from "../domain/fulfillment.repository";
-import { Fulfillment, FulfillmentStatus } from "../domain/fulfillment.schema";
+import type { IFulfillmentRepository } from "../domain/fulfillment.repository";
+import type { Fulfillment, FulfillmentStatus } from "../domain/fulfillment.schema";
 
 export class SqlFulfillmentRepository implements IFulfillmentRepository {
   async createFulfillment(data: { id: string; orderId: string }): Promise<Fulfillment> {

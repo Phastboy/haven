@@ -1,5 +1,5 @@
-import { IOfferRepository } from "../domain/offer.repository";
-import { UpdateOfferData, Offer } from "../domain/offer.schema";
+import type { IOfferRepository } from "../domain/offer.repository";
+import type { UpdateOfferData, Offer } from "../domain/offer.schema";
 import { OfferNotFoundError, UnauthorizedOfferActionError } from "../domain/errors";
 
 export class UpdateOfferUseCase {

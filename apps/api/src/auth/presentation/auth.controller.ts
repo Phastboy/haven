@@ -14,7 +14,7 @@ import { MagicLinkRepository } from "../infrastructure/repositories/magic-link.r
 import { AccountRepository } from "../infrastructure/repositories/account.repository";
 import { SessionRepository } from "../infrastructure/repositories/session.repository";
 import { OAuthCredentialRepository } from "../infrastructure/repositories/oauth-credential.repository";
-import { IProfileCreator } from "../domain/ports/IProfileCreator";
+import type { IProfileCreator } from "../domain/ports/IProfileCreator";
 import { SqlUserRepository } from "../../user/infrastructure/sql-user.repository";
 
 import { tokenService } from "../infrastructure/services/token.service";

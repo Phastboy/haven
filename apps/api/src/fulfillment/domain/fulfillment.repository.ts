@@ -1,4 +1,4 @@
-import { Fulfillment, FulfillmentStatus } from "./fulfillment.schema";
+import type { Fulfillment, FulfillmentStatus } from "./fulfillment.schema";
 
 export interface IFulfillmentRepository {
   createFulfillment(data: { id: string; orderId: string }): Promise<Fulfillment>;

@@ -1,5 +1,5 @@
-import { ISessionRepository } from "../../domain/ports/ISessionRepository";
-import { TokenService } from "../../infrastructure/services/token.service";
+import type { ISessionRepository } from "../../domain/ports/ISessionRepository";
+import type { TokenService } from "../../infrastructure/services/token.service";
 
 export class LogoutUseCase {
   readonly #sessionRepo: ISessionRepository;

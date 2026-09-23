@@ -1,4 +1,4 @@
-import { IEmailService } from "../../domain/ports/IEmailService";
+import type { IEmailService } from "../../domain/ports/IEmailService";
 import * as nodemailer from "nodemailer";
 
 export class SmtpEmailService implements IEmailService {

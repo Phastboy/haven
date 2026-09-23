@@ -1,4 +1,4 @@
-import { Offer, CreateOfferData, UpdateOfferData } from "./offer.schema";
+import type { Offer, CreateOfferData, UpdateOfferData } from "./offer.schema";
 
 export interface IOfferRepository {
   create(userId: string, data: CreateOfferData): Promise<Offer>;

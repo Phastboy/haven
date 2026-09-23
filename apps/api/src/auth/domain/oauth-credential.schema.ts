@@ -1,4 +1,5 @@
-import { Type, Static } from "typebox";
+import type { Static } from "typebox";
+import { Type } from "typebox";
 
 export const OAuthCredentialSchema = Type.Object({
   id: Type.String({ format: "uuid" }),

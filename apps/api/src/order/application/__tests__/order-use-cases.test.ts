@@ -8,7 +8,7 @@ import {
   OfferNotActiveError,
   DuplicateOrderError,
 } from "../../domain/errors";
-import { Order } from "../../domain/order.schema";
+import type { Order } from "../../domain/order.schema";
 
 describe("Order Use Cases", () => {
   describe("CreateOrderUseCase", () => {

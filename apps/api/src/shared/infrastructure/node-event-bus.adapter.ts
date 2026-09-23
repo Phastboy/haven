@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import { IEventBus, DomainEvents } from "../domain/event-bus.interface";
+import type { IEventBus, DomainEvents } from "../domain/event-bus.interface";
 
 export class NodeEventEmitterAdapter implements IEventBus {
   private emitter = new EventEmitter();

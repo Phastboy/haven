@@ -1,6 +1,6 @@
-import { ISessionRepository } from "../../domain/ports/ISessionRepository";
-import { TokenService } from "../../infrastructure/services/token.service";
-import { SessionWithAccount } from "../../domain/session.schema";
+import type { ISessionRepository } from "../../domain/ports/ISessionRepository";
+import type { TokenService } from "../../infrastructure/services/token.service";
+import type { SessionWithAccount } from "../../domain/session.schema";
 import { UnauthorizedError } from "../../domain/errors";
 
 export class GetSessionUseCase {

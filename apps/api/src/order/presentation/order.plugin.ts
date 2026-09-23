@@ -23,7 +23,7 @@ import {
   DuplicateOrderError,
 } from "../domain/errors";
 
-import { IEventBus } from "../../shared/domain/event-bus.interface";
+import type { IEventBus } from "../../shared/domain/event-bus.interface";
 
 export const createOrderPlugin = (eventBus?: IEventBus) => {
   const repository = new SqlOrderRepository();
