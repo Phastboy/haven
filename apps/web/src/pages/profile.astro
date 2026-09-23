@@ -16,5 +16,13 @@ const user = { ...(session.user ?? {}), email: (session.user as any)?.email || s
       <p class="mt-1 text-sm text-zinc-400">Your public information and account settings.</p>
     </header>
     <ProfileForm client:load user={user} />
+
+    <div class="mt-8 flex justify-center">
+      <form method="post" action="/logout">
+        <button type="submit" class="text-sm font-medium text-red-500 hover:text-red-400 transition-colors">
+          Log out of your account
+        </button>
+      </form>
+    </div>
   </div>
 </Layout>
