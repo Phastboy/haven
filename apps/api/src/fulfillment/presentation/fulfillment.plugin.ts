@@ -16,13 +16,6 @@ import {
   deliverFulfillmentBodySchema,
   requestRevisionBodySchema,
 } from "../domain/fulfillment.schema";
-import {
-  FulfillmentNotFoundError,
-  UnauthorizedFulfillmentActionError,
-  InvalidFulfillmentStateTransitionError,
-  RevisionNotApplicableError,
-  OrderNotFoundForFulfillmentError,
-} from "../domain/errors";
 
 export const createFulfillmentPlugin = () => {
   const repository = new SqlFulfillmentRepository();
@@ -35,41 +28,6 @@ export const createFulfillmentPlugin = () => {
   const getSessionUseCase = new GetSessionUseCase(new SessionRepository(), tokenService);
 
   return new Elysia({ prefix: "/orders/:orderId/fulfillment", tags: ["Fulfillment"] })
-    .error(({ error, set }) => {
-      if (error instanceof FulfillmentNotFoundError || error.name === "FulfillmentNotFoundError") {
-        set.status = 404;
-        return { error: error.message };
-      }
-      if (
-        error instanceof OrderNotFoundForFulfillmentError ||
-        error.name === "OrderNotFoundForFulfillmentError"
-      ) {
-        set.status = 404;
-        return { error: error.message };
-      }
-      if (
-        error instanceof UnauthorizedFulfillmentActionError ||
-        error.name === "UnauthorizedFulfillmentActionError"
-      ) {
-        set.status = 403;
-        return { error: error.message };
-      }
-      if (
-        error instanceof InvalidFulfillmentStateTransitionError ||
-        error.name === "InvalidFulfillmentStateTransitionError"
-      ) {
-        set.status = 400;
-        return { error: error.message };
-      }
-      if (
-        error instanceof RevisionNotApplicableError ||
-        error.name === "RevisionNotApplicableError"
-      ) {
-        set.status = 400;
-        return { error: error.message };
-      }
-      return;
-    })
     .derive(async ({ headers }: { headers: Record<string, string | undefined> }) => {
       const authHeader = headers["authorization"];
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -89,8 +47,7 @@ export const createFulfillmentPlugin = () => {
       }
     })
     .get("/", async ({ params: { orderId }, session, set }) => {
-      const authCheck = requireAuth({ session, set });
-      if (authCheck) return authCheck;
+      requireAuth({ session, set });
 
       // Ideally we would also verify if the user has access to this order (owner or requester)
       const fulfillment = await repository.getFulfillmentByOrderId(orderId);
@@ -106,8 +63,7 @@ export const createFulfillmentPlugin = () => {
         body: deliverFulfillmentBodySchema,
       },
       async ({ params: { orderId }, body, user, session, set }) => {
-        const authCheck = requireAuth({ session, set });
-        if (authCheck) return authCheck;
+        requireAuth({ session, set });
 
         if (!user) {
           set.status = 404;
@@ -123,8 +79,7 @@ export const createFulfillmentPlugin = () => {
       },
     )
     .post("/accept", async ({ params: { orderId }, user, session, set }) => {
-      const authCheck = requireAuth({ session, set });
-      if (authCheck) return authCheck;
+      requireAuth({ session, set });
 
       if (!user) {
         set.status = 404;
@@ -142,8 +97,7 @@ export const createFulfillmentPlugin = () => {
         body: requestRevisionBodySchema,
       },
       async ({ params: { orderId }, body, user, session, set }) => {
-        const authCheck = requireAuth({ session, set });
-        if (authCheck) return authCheck;
+        requireAuth({ session, set });
 
         if (!user) {
           set.status = 404;

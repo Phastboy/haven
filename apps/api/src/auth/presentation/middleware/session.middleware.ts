@@ -1,11 +1,12 @@
 import type { SessionWithAccount } from "../../domain/session.schema";
+import { UnauthorizedError } from "../../domain/errors";
+
 export const requireAuth = (context: {
   session?: SessionWithAccount | null;
   set: { status?: number | string; [key: string]: unknown };
 }) => {
   if (!context.session) {
-    context.set.status = 401;
-    return { error: "Unauthorized access" };
+    throw new UnauthorizedError();
   }
   return;
 };

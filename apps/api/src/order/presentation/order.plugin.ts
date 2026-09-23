@@ -13,15 +13,6 @@ import { db } from "../../database/db";
 import { users } from "../../database/schema";
 import { eq } from "drizzle-orm";
 import { createOrderBodySchema, updateOrderStatusBodySchema } from "../domain/order.schema";
-import {
-  OrderNotFoundError,
-  UnauthorizedOrderActionError,
-  InvalidOrderStateTransitionError,
-  SelfOrderNotAllowedError,
-  OfferNotActiveError,
-  OfferNotFoundError,
-  DuplicateOrderError,
-} from "../domain/errors";
 
 import type { IEventBus } from "../../shared/domain/event-bus.interface";
 
@@ -36,43 +27,6 @@ export const createOrderPlugin = (eventBus?: IEventBus) => {
   const getSessionUseCase = new GetSessionUseCase(new SessionRepository(), tokenService);
 
   return new Elysia({ prefix: "/orders", tags: ["Orders"] })
-    .error(({ error, set }) => {
-      if (error instanceof OrderNotFoundError || error.name === "OrderNotFoundError") {
-        set.status = 404;
-        return { error: error.message };
-      }
-      if (
-        error instanceof UnauthorizedOrderActionError ||
-        error.name === "UnauthorizedOrderActionError"
-      ) {
-        set.status = 403;
-        return { error: error.message };
-      }
-      if (
-        error instanceof InvalidOrderStateTransitionError ||
-        error.name === "InvalidOrderStateTransitionError"
-      ) {
-        set.status = 400;
-        return { error: error.message };
-      }
-      if (error instanceof SelfOrderNotAllowedError || error.name === "SelfOrderNotAllowedError") {
-        set.status = 400;
-        return { error: error.message };
-      }
-      if (error instanceof OfferNotActiveError || error.name === "OfferNotActiveError") {
-        set.status = 400;
-        return { error: error.message };
-      }
-      if (error instanceof OfferNotFoundError || error.name === "OfferNotFoundError") {
-        set.status = 404;
-        return { error: error.message };
-      }
-      if (error instanceof DuplicateOrderError || error.name === "DuplicateOrderError") {
-        set.status = 409;
-        return { error: error.message };
-      }
-      return;
-    })
     .derive(async ({ headers }: { headers: Record<string, string | undefined> }) => {
       const authHeader = headers["authorization"];
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -100,8 +54,7 @@ export const createOrderPlugin = (eventBus?: IEventBus) => {
         body: createOrderBodySchema,
       },
       async ({ body, user, session, set }) => {
-        const authCheck = requireAuth({ session, set });
-        if (authCheck) return authCheck;
+        requireAuth({ session, set });
 
         if (!user) {
           set.status = 404;
@@ -119,8 +72,7 @@ export const createOrderPlugin = (eventBus?: IEventBus) => {
       },
     )
     .get("/me", async ({ user, session, set }) => {
-      const authCheck = requireAuth({ session, set });
-      if (authCheck) return authCheck;
+      requireAuth({ session, set });
 
       if (!user) {
         set.status = 404;
@@ -130,8 +82,7 @@ export const createOrderPlugin = (eventBus?: IEventBus) => {
       return getOrdersUseCase.getRequesterOrders(user.id);
     })
     .get("/received", async ({ user, session, set }) => {
-      const authCheck = requireAuth({ session, set });
-      if (authCheck) return authCheck;
+      requireAuth({ session, set });
 
       if (!user) {
         set.status = 404;
@@ -146,8 +97,7 @@ export const createOrderPlugin = (eventBus?: IEventBus) => {
         body: updateOrderStatusBodySchema,
       },
       async ({ params, body, user, session, set }) => {
-        const authCheck = requireAuth({ session, set });
-        if (authCheck) return authCheck;
+        requireAuth({ session, set });
 
         return updateOrderStatusUseCase.execute({
           orderId: params.id,

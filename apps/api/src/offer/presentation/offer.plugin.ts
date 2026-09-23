@@ -6,7 +6,7 @@ import { UpdateOfferUseCase } from "../application/update-offer.usecase";
 import { DeleteOfferUseCase } from "../application/delete-offer.usecase";
 import { GetOfferUseCase } from "../application/get-offer.usecase";
 import { ListUserOffersUseCase } from "../application/list-user-offers.usecase";
-import { OfferNotFoundError, UnauthorizedOfferActionError } from "../domain/errors";
+import { OfferNotFoundError } from "../domain/errors";
 import { requireAuth } from "../../auth/presentation/middleware/session.middleware";
 import { GetSessionUseCase } from "../../auth/application/use-cases/get-session.use-case";
 import { SessionRepository } from "../../auth/infrastructure/repositories/session.repository";
@@ -27,20 +27,6 @@ export const createOfferPlugin = () => {
   const getSessionUseCase = new GetSessionUseCase(new SessionRepository(), tokenService);
 
   return new Elysia({ prefix: "/offers", tags: ["Offers"] })
-    .error(({ error, set }) => {
-      if (error instanceof OfferNotFoundError || error.name === "OfferNotFoundError") {
-        set.status = 404;
-        return { error: error.message };
-      }
-      if (
-        error instanceof UnauthorizedOfferActionError ||
-        error.name === "UnauthorizedOfferActionError"
-      ) {
-        set.status = 403;
-        return { error: error.message };
-      }
-      return;
-    })
     .derive(async ({ headers }: { headers: Record<string, string | undefined> }) => {
       const authHeader = headers["authorization"];
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -96,8 +82,7 @@ export const createOfferPlugin = () => {
         body: CreateOfferBody,
       },
       async ({ body, user, session, set }) => {
-        const authCheck = requireAuth({ session, set });
-        if (authCheck) return authCheck;
+        requireAuth({ session, set });
 
         if (!user) {
           set.status = 404;
@@ -116,8 +101,7 @@ export const createOfferPlugin = () => {
         body: UpdateOfferBody,
       },
       async ({ params, body, user, session, set }) => {
-        const authCheck = requireAuth({ session, set });
-        if (authCheck) return authCheck;
+        requireAuth({ session, set });
 
         return updateOffer.execute(user!.id, params.id, body);
       },
@@ -128,8 +112,7 @@ export const createOfferPlugin = () => {
         params: OfferIdParam,
       },
       async ({ params, user, session, set }) => {
-        const authCheck = requireAuth({ session, set });
-        if (authCheck) return authCheck;
+        requireAuth({ session, set });
 
         await deleteOffer.execute(user!.id, params.id);
         set.status = 204;
