@@ -1,5 +1,5 @@
-import { GraphQLContext } from "./context";
-import { DirectoryOffer } from "../../domain/directory.schema";
+import type { GraphQLContext } from "./context";
+import type { DirectoryOffer } from "../../domain/directory.schema";
 
 export const resolvers = {
   Query: {

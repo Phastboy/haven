@@ -4,9 +4,9 @@ import { UpdateOfferUseCase } from "../update-offer.usecase";
 import { DeleteOfferUseCase } from "../delete-offer.usecase";
 import { GetOfferUseCase } from "../get-offer.usecase";
 import { ListUserOffersUseCase } from "../list-user-offers.usecase";
-import { IOfferRepository } from "../../domain/offer.repository";
+import type { IOfferRepository } from "../../domain/offer.repository";
 import { OfferNotFoundError, UnauthorizedOfferActionError } from "../../domain/errors";
-import { Offer } from "../../domain/offer.schema";
+import type { Offer } from "../../domain/offer.schema";
 
 const mockOffer: Offer = {
   id: "offer-1",

@@ -1,4 +1,4 @@
-import {
+import type {
   SqlMessageRepository,
   ThreadWithParticipants,
 } from "../infrastructure/sql-message.repository";

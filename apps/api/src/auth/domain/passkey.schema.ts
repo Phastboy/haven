@@ -1,4 +1,5 @@
-import { Type, Static } from "typebox";
+import type { Static } from "typebox";
+import { Type } from "typebox";
 
 // Phase 2 Schema (Documented Only, Not Migrated)
 export const PasskeySchema = Type.Object({

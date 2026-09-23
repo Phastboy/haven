@@ -1,12 +1,12 @@
-import { IOrderRepository } from "../domain/order.repository";
-import { Order, OrderStatus } from "../domain/order.schema";
+import type { IOrderRepository } from "../domain/order.repository";
+import type { Order, OrderStatus } from "../domain/order.schema";
 import {
   OrderNotFoundError,
   UnauthorizedOrderActionError,
   InvalidOrderStateTransitionError,
 } from "../domain/errors";
 
-import { IEventBus } from "../../shared/domain/event-bus.interface";
+import type { IEventBus } from "../../shared/domain/event-bus.interface";
 
 export interface IOfferOwnerService {
   getOfferOwnerId(offerId: string): Promise<string | null>;

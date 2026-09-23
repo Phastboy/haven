@@ -1,5 +1,5 @@
-import { IFulfillmentRepository } from "../domain/fulfillment.repository";
-import { IOrderFulfillmentService } from "./order-fulfillment.service.interface";
+import type { IFulfillmentRepository } from "../domain/fulfillment.repository";
+import type { IOrderFulfillmentService } from "./order-fulfillment.service.interface";
 
 export class AutoCompleteExpiredUseCase {
   constructor(

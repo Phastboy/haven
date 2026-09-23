@@ -1,4 +1,4 @@
-import { IOfferRepository } from "../domain/offer.repository";
+import type { IOfferRepository } from "../domain/offer.repository";
 import { OfferNotFoundError, UnauthorizedOfferActionError } from "../domain/errors";
 
 export class DeleteOfferUseCase {

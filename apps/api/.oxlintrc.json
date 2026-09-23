@@ -1,5 +1,7 @@
 {
+  "ignorePatterns": [".agents"],
   "rules": {
+    "typescript/consistent-type-imports": "error",
     "no-explicit-any": "error",
     "typescript/no-unsafe-assignment": "error",
     "typescript/no-unsafe-member-access": "error",

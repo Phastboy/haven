@@ -2,8 +2,8 @@ import { db } from "../../../database/db";
 import { magicLinks } from "../../../database/schema";
 import { eq, and, isNull } from "drizzle-orm";
 import { toIso } from "../../../database/map";
-import { CreateMagicLinkDTO, IMagicLinkRepository } from "../../domain/ports/IMagicLinkRepository";
-import { MagicLink } from "../../domain/magic-link.schema";
+import type { CreateMagicLinkDTO, IMagicLinkRepository } from "../../domain/ports/IMagicLinkRepository";
+import type { MagicLink } from "../../domain/magic-link.schema";
 
 export class MagicLinkRepository implements IMagicLinkRepository {
   async create(data: CreateMagicLinkDTO): Promise<MagicLink> {

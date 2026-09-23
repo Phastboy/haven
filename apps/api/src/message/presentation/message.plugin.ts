@@ -20,7 +20,7 @@ import {
   SelfThreadError,
 } from "../domain/errors";
 
-import { IEventBus } from "../../shared/domain/event-bus.interface";
+import type { IEventBus } from "../../shared/domain/event-bus.interface";
 
 export const createMessagePlugin = (eventBus: IEventBus) => {
   const repository = new SqlMessageRepository();

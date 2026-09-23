@@ -1,4 +1,4 @@
-import { MessageRecord } from "../../database/schema";
+import type { MessageRecord } from "../../database/schema";
 
 export interface OrderAcceptedEventPayload {
   orderId: string;

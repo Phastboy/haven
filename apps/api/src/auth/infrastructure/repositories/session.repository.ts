@@ -2,8 +2,8 @@ import { db } from "../../../database/db";
 import { sessions } from "../../../database/schema";
 import { eq, lt } from "drizzle-orm";
 import { toIso } from "../../../database/map";
-import { CreateSessionDTO, ISessionRepository } from "../../domain/ports/ISessionRepository";
-import { Session, SessionWithAccount } from "../../domain/session.schema";
+import type { CreateSessionDTO, ISessionRepository } from "../../domain/ports/ISessionRepository";
+import type { Session, SessionWithAccount } from "../../domain/session.schema";
 
 export class SessionRepository implements ISessionRepository {
   async create(data: CreateSessionDTO): Promise<Session> {

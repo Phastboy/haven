@@ -1,8 +1,8 @@
 import { describe, expect, it, mock } from "bun:test";
 import { GetSessionUseCase } from "../use-cases/get-session.use-case";
-import { ISessionRepository } from "../../domain/ports/ISessionRepository";
+import type { ISessionRepository } from "../../domain/ports/ISessionRepository";
 import { UnauthorizedError } from "../../domain/errors";
-import { SessionWithAccount } from "../../domain/session.schema";
+import type { SessionWithAccount } from "../../domain/session.schema";
 
 describe("GetSessionUseCase", () => {
   const mockTokenService = {

@@ -1,5 +1,5 @@
-import { IAccountPlatformLinkRepository } from "../../domain/ports/IAccountPlatformLinkRepository";
-import { AccountPlatformLink } from "../../domain/account-platform-link.schema";
+import type { IAccountPlatformLinkRepository } from "../../domain/ports/IAccountPlatformLinkRepository";
+import type { AccountPlatformLink } from "../../domain/account-platform-link.schema";
 
 export class LinkPlatformUseCase {
   #platformLinkRepo: IAccountPlatformLinkRepository;

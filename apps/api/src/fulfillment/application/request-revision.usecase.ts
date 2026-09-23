@@ -1,6 +1,6 @@
-import { IFulfillmentRepository } from "../domain/fulfillment.repository";
-import { IOrderFulfillmentService } from "./order-fulfillment.service.interface";
-import { Fulfillment } from "../domain/fulfillment.schema";
+import type { IFulfillmentRepository } from "../domain/fulfillment.repository";
+import type { IOrderFulfillmentService } from "./order-fulfillment.service.interface";
+import type { Fulfillment } from "../domain/fulfillment.schema";
 import {
   FulfillmentNotFoundError,
   UnauthorizedFulfillmentActionError,

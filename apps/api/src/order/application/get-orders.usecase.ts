@@ -1,5 +1,5 @@
-import { IOrderRepository } from "../domain/order.repository";
-import { Order } from "../domain/order.schema";
+import type { IOrderRepository } from "../domain/order.repository";
+import type { Order } from "../domain/order.schema";
 
 export class GetOrdersUseCase {
   constructor(private readonly orderRepository: IOrderRepository) {}

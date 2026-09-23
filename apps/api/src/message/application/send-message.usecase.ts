@@ -1,8 +1,8 @@
-import { SqlMessageRepository } from "../infrastructure/sql-message.repository";
-import { MessageRecord } from "../../database/schema";
+import type { SqlMessageRepository } from "../infrastructure/sql-message.repository";
+import type { MessageRecord } from "../../database/schema";
 import { ThreadNotFoundError, UnauthorizedThreadAccessError } from "../domain/errors";
 
-import { IEventBus } from "../../shared/domain/event-bus.interface";
+import type { IEventBus } from "../../shared/domain/event-bus.interface";
 
 export class SendMessageUseCase {
   constructor(

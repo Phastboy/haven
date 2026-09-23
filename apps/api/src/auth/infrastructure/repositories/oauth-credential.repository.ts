@@ -2,11 +2,11 @@ import { db } from "../../../database/db";
 import { oauthCredentials } from "../../../database/schema";
 import { eq, and } from "drizzle-orm";
 import { toIso } from "../../../database/map";
-import {
+import type {
   CreateOAuthCredentialDTO,
   IOAuthCredentialRepository,
 } from "../../domain/ports/IOAuthCredentialRepository";
-import { OAuthCredential } from "../../domain/oauth-credential.schema";
+import type { OAuthCredential } from "../../domain/oauth-credential.schema";
 
 export class OAuthCredentialRepository implements IOAuthCredentialRepository {
   async create(data: CreateOAuthCredentialDTO): Promise<OAuthCredential> {

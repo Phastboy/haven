@@ -15,8 +15,7 @@
     "lint:api": "bun run --cwd apps/api lint"
   },
   "dependencies": {
-    "elysia": "2.0.0-beta.16",
-    "typebox": "^1.3.34"
+    "elysia": "2.0.0-beta.16"
   },
   "devDependencies": {
     "@types/bun": "^1.4.2",

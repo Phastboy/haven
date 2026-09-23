@@ -1,10 +1,10 @@
-import { IAccountRepository } from "../../domain/ports/IAccountRepository";
-import { IOAuthCredentialRepository } from "../../domain/ports/IOAuthCredentialRepository";
-import { ISessionRepository } from "../../domain/ports/ISessionRepository";
-import { IGoogleTokenService } from "../../domain/ports/IGoogleTokenService";
-import { TokenService } from "../../infrastructure/services/token.service";
-import { Session } from "../../domain/session.schema";
-import { IProfileCreator } from "../../domain/ports/IProfileCreator";
+import type { IAccountRepository } from "../../domain/ports/IAccountRepository";
+import type { IOAuthCredentialRepository } from "../../domain/ports/IOAuthCredentialRepository";
+import type { ISessionRepository } from "../../domain/ports/ISessionRepository";
+import type { IGoogleTokenService } from "../../domain/ports/IGoogleTokenService";
+import type { TokenService } from "../../infrastructure/services/token.service";
+import type { Session } from "../../domain/session.schema";
+import type { IProfileCreator } from "../../domain/ports/IProfileCreator";
 
 export class LoginWithGoogleUseCase {
   readonly #accountRepo: IAccountRepository;

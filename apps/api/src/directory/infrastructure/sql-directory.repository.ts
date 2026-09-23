@@ -1,5 +1,5 @@
-import { IDirectoryRepository } from "../domain/directory.repository";
-import { DirectoryOffer, DirectoryUser } from "../domain/directory.schema";
+import type { IDirectoryRepository } from "../domain/directory.repository";
+import type { DirectoryOffer, DirectoryUser } from "../domain/directory.schema";
 import { db } from "../../database/db";
 import { offers, users } from "../../database/schema";
 import { eq, desc, inArray } from "drizzle-orm";

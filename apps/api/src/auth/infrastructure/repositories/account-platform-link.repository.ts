@@ -2,11 +2,11 @@ import { db } from "../../../database/db";
 import { accountPlatformLinks } from "../../../database/schema";
 import { eq, and } from "drizzle-orm";
 import { toIso } from "../../../database/map";
-import {
+import type {
   CreateAccountPlatformLinkDTO,
   IAccountPlatformLinkRepository,
 } from "../../domain/ports/IAccountPlatformLinkRepository";
-import { AccountPlatformLink } from "../../domain/account-platform-link.schema";
+import type { AccountPlatformLink } from "../../domain/account-platform-link.schema";
 
 export class AccountPlatformLinkRepository implements IAccountPlatformLinkRepository {
   async create(data: CreateAccountPlatformLinkDTO): Promise<AccountPlatformLink> {
