@@ -47,6 +47,30 @@ export default function OfferForm(props: { token: string; initialData?: any; isE
     }
   };
 
+  const handleDelete = async () => {
+    if (!props.isEdit || !props.initialData?.id) return;
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this offer? This cannot be undone.",
+    );
+    if (!confirmed) return;
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const result = await api.offers[props.initialData.id].delete();
+      if (result.error) {
+        setError((result.error.value as any)?.error || "Failed to delete offer");
+        setLoading(false);
+      } else {
+        window.location.href = "/my-offers";
+      }
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred");
+      setLoading(false);
+    }
+  };
+
   return (
     <div class="w-full max-w-2xl mx-auto bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden mt-8">
       <div class="p-8">
@@ -152,22 +176,36 @@ export default function OfferForm(props: { token: string; initialData?: any; isE
             </p>
           </div>
 
-          <div class="pt-6 border-t border-zinc-800 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => window.history.back()}
-              disabled={loading()}
-              class="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading()}
-              class="px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {loading() ? "Saving..." : props.isEdit ? "Update Offer" : "Create Offer"}
-            </button>
+          <div class="pt-6 border-t border-zinc-800 flex justify-between gap-3">
+            <div>
+              {props.isEdit && (
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={loading()}
+                  class="px-6 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl font-medium transition-colors disabled:opacity-50"
+                >
+                  Delete Offer
+                </button>
+              )}
+            </div>
+            <div class="flex gap-3">
+              <button
+                type="button"
+                onClick={() => window.history.back()}
+                disabled={loading()}
+                class="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading()}
+                class="px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loading() ? "Saving..." : props.isEdit ? "Update Offer" : "Create Offer"}
+              </button>
+            </div>
           </div>
         </form>
       </div>
