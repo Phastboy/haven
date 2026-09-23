@@ -99,7 +99,7 @@ describe("Message Use Cases", () => {
       mockRepo.getUserThreads.mockResolvedValue([{ id: "thread1" }] as unknown);
       const useCase = new GetThreadsUseCase(mockRepo as unknown as SqlMessageRepository);
       const threads = await useCase.execute("user1");
-      expect(threads).toHaveLength(1);
+      expect(threads.data).toHaveLength(1);
     });
   });
 
@@ -129,7 +129,7 @@ describe("Message Use Cases", () => {
       mockRepo.getThreadMessages.mockResolvedValue([{ id: "msg1" }] as unknown);
       const useCase = new GetMessagesUseCase(mockRepo as unknown as SqlMessageRepository);
       const messages = await useCase.execute("thread1", "user1");
-      expect(messages).toHaveLength(1);
+      expect(messages.data).toHaveLength(1);
     });
   });
 });

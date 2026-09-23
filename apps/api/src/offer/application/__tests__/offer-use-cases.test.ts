@@ -102,21 +102,21 @@ describe("Offer Use Cases", () => {
     it("should call findByUserId when requester is the owner", async () => {
       const useCase = new ListUserOffersUseCase(repository);
       const result = await useCase.execute("user-1", "user-1");
-      expect(result).toEqual([mockOffer]);
+      expect(result.data).toEqual([mockOffer]);
       expect(repository.findByUserId).toHaveBeenCalledWith("user-1");
     });
 
     it("should call findActiveByUserId for a third-party requester", async () => {
       const useCase = new ListUserOffersUseCase(repository);
       const result = await useCase.execute("user-1", "user-2");
-      expect(result).toEqual([mockOffer]);
+      expect(result.data).toEqual([mockOffer]);
       expect(repository.findActiveByUserId).toHaveBeenCalledWith("user-1");
     });
 
     it("should call findActiveByUserId for an unauthenticated requester", async () => {
       const useCase = new ListUserOffersUseCase(repository);
       const result = await useCase.execute("user-1");
-      expect(result).toEqual([mockOffer]);
+      expect(result.data).toEqual([mockOffer]);
       expect(repository.findActiveByUserId).toHaveBeenCalledWith("user-1");
     });
   });

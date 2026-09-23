@@ -22,14 +22,12 @@ describe("Message Plugin E2E", () => {
     await db
       .insert(users)
       .values({ id: user1Id, accountId: account1Id, username: `e2e1_${randomUUID()}` });
-    await db
-      .insert(sessions)
-      .values({
-        id: randomUUID(),
-        accountId: account1Id,
-        token: tokenService.hash(user1Token),
-        expiresAt: new Date(Date.now() + 1000000),
-      });
+    await db.insert(sessions).values({
+      id: randomUUID(),
+      accountId: account1Id,
+      token: tokenService.hash(user1Token),
+      expiresAt: new Date(Date.now() + 1000000),
+    });
 
     account2Id = randomUUID();
     user2Id = randomUUID();
@@ -38,14 +36,12 @@ describe("Message Plugin E2E", () => {
     await db
       .insert(users)
       .values({ id: user2Id, accountId: account2Id, username: `e2e2_${randomUUID()}` });
-    await db
-      .insert(sessions)
-      .values({
-        id: randomUUID(),
-        accountId: account2Id,
-        token: tokenService.hash(user2Token),
-        expiresAt: new Date(Date.now() + 1000000),
-      });
+    await db.insert(sessions).values({
+      id: randomUUID(),
+      accountId: account2Id,
+      token: tokenService.hash(user2Token),
+      expiresAt: new Date(Date.now() + 1000000),
+    });
   });
 
   afterAll(async () => {
@@ -80,7 +76,7 @@ describe("Message Plugin E2E", () => {
     );
     expect(response.status).toBe(200);
     const body = await response.json();
-    expect(Array.isArray(body)).toBe(true);
+    expect(Array.isArray(body.data)).toBe(true);
   });
 
   it("should send a message and retrieve it", async () => {
@@ -123,8 +119,8 @@ describe("Message Plugin E2E", () => {
       }),
     );
     expect(getRes.status).toBe(200);
-    const getBody = (await getRes.json()) as { content?: string }[];
-    expect(Array.isArray(getBody)).toBe(true);
-    expect(getBody[0]?.content).toBe("Hello E2E");
+    const getBody = (await getRes.json()) as { data: { content?: string }[] };
+    expect(Array.isArray(getBody.data)).toBe(true);
+    expect(getBody.data[0]?.content).toBe("Hello E2E");
   });
 });

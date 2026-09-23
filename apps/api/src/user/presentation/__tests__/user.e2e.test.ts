@@ -63,9 +63,9 @@ describe("User Plugin E2E", () => {
   test("GET /api/users should list profiles", async () => {
     const res = await app.handle(new Request("http://localhost/api/users"));
     expect(res.status).toBe(200);
-    const data = (await res.json()) as { id: string }[];
-    expect(Array.isArray(data)).toBe(true);
-    expect(data.length).toBeGreaterThanOrEqual(2);
+    const data = (await res.json()) as { data: { id: string; username: string }[] };
+    expect(Array.isArray(data.data)).toBe(true);
+    expect(data.data.length).toBeGreaterThanOrEqual(2);
   });
 
   test("GET /api/users/:id should fetch a specific profile", async () => {

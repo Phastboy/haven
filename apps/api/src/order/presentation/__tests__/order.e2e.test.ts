@@ -119,7 +119,7 @@ describe("Order API E2E", () => {
       body: JSON.stringify({ offerId: testOfferId }),
     });
     const res = await app.handle(req);
-    expect(res.status).toBe(400); // SelfOrderNotAllowedError
+    expect(res.status).toBe(400);
   });
 
   it("should allow requester to view their outgoing orders", async () => {
@@ -128,9 +128,9 @@ describe("Order API E2E", () => {
     });
     const res = await app.handle(req);
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { id: string; status: string }[];
-    expect(Array.isArray(body)).toBe(true);
-    expect(body.find((o: { id: string }) => o.id === testOrderId)).toBeDefined();
+    const body = (await res.json()) as { data: { id: string; status: string }[] };
+    expect(Array.isArray(body.data)).toBe(true);
+    expect(body.data.find((o: { id: string }) => o.id === testOrderId)).toBeDefined();
   });
 
   it("should allow owner to view received orders", async () => {
@@ -139,9 +139,9 @@ describe("Order API E2E", () => {
     });
     const res = await app.handle(req);
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { id: string; status: string }[];
-    expect(Array.isArray(body)).toBe(true);
-    expect(body.find((o: { id: string }) => o.id === testOrderId)).toBeDefined();
+    const body = (await res.json()) as { data: { id: string; status: string }[] };
+    expect(Array.isArray(body.data)).toBe(true);
+    expect(body.data.find((o: { id: string }) => o.id === testOrderId)).toBeDefined();
   });
 
   it("should allow owner to ACCEPT the order", async () => {
@@ -175,6 +175,6 @@ describe("Order API E2E", () => {
       body: JSON.stringify({ status: "CANCELLED" }),
     });
     const res = await app.handle(req);
-    expect(res.status).toBe(400); // InvalidOrderStateTransitionError
+    expect(res.status).toBe(422);
   });
 });
