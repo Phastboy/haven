@@ -1,5 +1,6 @@
 import type { IOfferRepository } from "../domain/offer.repository";
 import type { Offer } from "../domain/offer.schema";
+import { createPaginatedResponse, type PaginatedResponse } from "../../shared/domain/pagination";
 
 export class ListUserOffersUseCase {
   constructor(private readonly repository: IOfferRepository) {}
@@ -9,10 +10,12 @@ export class ListUserOffersUseCase {
    * @param requesterId  The account making the request (undefined = unauthenticated).
    *                   If requesterId === userId the caller is the owner and sees all statuses.
    */
-  async execute(userId: string, requesterId?: string): Promise<Offer[]> {
-    if (requesterId === userId) {
-      return this.repository.findByUserId(userId);
-    }
-    return this.repository.findActiveByUserId(userId);
+  async execute(userId: string, requesterId?: string): Promise<PaginatedResponse<Offer>> {
+    const data =
+      requesterId === userId
+        ? await this.repository.findByUserId(userId)
+        : await this.repository.findActiveByUserId(userId);
+
+    return createPaginatedResponse(data, { total: data.length });
   }
 }

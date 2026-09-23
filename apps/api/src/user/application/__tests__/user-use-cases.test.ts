@@ -83,7 +83,7 @@ describe("User Use Cases", () => {
     test("should return array of users", async () => {
       mockUserRepo.findAll.mockResolvedValueOnce([{ id: "user-1" }]);
       const result = await useCase.execute();
-      expect(result.length).toBe(1);
+      expect(result.data.length).toBe(1);
     });
   });
 

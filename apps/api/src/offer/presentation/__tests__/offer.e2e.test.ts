@@ -159,10 +159,10 @@ describe("Offer Plugin E2E", () => {
 
     const res = await app.handle(req);
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { id: string; title: string }[];
-    expect(Array.isArray(body)).toBe(true);
-    expect(body.length).toBeGreaterThan(0);
-    expect(body[0]!.title).toBe("Updated Title E2E");
+    const body = (await res.json()) as { data: { id: string; title: string }[] };
+    expect(Array.isArray(body.data)).toBe(true);
+    expect(body.data.length).toBeGreaterThan(0);
+    expect(body.data[0]!.title).toBe("Updated Title E2E");
   });
 
   it("should prevent unauthorized users from deleting (DELETE /offers/:id)", async () => {
