@@ -28,20 +28,28 @@ export class PostgresEventBusAdapter implements IEventBus {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, []);
       // Setup the PG listen once per event channel
-      await this.sql.listen(event, (payloadStr: string) => {
-        try {
-          const payload = JSON.parse(payloadStr) as DomainEvents[K];
+      try {
+        await this.sql.listen(event, async (payloadStr: string) => {
+          let payload: DomainEvents[K];
+          try {
+            payload = JSON.parse(payloadStr) as DomainEvents[K];
+          } catch (err) {
+            console.error(`[PostgresEventBus] Failed to parse payload for event ${event}:`, err);
+            return;
+          }
           const handlers = this.listeners.get(event) || [];
           for (const h of handlers) {
-            h(payload);
+            try {
+              await h(payload);
+            } catch (handlerErr) {
+              console.error(`[PostgresEventBus] Handler failed for event ${event}:`, handlerErr);
+            }
           }
-        } catch (err) {
-          console.error(
-            `[PostgresEventBus] Failed to parse or handle payload for event ${event}:`,
-            err,
-          );
-        }
-      });
+        });
+      } catch (listenErr) {
+        this.listeners.delete(event);
+        throw listenErr;
+      }
     }
 
     this.listeners.get(event)!.push(handler as unknown as (payload: unknown) => void);

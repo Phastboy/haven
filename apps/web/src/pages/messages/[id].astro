@@ -9,11 +9,12 @@ if (!token) {
   return Astro.redirect("/login");
 }
 
-const { data: authData, error: authError } = await client.auth.me.get({
+const { data: authDataRes, error: authError } = await client.auth.me.get({
   headers: {
     authorization: `Bearer ${token}`
   }
 });
+const authData = (authDataRes as any)?.data;
 
 if (authError || !authData?.account) {
   return Astro.redirect("/login");
@@ -23,11 +24,12 @@ const user = authData.account;
 const threadId = Astro.params.id as string;
 
 // Fetch all threads to find the details of this specific thread
-const { data: threads, error: threadsError } = await client.messages.threads.get({
+const { data: threadsRes, error: threadsError } = await client.messages.threads.get({
   headers: {
     authorization: `Bearer ${token}`
   }
 });
+const threads = (threadsRes as any)?.data;
 
 if (threadsError || !threads) {
   return Astro.redirect("/messages");
@@ -43,11 +45,12 @@ const isUser1 = thread.participant1.id === user.id;
 const otherUser = isUser1 ? thread.participant2 : thread.participant1;
 
 // Fetch initial messages for SSR
-const { data: messages, error: messagesError } = await client.messages.threads({ threadId }).get({
+const { data: messagesRes, error: messagesError } = await client.messages.threads({ threadId }).get({
   headers: {
     authorization: `Bearer ${token}`
   }
 });
+const messages = (messagesRes as any)?.data;
 
 const initialMessages = messages || [];
 ---

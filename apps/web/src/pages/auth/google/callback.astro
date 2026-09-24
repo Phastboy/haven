@@ -28,7 +28,8 @@ if (!idToken) {
 }
 
 try {
-  const { data, error } = await client.auth.google.login.post({ idToken });
+  const { data: resData, error } = await client.auth.google.login.post({ idToken });
+  const data = resData?.data;
 
   if (error || !data) {
     return Astro.redirect("/login?error=google_failed");

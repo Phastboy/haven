@@ -8,11 +8,12 @@ if (!token) {
   return Astro.redirect("/login");
 }
 
-const { data: authData, error: authError } = await client.auth.me.get({
+const { data: authDataRes, error: authError } = await client.auth.me.get({
   headers: {
     authorization: `Bearer ${token}`
   }
 });
+const authData = (authDataRes as any)?.data;
 
 if (authError || !authData?.account) {
   return Astro.redirect("/login");
@@ -20,11 +21,12 @@ if (authError || !authData?.account) {
 
 const user = authData.account;
 
-const { data: threads, error: threadsError } = await client.messages.threads.get({
+const { data: threadsRes, error: threadsError } = await client.messages.threads.get({
   headers: {
     authorization: `Bearer ${token}`
   }
 });
+const threads = (threadsRes as any)?.data;
 
 const threadList = threads || [];
 

@@ -10,12 +10,14 @@ if (!id) return Astro.redirect("/directory");
 
 // Offer, creator and session all start together instead of one after another.
 const session = await getSession(Astro);
-const { data: offer, error } = await client.offers({ id }).get();
+const { data: offerRes, error } = await client.offers({ id }).get();
+const offer = (offerRes as any)?.data;
 if (error || !offer) return Astro.redirect("/directory");
 
-const { data: creator } = offer.userId
+const { data: creatorRes } = offer.userId
   ? await client.users({ id: offer.userId }).get()
   : { data: null };
+const creator = (creatorRes as any)?.data;
 
 const author = creator as any;
 const isOwner = !!session?.user && (session.user as any).id === offer.userId;

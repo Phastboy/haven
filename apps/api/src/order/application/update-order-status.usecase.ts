@@ -78,11 +78,15 @@ export class UpdateOrderStatusUseCase {
     const updatedOrder = await this.orderRepository.updateOrderStatus(order.id, params.newStatus);
 
     if (params.newStatus === "ACCEPTED" && this.eventBus) {
-      this.eventBus.publish("order.accepted", {
-        orderId: order.id,
-        requesterId: order.requesterId,
-        ownerId: offerOwnerId,
-      });
+      try {
+        await this.eventBus.publish("order.accepted", {
+          orderId: order.id,
+          requesterId: order.requesterId,
+          ownerId: offerOwnerId,
+        });
+      } catch (err) {
+        console.error("[UpdateOrderStatusUseCase] Failed to publish order.accepted event:", err);
+      }
     }
 
     return updatedOrder;

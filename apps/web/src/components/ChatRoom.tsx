@@ -34,9 +34,12 @@ export default function ChatRoom(props: ChatRoomProps) {
 
   const fetchMessages = async () => {
     try {
-      const { data, error } = await client.messages.threads({ threadId: props.threadId }).get({
-        headers: { authorization: `Bearer ${props.token}` },
-      });
+      const { data: resData, error } = await client.messages
+        .threads({ threadId: props.threadId })
+        .get({
+          headers: { authorization: `Bearer ${props.token}` },
+        });
+      const data = (resData as any)?.data;
       if (data && !error) {
         // Backend returns DESC (newest first). Let's reverse it to display oldest top, newest bottom.
         const reversed = [...data].reverse();
@@ -82,9 +85,10 @@ export default function ChatRoom(props: ChatRoomProps) {
     scrollToBottom();
 
     try {
-      const { data, error } = await client.messages
+      const { data: resData, error } = await client.messages
         .threads({ threadId: props.threadId })
         .post({ content }, { headers: { authorization: `Bearer ${props.token}` } });
+      const data = (resData as any)?.data;
 
       if (!error && data) {
         // Replace temp message with real one
