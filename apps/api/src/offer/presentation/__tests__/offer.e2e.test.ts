@@ -94,7 +94,7 @@ describe("Offer Plugin E2E", () => {
     };
     expect(body.data?.title).toBe("E2E Offer");
     expect(body.data?.userId).toBe(testUserId1);
-    offerId1 = body.data?.id!;
+    offerId1 = body.data!.id!;
   });
 
   it("should prevent unauthorized users from editing offers (PATCH /offers/:id)", async () => {
