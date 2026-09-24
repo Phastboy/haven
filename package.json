@@ -9,10 +9,10 @@
     "format": "oxfmt src/ apps/",
     "dev": "bun run --parallel --filter '*' dev",
     "typecheck": "bun run --filter '*' typecheck",
+    "lint": "bun run --filter '*' lint",
     "build:web": "bun run --cwd apps/web build",
     "start:web": "bun apps/web/dist/server/entry.mjs",
-    "test:api": "bun run --cwd apps/api test",
-    "lint:api": "bun run --cwd apps/api lint"
+    "test:api": "bun run --cwd apps/api test"
   },
   "dependencies": {
     "elysia": "2.0.0-beta.16"
@@ -22,6 +22,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^17.5.1",
     "oxfmt": "^0.68.0",
+    "oxlint": "^1.83.0",
     "typescript": "^7.0.2"
   },
   "lint-staged": {
