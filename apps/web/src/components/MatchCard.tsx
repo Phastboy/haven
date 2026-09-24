@@ -16,7 +16,7 @@ export default function MatchCard(props: MatchCardProps) {
   createEffect(() => {
     if (status() === "ACCEPTED" || status() === "COMPLETED") {
       api.orders[props.order.id].fulfillment.get().then((res) => {
-        if (res.data) setFulfillment(res.data);
+        if (res.data?.data) setFulfillment(res.data.data as any);
       });
     }
   });
@@ -50,7 +50,7 @@ export default function MatchCard(props: MatchCardProps) {
       if (result.error) {
         setError((result.error.value as any)?.error || "Failed to deliver");
       } else {
-        setFulfillment(result.data);
+        setFulfillment(result.data?.data as any);
       }
     } catch (err: any) {
       setError(err.message);
@@ -87,7 +87,7 @@ export default function MatchCard(props: MatchCardProps) {
       if (result.error) {
         setError((result.error.value as any)?.error || "Failed to request revision");
       } else {
-        setFulfillment(result.data);
+        setFulfillment(result.data?.data as any);
       }
     } catch (err: any) {
       setError(err.message);

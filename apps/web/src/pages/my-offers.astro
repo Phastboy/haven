@@ -9,10 +9,11 @@ if (guard.redirect) return guard.redirect;
 const session = guard.session;
 if (!session.user) return Astro.redirect("/profile");
 
-const { data, error } = await client.offers
+const { data: resData, error } = await client.offers
   .user({ userId: (session.user as any).id })
   .get({ headers: authHeaders(session.token) });
 
+const data = (resData as any)?.data;
 const offers = (Array.isArray(data) ? data : []).map((offer: any) => ({ ...offer, user: session.user }));
 ---
 

@@ -27,12 +27,16 @@ export class SendMessageUseCase {
       thread.participant1Id === senderId ? thread.participant2Id : thread.participant1Id;
 
     // Emit event for real-time delivery
-    this.eventBus.publish("message.created", {
-      threadId,
-      senderId,
-      receiverId,
-      message,
-    });
+    try {
+      await this.eventBus.publish("message.created", {
+        threadId,
+        senderId,
+        receiverId,
+        message,
+      });
+    } catch (error) {
+      console.error("[SendMessageUseCase] Failed to publish message.created event:", error);
+    }
 
     return message;
   }

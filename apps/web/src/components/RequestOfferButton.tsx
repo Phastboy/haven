@@ -27,6 +27,7 @@ export default function RequestOfferButton(props: RequestOfferButtonProps) {
       };
 
       const result = await (api.orders as any).post(payload);
+      const data = (result.data as any)?.data;
 
       if (result.error) {
         setError((result.error.value as any)?.error || "Failed to submit request");

@@ -8,7 +8,8 @@ if (!token) {
 }
 
 try {
-  const { data, error } = await client.auth["magic-link"].verify.post({ token });
+  const { data: resData, error } = await client.auth["magic-link"].verify.post({ token });
+  const data = resData?.data;
 
   if (error || !data) {
     return Astro.redirect("/login?error=invalid_token");

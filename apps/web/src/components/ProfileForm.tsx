@@ -20,12 +20,13 @@ export default function ProfileForm(props: { user: any; token: string }) {
     setSuccess(false);
 
     try {
-      const { data, error: apiError } = await api.users.me.patch({
+      const { data: resData, error: apiError } = await api.users.me.patch({
         username: username() || null,
         name: name() || null,
         bio: bio() || null,
         profilePictureUrl: profilePictureUrl() || null,
       });
+      const data = (resData as any)?.data;
 
       if (apiError) {
         setError((apiError.value as any)?.error || "Failed to update profile");

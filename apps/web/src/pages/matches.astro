@@ -15,8 +15,8 @@ const [sentRes, receivedRes] = await Promise.all([
 ]);
 
 const byNewest = (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-const sent = [...((sentRes.data as any[]) ?? [])].sort(byNewest);
-const received = [...((receivedRes.data as any[]) ?? [])].sort(byNewest);
+const sent = [...(((sentRes.data as any)?.data as any[]) ?? [])].sort(byNewest);
+const received = [...(((receivedRes.data as any)?.data as any[]) ?? [])].sort(byNewest);
 
 const tab = Astro.url.searchParams.get("tab") === "sent" ? "sent" : "received";
 const orders = tab === "sent" ? sent : received;

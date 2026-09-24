@@ -23,7 +23,7 @@ if (!process.env["DATABASE_URL"]) {
 const eventBus = new PostgresEventBusAdapter(process.env["DATABASE_URL"]);
 
 // Set up cross-domain event listeners
-eventBus.subscribe("order.accepted", async (payload) => {
+await eventBus.subscribe("order.accepted", async (payload) => {
   const messageRepo = new SqlMessageRepository();
   const createThreadUseCase = new CreateThreadUseCase(messageRepo);
   try {
@@ -35,21 +35,21 @@ eventBus.subscribe("order.accepted", async (payload) => {
 });
 
 // Broadcast real-time notifications to users
-eventBus.subscribe("order.requested", (payload) => {
+await eventBus.subscribe("order.requested", (payload) => {
   app.server?.publish(
     `user:${payload.ownerId}`,
     JSON.stringify({ type: "NOTIFICATION", data: { message: "Someone requested your offer!" } }),
   );
 });
 
-eventBus.subscribe("order.accepted", (payload) => {
+await eventBus.subscribe("order.accepted", (payload) => {
   app.server?.publish(
     `user:${payload.requesterId}`,
     JSON.stringify({ type: "NOTIFICATION", data: { message: "Your request was accepted!" } }),
   );
 });
 
-eventBus.subscribe("message.created", (payload) => {
+await eventBus.subscribe("message.created", (payload) => {
   app.server?.publish(
     `user:${payload.receiverId}`,
     JSON.stringify({ type: "NEW_MESSAGE", data: payload.message }),

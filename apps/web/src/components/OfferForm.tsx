@@ -38,7 +38,7 @@ export default function OfferForm(props: { token: string; initialData?: any; isE
         setError((result.error.value as any)?.error || "Failed to save offer");
       } else {
         // Redirect to the offer page
-        window.location.href = `/offers/${result.data.id}`;
+        window.location.href = `/offers/${result.data?.data?.id}`;
       }
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred");
