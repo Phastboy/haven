@@ -70,6 +70,7 @@ export const app = new Elysia({ prefix: "/api" })
   .use(createMessagePlugin(eventBus))
   .use(createWsPlugin())
   .get("/", () => "Hello Elysia")
+  .get("/health", () => ({ status: "ok", timestamp: new Date().toISOString() }))
   // Global last-resort error handler — registered LAST so plugin-level handlers
   // run first (Elysia resolves hooks in definition order within the same scope).
   // This ensures no raw SQL, stack traces, or Postgres internals ever reach the
