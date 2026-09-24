@@ -8,7 +8,7 @@ export const POST: APIRoute = async (ctx) => {
       await client.auth.logout.post(null, {
         headers: { authorization: `Bearer ${token}` },
       });
-    } catch (e) {
+    } catch {
       // Ignore errors on logout
     }
     ctx.cookies.delete("token", { path: "/" });

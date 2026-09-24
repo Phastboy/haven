@@ -12,7 +12,7 @@ interface Message {
 interface ChatRoomProps {
   threadId: string;
   currentUserId: string;
-  otherUser: any;
+  otherUser: Record<string, unknown>;
   initialMessages: Message[];
   token: string;
 }
@@ -22,8 +22,8 @@ export default function ChatRoom(props: ChatRoomProps) {
   const [inputText, setInputText] = createSignal("");
   const [isSending, setIsSending] = createSignal(false);
 
-  let chatContainerRef: HTMLDivElement | undefined;
-  let pollingInterval: any;
+  let chatContainerRef: HTMLDivElement | undefined = undefined;
+  let pollingInterval: number | ReturnType<typeof setInterval> | undefined = undefined;
 
   // Auto-scroll to bottom
   const scrollToBottom = () => {
@@ -39,7 +39,7 @@ export default function ChatRoom(props: ChatRoomProps) {
         .get({
           headers: { authorization: `Bearer ${props.token}` },
         });
-      const data = (resData as any)?.data;
+      const data = (resData as { data?: unknown })?.data;
       if (data && !error) {
         // Backend returns DESC (newest first). Let's reverse it to display oldest top, newest bottom.
         const reversed = [...data].reverse();
@@ -59,7 +59,7 @@ export default function ChatRoom(props: ChatRoomProps) {
       await client.messages.threads({ threadId: props.threadId }).read.patch(null, {
         headers: { authorization: `Bearer ${props.token}` },
       });
-    } catch (e) {
+    } catch {
       // fail silently for read receipts
     }
   };
@@ -88,7 +88,7 @@ export default function ChatRoom(props: ChatRoomProps) {
       const { data: resData, error } = await client.messages
         .threads({ threadId: props.threadId })
         .post({ content }, { headers: { authorization: `Bearer ${props.token}` } });
-      const data = (resData as any)?.data;
+      const data = (resData as { data?: unknown })?.data;
 
       if (!error && data) {
         // Replace temp message with real one
@@ -97,7 +97,7 @@ export default function ChatRoom(props: ChatRoomProps) {
         // Handle error (remove temp msg)
         setMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
       }
-    } catch (err) {
+    } catch {
       setMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
     } finally {
       setIsSending(false);

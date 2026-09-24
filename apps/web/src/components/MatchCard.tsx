@@ -1,9 +1,22 @@
 import { createSignal, createEffect, Show } from "solid-js";
 import { api } from "../lib/browser-api";
-import { formatPrice, formatDate } from "../lib/format";
+import { formatPrice } from "../lib/format";
 
 interface MatchCardProps {
-  order: any;
+  order: {
+    id: string;
+    status: string;
+    requester?: { profilePictureUrl?: string; name?: string; username?: string };
+    offer?: {
+      user?: { profilePictureUrl?: string; name?: string; username?: string };
+      title?: string;
+      price?: number;
+    };
+    message?: string;
+    price?: number;
+    createdAt: string;
+    [key: string]: unknown;
+  };
   isReceived: boolean;
 }
 
@@ -11,12 +24,16 @@ export default function MatchCard(props: MatchCardProps) {
   const [status, setStatus] = createSignal(props.order.status);
   const [loading, setLoading] = createSignal(false);
   const [error, setError] = createSignal("");
-  const [fulfillment, setFulfillment] = createSignal<any>(null);
+  const [fulfillment, setFulfillment] = createSignal<{
+    status: string;
+    [key: string]: unknown;
+  } | null>(null);
 
   createEffect(() => {
     if (status() === "ACCEPTED" || status() === "COMPLETED") {
       api.orders[props.order.id].fulfillment.get().then((res) => {
-        if (res.data?.data) setFulfillment(res.data.data as any);
+        if (res.data?.data)
+          setFulfillment(res.data.data as { status: string; [key: string]: unknown });
       });
     }
   });
@@ -29,12 +46,12 @@ export default function MatchCard(props: MatchCardProps) {
       const result = await api.orders[props.order.id].status.patch({ status: newStatus });
 
       if (result.error) {
-        setError((result.error.value as any)?.error || `Failed to update status`);
+        setError((result.error.value as { error?: string })?.error || `Failed to update status`);
       } else {
         setStatus(newStatus);
       }
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
     } finally {
       setLoading(false);
     }
@@ -48,12 +65,12 @@ export default function MatchCard(props: MatchCardProps) {
         message: "Delivered via Haven.",
       });
       if (result.error) {
-        setError((result.error.value as any)?.error || "Failed to deliver");
+        setError((result.error.value as { error?: string })?.error || "Failed to deliver");
       } else {
-        setFulfillment(result.data?.data as any);
+        setFulfillment(result.data?.data as { status: string; [key: string]: unknown });
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
     } finally {
       setLoading(false);
     }
@@ -65,13 +82,13 @@ export default function MatchCard(props: MatchCardProps) {
     try {
       const result = await api.orders[props.order.id].fulfillment.accept.post();
       if (result.error) {
-        setError((result.error.value as any)?.error || "Failed to accept");
+        setError((result.error.value as { error?: string })?.error || "Failed to accept");
       } else {
         setStatus("COMPLETED");
         setFulfillment({ ...fulfillment(), status: "COMPLETED" });
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
     } finally {
       setLoading(false);
     }
@@ -85,12 +102,12 @@ export default function MatchCard(props: MatchCardProps) {
         reason: "Please revise.",
       });
       if (result.error) {
-        setError((result.error.value as any)?.error || "Failed to request revision");
+        setError((result.error.value as { error?: string })?.error || "Failed to request revision");
       } else {
-        setFulfillment(result.data?.data as any);
+        setFulfillment(result.data?.data as { status: string; [key: string]: unknown });
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
     } finally {
       setLoading(false);
     }

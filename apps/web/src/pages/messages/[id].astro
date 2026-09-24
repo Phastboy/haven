@@ -14,7 +14,7 @@ const { data: authDataRes, error: authError } = await client.auth.me.get({
     authorization: `Bearer ${token}`
   }
 });
-const authData = (authDataRes as any)?.data;
+const authData = (authDataRes as { data?: { account: { id: string } } })?.data;
 
 if (authError || !authData?.account) {
   return Astro.redirect("/login");
@@ -29,13 +29,13 @@ const { data: threadsRes, error: threadsError } = await client.messages.threads.
     authorization: `Bearer ${token}`
   }
 });
-const threads = (threadsRes as any)?.data;
+const threads = (threadsRes as { data?: Array<{ id: string; participant1: { id: string }, participant2: { id: string } }> })?.data;
 
 if (threadsError || !threads) {
   return Astro.redirect("/messages");
 }
 
-const thread = threads.find((t: any) => t.id === threadId);
+const thread = threads.find((t: { id: string; participant1: { id: string }, participant2: { id: string } }) => t.id === threadId);
 
 if (!thread) {
   return Astro.redirect("/messages");
@@ -50,7 +50,7 @@ const { data: messagesRes, error: messagesError } = await client.messages.thread
     authorization: `Bearer ${token}`
   }
 });
-const messages = (messagesRes as any)?.data;
+const messages = (messagesRes as { data?: unknown })?.data;
 
 const initialMessages = messages || [];
 ---
