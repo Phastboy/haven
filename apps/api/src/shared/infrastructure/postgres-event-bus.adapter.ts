@@ -16,9 +16,13 @@ export class PostgresEventBusAdapter implements IEventBus {
   }
 
   async publish<K extends keyof DomainEvents>(event: K, payload: DomainEvents[K]): Promise<void> {
-    const payloadStr = JSON.stringify(payload);
-    // notify channel name max length is 63 chars, which is fine for our events.
-    await this.sql`SELECT pg_notify(${event}, ${payloadStr})`;
+    try {
+      const payloadStr = JSON.stringify(payload);
+      // notify channel name max length is 63 chars, which is fine for our events.
+      await this.sql`SELECT pg_notify(${event}, ${payloadStr})`;
+    } catch (err) {
+      console.error(`[PostgresEventBusAdapter] Error publishing event ${event}:`, err);
+    }
   }
 
   async subscribe<K extends keyof DomainEvents>(
