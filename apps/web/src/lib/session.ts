@@ -4,7 +4,7 @@ import { client } from "../api";
 export type Session = {
   token: string;
   account: { id: string; email: string };
-  user: Record<string, any> | null;
+  user: Record<string, unknown> | null;
 };
 
 /**
@@ -21,10 +21,19 @@ export async function getSession(ctx: APIContext): Promise<Session | null> {
     client.users.me.get({ headers }),
   ]);
 
-  const account = authRes.data?.account;
+  const account =
+    (authRes.data as { data?: { account?: { id: string; email: string } } })?.data?.account ??
+    (authRes.data as { account?: { id: string; email: string } })?.account;
   if (authRes.error || !account) return null;
 
-  return { token, account, user: (userRes.data as any) ?? null };
+  return {
+    token,
+    account,
+    user:
+      (userRes.data as { data?: Record<string, unknown> })?.data ??
+      (userRes.data as Record<string, unknown>) ??
+      null,
+  };
 }
 
 /**
