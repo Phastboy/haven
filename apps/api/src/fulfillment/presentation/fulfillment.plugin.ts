@@ -55,7 +55,7 @@ export const createFulfillmentPlugin = () => {
         set.status = 404;
         return { error: "Fulfillment not found." };
       }
-      return fulfillment;
+      return { data: fulfillment };
     })
     .post(
       "/deliver",
@@ -70,12 +70,13 @@ export const createFulfillmentPlugin = () => {
           return { error: "User profile not found." };
         }
 
-        return deliverFulfillment.execute({
+        const fulfillment = await deliverFulfillment.execute({
           orderId,
           accountId: user.id,
           ...(body.message && { deliveryMessage: body.message }),
           autoReviewDays: 3, // Default auto-complete threshold
         });
+        return { data: fulfillment };
       },
     )
     .post("/accept", async ({ params: { orderId }, user, session, set }) => {
@@ -86,10 +87,11 @@ export const createFulfillmentPlugin = () => {
         return { error: "User profile not found." };
       }
 
-      return acceptFulfillment.execute({
+      const fulfillment = await acceptFulfillment.execute({
         orderId,
         accountId: user.id,
       });
+      return { data: fulfillment };
     })
     .post(
       "/request-revision",
@@ -104,11 +106,12 @@ export const createFulfillmentPlugin = () => {
           return { error: "User profile not found." };
         }
 
-        return requestRevision.execute({
+        const fulfillment = await requestRevision.execute({
           orderId,
           accountId: user.id,
           reason: body.reason,
         });
+        return { data: fulfillment };
       },
     );
 };

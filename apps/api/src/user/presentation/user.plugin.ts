@@ -54,7 +54,10 @@ export function createUserPlugin() {
     .get(
       "/:id",
       { params: UserIdParam, detail: { summary: "Get a profile by ID" } },
-      async ({ params }) => getUser.execute(params.id),
+      async ({ params }) => {
+        const user = await getUser.execute(params.id);
+        return { data: user };
+      },
     )
 
     .patch(
@@ -64,7 +67,10 @@ export function createUserPlugin() {
         beforeHandle: [requireAuth],
         detail: { summary: "Update my profile" },
       },
-      async ({ account, body }) => updateUser.execute(account!.id, body),
+      async ({ account, body }) => {
+        const user = await updateUser.execute(account!.id, body);
+        return { data: user };
+      },
     )
 
     .get(
@@ -76,7 +82,7 @@ export function createUserPlugin() {
       async ({ account }) => {
         const user = await repository.findByAccountId(account!.id);
         if (!user) throw new NotFoundError("User", account!.id);
-        return user;
+        return { data: user };
       },
     );
 }
