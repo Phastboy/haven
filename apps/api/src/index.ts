@@ -81,19 +81,7 @@ export const app = new Elysia({ prefix: "/api" })
     const asRecordError = error as unknown as Record<string, unknown>;
     const code = asRecordContext["code"] || asRecordError["code"];
 
-    // 1. Validation Errors (TypeBox/Elysia)
-    if (code === "VALIDATION" || error.name === "ValidationError") {
-      set.status = 422;
-      return {
-        type: "validation_error",
-        title: "Validation Failed",
-        status: 422,
-        detail: "The request payload failed to validate against the schema.",
-        errors: asRecordError["all"] ?? error.message,
-      };
-    }
-
-    // 2. Custom Domain Errors
+    // 1. Custom Domain Errors
     if (error instanceof DomainError) {
       set.status = error.status;
       return {
@@ -101,6 +89,18 @@ export const app = new Elysia({ prefix: "/api" })
         title: error.title,
         status: error.status,
         detail: error.detail,
+      };
+    }
+
+    // 2. Validation Errors (TypeBox/Elysia)
+    if (code === "VALIDATION") {
+      set.status = 422;
+      return {
+        type: "validation_error",
+        title: "Validation Failed",
+        status: 422,
+        detail: "The request payload failed to validate against the schema.",
+        errors: asRecordError["all"] ?? error.message,
       };
     }
 
