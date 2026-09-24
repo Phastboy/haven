@@ -11,13 +11,16 @@ import { createAutoCompletePlugin } from "./scheduler/auto-complete.plugin";
 
 import { createMessagePlugin } from "./message/presentation/message.plugin";
 import { createWsPlugin } from "./shared/presentation/ws.plugin";
-import { NodeEventEmitterAdapter } from "./shared/infrastructure/node-event-bus.adapter";
+import { PostgresEventBusAdapter } from "./shared/infrastructure/postgres-event-bus.adapter";
 import { SqlMessageRepository } from "./message/infrastructure/sql-message.repository";
 import { CreateThreadUseCase } from "./message/application/create-thread.usecase";
 import { DomainError } from "./shared/domain/errors";
 import { SqlUserRepository } from "./user/infrastructure/sql-user.repository";
 
-const eventBus = new NodeEventEmitterAdapter();
+if (!process.env["DATABASE_URL"]) {
+  throw new Error("DATABASE_URL environment variable is missing.");
+}
+const eventBus = new PostgresEventBusAdapter(process.env["DATABASE_URL"]);
 
 // Set up cross-domain event listeners
 eventBus.subscribe("order.accepted", async (payload) => {
