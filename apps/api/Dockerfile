@@ -21,8 +21,11 @@ WORKDIR /app
 # Install certificates and curl (for docker healthcheck)
 RUN apt-get update && apt-get install -y ca-certificates curl && rm -rf /var/lib/apt/lists/*
 
-# Copy compiled binary
-COPY --from=builder /app/apps/api/apibin ./haven-api
+# Create system user and copy compiled binary
+RUN useradd -r -s /bin/false haven
+COPY --from=builder --chown=haven:haven /app/apps/api/apibin ./haven-api
+
+USER haven
 
 EXPOSE 3000
 CMD ["./haven-api"]

@@ -23,8 +23,11 @@ COPY --from=builder /app/apps/web/node_modules ./apps/web/node_modules
 COPY --from=builder /app/apps/web/dist ./apps/web/dist
 COPY --from=builder /app/apps/web/package.json ./apps/web/package.json
 
+RUN chown -R bun:bun /app
+
 WORKDIR /app/apps/web
 ENV HOST=0.0.0.0
 ENV PORT=4200
+USER bun
 EXPOSE 4200
 CMD ["bun", "run", "./dist/server/entry.mjs"]
