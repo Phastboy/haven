@@ -1,12 +1,14 @@
 import { sql } from "drizzle-orm";
 import { expect, test, describe, afterAll } from "bun:test";
 import { Elysia } from "elysia";
-import { authController } from "../auth.controller";
+import { createAuthPlugin } from "../auth.controller";
 import { db } from "../../../database/db";
 import { tokenService } from "../../infrastructure/services/token.service";
 
+const mockProfileCreator = { createProfileForAccount: async () => {} };
+
 describe("Magic Link E2E", () => {
-  const app = new Elysia().use(authController);
+  const app = new Elysia().use(createAuthPlugin(mockProfileCreator));
   const testEmail = `e2e-magic-${crypto.randomUUID()}@example.com`;
 
   afterAll(async () => {

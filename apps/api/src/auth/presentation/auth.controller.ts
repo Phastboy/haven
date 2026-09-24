@@ -21,145 +21,141 @@ import { AccountRepository } from "../infrastructure/repositories/account.reposi
 import { SessionRepository } from "../infrastructure/repositories/session.repository";
 import { OAuthCredentialRepository } from "../infrastructure/repositories/oauth-credential.repository";
 import type { IProfileCreator } from "../domain/ports/IProfileCreator";
-import { SqlUserRepository } from "../../user/infrastructure/sql-user.repository";
 
 import { tokenService } from "../infrastructure/services/token.service";
 import { GoogleTokenService } from "../infrastructure/services/google-token.service";
 import { SmtpEmailService } from "../infrastructure/services/smtp-email.service";
 import { ConsoleEmailService } from "../infrastructure/services/console-email.service";
 
-const getSessionUseCase = new GetSessionUseCase(new SessionRepository(), tokenService);
+export const createAuthPlugin = (profileCreator: IProfileCreator) => {
+  const getSessionUseCase = new GetSessionUseCase(new SessionRepository(), tokenService);
 
-// Instantiate repositories
-const magicLinkRepo = new MagicLinkRepository();
-const accountRepo = new AccountRepository();
-const sessionRepo = new SessionRepository();
-const oauthRepo = new OAuthCredentialRepository();
+  // Instantiate repositories
+  const magicLinkRepo = new MagicLinkRepository();
+  const accountRepo = new AccountRepository();
+  const sessionRepo = new SessionRepository();
+  const oauthRepo = new OAuthCredentialRepository();
 
-// Determine which email service to use based on environment
-const emailService = process.env["SMTP_HOST"] ? new SmtpEmailService() : new ConsoleEmailService();
+  // Determine which email service to use based on environment
+  const emailService = process.env["SMTP_HOST"]
+    ? new SmtpEmailService()
+    : new ConsoleEmailService();
 
-const googleTokenService = new GoogleTokenService();
+  const googleTokenService = new GoogleTokenService();
 
-const userRepo = new SqlUserRepository();
-const profileCreator: IProfileCreator = {
-  async createProfileForAccount(accountId: string) {
-    await userRepo.create({ accountId });
-  },
-};
+  // Instantiate use cases
+  const requestMagicLinkUC = new RequestMagicLinkUseCase(magicLinkRepo, emailService, tokenService);
+  const verifyMagicLinkUC = new VerifyMagicLinkUseCase(
+    magicLinkRepo,
+    accountRepo,
+    sessionRepo,
+    tokenService,
+    profileCreator,
+  );
+  const loginWithGoogleUC = new LoginWithGoogleUseCase(
+    accountRepo,
+    oauthRepo,
+    sessionRepo,
+    googleTokenService,
+    tokenService,
+    profileCreator,
+  );
+  // Link platform use case is wired up but not yet exposed in any route
+  // const linkPlatformUC = new LinkPlatformUseCase(linkRepo);
+  const logoutUC = new LogoutUseCase(sessionRepo, tokenService);
 
-// Instantiate use cases
-const requestMagicLinkUC = new RequestMagicLinkUseCase(magicLinkRepo, emailService, tokenService);
-const verifyMagicLinkUC = new VerifyMagicLinkUseCase(
-  magicLinkRepo,
-  accountRepo,
-  sessionRepo,
-  tokenService,
-  profileCreator,
-);
-const loginWithGoogleUC = new LoginWithGoogleUseCase(
-  accountRepo,
-  oauthRepo,
-  sessionRepo,
-  googleTokenService,
-  tokenService,
-  profileCreator,
-);
-// Link platform use case is wired up but not yet exposed in any route
-// const linkPlatformUC = new LinkPlatformUseCase(linkRepo);
-const logoutUC = new LogoutUseCase(sessionRepo, tokenService);
-
-export const authController = new Elysia({
-  prefix: "/auth",
-  name: "auth-controller",
-  tags: ["Auth"],
-})
-  .derive(async ({ headers }: { headers: Record<string, string | undefined> }) => {
-    const authHeader = headers["authorization"];
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return { session: null, account: null };
-    }
-
-    const token = authHeader.substring(7);
-    try {
-      const sessionWithAccount = await getSessionUseCase.execute(token);
-      return {
-        session: sessionWithAccount,
-        account: sessionWithAccount.account,
-      };
-    } catch (e: unknown) {
-      if (e instanceof UnauthorizedError) {
+  return new Elysia({
+    prefix: "/auth",
+    name: "auth-plugin",
+    tags: ["Auth"],
+  })
+    .derive(async ({ headers }: { headers: Record<string, string | undefined> }) => {
+      const authHeader = headers["authorization"];
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return { session: null, account: null };
       }
-      throw e;
-    }
-  })
-  .post(
-    "/magic-link/request",
-    {
-      body: RequestMagicLinkDTO,
-      response: { 200: RequestMagicLinkResponseDTO },
-    },
-    async ({ body }) => {
-      await requestMagicLinkUC.execute(body.email);
-      return { message: "If the email exists, a magic link was sent to it." };
-    },
-  )
 
-  .post(
-    "/magic-link/verify",
-    {
-      body: VerifyMagicLinkDTO,
-      response: { 200: AuthSuccessResponseDTO },
-    },
-    async ({ body }) => {
-      const result = await verifyMagicLinkUC.execute(body.token);
-      return result;
-    },
-  )
-
-  .post(
-    "/google/login",
-    {
-      body: LoginWithGoogleDTO,
-      response: { 200: AuthSuccessResponseDTO },
-    },
-    async ({ body }) => {
-      const result = await loginWithGoogleUC.execute(body.idToken);
-      return result;
-    },
-  )
-
-  .post(
-    "/logout",
-    {
-      beforeHandle: [requireAuth],
-      response: { 204: t.Undefined() },
-    },
-    async ({
-      headers,
-      set,
-    }: {
-      headers: Record<string, string | undefined>;
-      set: { status?: number | string };
-    }) => {
-      const authHeader = headers["authorization"];
-      if (authHeader) {
-        const token = authHeader.substring(7);
-        await logoutUC.execute(token);
+      const token = authHeader.substring(7);
+      try {
+        const sessionWithAccount = await getSessionUseCase.execute(token);
+        return {
+          session: sessionWithAccount,
+          account: sessionWithAccount.account,
+        };
+      } catch (e: unknown) {
+        if (e instanceof UnauthorizedError) {
+          return { session: null, account: null };
+        }
+        throw e;
       }
-      set.status = 204;
-      return;
-    },
-  )
+    })
+    .post(
+      "/magic-link/request",
+      {
+        body: RequestMagicLinkDTO,
+        response: { 200: RequestMagicLinkResponseDTO },
+      },
+      async ({ body }) => {
+        await requestMagicLinkUC.execute(body.email);
+        return { message: "If the email exists, a magic link was sent to it." };
+      },
+    )
 
-  .get(
-    "/me",
-    {
-      beforeHandle: [requireAuth],
-      response: { 200: MeResponseDTO },
-    },
-    ({ account }) => {
-      return { account: account! };
-    },
-  );
+    .post(
+      "/magic-link/verify",
+      {
+        body: VerifyMagicLinkDTO,
+        response: { 200: AuthSuccessResponseDTO },
+      },
+      async ({ body }) => {
+        const result = await verifyMagicLinkUC.execute(body.token);
+        return result;
+      },
+    )
+
+    .post(
+      "/google/login",
+      {
+        body: LoginWithGoogleDTO,
+        response: { 200: AuthSuccessResponseDTO },
+      },
+      async ({ body }) => {
+        const result = await loginWithGoogleUC.execute(body.idToken);
+        return result;
+      },
+    )
+
+    .post(
+      "/logout",
+      {
+        beforeHandle: [requireAuth],
+        response: { 204: t.Undefined() },
+      },
+      async ({
+        headers,
+        set,
+      }: {
+        headers: Record<string, string | undefined>;
+        set: { status?: number | string };
+      }) => {
+        const authHeader = headers["authorization"];
+        if (authHeader) {
+          const token = authHeader.substring(7);
+          await logoutUC.execute(token);
+        }
+        set.status = 204;
+        return;
+      },
+    )
+
+    .get(
+      "/me",
+      {
+        beforeHandle: [requireAuth],
+        response: { 200: MeResponseDTO },
+      },
+      ({ account }) => {
+        return { account: account! };
+      },
+    );
+};

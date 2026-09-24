@@ -1,7 +1,7 @@
 import { expect, test, describe, beforeAll, afterAll } from "bun:test";
 import { Elysia } from "elysia";
 import { createUserPlugin } from "../user.plugin";
-import { authController } from "../../../auth/presentation/auth.controller";
+import { createAuthPlugin } from "../../../auth/presentation/auth.controller";
 import { db } from "../../../database/db";
 import { sql } from "drizzle-orm";
 import { AccountRepository } from "../../../auth/infrastructure/repositories/account.repository";
@@ -9,7 +9,11 @@ import { SessionRepository } from "../../../auth/infrastructure/repositories/ses
 import { TokenService } from "../../../auth/infrastructure/services/token.service";
 import { SqlUserRepository } from "../../infrastructure/sql-user.repository";
 
-const app = new Elysia({ prefix: "/api" }).use(createUserPlugin()).use(authController);
+const mockProfileCreator = { createProfileForAccount: async () => {} };
+
+const app = new Elysia({ prefix: "/api" })
+  .use(createUserPlugin())
+  .use(createAuthPlugin(mockProfileCreator));
 
 describe("User Plugin E2E", () => {
   const accountRepo = new AccountRepository();
