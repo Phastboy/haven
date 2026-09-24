@@ -1,5 +1,12 @@
-import { Elysia } from "elysia";
-import { RequestMagicLinkDTO, VerifyMagicLinkDTO, LoginWithGoogleDTO } from "./dtos/auth.dtos";
+import { Elysia, t } from "elysia";
+import {
+  RequestMagicLinkDTO,
+  VerifyMagicLinkDTO,
+  LoginWithGoogleDTO,
+  RequestMagicLinkResponseDTO,
+  AuthSuccessResponseDTO,
+  MeResponseDTO,
+} from "./dtos/auth.dtos";
 import { requireAuth } from "./middleware/session.middleware";
 import { UnauthorizedError } from "../domain/errors";
 
@@ -91,6 +98,7 @@ export const authController = new Elysia({
     "/magic-link/request",
     {
       body: RequestMagicLinkDTO,
+      response: { 200: RequestMagicLinkResponseDTO },
     },
     async ({ body }) => {
       await requestMagicLinkUC.execute(body.email);
@@ -102,6 +110,7 @@ export const authController = new Elysia({
     "/magic-link/verify",
     {
       body: VerifyMagicLinkDTO,
+      response: { 200: AuthSuccessResponseDTO },
     },
     async ({ body }) => {
       const result = await verifyMagicLinkUC.execute(body.token);
@@ -113,6 +122,7 @@ export const authController = new Elysia({
     "/google/login",
     {
       body: LoginWithGoogleDTO,
+      response: { 200: AuthSuccessResponseDTO },
     },
     async ({ body }) => {
       const result = await loginWithGoogleUC.execute(body.idToken);
@@ -124,6 +134,7 @@ export const authController = new Elysia({
     "/logout",
     {
       beforeHandle: [requireAuth],
+      response: { 204: t.Undefined() },
     },
     async ({
       headers,
@@ -132,9 +143,11 @@ export const authController = new Elysia({
       headers: Record<string, string | undefined>;
       set: { status?: number | string };
     }) => {
-      const authHeader = headers["authorization"]!;
-      const token = authHeader.substring(7);
-      await logoutUC.execute(token);
+      const authHeader = headers["authorization"];
+      if (authHeader) {
+        const token = authHeader.substring(7);
+        await logoutUC.execute(token);
+      }
       set.status = 204;
       return;
     },
@@ -144,8 +157,9 @@ export const authController = new Elysia({
     "/me",
     {
       beforeHandle: [requireAuth],
+      response: { 200: MeResponseDTO },
     },
     ({ account }) => {
-      return { account };
+      return { account: account! };
     },
   );

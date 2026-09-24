@@ -25,6 +25,7 @@
     "@elysia/cron": "2.0.0-beta.1",
     "@elysia/graphql-yoga": "2.0.0-beta.1",
     "@elysia/openapi": "2.0.0-beta.4",
+    "@elysia/server-timing": "2.0.0-beta.1",
     "dataloader": "^2.2.3",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",

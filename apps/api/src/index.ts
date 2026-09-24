@@ -52,11 +52,15 @@ eventBus.subscribe("message.created", (payload) => {
   );
 });
 
+import { serverTiming } from "@elysia/server-timing";
+
 export const app = new Elysia({ prefix: "/api" })
   // CORS via the plugin. The hand-rolled version (a `.request` hook plus an
   // `options("/*")` catch-all) silently collapsed the whole app type to `any`,
+  // `options("/*")` catch-all) silently collapsed the whole app type to `any`,
   // which is what killed Eden's autocompletion in apps/web.
   .use(cors({ origin: process.env["WEB_ORIGIN"] ?? true, credentials: true }))
+  .use(serverTiming())
   .use(
     openapi({
       references: fromTypes(),
