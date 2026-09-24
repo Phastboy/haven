@@ -15,11 +15,17 @@ export const LoginWithGoogleDTO = t.Object({
 });
 
 export const RequestMagicLinkResponseDTO = t.Object({
-  message: t.String(),
+  data: t.Object({
+    message: t.String(),
+  }),
 });
 
-export const AuthSuccessResponseDTO = SessionSchema;
+export const AuthSuccessResponseDTO = t.Object({
+  data: SessionSchema,
+});
 
 export const MeResponseDTO = t.Object({
-  account: AccountSchema,
+  data: t.Object({
+    account: AccountSchema,
+  }),
 });

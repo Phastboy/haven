@@ -68,7 +68,7 @@ export const createOrderPlugin = (eventBus?: IEventBus) => {
           ...(body.message && { message: body.message }),
         });
         set.status = 201;
-        return order;
+        return { data: order };
       },
     )
     .get("/me", async ({ user, session, set }) => {
@@ -99,11 +99,12 @@ export const createOrderPlugin = (eventBus?: IEventBus) => {
       async ({ params, body, user, session, set }) => {
         requireAuth({ session, set });
 
-        return updateOrderStatusUseCase.execute({
+        const order = await updateOrderStatusUseCase.execute({
           orderId: params.id,
           accountId: user!.id,
           newStatus: body.status,
         });
+        return { data: order };
       },
     );
 };

@@ -84,15 +84,17 @@ describe("Offer Plugin E2E", () => {
     }
     expect(res.status).toBe(201);
     const body = (await res.json()) as {
-      id?: string;
-      title?: string;
-      status?: string;
-      userId?: string;
-      [key: string]: unknown;
+      data?: {
+        id?: string;
+        title?: string;
+        status?: string;
+        userId?: string;
+        [key: string]: unknown;
+      };
     };
-    expect(body.title).toBe("E2E Offer");
-    expect(body.userId).toBe(testUserId1);
-    offerId1 = body.id!;
+    expect(body.data?.title).toBe("E2E Offer");
+    expect(body.data?.userId).toBe(testUserId1);
+    offerId1 = body.data?.id!;
   });
 
   it("should prevent unauthorized users from editing offers (PATCH /offers/:id)", async () => {
@@ -126,13 +128,15 @@ describe("Offer Plugin E2E", () => {
     const res = await app.handle(req);
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
-      id?: string;
-      title?: string;
-      status?: string;
-      userId?: string;
-      [key: string]: unknown;
+      data?: {
+        id?: string;
+        title?: string;
+        status?: string;
+        userId?: string;
+        [key: string]: unknown;
+      };
     };
-    expect(body.title).toBe("Updated Title E2E");
+    expect(body.data?.title).toBe("Updated Title E2E");
   });
 
   it("should retrieve a public offer (GET /offers/:id)", async () => {
@@ -143,13 +147,15 @@ describe("Offer Plugin E2E", () => {
     const res = await app.handle(req);
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
-      id?: string;
-      title?: string;
-      status?: string;
-      userId?: string;
-      [key: string]: unknown;
+      data?: {
+        id?: string;
+        title?: string;
+        status?: string;
+        userId?: string;
+        [key: string]: unknown;
+      };
     };
-    expect(body.title).toBe("Updated Title E2E");
+    expect(body.data?.title).toBe("Updated Title E2E");
   });
 
   it("should list offers for a user publicly (GET /offers/user/:userId)", async () => {
@@ -203,12 +209,14 @@ describe("Offer Plugin E2E", () => {
     const ownerGetRes = await app.handle(ownerGetReq);
     expect(ownerGetRes.status).toBe(200);
     const getBody = (await ownerGetRes.json()) as {
-      id?: string;
-      title?: string;
-      status?: string;
-      userId?: string;
-      [key: string]: unknown;
+      data?: {
+        id?: string;
+        title?: string;
+        status?: string;
+        userId?: string;
+        [key: string]: unknown;
+      };
     };
-    expect(getBody.status).toBe("ARCHIVED");
+    expect(getBody.data?.status).toBe("ARCHIVED");
   });
 });

@@ -58,8 +58,8 @@ describe("Google OAuth E2E", () => {
 
     expect(response.status).toBe(200);
     const body = await response.json();
-    expect(body.id).toBeDefined();
-    expect(body.token).toBeDefined();
+    expect(body.data.id).toBeDefined();
+    expect(body.data.token).toBeDefined();
 
     // Verify DB records
     const account = (

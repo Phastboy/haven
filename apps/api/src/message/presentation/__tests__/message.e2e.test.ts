@@ -61,8 +61,8 @@ describe("Message Plugin E2E", () => {
       }),
     );
     expect(response.status).toBe(201);
-    const body = (await response.json()) as { id?: string };
-    expect(body.id).toBeDefined();
+    const body = (await response.json()) as { data?: { id?: string } };
+    expect(body.data?.id).toBeDefined();
   });
 
   it("should list threads", async () => {
@@ -91,8 +91,8 @@ describe("Message Plugin E2E", () => {
         body: JSON.stringify({ participantId: user2Id }),
       }),
     );
-    const createBody = (await createRes.json()) as { id?: string };
-    const threadId = createBody.id;
+    const createBody = (await createRes.json()) as { data?: { id?: string } };
+    const threadId = createBody.data?.id;
 
     // 2. Send message
     const sendRes = await app.handle(
@@ -106,8 +106,8 @@ describe("Message Plugin E2E", () => {
       }),
     );
     expect(sendRes.status).toBe(201);
-    const sendBody = (await sendRes.json()) as { content?: string };
-    expect(sendBody.content).toBe("Hello E2E");
+    const sendBody = (await sendRes.json()) as { data?: { content?: string } };
+    expect(sendBody.data?.content).toBe("Hello E2E");
 
     // 3. Get messages
     const getRes = await app.handle(

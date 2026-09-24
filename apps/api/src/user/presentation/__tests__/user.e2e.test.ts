@@ -75,15 +75,17 @@ describe("User Plugin E2E", () => {
   test("GET /api/users/:id should fetch a specific profile", async () => {
     const res = await app.handle(new Request(`http://localhost/api/users/${testUserId}`));
     expect(res.status).toBe(200);
-    const data = (await res.json()) as {
-      id?: string;
-      username?: string;
-      name?: string;
-      profilePictureUrl?: string;
-      [key: string]: unknown;
+    const body = (await res.json()) as {
+      data?: {
+        id?: string;
+        username?: string;
+        name?: string;
+        profilePictureUrl?: string;
+        [key: string]: unknown;
+      };
     };
-    expect(data.id).toBe(testUserId);
-    expect(data.username).toBe("e2e-user");
+    expect(body.data?.id).toBe(testUserId);
+    expect(body.data?.username).toBe("e2e-user");
   });
 
   test("GET /api/users/:id should return 404 for non-existent profile", async () => {
@@ -115,26 +117,30 @@ describe("User Plugin E2E", () => {
     );
 
     expect(res.status).toBe(200);
-    const data = (await res.json()) as {
-      id?: string;
-      username?: string;
-      name?: string;
-      profilePictureUrl?: string;
-      [key: string]: unknown;
+    const body = (await res.json()) as {
+      data?: {
+        id?: string;
+        username?: string;
+        name?: string;
+        profilePictureUrl?: string;
+        [key: string]: unknown;
+      };
     };
-    expect(data.id).toBe(testUserId);
-    expect(data.name).toBe("Updated E2E Name");
-    expect((data as unknown as { bio: string }).bio).toBe("New Bio");
+    expect(body.data?.id).toBe(testUserId);
+    expect(body.data?.name).toBe("Updated E2E Name");
+    expect((body.data as unknown as { bio: string }).bio).toBe("New Bio");
 
     // Verify in db
     const fetchRes = await app.handle(new Request(`http://localhost/api/users/${testUserId}`));
     const fetchProfile = (await fetchRes.json()) as {
-      id?: string;
-      username?: string;
-      name?: string;
-      profilePictureUrl?: string;
-      [key: string]: unknown;
+      data?: {
+        id?: string;
+        username?: string;
+        name?: string;
+        profilePictureUrl?: string;
+        [key: string]: unknown;
+      };
     };
-    expect(fetchProfile.name).toBe("Updated E2E Name");
+    expect(fetchProfile.data?.name).toBe("Updated E2E Name");
   });
 });

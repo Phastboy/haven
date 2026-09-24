@@ -116,13 +116,15 @@ describe("Fulfillment API E2E", () => {
     const res = await app.handle(req);
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
-      id?: string;
-      status?: string;
-      deliveryMessage?: string;
-      [key: string]: unknown;
+      data?: {
+        id?: string;
+        status?: string;
+        deliveryMessage?: string;
+        [key: string]: unknown;
+      };
     };
-    expect(body.status).toBe("DELIVERED");
-    expect(body.deliveryMessage).toBe("Here is your work");
+    expect(body.data?.status).toBe("DELIVERED");
+    expect(body.data?.deliveryMessage).toBe("Here is your work");
   });
 
   it("should allow requester to view fulfillment details", async () => {
@@ -132,12 +134,14 @@ describe("Fulfillment API E2E", () => {
     const res = await app.handle(req);
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
-      id?: string;
-      status?: string;
-      deliveryMessage?: string;
-      [key: string]: unknown;
+      data?: {
+        id?: string;
+        status?: string;
+        deliveryMessage?: string;
+        [key: string]: unknown;
+      };
     };
-    expect(body.status).toBe("DELIVERED");
+    expect(body.data?.status).toBe("DELIVERED");
   });
 
   it("should not allow owner to request a revision", async () => {
@@ -171,12 +175,14 @@ describe("Fulfillment API E2E", () => {
     const res = await app.handle(req);
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
-      id?: string;
-      status?: string;
-      deliveryMessage?: string;
-      [key: string]: unknown;
+      data?: {
+        id?: string;
+        status?: string;
+        deliveryMessage?: string;
+        [key: string]: unknown;
+      };
     };
-    expect(body.status).toBe("REVISION_REQUESTED");
+    expect(body.data?.status).toBe("REVISION_REQUESTED");
   });
 
   it("should allow owner to deliver again after revision", async () => {
@@ -191,12 +197,14 @@ describe("Fulfillment API E2E", () => {
     const res = await app.handle(req);
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
-      id?: string;
-      status?: string;
-      deliveryMessage?: string;
-      [key: string]: unknown;
+      data?: {
+        id?: string;
+        status?: string;
+        deliveryMessage?: string;
+        [key: string]: unknown;
+      };
     };
-    expect(body.status).toBe("DELIVERED");
+    expect(body.data?.status).toBe("DELIVERED");
   });
 
   it("should allow requester to accept fulfillment", async () => {
@@ -207,12 +215,14 @@ describe("Fulfillment API E2E", () => {
     const res = await app.handle(req);
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
-      id?: string;
-      status?: string;
-      deliveryMessage?: string;
-      [key: string]: unknown;
+      data?: {
+        id?: string;
+        status?: string;
+        deliveryMessage?: string;
+        [key: string]: unknown;
+      };
     };
-    expect(body.status).toBe("COMPLETED");
+    expect(body.data?.status).toBe("COMPLETED");
   });
 
   it("should have cascaded COMPLETED status back to the order", async () => {

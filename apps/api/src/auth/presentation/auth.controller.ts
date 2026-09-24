@@ -97,7 +97,7 @@ export const createAuthPlugin = (profileCreator: IProfileCreator) => {
       },
       async ({ body }) => {
         await requestMagicLinkUC.execute(body.email);
-        return { message: "If the email exists, a magic link was sent to it." };
+        return { data: { message: "If the email exists, a magic link was sent to it." } };
       },
     )
 
@@ -109,7 +109,7 @@ export const createAuthPlugin = (profileCreator: IProfileCreator) => {
       },
       async ({ body }) => {
         const result = await verifyMagicLinkUC.execute(body.token);
-        return result;
+        return { data: result };
       },
     )
 
@@ -121,7 +121,7 @@ export const createAuthPlugin = (profileCreator: IProfileCreator) => {
       },
       async ({ body }) => {
         const result = await loginWithGoogleUC.execute(body.idToken);
-        return result;
+        return { data: result };
       },
     )
 
@@ -155,7 +155,7 @@ export const createAuthPlugin = (profileCreator: IProfileCreator) => {
         response: { 200: MeResponseDTO },
       },
       ({ account }) => {
-        return { account: account! };
+        return { data: { account: account! } };
       },
     );
 };

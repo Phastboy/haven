@@ -63,7 +63,7 @@ export const createOfferPlugin = () => {
         if (offer.status === "ARCHIVED" && offer.userId !== user?.id) {
           throw new OfferNotFoundError();
         }
-        return offer;
+        return { data: offer };
       },
     )
     .get(
@@ -91,7 +91,7 @@ export const createOfferPlugin = () => {
 
         const offer = await createOffer.execute(user.id, body);
         set.status = 201;
-        return offer;
+        return { data: offer };
       },
     )
     .patch(
@@ -103,7 +103,8 @@ export const createOfferPlugin = () => {
       async ({ params, body, user, session, set }) => {
         requireAuth({ session, set });
 
-        return updateOffer.execute(user!.id, params.id, body);
+        const offer = await updateOffer.execute(user!.id, params.id, body);
+        return { data: offer };
       },
     )
     .delete(

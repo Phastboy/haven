@@ -49,10 +49,10 @@ describe("Session Middleware E2E", () => {
     });
     const res = await authController.handle(req);
     expect(res.status).toBe(200);
-    const data = (await res.json()) as { token?: string; [key: string]: unknown };
-    expect(data).not.toBeNull();
-    expect((data as unknown as { account: unknown }).account).toBeDefined();
-    expect((data as unknown as { account: { id: string } }).account.id).toBe(testAccountId);
+    const body = (await res.json()) as { data?: { account: { id: string } } };
+    expect(body).not.toBeNull();
+    expect(body.data?.account).toBeDefined();
+    expect(body.data?.account.id).toBe(testAccountId);
   });
 
   it("should return 401 Unauthorized if no token is provided", async () => {

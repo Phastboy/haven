@@ -72,7 +72,7 @@ export const createMessagePlugin = (eventBus: IEventBus) => {
 
         const thread = await createThreadUseCase.execute(user.id, body.participantId);
         set.status = 201;
-        return thread;
+        return { data: thread };
       },
     )
     .get("/threads/:threadId", async ({ params, user, session, set }) => {
@@ -100,7 +100,7 @@ export const createMessagePlugin = (eventBus: IEventBus) => {
 
         const message = await sendMessageUseCase.execute(params.threadId, user.id, body.content);
         set.status = 201;
-        return message;
+        return { data: message };
       },
     );
 };

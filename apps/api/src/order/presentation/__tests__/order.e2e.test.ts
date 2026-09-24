@@ -96,17 +96,19 @@ describe("Order API E2E", () => {
     expect(res.status).toBe(201);
 
     const body = (await res.json()) as {
-      id?: string;
-      status?: string;
-      price?: number;
-      quantity?: number;
-      [key: string]: unknown;
+      data?: {
+        id?: string;
+        status?: string;
+        price?: number;
+        quantity?: number;
+        [key: string]: unknown;
+      };
     };
-    expect(body.id).toBeDefined();
-    expect(body.price).toBe(1500);
-    expect(body.quantity).toBe(2);
-    expect(body.status).toBe("PENDING");
-    testOrderId = body.id!;
+    expect(body.data?.id).toBeDefined();
+    expect(body.data?.price).toBe(1500);
+    expect(body.data?.quantity).toBe(2);
+    expect(body.data?.status).toBe("PENDING");
+    testOrderId = body.data?.id!;
   });
 
   it("should fail to create order if user is offer owner", async () => {
@@ -156,13 +158,15 @@ describe("Order API E2E", () => {
     const res = await app.handle(req);
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
-      id?: string;
-      status?: string;
-      price?: number;
-      quantity?: number;
-      [key: string]: unknown;
+      data?: {
+        id?: string;
+        status?: string;
+        price?: number;
+        quantity?: number;
+        [key: string]: unknown;
+      };
     };
-    expect(body.status).toBe("ACCEPTED");
+    expect(body.data?.status).toBe("ACCEPTED");
   });
 
   it("should not allow requester to CANCEL an ACCEPTED order", async () => {

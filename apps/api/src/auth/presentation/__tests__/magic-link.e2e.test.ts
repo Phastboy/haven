@@ -37,7 +37,7 @@ describe("Magic Link E2E", () => {
 
     expect(response.status).toBe(200);
     const body = await response.json();
-    expect(body.message).toContain("If the email exists, a magic link was sent");
+    expect(body.data.message).toContain("If the email exists, a magic link was sent");
 
     const magicLink = (
       await db.execute(sql`SELECT * FROM "MagicLink" WHERE "email" = ${testEmail}`)
@@ -74,8 +74,8 @@ describe("Magic Link E2E", () => {
       console.log("Verify Error:", body);
     }
     expect(verifyResponse.status).toBe(200);
-    expect(body.id).toBeDefined(); // The returned object is the session
-    expect(body.token).toBeDefined();
+    expect(body.data.id).toBeDefined(); // The returned object is the session
+    expect(body.data.token).toBeDefined();
 
     // Verify account and link were created
     const account = (
