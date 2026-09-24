@@ -1,7 +1,19 @@
 import { createSignal } from "solid-js";
 import { api } from "../lib/browser-api";
 
-export default function OfferForm(props: { token: string; initialData?: any; isEdit?: boolean }) {
+export default function OfferForm(props: {
+  token: string;
+  initialData?: {
+    id?: string;
+    title?: string;
+    description?: string;
+    price?: number;
+    offerType?: string;
+    images?: string[];
+    [key: string]: unknown;
+  };
+  isEdit?: boolean;
+}) {
   const [title, setTitle] = createSignal(props.initialData?.title || "");
   const [description, setDescription] = createSignal(props.initialData?.description || "");
   const [price, setPrice] = createSignal(
@@ -35,13 +47,13 @@ export default function OfferForm(props: { token: string; initialData?: any; isE
       }
 
       if (result.error) {
-        setError((result.error.value as any)?.error || "Failed to save offer");
+        setError((result.error.value as { error?: string })?.error || "Failed to save offer");
       } else {
         // Redirect to the offer page
         window.location.href = `/offers/${result.data?.data?.id}`;
       }
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
     } finally {
       setLoading(false);
     }
@@ -60,13 +72,13 @@ export default function OfferForm(props: { token: string; initialData?: any; isE
     try {
       const result = await api.offers[props.initialData.id].delete();
       if (result.error) {
-        setError((result.error.value as any)?.error || "Failed to delete offer");
+        setError((result.error.value as { error?: string })?.error || "Failed to delete offer");
         setLoading(false);
       } else {
         window.location.href = "/my-offers";
       }
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
       setLoading(false);
     }
   };

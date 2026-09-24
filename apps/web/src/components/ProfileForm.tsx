@@ -1,7 +1,16 @@
 import { createSignal } from "solid-js";
 import { api } from "../lib/browser-api";
 
-export default function ProfileForm(props: { user: any; token: string }) {
+export default function ProfileForm(props: {
+  user: {
+    username?: string;
+    name?: string;
+    bio?: string;
+    profilePictureUrl?: string;
+    [key: string]: unknown;
+  };
+  token: string;
+}) {
   const [username, setUsername] = createSignal(props.user.username || "");
   const [name, setName] = createSignal(props.user.name || "");
   const [bio, setBio] = createSignal(props.user.bio || "");
@@ -20,21 +29,20 @@ export default function ProfileForm(props: { user: any; token: string }) {
     setSuccess(false);
 
     try {
-      const { data: resData, error: apiError } = await api.users.me.patch({
+      const { error: apiError } = await api.users.me.patch({
         username: username() || null,
         name: name() || null,
         bio: bio() || null,
         profilePictureUrl: profilePictureUrl() || null,
       });
-      const data = (resData as any)?.data;
 
       if (apiError) {
-        setError((apiError.value as any)?.error || "Failed to update profile");
+        setError((apiError.value as { error?: string })?.error || "Failed to update profile");
       } else {
         setSuccess(true);
       }
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
     } finally {
       setLoading(false);
     }

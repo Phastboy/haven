@@ -26,17 +26,22 @@ export default function RequestOfferButton(props: RequestOfferButtonProps) {
         message: message() || undefined,
       };
 
-      const result = await (api.orders as any).post(payload);
-      const data = (result.data as any)?.data;
+      const result = await (
+        api.orders as {
+          post: (
+            p: unknown,
+          ) => Promise<{ data: unknown; error: { value: { error?: string } } | null }>;
+        }
+      ).post(payload);
 
       if (result.error) {
-        setError((result.error.value as any)?.error || "Failed to submit request");
+        setError((result.error.value as { error?: string })?.error || "Failed to submit request");
       } else {
         setSuccess(true);
         setTimeout(() => setIsOpen(false), 2000);
       }
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
     } finally {
       setLoading(false);
     }

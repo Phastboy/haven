@@ -51,7 +51,7 @@ export default function LoginForm(props: Props) {
   const [success, setSuccess] = createSignal(false);
   const [error, setError] = createSignal("");
 
-  let googleButtonRef: HTMLDivElement | undefined;
+  let googleButtonRef: HTMLDivElement | undefined = undefined;
 
   // ── Magic-link handler ─────────────────────────────────────────────────────
   const handleSubmit = async (e: Event) => {

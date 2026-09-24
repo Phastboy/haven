@@ -10,11 +10,11 @@ const session = guard.session;
 if (!session.user) return Astro.redirect("/profile");
 
 const { data: resData, error } = await client.offers
-  .user({ userId: (session.user as any).id })
+  .user({ userId: (session.user as { id: string }).id })
   .get({ headers: authHeaders(session.token) });
 
-const data = (resData as any)?.data;
-const offers = (Array.isArray(data) ? data : []).map((offer: any) => ({ ...offer, user: session.user }));
+const data = (resData as { data?: unknown })?.data;
+const offers = (Array.isArray(data) ? data : []).map((offer: object) => ({ ...offer, user: session.user }));
 ---
 
 <Layout title="My offers" bare={false}>

@@ -31,7 +31,7 @@ if (error || !offer) {
 }
 
 // Verify ownership
-if (!currentUserData || (currentUserData as any).id !== offer.userId) {
+if (!currentUserData || (currentUserData as { id?: string }).id !== offer.userId) {
   return Astro.redirect(`/offers/${offer.id}`);
 }
 ---
