@@ -1,6 +1,6 @@
 import { cors } from "@elysia/cors";
 import openapi, { fromTypes } from "@elysia/openapi";
-import { Elysia } from "elysia";
+import { Elysia, ValidationError as ElysiaValidationError } from "elysia";
 import { createUserPlugin } from "./user/presentation/user.plugin";
 import { createAuthPlugin } from "./auth";
 import { createOfferPlugin } from "./offer/presentation/offer.plugin";
@@ -109,7 +109,11 @@ export const app = new Elysia({ prefix: "/api" })
     }
 
     // 2. Validation Errors (TypeBox/Elysia)
-    if (code === "VALIDATION") {
+    if (
+      code === "VALIDATION" ||
+      error instanceof ElysiaValidationError ||
+      (error && (error as { name?: string }).name === "ValidationError")
+    ) {
       set.status = 422;
       return {
         type: "validation_error",

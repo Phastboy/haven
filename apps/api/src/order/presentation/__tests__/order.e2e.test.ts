@@ -108,7 +108,7 @@ describe("Order API E2E", () => {
     expect(body.data?.price).toBe(1500);
     expect(body.data?.quantity).toBe(2);
     expect(body.data?.status).toBe("PENDING");
-    testOrderId = body.data?.id!;
+    testOrderId = body.data!.id!;
   });
 
   it("should fail to create order if user is offer owner", async () => {
