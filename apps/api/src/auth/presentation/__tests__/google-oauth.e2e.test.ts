@@ -1,12 +1,14 @@
 import { sql } from "drizzle-orm";
 import { expect, test, describe, beforeAll, afterAll, mock } from "bun:test";
 import { Elysia } from "elysia";
-import { authController } from "../auth.controller";
+import { createAuthPlugin } from "../auth.controller";
 import { db } from "../../../database/db";
 import { OAuth2Client } from "google-auth-library";
 
+const mockProfileCreator = { createProfileForAccount: async () => {} };
+
 describe("Google OAuth E2E", () => {
-  const app = new Elysia().use(authController);
+  const app = new Elysia().use(createAuthPlugin(mockProfileCreator));
   const testEmail = `e2e-google-${crypto.randomUUID()}@example.com`;
   const googleId = `google-id-${crypto.randomUUID()}`;
 

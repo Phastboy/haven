@@ -1,7 +1,10 @@
 import { sql } from "drizzle-orm";
 import { describe, expect, it, beforeAll, afterAll } from "bun:test";
-import { authController } from "../auth.controller";
+import { createAuthPlugin } from "../auth.controller";
 import { db } from "../../../database/db";
+
+const mockProfileCreator = { createProfileForAccount: async () => {} };
+const authController = createAuthPlugin(mockProfileCreator);
 import { tokenService } from "../../infrastructure/services/token.service";
 import { SessionRepository } from "../../infrastructure/repositories/session.repository";
 import * as crypto from "crypto";

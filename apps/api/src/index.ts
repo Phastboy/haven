@@ -2,7 +2,7 @@ import { cors } from "@elysia/cors";
 import openapi, { fromTypes } from "@elysia/openapi";
 import { Elysia } from "elysia";
 import { createUserPlugin } from "./user/presentation/user.plugin";
-import { authController } from "./auth";
+import { createAuthPlugin } from "./auth";
 import { createOfferPlugin } from "./offer/presentation/offer.plugin";
 import { createDirectoryPlugin } from "./directory/presentation/graphql.plugin";
 import { createOrderPlugin } from "./order/presentation/order.plugin";
@@ -15,6 +15,7 @@ import { NodeEventEmitterAdapter } from "./shared/infrastructure/node-event-bus.
 import { SqlMessageRepository } from "./message/infrastructure/sql-message.repository";
 import { CreateThreadUseCase } from "./message/application/create-thread.usecase";
 import { DomainError } from "./shared/domain/errors";
+import { SqlUserRepository } from "./user/infrastructure/sql-user.repository";
 
 const eventBus = new NodeEventEmitterAdapter();
 
@@ -54,6 +55,8 @@ eventBus.subscribe("message.created", (payload) => {
 
 import { serverTiming } from "@elysia/server-timing";
 
+const userRepo = new SqlUserRepository();
+
 export const app = new Elysia({ prefix: "/api" })
   // CORS via the plugin. The hand-rolled version (a `.request` hook plus an
   // `options("/*")` catch-all) silently collapsed the whole app type to `any`,
@@ -67,7 +70,13 @@ export const app = new Elysia({ prefix: "/api" })
     }),
   )
   .use(createUserPlugin())
-  .use(authController)
+  .use(
+    createAuthPlugin({
+      async createProfileForAccount(accountId: string) {
+        await userRepo.create({ accountId });
+      },
+    }),
+  )
   .use(createOfferPlugin())
   .use(createOrderPlugin(eventBus))
   .use(createFulfillmentPlugin())
