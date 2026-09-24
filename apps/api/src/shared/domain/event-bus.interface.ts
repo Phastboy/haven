@@ -25,9 +25,9 @@ export interface DomainEvents {
 }
 
 export interface IEventBus {
-  publish<K extends keyof DomainEvents>(event: K, payload: DomainEvents[K]): void;
+  publish<K extends keyof DomainEvents>(event: K, payload: DomainEvents[K]): void | Promise<void>;
   subscribe<K extends keyof DomainEvents>(
     event: K,
     handler: (payload: DomainEvents[K]) => void | Promise<void>,
-  ): void;
+  ): void | Promise<void>;
 }
