@@ -2,6 +2,7 @@
 import Layout from "../../layouts/Layout.astro";
 import { client } from "../../api";
 import ChatRoom from "../../components/ChatRoom";
+import type { ChatMessage } from "../../types";
 
 const token = Astro.cookies.get("token")?.value;
 
@@ -29,13 +30,13 @@ const { data: threadsRes, error: threadsError } = await client.messages.threads.
     authorization: `Bearer ${token}`
   }
 });
-const threads = (threadsRes as { data?: Array<{ id: string; participant1: { id: string }, participant2: { id: string } }> })?.data;
+const threads = (threadsRes as { data?: Array<{ id: string; participant1: { id: string; name?: string | null; profilePictureUrl?: string | null; username?: string | null }; participant2: { id: string; name?: string | null; profilePictureUrl?: string | null; username?: string | null } }> })?.data;
 
 if (threadsError || !threads) {
   return Astro.redirect("/messages");
 }
 
-const thread = threads.find((t: { id: string; participant1: { id: string }, participant2: { id: string } }) => t.id === threadId);
+const thread = threads.find((t: { id: string; participant1: { id: string; name?: string | null; profilePictureUrl?: string | null; username?: string | null }; participant2: { id: string; name?: string | null; profilePictureUrl?: string | null; username?: string | null } }) => t.id === threadId);
 
 if (!thread) {
   return Astro.redirect("/messages");
@@ -50,7 +51,7 @@ const { data: messagesRes, error: messagesError } = await client.messages.thread
     authorization: `Bearer ${token}`
   }
 });
-const messages = (messagesRes as { data?: unknown })?.data;
+const messages = (messagesRes as { data?: ChatMessage[] })?.data;
 
 const initialMessages = messages || [];
 ---
