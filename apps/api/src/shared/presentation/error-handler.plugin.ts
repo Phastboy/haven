@@ -95,7 +95,19 @@ export const globalErrorHandler = (context: any) => {
       };
     }
 
-    // 3. Not Found Errors (Elysia unmatched routes)
+    // 3. Parse Errors (Malformed JSON)
+    if (code === "PARSE") {
+      set.status = 400;
+      return {
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: "The request payload is malformed or invalid JSON.",
+        instance,
+      };
+    }
+
+    // 4. Not Found Errors (Elysia unmatched routes)
     const asAny = error as unknown as Record<string, unknown>;
     if (
       code === "NOT_FOUND" ||
