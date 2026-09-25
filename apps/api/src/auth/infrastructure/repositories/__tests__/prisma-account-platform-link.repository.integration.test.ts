@@ -1,13 +1,16 @@
+import { config } from "../../../../config";
 import { sql } from "drizzle-orm";
 import { expect, test, describe, afterAll, beforeAll } from "bun:test";
 import { AccountPlatformLinkRepository } from "../account-platform-link.repository";
 import { AccountRepository } from "../account.repository";
 
-import { db } from "../../../../database/db";
+import { createDb } from "../../../../database/db";
+const db = createDb(config);
+
 
 describe("AccountPlatformLinkRepository Integration", () => {
-  const linkRepo = new AccountPlatformLinkRepository();
-  const accountRepo = new AccountRepository();
+  const linkRepo = new AccountPlatformLinkRepository(db);
+  const accountRepo = new AccountRepository(db);
 
   const testEmail = `test-link-${crypto.randomUUID()}@example.com`;
   const platformUserId = `platform-user-${crypto.randomUUID()}`;

@@ -6,15 +6,21 @@ import type {
   OfferStatus,
   OfferType,
 } from "../domain/offer.schema";
-import { db } from "../../database/db";
+import type { DB } from "../../database/db";
 import { offers } from "../../database/schema";
 import { randomUUID } from "crypto";
 import { and, eq, ne } from "drizzle-orm";
 
 export class SqlOfferRepository implements IOfferRepository {
+  readonly #db: DB;
+
+  constructor(db: DB) {
+    this.#db = db;
+  }
+
   async create(userId: string, data: CreateOfferData): Promise<Offer> {
     const id = randomUUID();
-    const [record] = await db
+    const [record] = await this.#db
       .insert(offers)
       .values({
         id,
@@ -32,18 +38,18 @@ export class SqlOfferRepository implements IOfferRepository {
   }
 
   async findById(id: string): Promise<Offer | null> {
-    const [record] = await db.select().from(offers).where(eq(offers.id, id));
+    const [record] = await this.#db.select().from(offers).where(eq(offers.id, id));
     if (!record) return null;
     return this.mapToDomain(record);
   }
 
   async findByUserId(userId: string): Promise<Offer[]> {
-    const records = await db.select().from(offers).where(eq(offers.userId, userId));
+    const records = await this.#db.select().from(offers).where(eq(offers.userId, userId));
     return records.map(this.mapToDomain);
   }
 
   async findActiveByUserId(userId: string): Promise<Offer[]> {
-    const records = await db
+    const records = await this.#db
       .select()
       .from(offers)
       .where(and(eq(offers.userId, userId), ne(offers.status, "ARCHIVED")));
@@ -61,14 +67,14 @@ export class SqlOfferRepository implements IOfferRepository {
     if (data.offerType !== undefined) updateData.offerType = data.offerType;
     if (data.images !== undefined) updateData.images = data.images;
 
-    const [record] = await db.update(offers).set(updateData).where(eq(offers.id, id)).returning();
+    const [record] = await this.#db.update(offers).set(updateData).where(eq(offers.id, id)).returning();
 
     if (!record) return null;
     return this.mapToDomain(record);
   }
 
   async delete(id: string): Promise<boolean> {
-    const [record] = await db
+    const [record] = await this.#db
       .update(offers)
       .set({ status: "ARCHIVED", updatedAt: new Date() })
       .where(eq(offers.id, id))

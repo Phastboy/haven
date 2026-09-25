@@ -1,5 +1,8 @@
+import { config } from "../../../config";
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
-import { db } from "../../../database/db";
+import { createDb } from "../../../database/db";
+const db = createDb(config);
+
 import { users, accounts } from "../../../database/schema";
 import { SqlOfferRepository } from "../sql-offer.repository";
 import { randomUUID } from "crypto";
@@ -11,7 +14,7 @@ describe("SqlOfferRepository Integration", () => {
   let testUserId: string;
 
   beforeAll(async () => {
-    repository = new SqlOfferRepository();
+    repository = new SqlOfferRepository(db);
     testAccountId = randomUUID();
     testUserId = randomUUID();
 

@@ -5,6 +5,7 @@ import type { IGoogleTokenService } from "../../domain/ports/IGoogleTokenService
 import type { TokenService } from "../../infrastructure/services/token.service";
 import type { Session } from "../../domain/session.schema";
 import type { IProfileCreator } from "../../domain/ports/IProfileCreator";
+import type { Config } from "../../../config";
 
 export class LoginWithGoogleUseCase {
   readonly #accountRepo: IAccountRepository;
@@ -13,6 +14,7 @@ export class LoginWithGoogleUseCase {
   readonly #googleService: IGoogleTokenService;
   readonly #tokenService: TokenService;
   readonly #profileCreator: IProfileCreator;
+  readonly #config: Config;
 
   constructor(
     accountRepo: IAccountRepository,
@@ -21,6 +23,7 @@ export class LoginWithGoogleUseCase {
     googleService: IGoogleTokenService,
     tokenService: TokenService,
     profileCreator: IProfileCreator,
+    config: Config,
   ) {
     this.#accountRepo = accountRepo;
     this.#oauthRepo = oauthRepo;
@@ -28,6 +31,7 @@ export class LoginWithGoogleUseCase {
     this.#googleService = googleService;
     this.#tokenService = tokenService;
     this.#profileCreator = profileCreator;
+    this.#config = config;
   }
 
   async execute(idToken: string, userAgent?: string, ipAddress?: string): Promise<Session> {
@@ -67,7 +71,7 @@ export class LoginWithGoogleUseCase {
     const sessionRawToken = this.#tokenService.generate(64);
     const sessionHashedToken = this.#tokenService.hash(sessionRawToken);
 
-    const ttlDays = Number(process.env["SESSION_TTL_DAYS"]) || 30;
+    const ttlDays = this.#config.SESSION_TTL_DAYS;
     const sessionExpiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000).toISOString();
 
     const session = await this.#sessionRepo.create({

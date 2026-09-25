@@ -1,11 +1,15 @@
-import "dotenv/config";
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import * as schema from "./schema";
+import type { Config } from "../config";
 
-if (!process.env["DATABASE_URL"]) {
-  throw new Error("DATABASE_URL environment variable is missing.");
+/**
+ * Factory to create a database connection.
+ * @param cfg The config containing the database URL
+ */
+export function createDb(cfg: Config) {
+  const client = postgres(cfg.DATABASE_URL);
+  return drizzle(client, { schema });
 }
 
-const client = postgres(process.env["DATABASE_URL"]);
-export const db = drizzle(client, { schema });
+export type DB = ReturnType<typeof createDb>;

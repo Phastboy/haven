@@ -1,11 +1,14 @@
+import { config } from "../../../../config";
 import { sql } from "drizzle-orm";
 import { expect, test, describe, afterAll } from "bun:test";
 import { MagicLinkRepository } from "../magic-link.repository";
 
-import { db } from "../../../../database/db";
+import { createDb } from "../../../../database/db";
+const db = createDb(config);
+
 
 describe("MagicLinkRepository Integration", () => {
-  const repo = new MagicLinkRepository();
+  const repo = new MagicLinkRepository(db);
   const testEmail = `test-ml-${crypto.randomUUID()}@example.com`;
   const testToken = crypto.randomUUID();
   let magicLinkId: string;

@@ -1,4 +1,4 @@
-import { db } from "../../database/db";
+import type { DB } from "../../database/db";
 import { users } from "../../database/schema";
 import { eq, desc } from "drizzle-orm";
 import { toIso } from "../../database/map";
@@ -7,22 +7,28 @@ import type { User, CreateUserData, UpdateUserData } from "../domain/user.entity
 import { NotFoundError } from "../../shared/errors";
 
 export class SqlUserRepository implements IUserRepository {
+  readonly #db: DB;
+
+  constructor(db: DB) {
+    this.#db = db;
+  }
+
   async findById(id: string): Promise<User | null> {
-    const row = await db.query.users.findFirst({
+    const row = await this.#db.query.users.findFirst({
       where: eq(users.id, id),
     });
     return row ? this.#toUser(row) : null;
   }
 
   async findByAccountId(accountId: string): Promise<User | null> {
-    const row = await db.query.users.findFirst({
+    const row = await this.#db.query.users.findFirst({
       where: eq(users.accountId, accountId),
     });
     return row ? this.#toUser(row) : null;
   }
 
   async findAll(): Promise<User[]> {
-    const rows = await db.query.users.findMany({
+    const rows = await this.#db.query.users.findMany({
       orderBy: [desc(users.createdAt)],
     });
     return rows.map((r) => this.#toUser(r));
@@ -30,7 +36,7 @@ export class SqlUserRepository implements IUserRepository {
 
   async create(data: CreateUserData): Promise<User> {
     const id = crypto.randomUUID();
-    const rows = await db
+    const rows = await this.#db
       .insert(users)
       .values({
         id,
@@ -63,7 +69,7 @@ export class SqlUserRepository implements IUserRepository {
       return existing;
     }
 
-    const rows = await db.update(users).set(updates).where(eq(users.id, id)).returning();
+    const rows = await this.#db.update(users).set(updates).where(eq(users.id, id)).returning();
     const row = rows[0];
 
     if (!row) throw new NotFoundError("User", id);
@@ -71,7 +77,7 @@ export class SqlUserRepository implements IUserRepository {
   }
 
   async delete(id: string): Promise<void> {
-    await db.delete(users).where(eq(users.id, id));
+    await this.#db.delete(users).where(eq(users.id, id));
   }
 
   #toUser(row: typeof users.$inferSelect): User {

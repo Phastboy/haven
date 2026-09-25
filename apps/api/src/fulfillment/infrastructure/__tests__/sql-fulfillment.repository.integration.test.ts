@@ -1,5 +1,8 @@
+import { config } from "../../../config";
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
-import { db } from "../../../database/db";
+import { createDb } from "../../../database/db";
+const db = createDb(config);
+
 import { accounts, offers, orders, users } from "../../../database/schema";
 import { SqlFulfillmentRepository } from "../sql-fulfillment.repository";
 import { randomUUID } from "crypto";
@@ -14,7 +17,7 @@ describe("SqlFulfillmentRepository Integration", () => {
   let testOrderId: string;
 
   beforeAll(async () => {
-    repository = new SqlFulfillmentRepository();
+    repository = new SqlFulfillmentRepository(db);
 
     testAccountId = randomUUID();
     testUserId = randomUUID();

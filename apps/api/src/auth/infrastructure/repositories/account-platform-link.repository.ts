@@ -1,4 +1,4 @@
-import { db } from "../../../database/db";
+import type { DB } from "../../../database/db";
 import { accountPlatformLinks } from "../../../database/schema";
 import { eq, and } from "drizzle-orm";
 import { toIso } from "../../../database/map";
@@ -9,9 +9,15 @@ import type {
 import type { AccountPlatformLink } from "../../domain/account-platform-link.schema";
 
 export class AccountPlatformLinkRepository implements IAccountPlatformLinkRepository {
+  readonly #db: DB;
+
+  constructor(db: DB) {
+    this.#db = db;
+  }
+
   async create(data: CreateAccountPlatformLinkDTO): Promise<AccountPlatformLink> {
     const id = crypto.randomUUID();
-    const rows = await db
+    const rows = await this.#db
       .insert(accountPlatformLinks)
       .values({
         id,
@@ -27,7 +33,7 @@ export class AccountPlatformLinkRepository implements IAccountPlatformLinkReposi
     accountId: string,
     platform: string,
   ): Promise<AccountPlatformLink | null> {
-    const row = await db.query.accountPlatformLinks.findFirst({
+    const row = await this.#db.query.accountPlatformLinks.findFirst({
       where: and(
         eq(accountPlatformLinks.accountId, accountId),
         eq(accountPlatformLinks.platform, platform),

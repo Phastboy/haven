@@ -1,8 +1,15 @@
 import type { IEmailService } from "../../domain/ports/IEmailService";
+import type { Config } from "../../../config";
 
 export class ConsoleEmailService implements IEmailService {
+  #enabled: boolean;
+
+  constructor(config: Config) {
+    this.#enabled = config.ENABLE_CONSOLE_EMAIL;
+  }
+
   async send(to: string, subject: string, body: string): Promise<void> {
-    if (process.env["ENABLE_CONSOLE_EMAIL"] !== "true") {
+    if (!this.#enabled) {
       return;
     }
     console.log(`To: ${to}`);

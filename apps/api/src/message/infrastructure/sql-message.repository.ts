@@ -1,4 +1,4 @@
-import { db } from "../../database/db";
+import type { DB } from "../../database/db";
 import type { ThreadRecord, MessageRecord } from "../../database/schema";
 import { threads, messages } from "../../database/schema";
 import { eq, or, and, desc, asc } from "drizzle-orm";
@@ -21,13 +21,19 @@ export interface ThreadWithParticipants extends ThreadRecord {
 }
 
 export class SqlMessageRepository {
+  readonly #db: DB;
+
+  constructor(db: DB) {
+    this.#db = db;
+  }
+
   async findThreadById(threadId: string): Promise<ThreadRecord | null> {
-    const [thread] = await db.select().from(threads).where(eq(threads.id, threadId));
+    const [thread] = await this.#db.select().from(threads).where(eq(threads.id, threadId));
     return thread || null;
   }
 
   async findThreadByParticipants(user1Id: string, user2Id: string): Promise<ThreadRecord | null> {
-    const [thread] = await db
+    const [thread] = await this.#db
       .select()
       .from(threads)
       .where(
@@ -41,7 +47,7 @@ export class SqlMessageRepository {
 
   async createThread(participant1Id: string, participant2Id: string): Promise<ThreadRecord> {
     try {
-      const [thread] = await db
+      const [thread] = await this.#db
         .insert(threads)
         .values({
           id: randomUUID(),
@@ -60,7 +66,7 @@ export class SqlMessageRepository {
   }
 
   async getUserThreads(userId: string): Promise<ThreadWithParticipants[]> {
-    const userThreads = await db.query.threads.findMany({
+    const userThreads = await this.#db.query.threads.findMany({
       where: or(eq(threads.participant1Id, userId), eq(threads.participant2Id, userId)),
       with: {
         participant1: {
@@ -84,7 +90,7 @@ export class SqlMessageRepository {
   }
 
   async getThreadMessages(threadId: string): Promise<MessageRecord[]> {
-    return db
+    return this.#db
       .select()
       .from(messages)
       .where(eq(messages.threadId, threadId))
@@ -92,7 +98,7 @@ export class SqlMessageRepository {
   }
 
   async sendMessage(threadId: string, senderId: string, content: string): Promise<MessageRecord> {
-    const [message] = await db
+    const [message] = await this.#db
       .insert(messages)
       .values({
         id: randomUUID(),
@@ -103,7 +109,7 @@ export class SqlMessageRepository {
       .returning();
 
     // Update thread's updatedAt
-    await db.update(threads).set({ updatedAt: new Date() }).where(eq(threads.id, threadId));
+    await this.#db.update(threads).set({ updatedAt: new Date() }).where(eq(threads.id, threadId));
 
     return message!;
   }
@@ -115,7 +121,7 @@ export class SqlMessageRepository {
     // But for a robust version, we'd only mark the OTHER person's messages as read.
     // For simplicity, we can ignore this or implement a basic version.
     /*
-    await db.update(messages)
+    await this.#db.update(messages)
       .set({ readAt: new Date() })
       .where(and(eq(messages.threadId, threadId), isNull(messages.readAt))); 
     */

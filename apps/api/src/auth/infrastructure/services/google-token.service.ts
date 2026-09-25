@@ -2,12 +2,14 @@ import { OAuth2Client } from "google-auth-library";
 import type { IGoogleTokenService, GoogleClaims } from "../../domain/ports/IGoogleTokenService";
 import { UnauthorizedError } from "../../domain/errors";
 
+import type { Config } from "../../../config";
+
 export class GoogleTokenService implements IGoogleTokenService {
   #client: OAuth2Client;
   #clientId: string;
 
-  constructor() {
-    this.#clientId = process.env["GOOGLE_CLIENT_ID"] || "";
+  constructor(config: Config) {
+    this.#clientId = config.GOOGLE_CLIENT_ID || "";
     if (!this.#clientId) {
       console.warn("WARNING: GOOGLE_CLIENT_ID is not set.");
     }

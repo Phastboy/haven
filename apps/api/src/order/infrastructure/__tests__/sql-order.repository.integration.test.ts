@@ -1,5 +1,8 @@
+import { config } from "../../../config";
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
-import { db } from "../../../database/db";
+import { createDb } from "../../../database/db";
+const db = createDb(config);
+
 import { accounts, offers, users } from "../../../database/schema";
 import { SqlOrderRepository } from "../sql-order.repository";
 import { randomUUID } from "crypto";
@@ -18,7 +21,7 @@ describe("SqlOrderRepository Integration", () => {
   let testOfferId2: string;
 
   beforeAll(async () => {
-    repository = new SqlOrderRepository();
+    repository = new SqlOrderRepository(db);
 
     testAccountId1 = randomUUID();
     testUserId1 = randomUUID();

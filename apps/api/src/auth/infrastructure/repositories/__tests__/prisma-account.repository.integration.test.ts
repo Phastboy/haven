@@ -1,11 +1,14 @@
+import { config } from "../../../../config";
 import { sql } from "drizzle-orm";
 import { expect, test, describe } from "bun:test";
 import { AccountRepository } from "../account.repository";
 
-import { db } from "../../../../database/db";
+import { createDb } from "../../../../database/db";
+const db = createDb(config);
+
 
 describe("AccountRepository Integration", () => {
-  const repo = new AccountRepository();
+  const repo = new AccountRepository(db);
 
   test("should create a new account", async () => {
     const testEmail = `test-${crypto.randomUUID()}@example.com`;

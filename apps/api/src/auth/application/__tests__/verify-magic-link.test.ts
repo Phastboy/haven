@@ -1,3 +1,4 @@
+import { config } from "../../../config";
 import { expect, test, describe, mock } from "bun:test";
 import { VerifyMagicLinkUseCase } from "../use-cases/verify-magic-link.use-case";
 import { InvalidTokenError, ExpiredTokenError } from "../../domain/errors";
@@ -28,7 +29,7 @@ describe("VerifyMagicLinkUseCase", () => {
     createProfileForAccount: mock(),
   };
 
-  const tokenService = new TokenService();
+  const tokenService = new TokenService(config);
 
   const useCase = new VerifyMagicLinkUseCase(
     mockMagicLinkRepo,
@@ -36,6 +37,7 @@ describe("VerifyMagicLinkUseCase", () => {
     mockSessionRepo,
     tokenService,
     mockProfileCreator,
+    config
   );
 
   test("should throw InvalidTokenError if magic link not found", async () => {

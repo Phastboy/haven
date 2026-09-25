@@ -1,11 +1,14 @@
+import { config } from "../../../../config";
 import { sql } from "drizzle-orm";
 import { describe, expect, it, beforeAll, afterAll } from "bun:test";
 import { SessionRepository } from "../session.repository";
-import { db } from "../../../../database/db";
+import { createDb } from "../../../../database/db";
+const db = createDb(config);
+
 import * as crypto from "crypto";
 
 describe("SessionRepository Integration", () => {
-  const repo = new SessionRepository();
+  const repo = new SessionRepository(db);
   let testAccountId: string;
 
   beforeAll(async () => {

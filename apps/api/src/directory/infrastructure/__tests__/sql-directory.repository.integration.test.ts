@@ -1,5 +1,8 @@
+import { config } from "../../../config";
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
-import { db } from "../../../database/db";
+import { createDb } from "../../../database/db";
+const db = createDb(config);
+
 import { users, accounts, offers } from "../../../database/schema";
 import { SqlDirectoryRepository } from "../sql-directory.repository";
 import { inArray } from "drizzle-orm";
@@ -17,7 +20,7 @@ describe("SqlDirectoryRepository Integration", () => {
   let pausedOfferId: string;
 
   beforeAll(async () => {
-    repository = new SqlDirectoryRepository();
+    repository = new SqlDirectoryRepository(db);
 
     testAccountId1 = randomUUID();
     testUserId1 = randomUUID();

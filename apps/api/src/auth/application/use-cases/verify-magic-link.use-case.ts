@@ -5,6 +5,7 @@ import type { TokenService } from "../../infrastructure/services/token.service";
 import { InvalidTokenError, ExpiredTokenError } from "../../domain/errors";
 import type { Session } from "../../domain/session.schema";
 import type { IProfileCreator } from "../../domain/ports/IProfileCreator";
+import type { Config } from "../../../config";
 
 export class VerifyMagicLinkUseCase {
   readonly #magicLinkRepo: IMagicLinkRepository;
@@ -12,6 +13,7 @@ export class VerifyMagicLinkUseCase {
   readonly #sessionRepo: ISessionRepository;
   readonly #tokenService: TokenService;
   readonly #profileCreator: IProfileCreator;
+  readonly #config: Config;
 
   constructor(
     magicLinkRepo: IMagicLinkRepository,
@@ -19,12 +21,14 @@ export class VerifyMagicLinkUseCase {
     sessionRepo: ISessionRepository,
     tokenService: TokenService,
     profileCreator: IProfileCreator,
+    config: Config,
   ) {
     this.#magicLinkRepo = magicLinkRepo;
     this.#accountRepo = accountRepo;
     this.#sessionRepo = sessionRepo;
     this.#tokenService = tokenService;
     this.#profileCreator = profileCreator;
+    this.#config = config;
   }
 
   async execute(rawToken: string, userAgent?: string, ipAddress?: string): Promise<Session> {
@@ -58,7 +62,7 @@ export class VerifyMagicLinkUseCase {
     const sessionRawToken = this.#tokenService.generate(64);
     const sessionHashedToken = this.#tokenService.hash(sessionRawToken);
 
-    const ttlDays = Number(process.env["SESSION_TTL_DAYS"]) || 30;
+    const ttlDays = this.#config.SESSION_TTL_DAYS;
     const sessionExpiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000).toISOString();
 
     const session = await this.#sessionRepo.create({

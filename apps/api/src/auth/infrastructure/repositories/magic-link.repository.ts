@@ -1,4 +1,4 @@
-import { db } from "../../../database/db";
+import type { DB } from "../../../database/db";
 import { magicLinks } from "../../../database/schema";
 import { eq, and, isNull } from "drizzle-orm";
 import { toIso } from "../../../database/map";
@@ -6,9 +6,15 @@ import type { CreateMagicLinkDTO, IMagicLinkRepository } from "../../domain/port
 import type { MagicLink } from "../../domain/magic-link.schema";
 
 export class MagicLinkRepository implements IMagicLinkRepository {
+  readonly #db: DB;
+
+  constructor(db: DB) {
+    this.#db = db;
+  }
+
   async create(data: CreateMagicLinkDTO): Promise<MagicLink> {
     const id = crypto.randomUUID();
-    const rows = await db
+    const rows = await this.#db
       .insert(magicLinks)
       .values({
         id,
@@ -22,14 +28,14 @@ export class MagicLinkRepository implements IMagicLinkRepository {
   }
 
   async findByToken(token: string): Promise<MagicLink | null> {
-    const row = await db.query.magicLinks.findFirst({
+    const row = await this.#db.query.magicLinks.findFirst({
       where: eq(magicLinks.token, token),
     });
     return row ? this.#toMagicLink(row) : null;
   }
 
   async markUsed(id: string, usedAt: string): Promise<boolean> {
-    const rows = await db
+    const rows = await this.#db
       .update(magicLinks)
       .set({ usedAt: new Date(usedAt) })
       .where(and(eq(magicLinks.id, id), isNull(magicLinks.usedAt)))

@@ -1,3 +1,4 @@
+import { config } from "../../../config";
 import { expect, test, describe, mock } from "bun:test";
 import type { IMagicLinkRepository } from "../../domain/ports/IMagicLinkRepository";
 import type { IEmailService } from "../../domain/ports/IEmailService";
@@ -15,12 +16,13 @@ describe("RequestMagicLinkUseCase", () => {
     send: mock(),
   };
 
-  const tokenService = new TokenService();
+  const tokenService = new TokenService(config);
 
   const useCase = new RequestMagicLinkUseCase(
     mockMagicLinkRepo as unknown as IMagicLinkRepository,
     mockEmailService as unknown as IEmailService,
     tokenService,
+    config,
   );
 
   test("should generate a token, save to repo, and send email", async () => {
@@ -41,6 +43,6 @@ describe("RequestMagicLinkUseCase", () => {
     const sendCall = mockEmailService.send.mock.calls[0]!;
     expect(sendCall[0]).toBe("test@example.com");
     expect(sendCall[1]).toBe("Your Magic Login Link");
-    expect(sendCall[2]).toContain(`${process.env["MAGIC_LINK_BASE_URL"]}/auth/magic-login`);
+    expect(sendCall[2]).toContain(`${config.MAGIC_LINK_BASE_URL}/auth/magic-login`);
   });
 });

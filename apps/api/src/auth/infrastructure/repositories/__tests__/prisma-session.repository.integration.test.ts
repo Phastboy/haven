@@ -1,13 +1,16 @@
+import { config } from "../../../../config";
 import { sql } from "drizzle-orm";
 import { expect, test, describe } from "bun:test";
 import { SessionRepository } from "../session.repository";
 import { AccountRepository } from "../account.repository";
 
-import { db } from "../../../../database/db";
+import { createDb } from "../../../../database/db";
+const db = createDb(config);
+
 
 describe("SessionRepository Integration", () => {
-  const sessionRepo = new SessionRepository();
-  const accountRepo = new AccountRepository();
+  const sessionRepo = new SessionRepository(db);
+  const accountRepo = new AccountRepository(db);
 
   test("should create a session", async () => {
     const account = await accountRepo.create({
