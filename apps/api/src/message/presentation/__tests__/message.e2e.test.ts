@@ -1,10 +1,14 @@
+import { config } from "../../../config";
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 import { app } from "../../../index";
-import { db } from "../../../database/db";
+import { createDb } from "../../../database/db";
+const db = createDb(config);
+
 import { users, accounts, sessions } from "../../../database/schema";
 import { randomUUID } from "crypto";
 import { eq } from "drizzle-orm";
-import { tokenService } from "../../../auth/infrastructure/services/token.service";
+import { TokenService } from "../../../auth/infrastructure/services/token.service";
+const tokenService = new TokenService(config);
 
 describe("Message Plugin E2E", () => {
   let user1Token: string;

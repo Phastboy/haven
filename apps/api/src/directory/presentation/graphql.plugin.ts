@@ -1,3 +1,4 @@
+import type { DB } from "../../database/db";
 import { yoga } from "@elysia/graphql-yoga";
 import { typeDefs } from "./graphql/schema";
 import { resolvers } from "./graphql/resolvers";
@@ -5,8 +6,8 @@ import { SqlDirectoryRepository } from "../infrastructure/sql-directory.reposito
 import type { GraphQLContext } from "./graphql/context";
 import DataLoader from "dataloader";
 
-export const createDirectoryPlugin = () => {
-  const repository = new SqlDirectoryRepository();
+export const createDirectoryPlugin = (db: DB) => {
+  const repository = new SqlDirectoryRepository(db);
 
   return yoga({
     typeDefs,

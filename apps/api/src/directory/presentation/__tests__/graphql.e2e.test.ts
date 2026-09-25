@@ -1,6 +1,9 @@
+import { config } from "../../../config";
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 import { randomUUID } from "crypto";
-import { db } from "../../../database/db";
+import { createDb } from "../../../database/db";
+const db = createDb(config);
+
 import { users, accounts, offers } from "../../../database/schema";
 import { app } from "../../../index";
 import { eq } from "drizzle-orm";

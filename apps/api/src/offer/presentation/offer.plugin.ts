@@ -1,3 +1,4 @@
+import { config } from "../../config";
 import { Elysia } from "elysia";
 import { CreateOfferBody, UpdateOfferBody, OfferIdParam, UserIdParam } from "./offer.dto";
 import { SqlOfferRepository } from "../infrastructure/sql-offer.repository";
@@ -10,21 +11,22 @@ import { OfferNotFoundError } from "../domain/errors";
 import { requireAuth } from "../../auth/presentation/middleware/session.middleware";
 import { GetSessionUseCase } from "../../auth/application/use-cases/get-session.use-case";
 import { SessionRepository } from "../../auth/infrastructure/repositories/session.repository";
-import { tokenService } from "../../auth/infrastructure/services/token.service";
+import { TokenService } from "../../auth/infrastructure/services/token.service";
+const tokenService = new TokenService(config);
 import { UnauthorizedError } from "../../auth/domain/errors";
-import { db } from "../../database/db";
+import type { DB } from "../../database/db";
 import { users } from "../../database/schema";
 import { eq } from "drizzle-orm";
 
-export const createOfferPlugin = () => {
-  const repository = new SqlOfferRepository();
+export const createOfferPlugin = (db: DB) => {
+  const repository = new SqlOfferRepository(db);
   const createOffer = new CreateOfferUseCase(repository);
   const updateOffer = new UpdateOfferUseCase(repository);
   const deleteOffer = new DeleteOfferUseCase(repository);
   const getOffer = new GetOfferUseCase(repository);
   const listUserOffers = new ListUserOffersUseCase(repository);
 
-  const getSessionUseCase = new GetSessionUseCase(new SessionRepository(), tokenService);
+  const getSessionUseCase = new GetSessionUseCase(new SessionRepository(db), tokenService);
 
   return new Elysia({ prefix: "/offers", tags: ["Offers"] })
     .derive(async ({ headers }: { headers: Record<string, string | undefined> }) => {

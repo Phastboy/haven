@@ -1,6 +1,10 @@
+import { config } from "./config";
+import { createDb } from "./database/db";
 import { cors } from "@elysia/cors";
 import openapi, { fromTypes } from "@elysia/openapi";
-import { Elysia, ValidationError as ElysiaValidationError } from "elysia";
+import { Elysia } from "elysia";
+import { serverTiming } from "@elysia/server-timing";
+
 import { createUserPlugin } from "./user/presentation/user.plugin";
 import { createAuthPlugin } from "./auth";
 import { createOfferPlugin } from "./offer/presentation/offer.plugin";
@@ -8,228 +12,62 @@ import { createDirectoryPlugin } from "./directory/presentation/graphql.plugin";
 import { createOrderPlugin } from "./order/presentation/order.plugin";
 import { createFulfillmentPlugin } from "./fulfillment/presentation/fulfillment.plugin";
 import { createAutoCompletePlugin } from "./scheduler/auto-complete.plugin";
-
 import { createMessagePlugin } from "./message/presentation/message.plugin";
 import { createWsPlugin } from "./shared/presentation/ws.plugin";
+
 import { PostgresEventBusAdapter } from "./shared/infrastructure/postgres-event-bus.adapter";
-import { SqlMessageRepository } from "./message/infrastructure/sql-message.repository";
-import { CreateThreadUseCase } from "./message/application/create-thread.usecase";
-import { DomainError } from "./shared/domain/errors";
 import { SqlUserRepository } from "./user/infrastructure/sql-user.repository";
+import { setupEventSubscribers } from "./shared/infrastructure/event-subscribers";
+import { globalErrorHandler } from "./shared/presentation/error-handler.plugin";
 
-if (!process.env["DATABASE_URL"]) {
-  throw new Error("DATABASE_URL environment variable is missing.");
-}
-const eventBus = new PostgresEventBusAdapter(process.env["DATABASE_URL"]);
+const eventBus = new PostgresEventBusAdapter(config.DATABASE_URL);
 
-// Set up cross-domain event listeners
-await eventBus.subscribe("order.accepted", async (payload) => {
-  const messageRepo = new SqlMessageRepository();
-  const createThreadUseCase = new CreateThreadUseCase(messageRepo);
-  try {
-    await createThreadUseCase.execute(payload.requesterId, payload.ownerId);
-    console.log(`[EventBus] Thread auto-created for order ${payload.orderId}`);
-  } catch (error) {
-    console.error(`[EventBus] Error creating thread for order ${payload.orderId}:`, error);
-  }
-});
-
-// Broadcast real-time notifications to users
-await eventBus.subscribe("order.requested", (payload) => {
-  app.server?.publish(
-    `user:${payload.ownerId}`,
-    JSON.stringify({ type: "NOTIFICATION", data: { message: "Someone requested your offer!" } }),
-  );
-});
-
-await eventBus.subscribe("order.accepted", (payload) => {
-  app.server?.publish(
-    `user:${payload.requesterId}`,
-    JSON.stringify({ type: "NOTIFICATION", data: { message: "Your request was accepted!" } }),
-  );
-});
-
-await eventBus.subscribe("message.created", (payload) => {
-  app.server?.publish(
-    `user:${payload.receiverId}`,
-    JSON.stringify({ type: "NEW_MESSAGE", data: payload.message }),
-  );
-});
-
-import { serverTiming } from "@elysia/server-timing";
-
-const userRepo = new SqlUserRepository();
-
-const getHttpStatusPhrase = (status: number): string => {
-  switch (status) {
-    case 400:
-      return "Bad Request";
-    case 401:
-      return "Unauthorized";
-    case 403:
-      return "Forbidden";
-    case 404:
-      return "Not Found";
-    case 409:
-      return "Conflict";
-    case 422:
-      return "Unprocessable Entity";
-    default:
-      return "Internal Server Error";
-  }
-};
+const db = createDb(config);
+const userRepo = new SqlUserRepository(db);
 
 export const app = new Elysia({ prefix: "/api" })
-  // CORS via the plugin. The hand-rolled version (a `.request` hook plus an
-  // `options("/*")` catch-all) silently collapsed the whole app type to `any`,
-  // `options("/*")` catch-all) silently collapsed the whole app type to `any`,
-  // which is what killed Eden's autocompletion in apps/web.
-  .use(cors({ origin: process.env["WEB_ORIGIN"] ?? true, credentials: true }))
+  .use(cors({ origin: config.WEB_ORIGIN, credentials: true }))
   .use(serverTiming())
+  .error(globalErrorHandler)
   .use(
     openapi({
       references: fromTypes(),
     }),
   )
-  .use(createUserPlugin())
+  .use(createUserPlugin(db))
   .use(
-    createAuthPlugin({
-      async createProfileForAccount(accountId: string) {
-        await userRepo.create({ accountId });
+    createAuthPlugin(
+      {
+        async createProfileForAccount(accountId: string) {
+          await userRepo.create({ accountId });
+        },
       },
-    }),
+      config,
+      db
+    ),
   )
-  .use(createOfferPlugin())
-  .use(createOrderPlugin(eventBus))
-  .use(createFulfillmentPlugin())
-  .use(createMessagePlugin(eventBus))
-  .use(createWsPlugin())
+  .use(createOfferPlugin(db))
+  .use(createOrderPlugin(eventBus, db))
+  .use(createFulfillmentPlugin(db))
+  .use(createMessagePlugin(eventBus, db))
+  .use(createWsPlugin(db))
   .get("/", () => "Hello Elysia")
-  .get("/health", () => ({ status: "ok", timestamp: new Date().toISOString() }))
-  // Global last-resort error handler — registered LAST so plugin-level handlers
-  // run first (Elysia resolves hooks in definition order within the same scope).
-  // This ensures no raw SQL, stack traces, or Postgres internals ever reach the
-  // client for errors that no plugin handler claimed.
-  .error((context) => {
-    const { error, set, request } = context;
-    const asRecordContext = context as unknown as Record<string, unknown>;
-    const asRecordError = error as unknown as Record<string, unknown>;
-    const code = asRecordContext["code"] || asRecordError["code"];
-    const instance = new URL(request.url).pathname;
+  .get("/health", () => ({ status: "ok", timestamp: new Date().toISOString() }));
 
-    // 1. Custom Domain Errors
-    if (error instanceof DomainError) {
-      set.status = error.status;
-      return {
-        type: "about:blank",
-        title: getHttpStatusPhrase(error.status),
-        status: error.status,
-        detail: error.detail,
-        instance,
-      };
-    }
-
-    // 2. Validation Errors (TypeBox/Elysia)
-    if (
-      code === "VALIDATION" ||
-      error instanceof ElysiaValidationError ||
-      (error && (error as { name?: string }).name === "ValidationError")
-    ) {
-      set.status = 422;
-
-      let validationErrors: { name: string; reason: string }[] | undefined = undefined;
-
-      const extractErrors = (errors: unknown[]) => {
-        const mapped = errors.map((err) => {
-          const asRecord = err as Record<string, unknown>;
-          let name = String(asRecord["path"] || "");
-          if (name === "" || name === "root") {
-            const schemaPath = String(asRecord["schemaPath"] || "");
-            const match = schemaPath.match(/#\/properties\/([^\/]+)/);
-            name = match?.[1] || "body";
-          } else {
-            name = name.replace(/^\//, "");
-          }
-          return { name, reason: String(asRecord["message"] || "") };
-        });
-
-        const errorMap = new Map<string, string[]>();
-        for (const e of mapped) {
-          if (!errorMap.has(e.name)) {
-            errorMap.set(e.name, []);
-          }
-          if (e.reason !== "must match a schema in anyOf" && e.reason !== "Expected union value") {
-            errorMap.get(e.name)!.push(e.reason);
-          }
-        }
-
-        return Array.from(errorMap.entries()).map(([name, reasons]) => ({
-          name,
-          reason: reasons.length > 0 ? reasons.join(" OR ") : "Invalid value",
-        }));
-      };
-
-      if (error instanceof ElysiaValidationError) {
-        validationErrors = extractErrors(error.all);
-      } else if (asRecordError["all"] && Array.isArray(asRecordError["all"])) {
-        validationErrors = extractErrors(asRecordError["all"]);
-      }
-
-      return {
-        type: "about:blank",
-        title: "Unprocessable Entity",
-        status: 422,
-        detail: "The request payload failed to validate against the schema.",
-        instance,
-        errors: validationErrors,
-      };
-    }
-
-    // 3. Not Found Errors (Elysia unmatched routes)
-    const asAny = error as unknown as Record<string, unknown>;
-    if (
-      code === "NOT_FOUND" ||
-      asAny["code"] === "not-found" ||
-      (error instanceof Error &&
-        "status" in error &&
-        (error as unknown as { status: number }).status === 404)
-    ) {
-      set.status = 404;
-      return {
-        type: "about:blank",
-        title: "Not Found",
-        status: 404,
-        detail: "The requested route or resource does not exist.",
-        instance,
-      };
-    }
-
-    // 4. Unhandled Internal Errors
-    console.error("[unhandled error]", error);
-    set.status = 500;
-    return {
-      type: "about:blank",
-      title: "Internal Server Error",
-      status: 500,
-      detail: "An unexpected error occurred.",
-      instance,
-    };
-  });
+// Fix the event subscribers to actually have the app reference for WS publishing
+await setupEventSubscribers(eventBus, app as any, db);
 
 export type App = typeof app;
 
-// Registered after `App` is captured: both erase the inferred route map
-// (croner's `Cron` type is not nameable; the GraphQL plugin returns `any`),
-// and that erasure propagates to `treaty<App>` in apps/web.
-app.use(createDirectoryPlugin());
-app.use(createAutoCompletePlugin());
-const port = process.env["PORT"] ?? 3000;
+// Registered after `App` is captured
+app.use(createDirectoryPlugin(db));
+app.use(createAutoCompletePlugin(db));
 
-if (process.env.NODE_ENV !== "test") {
+if (config.NODE_ENV !== "test") {
   app.listen(
     {
-      port,
-      hostname: "0.0.0.0",
+      port: config.PORT,
+      hostname: config.HOST,
     },
     () => {
       console.log(`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`);

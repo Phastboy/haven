@@ -1,10 +1,14 @@
+import { config } from "../../../config";
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 import { randomUUID } from "crypto";
-import { db } from "../../../database/db";
+import { createDb } from "../../../database/db";
+const db = createDb(config);
+
 import { users, accounts, sessions, offers, orders } from "../../../database/schema";
 import { app } from "../../../index";
 import { eq, inArray } from "drizzle-orm";
-import { tokenService } from "../../../auth/infrastructure/services/token.service";
+import { TokenService } from "../../../auth/infrastructure/services/token.service";
+const tokenService = new TokenService(config);
 
 describe("Fulfillment API E2E", () => {
   let ownerAccountId: string;

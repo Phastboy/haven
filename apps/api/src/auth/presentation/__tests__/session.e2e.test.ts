@@ -1,11 +1,15 @@
+import { config } from "../../../config";
 import { sql } from "drizzle-orm";
 import { describe, expect, it, beforeAll, afterAll } from "bun:test";
 import { createAuthPlugin } from "../auth.controller";
-import { db } from "../../../database/db";
+import { createDb } from "../../../database/db";
+const db = createDb(config);
+
 
 const mockProfileCreator = { createProfileForAccount: async () => {} };
-const authController = createAuthPlugin(mockProfileCreator);
-import { tokenService } from "../../infrastructure/services/token.service";
+const authController = createAuthPlugin(mockProfileCreator, config, db);
+import { TokenService } from "../../infrastructure/services/token.service";
+const tokenService = new TokenService(config);
 import { SessionRepository } from "../../infrastructure/repositories/session.repository";
 import * as crypto from "crypto";
 
@@ -22,7 +26,7 @@ describe("Session Middleware E2E", () => {
       VALUES (${accountId}, ${`e2e-${Date.now()}@test.com`}, true)
     `);
 
-    const repo = new SessionRepository();
+    const repo = new SessionRepository(db);
 
     validRawToken = tokenService.generate(64);
     await repo.create({
