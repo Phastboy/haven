@@ -60,6 +60,25 @@ import { serverTiming } from "@elysia/server-timing";
 
 const userRepo = new SqlUserRepository();
 
+const getHttpStatusPhrase = (status: number): string => {
+  switch (status) {
+    case 400:
+      return "Bad Request";
+    case 401:
+      return "Unauthorized";
+    case 403:
+      return "Forbidden";
+    case 404:
+      return "Not Found";
+    case 409:
+      return "Conflict";
+    case 422:
+      return "Unprocessable Entity";
+    default:
+      return "Internal Server Error";
+  }
+};
+
 export const app = new Elysia({ prefix: "/api" })
   // CORS via the plugin. The hand-rolled version (a `.request` hook plus an
   // `options("/*")` catch-all) silently collapsed the whole app type to `any`,
@@ -92,19 +111,21 @@ export const app = new Elysia({ prefix: "/api" })
   // This ensures no raw SQL, stack traces, or Postgres internals ever reach the
   // client for errors that no plugin handler claimed.
   .error((context) => {
-    const { error, set } = context;
+    const { error, set, request } = context;
     const asRecordContext = context as unknown as Record<string, unknown>;
     const asRecordError = error as unknown as Record<string, unknown>;
     const code = asRecordContext["code"] || asRecordError["code"];
+    const instance = new URL(request.url).pathname;
 
     // 1. Custom Domain Errors
     if (error instanceof DomainError) {
       set.status = error.status;
       return {
-        type: error.type,
-        title: error.title,
+        type: "about:blank",
+        title: getHttpStatusPhrase(error.status),
         status: error.status,
         detail: error.detail,
+        instance,
       };
     }
 
@@ -115,12 +136,30 @@ export const app = new Elysia({ prefix: "/api" })
       (error && (error as { name?: string }).name === "ValidationError")
     ) {
       set.status = 422;
+
+      let validationErrors: { name: string; reason: string }[] | undefined = undefined;
+      if (error instanceof ElysiaValidationError) {
+        validationErrors = error.all.map((err) => ({
+          name: String((err as Record<string, unknown>)["path"] || "").replace(/^\//, "") || "body",
+          reason: String((err as Record<string, unknown>)["message"] || ""),
+        }));
+      } else if (asRecordError["all"] && Array.isArray(asRecordError["all"])) {
+        validationErrors = asRecordError["all"].map((err: unknown) => {
+          const e = err as Record<string, unknown>;
+          return {
+            name: typeof e["path"] === "string" ? e["path"].replace(/^\//, "") : "body",
+            reason: typeof e["message"] === "string" ? e["message"] : "",
+          };
+        });
+      }
+
       return {
-        type: "validation_error",
-        title: "Validation Failed",
+        type: "about:blank",
+        title: "Unprocessable Entity",
         status: 422,
         detail: "The request payload failed to validate against the schema.",
-        errors: asRecordError["all"] ?? error.message,
+        instance,
+        errors: validationErrors,
       };
     }
 
@@ -135,10 +174,11 @@ export const app = new Elysia({ prefix: "/api" })
     ) {
       set.status = 404;
       return {
-        type: "not_found",
-        title: "Resource Not Found",
+        type: "about:blank",
+        title: "Not Found",
         status: 404,
         detail: "The requested route or resource does not exist.",
+        instance,
       };
     }
 
@@ -146,10 +186,11 @@ export const app = new Elysia({ prefix: "/api" })
     console.error("[unhandled error]", error);
     set.status = 500;
     return {
-      type: "internal_error",
+      type: "about:blank",
       title: "Internal Server Error",
       status: 500,
       detail: "An unexpected error occurred.",
+      instance,
     };
   });
 

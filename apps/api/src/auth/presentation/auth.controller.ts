@@ -6,6 +6,7 @@ import {
   RequestMagicLinkResponseDTO,
   AuthSuccessResponseDTO,
   MeResponseDTO,
+  ErrorResponseDTO,
 } from "./dtos/auth.dtos";
 import { requireAuth } from "./middleware/session.middleware";
 import { UnauthorizedError } from "../domain/errors";
@@ -93,7 +94,12 @@ export const createAuthPlugin = (profileCreator: IProfileCreator) => {
       "/magic-link/request",
       {
         body: RequestMagicLinkDTO,
-        response: { 200: RequestMagicLinkResponseDTO },
+        response: {
+          200: RequestMagicLinkResponseDTO,
+          400: ErrorResponseDTO,
+          422: ErrorResponseDTO,
+          500: ErrorResponseDTO,
+        },
       },
       async ({ body }) => {
         await requestMagicLinkUC.execute(body.email);
@@ -105,7 +111,13 @@ export const createAuthPlugin = (profileCreator: IProfileCreator) => {
       "/magic-link/verify",
       {
         body: VerifyMagicLinkDTO,
-        response: { 200: AuthSuccessResponseDTO },
+        response: {
+          200: AuthSuccessResponseDTO,
+          401: ErrorResponseDTO,
+          404: ErrorResponseDTO,
+          422: ErrorResponseDTO,
+          500: ErrorResponseDTO,
+        },
       },
       async ({ body }) => {
         const result = await verifyMagicLinkUC.execute(body.token);
@@ -117,7 +129,12 @@ export const createAuthPlugin = (profileCreator: IProfileCreator) => {
       "/google/login",
       {
         body: LoginWithGoogleDTO,
-        response: { 200: AuthSuccessResponseDTO },
+        response: {
+          200: AuthSuccessResponseDTO,
+          401: ErrorResponseDTO,
+          422: ErrorResponseDTO,
+          500: ErrorResponseDTO,
+        },
       },
       async ({ body }) => {
         const result = await loginWithGoogleUC.execute(body.idToken);
@@ -129,7 +146,11 @@ export const createAuthPlugin = (profileCreator: IProfileCreator) => {
       "/logout",
       {
         beforeHandle: [requireAuth],
-        response: { 204: t.Undefined() },
+        response: {
+          204: t.Undefined(),
+          401: ErrorResponseDTO,
+          500: ErrorResponseDTO,
+        },
       },
       async ({
         headers,
@@ -152,7 +173,11 @@ export const createAuthPlugin = (profileCreator: IProfileCreator) => {
       "/me",
       {
         beforeHandle: [requireAuth],
-        response: { 200: MeResponseDTO },
+        response: {
+          200: MeResponseDTO,
+          401: ErrorResponseDTO,
+          500: ErrorResponseDTO,
+        },
       },
       ({ account }) => {
         return { data: { account: account! } };
