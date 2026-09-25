@@ -86,17 +86,21 @@ export const fulfillments = pgTable("Fulfillment", {
   updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const threads = pgTable("Thread", {
-  id: varchar("id", { length: 36 }).primaryKey(),
-  participant1Id: varchar("participant1Id", { length: 36 })
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  participant2Id: varchar("participant2Id", { length: 36 })
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
-});
+export const threads = pgTable(
+  "Thread",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    participant1Id: varchar("participant1Id", { length: 36 })
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    participant2Id: varchar("participant2Id", { length: 36 })
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("Thread_participant_pair_key").on(t.participant1Id, t.participant2Id)],
+);
 
 export const messages = pgTable("Message", {
   id: varchar("id", { length: 36 }).primaryKey(),

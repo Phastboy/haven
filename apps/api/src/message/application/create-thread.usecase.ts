@@ -10,11 +10,27 @@ export class CreateThreadUseCase {
       throw new SelfThreadError();
     }
 
-    const existingThread = await this.messageRepo.findThreadByParticipants(user1Id, user2Id);
+    const p1 = user1Id < user2Id ? user1Id : user2Id;
+    const p2 = user1Id < user2Id ? user2Id : user1Id;
+
+    const existingThread = await this.messageRepo.findThreadByParticipants(p1, p2);
     if (existingThread) {
       return existingThread;
     }
 
-    return this.messageRepo.createThread(user1Id, user2Id);
+    try {
+      return await this.messageRepo.createThread(p1, p2);
+    } catch (e: unknown) {
+      if (
+        typeof e === "object" &&
+        e !== null &&
+        "code" in e &&
+        (e as { code: string }).code === "23505"
+      ) {
+        const conflict = await this.messageRepo.findThreadByParticipants(p1, p2);
+        if (conflict) return conflict;
+      }
+      throw e;
+    }
   }
 }
