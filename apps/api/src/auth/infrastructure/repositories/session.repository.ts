@@ -1,4 +1,4 @@
-import { db } from "../../../database/db";
+import type { DB } from "../../../database/db";
 import { sessions } from "../../../database/schema";
 import { eq, lt } from "drizzle-orm";
 import { toIso } from "../../../database/map";
@@ -6,9 +6,15 @@ import type { CreateSessionDTO, ISessionRepository } from "../../domain/ports/IS
 import type { Session, SessionWithAccount } from "../../domain/session.schema";
 
 export class SessionRepository implements ISessionRepository {
+  readonly #db: DB;
+
+  constructor(db: DB) {
+    this.#db = db;
+  }
+
   async create(data: CreateSessionDTO): Promise<Session> {
     const id = crypto.randomUUID();
-    const rows = await db
+    const rows = await this.#db
       .insert(sessions)
       .values({
         id,
@@ -23,7 +29,7 @@ export class SessionRepository implements ISessionRepository {
   }
 
   async findByToken(token: string): Promise<SessionWithAccount | null> {
-    const row = await db.query.sessions.findFirst({
+    const row = await this.#db.query.sessions.findFirst({
       where: eq(sessions.token, token),
       with: {
         account: true,
@@ -45,11 +51,11 @@ export class SessionRepository implements ISessionRepository {
   }
 
   async deleteByToken(token: string): Promise<void> {
-    await db.delete(sessions).where(eq(sessions.token, token));
+    await this.#db.delete(sessions).where(eq(sessions.token, token));
   }
 
   async deleteExpired(): Promise<void> {
-    await db.delete(sessions).where(lt(sessions.expiresAt, new Date()));
+    await this.#db.delete(sessions).where(lt(sessions.expiresAt, new Date()));
   }
 
   #toSession(row: typeof sessions.$inferSelect): Session {

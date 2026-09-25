@@ -1,3 +1,4 @@
+import { config } from "../../../config";
 import { expect, test, describe, mock } from "bun:test";
 import type { ISessionRepository } from "../../domain/ports/ISessionRepository";
 import { GetSessionUseCase } from "../use-cases/get-session.use-case";
@@ -12,7 +13,7 @@ describe("GetSessionUseCase", () => {
     deleteExpired: mock(),
   };
 
-  const tokenService = new TokenService();
+  const tokenService = new TokenService(config);
 
   const useCase = new GetSessionUseCase(
     mockSessionRepo as unknown as ISessionRepository,

@@ -1,4 +1,4 @@
-import { db } from "../../../database/db";
+import type { DB } from "../../../database/db";
 import { oauthCredentials } from "../../../database/schema";
 import { eq, and } from "drizzle-orm";
 import { toIso } from "../../../database/map";
@@ -9,9 +9,15 @@ import type {
 import type { OAuthCredential } from "../../domain/oauth-credential.schema";
 
 export class OAuthCredentialRepository implements IOAuthCredentialRepository {
+  readonly #db: DB;
+
+  constructor(db: DB) {
+    this.#db = db;
+  }
+
   async create(data: CreateOAuthCredentialDTO): Promise<OAuthCredential> {
     const id = crypto.randomUUID();
-    const rows = await db
+    const rows = await this.#db
       .insert(oauthCredentials)
       .values({
         id,
@@ -27,7 +33,7 @@ export class OAuthCredentialRepository implements IOAuthCredentialRepository {
   }
 
   async findByProvider(provider: string, providerUserId: string): Promise<OAuthCredential | null> {
-    const row = await db.query.oauthCredentials.findFirst({
+    const row = await this.#db.query.oauthCredentials.findFirst({
       where: and(
         eq(oauthCredentials.provider, provider),
         eq(oauthCredentials.providerUserId, providerUserId),
@@ -54,7 +60,7 @@ export class OAuthCredentialRepository implements IOAuthCredentialRepository {
       updates.tokenExpiresAt = tokenExpiresAt ? new Date(tokenExpiresAt) : null;
     }
 
-    await db.update(oauthCredentials).set(updates).where(eq(oauthCredentials.id, id));
+    await this.#db.update(oauthCredentials).set(updates).where(eq(oauthCredentials.id, id));
   }
 
   #toOAuthCredential(row: typeof oauthCredentials.$inferSelect): OAuthCredential {

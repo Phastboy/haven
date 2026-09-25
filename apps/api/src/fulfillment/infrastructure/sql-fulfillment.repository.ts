@@ -1,12 +1,18 @@
 import { eq, lt, and } from "drizzle-orm";
-import { db } from "../../database/db";
+import type { DB } from "../../database/db";
 import { fulfillments } from "../../database/schema";
 import type { IFulfillmentRepository } from "../domain/fulfillment.repository";
 import type { Fulfillment, FulfillmentStatus } from "../domain/fulfillment.schema";
 
 export class SqlFulfillmentRepository implements IFulfillmentRepository {
+  readonly #db: DB;
+
+  constructor(db: DB) {
+    this.#db = db;
+  }
+
   async createFulfillment(data: { id: string; orderId: string }): Promise<Fulfillment> {
-    const [fulfillment] = await db
+    const [fulfillment] = await this.#db
       .insert(fulfillments)
       .values({
         id: data.id,
@@ -17,12 +23,12 @@ export class SqlFulfillmentRepository implements IFulfillmentRepository {
   }
 
   async getFulfillmentById(id: string): Promise<Fulfillment | null> {
-    const [fulfillment] = await db.select().from(fulfillments).where(eq(fulfillments.id, id));
+    const [fulfillment] = await this.#db.select().from(fulfillments).where(eq(fulfillments.id, id));
     return fulfillment || null;
   }
 
   async getFulfillmentByOrderId(orderId: string): Promise<Fulfillment | null> {
-    const [fulfillment] = await db
+    const [fulfillment] = await this.#db
       .select()
       .from(fulfillments)
       .where(eq(fulfillments.orderId, orderId));
@@ -34,7 +40,7 @@ export class SqlFulfillmentRepository implements IFulfillmentRepository {
     status: FulfillmentStatus,
     options?: { deliveryMessage?: string; reviewDeadline?: Date },
   ): Promise<Fulfillment> {
-    const [fulfillment] = await db
+    const [fulfillment] = await this.#db
       .update(fulfillments)
       .set({
         status,
@@ -48,7 +54,7 @@ export class SqlFulfillmentRepository implements IFulfillmentRepository {
   }
 
   async getExpiredFulfillments(currentDate: Date): Promise<Fulfillment[]> {
-    return db
+    return this.#db
       .select()
       .from(fulfillments)
       .where(

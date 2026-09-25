@@ -1,3 +1,4 @@
+import { config } from "../../../../config";
 import { expect, test, describe } from "bun:test";
 import { SmtpEmailService } from "../smtp-email.service";
 
@@ -9,7 +10,7 @@ describe("SmtpEmailService Integration", () => {
       return;
     }
 
-    const service = new SmtpEmailService();
+    const service = new SmtpEmailService(config);
 
     try {
       await service.send(

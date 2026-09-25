@@ -1,12 +1,18 @@
 import type { IDirectoryRepository } from "../domain/directory.repository";
 import type { DirectoryOffer, DirectoryUser } from "../domain/directory.schema";
-import { db } from "../../database/db";
+import type { DB } from "../../database/db";
 import { offers, users } from "../../database/schema";
 import { eq, desc, inArray } from "drizzle-orm";
 
 export class SqlDirectoryRepository implements IDirectoryRepository {
+  readonly #db: DB;
+
+  constructor(db: DB) {
+    this.#db = db;
+  }
+
   async getActiveOffers(limit: number = 50, offset: number = 0): Promise<DirectoryOffer[]> {
-    const records = await db
+    const records = await this.#db
       .select()
       .from(offers)
       .where(eq(offers.status, "ACTIVE"))
@@ -29,7 +35,7 @@ export class SqlDirectoryRepository implements IDirectoryRepository {
   async getUsersByIds(userIds: string[]): Promise<DirectoryUser[]> {
     if (userIds.length === 0) return [];
 
-    const records = await db.select().from(users).where(inArray(users.id, userIds));
+    const records = await this.#db.select().from(users).where(inArray(users.id, userIds));
 
     return records.map((record) => ({
       id: record.id,

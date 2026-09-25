@@ -1,12 +1,15 @@
+import { config } from "../../../config";
 import { sql } from "drizzle-orm";
 import { expect, test, describe } from "bun:test";
 import { SqlUserRepository } from "../sql-user.repository";
 import { AccountRepository } from "../../../auth/infrastructure/repositories/account.repository";
-import { db } from "../../../database/db";
+import { createDb } from "../../../database/db";
+const db = createDb(config);
+
 
 describe("SqlUserRepository Integration", () => {
-  const repo = new SqlUserRepository();
-  const accountRepo = new AccountRepository();
+  const repo = new SqlUserRepository(db);
+  const accountRepo = new AccountRepository(db);
 
   test("should create a new user profile", async () => {
     const testEmail = `test-user-${crypto.randomUUID()}@example.com`;

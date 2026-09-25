@@ -1,11 +1,17 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "../../database/db";
+import type { DB } from "../../database/db";
 import { orders, offers } from "../../database/schema";
 import type { IOrderRepository } from "../domain/order.repository";
 import type { Order, OrderStatus } from "../domain/order.schema";
 import { InvalidOrderStateTransitionError } from "../domain/errors";
 
 export class SqlOrderRepository implements IOrderRepository {
+  readonly #db: DB;
+
+  constructor(db: DB) {
+    this.#db = db;
+  }
+
   async createOrder(data: {
     id: string;
     offerId: string;
@@ -14,7 +20,7 @@ export class SqlOrderRepository implements IOrderRepository {
     quantity: number;
     message?: string | null;
   }): Promise<Order> {
-    const [order] = await db
+    const [order] = await this.#db
       .insert(orders)
       .values({
         id: data.id,
@@ -29,12 +35,12 @@ export class SqlOrderRepository implements IOrderRepository {
   }
 
   async getOrderById(id: string): Promise<Order | null> {
-    const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    const [order] = await this.#db.select().from(orders).where(eq(orders.id, id));
     return order || null;
   }
 
   async getOrdersByRequester(requesterId: string): Promise<Order[]> {
-    return db
+    return this.#db
       .select()
       .from(orders)
       .where(eq(orders.requesterId, requesterId))
@@ -43,7 +49,7 @@ export class SqlOrderRepository implements IOrderRepository {
 
   async getOrdersByOfferOwner(ownerId: string): Promise<Order[]> {
     // Join with offers to find orders where offer.userId === ownerId
-    const result = await db
+    const result = await this.#db
       .select({
         order: orders,
       })
@@ -59,7 +65,7 @@ export class SqlOrderRepository implements IOrderRepository {
     // Atomic conditional update: only succeeds if the order is currently PENDING.
     // This prevents a race condition where two concurrent ACCEPT requests both
     // read status=PENDING before either write completes.
-    const [order] = await db
+    const [order] = await this.#db
       .update(orders)
       .set({ status, updatedAt: new Date() })
       .where(and(eq(orders.id, id), eq(orders.status, "PENDING")))
@@ -84,7 +90,7 @@ export class SqlOrderRepository implements IOrderRepository {
     requesterId: string,
     offerId: string,
   ): Promise<Order | null> {
-    const [order] = await db
+    const [order] = await this.#db
       .select()
       .from(orders)
       .where(

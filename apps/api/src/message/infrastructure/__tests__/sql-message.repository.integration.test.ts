@@ -1,12 +1,15 @@
+import { config } from "../../../config";
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
-import { db } from "../../../database/db";
+import { createDb } from "../../../database/db";
+const db = createDb(config);
+
 import { users, accounts } from "../../../database/schema";
 import { SqlMessageRepository } from "../sql-message.repository";
 import { randomUUID } from "crypto";
 import { eq } from "drizzle-orm";
 
 describe("SqlMessageRepository Integration", () => {
-  const repo = new SqlMessageRepository();
+  const repo = new SqlMessageRepository(db);
   let user1Id: string;
   let user2Id: string;
   let account1Id: string;

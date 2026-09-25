@@ -1,3 +1,4 @@
+import { config } from "../../../config";
 import type { IAccountRepository } from "../../domain/ports/IAccountRepository";
 import type { IOAuthCredentialRepository } from "../../domain/ports/IOAuthCredentialRepository";
 import type { ISessionRepository } from "../../domain/ports/ISessionRepository";
@@ -36,7 +37,7 @@ describe("LoginWithGoogleUseCase", () => {
     createProfileForAccount: mock(),
   };
 
-  const tokenService = new TokenService();
+  const tokenService = new TokenService(config);
 
   const useCase = new LoginWithGoogleUseCase(
     mockAccountRepo as unknown as IAccountRepository,
@@ -45,6 +46,7 @@ describe("LoginWithGoogleUseCase", () => {
     mockGoogleService as unknown as IGoogleTokenService,
     tokenService,
     mockProfileCreator as unknown as IProfileCreator,
+    config,
   );
 
   beforeEach(() => {

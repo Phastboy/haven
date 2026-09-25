@@ -1,20 +1,22 @@
 import type { IEmailService } from "../../domain/ports/IEmailService";
 import * as nodemailer from "nodemailer";
 
+import type { Config } from "../../../config";
+
 export class SmtpEmailService implements IEmailService {
   #transporter: nodemailer.Transporter;
   readonly #fromEmail: string;
 
-  constructor() {
+  constructor(config: Config) {
     this.#transporter = nodemailer.createTransport({
-      host: process.env["SMTP_HOST"],
-      port: Number(process.env["SMTP_PORT"]) || 587,
+      host: config.SMTP_HOST,
+      port: config.SMTP_PORT,
       auth: {
-        user: process.env["SMTP_USER"],
-        pass: process.env["SMTP_PASS"],
+        user: config.SMTP_USER,
+        pass: config.SMTP_PASS,
       },
     });
-    this.#fromEmail = process.env["EMAIL_FROM"] || "noreply@haven.app";
+    this.#fromEmail = config.EMAIL_FROM;
   }
 
   async send(to: string, subject: string, body: string): Promise<void> {

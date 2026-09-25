@@ -1,13 +1,18 @@
 import { eq } from "drizzle-orm";
-import { db } from "../../database/db";
+import type { DB } from "../../database/db";
 import { orders, offers } from "../../database/schema";
 import type { IOrderFulfillmentService } from "../application/order-fulfillment.service.interface";
 
 export class OrderFulfillmentAdapter implements IOrderFulfillmentService {
+  readonly #db: DB;
+  constructor(db: DB) {
+    this.#db = db;
+  }
+
   async getOrderDetails(
     orderId: string,
   ): Promise<{ id: string; requesterId: string; offerId: string; status: string } | null> {
-    const [order] = await db
+    const [order] = await this.#db
       .select({
         id: orders.id,
         requesterId: orders.requesterId,
@@ -23,7 +28,7 @@ export class OrderFulfillmentAdapter implements IOrderFulfillmentService {
   async getOfferTypeAndOwner(
     offerId: string,
   ): Promise<{ offerType: string; ownerId: string } | null> {
-    const [offer] = await db
+    const [offer] = await this.#db
       .select({
         offerType: offers.offerType,
         ownerId: offers.userId,
@@ -35,7 +40,7 @@ export class OrderFulfillmentAdapter implements IOrderFulfillmentService {
   }
 
   async updateOrderStatus(orderId: string, status: string): Promise<void> {
-    await db
+    await this.#db
       .update(orders)
       .set({
         status: status as "PENDING" | "ACCEPTED" | "REJECTED" | "COMPLETED" | "CANCELLED",
