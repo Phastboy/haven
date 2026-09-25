@@ -14,7 +14,7 @@ const [sentRes, receivedRes] = await Promise.all([
   client.orders.received.get({ headers }),
 ]);
 
-const byNewest = (a: { createdAt: string | number | Date }, b: { createdAt: string | number | Date }) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+const byNewest = (a: { createdAt: string | number }, b: { createdAt: string | number }) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
 const sent = [...(((sentRes.data as { data?: Array<{ status: string, createdAt: string }> })?.data) ?? [])].sort(byNewest);
 const received = [...(((receivedRes.data as { data?: Array<{ status: string, createdAt: string }> })?.data) ?? [])].sort(byNewest);
 
