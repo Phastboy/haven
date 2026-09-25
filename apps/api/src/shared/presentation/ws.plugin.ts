@@ -1,15 +1,17 @@
+import { config } from "../../config";
 import { Elysia, t } from "elysia";
 import { websocket } from "elysia/websocket";
 import { GetSessionUseCase } from "../../auth/application/use-cases/get-session.use-case";
 import { SessionRepository } from "../../auth/infrastructure/repositories/session.repository";
-import { tokenService } from "../../auth/infrastructure/services/token.service";
-import { db } from "../../database/db";
+import { TokenService } from "../../auth/infrastructure/services/token.service";
+const tokenService = new TokenService(config);
+import type { DB } from "../../database/db";
 import { users } from "../../database/schema";
 import { eq } from "drizzle-orm";
 import { UnauthorizedError } from "../../auth/domain/errors";
 
-export const createWsPlugin = () => {
-  const getSessionUseCase = new GetSessionUseCase(new SessionRepository(), tokenService);
+export const createWsPlugin = (db: DB) => {
+  const getSessionUseCase = new GetSessionUseCase(new SessionRepository(db), tokenService);
 
   return new Elysia().use(websocket()).ws("/ws", {
     query: t.Object({
