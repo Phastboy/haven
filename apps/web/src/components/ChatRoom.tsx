@@ -1,24 +1,18 @@
 import { createSignal, onMount, onCleanup, For } from "solid-js";
 import { client } from "../api";
 
-interface Message {
-  id: string;
-  content: string;
-  senderId: string;
-  isRead: boolean;
-  createdAt: string;
-}
+import type { ChatMessage } from "../types";
 
 interface ChatRoomProps {
   threadId: string;
   currentUserId: string;
   otherUser: Record<string, unknown>;
-  initialMessages: Message[];
+  initialMessages: ChatMessage[];
   token: string;
 }
 
 export default function ChatRoom(props: ChatRoomProps) {
-  const [messages, setMessages] = createSignal<Message[]>(props.initialMessages.reverse()); // Reverse because backend usually orders DESC
+  const [messages, setMessages] = createSignal<ChatMessage[]>(props.initialMessages.reverse()); // Reverse because backend usually orders DESC
   const [inputText, setInputText] = createSignal("");
   const [isSending, setIsSending] = createSignal(false);
 
@@ -39,11 +33,11 @@ export default function ChatRoom(props: ChatRoomProps) {
         .get({
           headers: { authorization: `Bearer ${props.token}` },
         });
-      const data = (resData as { data?: unknown })?.data;
+      const data = (resData as { data?: ChatMessage[] })?.data;
       if (data && !error) {
         // Backend returns DESC (newest first). Let's reverse it to display oldest top, newest bottom.
         const reversed = [...data].reverse();
-        setMessages(reversed as Message[]);
+        setMessages(reversed as ChatMessage[]);
 
         // If we are at the bottom, auto-scroll when new messages arrive.
         // A smarter way is to only scroll if we were already near the bottom, but for simplicity:
@@ -73,7 +67,7 @@ export default function ChatRoom(props: ChatRoomProps) {
     setInputText("");
 
     // Optimistic UI update
-    const optimisticMsg: Message = {
+    const optimisticMsg: ChatMessage = {
       id: `temp-${Date.now()}`,
       content,
       senderId: props.currentUserId,
@@ -92,7 +86,9 @@ export default function ChatRoom(props: ChatRoomProps) {
 
       if (!error && data) {
         // Replace temp message with real one
-        setMessages((prev) => prev.map((m) => (m.id === optimisticMsg.id ? (data as Message) : m)));
+        setMessages((prev) =>
+          prev.map((m) => (m.id === optimisticMsg.id ? (data as ChatMessage) : m)),
+        );
       } else {
         // Handle error (remove temp msg)
         setMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
