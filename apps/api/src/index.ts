@@ -138,19 +138,41 @@ export const app = new Elysia({ prefix: "/api" })
       set.status = 422;
 
       let validationErrors: { name: string; reason: string }[] | undefined = undefined;
-      if (error instanceof ElysiaValidationError) {
-        validationErrors = error.all.map((err) => ({
-          name: String((err as Record<string, unknown>)["path"] || "").replace(/^\//, "") || "body",
-          reason: String((err as Record<string, unknown>)["message"] || ""),
-        }));
-      } else if (asRecordError["all"] && Array.isArray(asRecordError["all"])) {
-        validationErrors = asRecordError["all"].map((err: unknown) => {
-          const e = err as Record<string, unknown>;
-          return {
-            name: typeof e["path"] === "string" ? e["path"].replace(/^\//, "") : "body",
-            reason: typeof e["message"] === "string" ? e["message"] : "",
-          };
+
+      const extractErrors = (errors: unknown[]) => {
+        const mapped = errors.map((err) => {
+          const asRecord = err as Record<string, unknown>;
+          let name = String(asRecord["path"] || "");
+          if (name === "" || name === "root") {
+            const schemaPath = String(asRecord["schemaPath"] || "");
+            const match = schemaPath.match(/#\/properties\/([^\/]+)/);
+            name = match?.[1] || "body";
+          } else {
+            name = name.replace(/^\//, "");
+          }
+          return { name, reason: String(asRecord["message"] || "") };
         });
+
+        const errorMap = new Map<string, string[]>();
+        for (const e of mapped) {
+          if (!errorMap.has(e.name)) {
+            errorMap.set(e.name, []);
+          }
+          if (e.reason !== "must match a schema in anyOf" && e.reason !== "Expected union value") {
+            errorMap.get(e.name)!.push(e.reason);
+          }
+        }
+
+        return Array.from(errorMap.entries()).map(([name, reasons]) => ({
+          name,
+          reason: reasons.length > 0 ? reasons.join(" OR ") : "Invalid value",
+        }));
+      };
+
+      if (error instanceof ElysiaValidationError) {
+        validationErrors = extractErrors(error.all);
+      } else if (asRecordError["all"] && Array.isArray(asRecordError["all"])) {
+        validationErrors = extractErrors(asRecordError["all"]);
       }
 
       return {
