@@ -1,5 +1,5 @@
 import { config } from "../../../config";
-import { describe, it, expect, beforeAll, afterAll } from "bun:test";
+import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { createDb } from "../../../database/db";
 const db = createDb(config);
 
@@ -15,7 +15,7 @@ describe("SqlMessageRepository Integration", () => {
   let account1Id: string;
   let account2Id: string;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     account1Id = randomUUID();
     await db
       .insert(accounts)
@@ -35,7 +35,7 @@ describe("SqlMessageRepository Integration", () => {
       .values({ id: user2Id, accountId: account2Id, username: `user2_${randomUUID()}` });
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await db.delete(accounts).where(eq(accounts.id, account1Id));
     await db.delete(accounts).where(eq(accounts.id, account2Id));
   });
