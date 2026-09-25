@@ -1,8 +1,11 @@
+import { config } from "../../../config";
 import { expect, test, describe, beforeAll, afterAll } from "bun:test";
 import { Elysia } from "elysia";
 import { createUserPlugin } from "../user.plugin";
 import { createAuthPlugin } from "../../../auth/presentation/auth.controller";
-import { db } from "../../../database/db";
+import { createDb } from "../../../database/db";
+const db = createDb(config);
+
 import { sql } from "drizzle-orm";
 import { AccountRepository } from "../../../auth/infrastructure/repositories/account.repository";
 import { SessionRepository } from "../../../auth/infrastructure/repositories/session.repository";
@@ -12,14 +15,14 @@ import { SqlUserRepository } from "../../infrastructure/sql-user.repository";
 const mockProfileCreator = { createProfileForAccount: async () => {} };
 
 const app = new Elysia({ prefix: "/api" })
-  .use(createUserPlugin())
-  .use(createAuthPlugin(mockProfileCreator));
+  .use(createUserPlugin(db))
+  .use(createAuthPlugin(mockProfileCreator, config, db));
 
 describe("User Plugin E2E", () => {
-  const accountRepo = new AccountRepository();
-  const sessionRepo = new SessionRepository();
-  const userRepo = new SqlUserRepository();
-  const tokenService = new TokenService();
+  const accountRepo = new AccountRepository(db);
+  const sessionRepo = new SessionRepository(db);
+  const userRepo = new SqlUserRepository(db);
+  const tokenService = new TokenService(config);
 
   let testAccountId: string;
   let testSessionRawToken: string;

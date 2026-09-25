@@ -1,3 +1,4 @@
+import type { DB } from "../database/db";
 import { Elysia, type AnyElysia } from "elysia";
 import { cron } from "@elysia/cron";
 import { AutoCompleteExpiredUseCase } from "../fulfillment/application/auto-complete-expired.usecase";
@@ -9,9 +10,9 @@ import { OrderFulfillmentAdapter } from "../fulfillment/infrastructure/order-ful
 // reference to 'Cron' ... not portable"), and falls back to `any` — which then
 // collapses the WHOLE app type at the `.use()` call site and kills Eden's types.
 // This plugin registers no routes, so `Elysia` is all the caller needs to know.
-export const createAutoCompletePlugin = (): AnyElysia => {
-  const repository = new SqlFulfillmentRepository();
-  const adapter = new OrderFulfillmentAdapter();
+export const createAutoCompletePlugin = (db: DB): AnyElysia => {
+  const repository = new SqlFulfillmentRepository(db);
+  const adapter = new OrderFulfillmentAdapter(db);
   const autoCompleteUseCase = new AutoCompleteExpiredUseCase(repository, adapter);
 
   return new Elysia({ name: "cron.autoComplete" }).use(

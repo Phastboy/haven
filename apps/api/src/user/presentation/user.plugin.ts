@@ -1,3 +1,5 @@
+import { config } from "../../config";
+import type { DB } from "../../database/db";
 import { Elysia } from "elysia";
 import { NotFoundError } from "../../shared/errors";
 import { GetUserUseCase } from "../application/get-user.usecase";
@@ -9,7 +11,8 @@ import { requireAuth } from "../../auth/presentation/middleware/session.middlewa
 import { UnauthorizedError } from "../../auth/domain/errors";
 import { GetSessionUseCase } from "../../auth/application/use-cases/get-session.use-case";
 import { SessionRepository } from "../../auth/infrastructure/repositories/session.repository";
-import { tokenService } from "../../auth/infrastructure/services/token.service";
+import { TokenService } from "../../auth/infrastructure/services/token.service";
+const tokenService = new TokenService(config);
 
 /**
  * Factory function that wires the full user feature as an Elysia plugin.
@@ -18,14 +21,14 @@ import { tokenService } from "../../auth/infrastructure/services/token.service";
  * Elysia 2 route signature: (path, hook, handler) — hook holds schemas/details,
  * handler is the actual function. They are separate positional arguments.
  */
-export function createUserPlugin() {
-  const repository = new SqlUserRepository();
+export function createUserPlugin(db: DB) {
+  const repository = new SqlUserRepository(db);
 
   const getUser = new GetUserUseCase(repository);
   const listUsers = new ListUsersUseCase(repository);
   const updateUser = new UpdateUserUseCase(repository);
 
-  const getSessionUseCase = new GetSessionUseCase(new SessionRepository(), tokenService);
+  const getSessionUseCase = new GetSessionUseCase(new SessionRepository(db), tokenService);
 
   return new Elysia({ prefix: "/users", tags: ["Users"] })
     .derive(async ({ headers }: { headers: Record<string, string | undefined> }) => {

@@ -1,3 +1,4 @@
+import { config } from "../../config";
 import { Elysia } from "elysia";
 import { SqlFulfillmentRepository } from "../infrastructure/sql-fulfillment.repository";
 import { OrderFulfillmentAdapter } from "../infrastructure/order-fulfillment.adapter";
@@ -7,9 +8,10 @@ import { RequestRevisionUseCase } from "../application/request-revision.usecase"
 import { requireAuth } from "../../auth/presentation/middleware/session.middleware";
 import { GetSessionUseCase } from "../../auth/application/use-cases/get-session.use-case";
 import { SessionRepository } from "../../auth/infrastructure/repositories/session.repository";
-import { tokenService } from "../../auth/infrastructure/services/token.service";
+import { TokenService } from "../../auth/infrastructure/services/token.service";
+const tokenService = new TokenService(config);
 import { UnauthorizedError } from "../../auth/domain/errors";
-import { db } from "../../database/db";
+import type { DB } from "../../database/db";
 import { users } from "../../database/schema";
 import { eq } from "drizzle-orm";
 import {
@@ -17,15 +19,15 @@ import {
   requestRevisionBodySchema,
 } from "../domain/fulfillment.schema";
 
-export const createFulfillmentPlugin = () => {
-  const repository = new SqlFulfillmentRepository();
-  const adapter = new OrderFulfillmentAdapter();
+export const createFulfillmentPlugin = (db: DB) => {
+  const repository = new SqlFulfillmentRepository(db);
+  const adapter = new OrderFulfillmentAdapter(db);
 
   const deliverFulfillment = new DeliverFulfillmentUseCase(repository, adapter);
   const acceptFulfillment = new AcceptFulfillmentUseCase(repository, adapter);
   const requestRevision = new RequestRevisionUseCase(repository, adapter);
 
-  const getSessionUseCase = new GetSessionUseCase(new SessionRepository(), tokenService);
+  const getSessionUseCase = new GetSessionUseCase(new SessionRepository(db), tokenService);
 
   return new Elysia({ prefix: "/orders/:orderId/fulfillment", tags: ["Fulfillment"] })
     .derive(async ({ headers }: { headers: Record<string, string | undefined> }) => {

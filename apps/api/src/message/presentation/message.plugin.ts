@@ -1,3 +1,4 @@
+import { config } from "../../config";
 import { Elysia } from "elysia";
 import { SqlMessageRepository } from "../infrastructure/sql-message.repository";
 import { CreateThreadUseCase } from "../application/create-thread.usecase";
@@ -7,23 +8,24 @@ import { GetMessagesUseCase } from "../application/get-messages.usecase";
 import { requireAuth } from "../../auth/presentation/middleware/session.middleware";
 import { GetSessionUseCase } from "../../auth/application/use-cases/get-session.use-case";
 import { SessionRepository } from "../../auth/infrastructure/repositories/session.repository";
-import { tokenService } from "../../auth/infrastructure/services/token.service";
+import { TokenService } from "../../auth/infrastructure/services/token.service";
+const tokenService = new TokenService(config);
 import { UnauthorizedError } from "../../auth/domain/errors";
-import { db } from "../../database/db";
+import type { DB } from "../../database/db";
 import { users } from "../../database/schema";
 import { eq } from "drizzle-orm";
 import { createThreadBodySchema, sendMessageBodySchema } from "../domain/message.schema";
 
 import type { IEventBus } from "../../shared/domain/event-bus.interface";
 
-export const createMessagePlugin = (eventBus: IEventBus) => {
-  const repository = new SqlMessageRepository();
+export const createMessagePlugin = (eventBus: IEventBus, db: DB) => {
+  const repository = new SqlMessageRepository(db);
   const createThreadUseCase = new CreateThreadUseCase(repository);
   const sendMessageUseCase = new SendMessageUseCase(repository, eventBus);
   const getThreadsUseCase = new GetThreadsUseCase(repository);
   const getMessagesUseCase = new GetMessagesUseCase(repository);
 
-  const getSessionUseCase = new GetSessionUseCase(new SessionRepository(), tokenService);
+  const getSessionUseCase = new GetSessionUseCase(new SessionRepository(db), tokenService);
 
   return new Elysia({ prefix: "/messages", tags: ["Messages"] })
     .derive(async ({ headers }: { headers: Record<string, string | undefined> }) => {

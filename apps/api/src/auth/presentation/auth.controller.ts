@@ -23,35 +23,39 @@ import { SessionRepository } from "../infrastructure/repositories/session.reposi
 import { OAuthCredentialRepository } from "../infrastructure/repositories/oauth-credential.repository";
 import type { IProfileCreator } from "../domain/ports/IProfileCreator";
 
-import { tokenService } from "../infrastructure/services/token.service";
+import { TokenService } from "../infrastructure/services/token.service";
 import { GoogleTokenService } from "../infrastructure/services/google-token.service";
 import { SmtpEmailService } from "../infrastructure/services/smtp-email.service";
 import { ConsoleEmailService } from "../infrastructure/services/console-email.service";
+import type { DB } from "../../database/db";
+import type { Config } from "../../config";
 
-export const createAuthPlugin = (profileCreator: IProfileCreator) => {
-  const getSessionUseCase = new GetSessionUseCase(new SessionRepository(), tokenService);
+export const createAuthPlugin = (profileCreator: IProfileCreator, config: Config, db: DB) => {
+  const tokenService = new TokenService(config);
+  const getSessionUseCase = new GetSessionUseCase(new SessionRepository(db), tokenService);
 
   // Instantiate repositories
-  const magicLinkRepo = new MagicLinkRepository();
-  const accountRepo = new AccountRepository();
-  const sessionRepo = new SessionRepository();
-  const oauthRepo = new OAuthCredentialRepository();
+  const magicLinkRepo = new MagicLinkRepository(db);
+  const accountRepo = new AccountRepository(db);
+  const sessionRepo = new SessionRepository(db);
+  const oauthRepo = new OAuthCredentialRepository(db);
 
   // Determine which email service to use based on environment
-  const emailService = process.env["SMTP_HOST"]
-    ? new SmtpEmailService()
-    : new ConsoleEmailService();
+  const emailService = config.SMTP_HOST
+    ? new SmtpEmailService(config)
+    : new ConsoleEmailService(config);
 
-  const googleTokenService = new GoogleTokenService();
+  const googleTokenService = new GoogleTokenService(config);
 
   // Instantiate use cases
-  const requestMagicLinkUC = new RequestMagicLinkUseCase(magicLinkRepo, emailService, tokenService);
+  const requestMagicLinkUC = new RequestMagicLinkUseCase(magicLinkRepo, emailService, tokenService, config);
   const verifyMagicLinkUC = new VerifyMagicLinkUseCase(
     magicLinkRepo,
     accountRepo,
     sessionRepo,
     tokenService,
     profileCreator,
+    config
   );
   const loginWithGoogleUC = new LoginWithGoogleUseCase(
     accountRepo,
@@ -60,6 +64,7 @@ export const createAuthPlugin = (profileCreator: IProfileCreator) => {
     googleTokenService,
     tokenService,
     profileCreator,
+    config,
   );
   // Link platform use case is wired up but not yet exposed in any route
   // const linkPlatformUC = new LinkPlatformUseCase(linkRepo);

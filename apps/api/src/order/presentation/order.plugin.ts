@@ -1,3 +1,4 @@
+import { config } from "../../config";
 import { Elysia } from "elysia";
 import { SqlOrderRepository } from "../infrastructure/sql-order.repository";
 import { OfferAdapterService } from "../infrastructure/offer-adapter.service";
@@ -7,24 +8,25 @@ import { GetOrdersUseCase } from "../application/get-orders.usecase";
 import { requireAuth } from "../../auth/presentation/middleware/session.middleware";
 import { GetSessionUseCase } from "../../auth/application/use-cases/get-session.use-case";
 import { SessionRepository } from "../../auth/infrastructure/repositories/session.repository";
-import { tokenService } from "../../auth/infrastructure/services/token.service";
+import { TokenService } from "../../auth/infrastructure/services/token.service";
+const tokenService = new TokenService(config);
 import { UnauthorizedError } from "../../auth/domain/errors";
-import { db } from "../../database/db";
+import type { DB } from "../../database/db";
 import { users } from "../../database/schema";
 import { eq } from "drizzle-orm";
 import { createOrderBodySchema, updateOrderStatusBodySchema } from "../domain/order.schema";
 
 import type { IEventBus } from "../../shared/domain/event-bus.interface";
 
-export const createOrderPlugin = (eventBus?: IEventBus) => {
-  const repository = new SqlOrderRepository();
-  const offerAdapter = new OfferAdapterService();
+export const createOrderPlugin = (eventBus: IEventBus | undefined, db: DB) => {
+  const repository = new SqlOrderRepository(db);
+  const offerAdapter = new OfferAdapterService(db);
 
   const createOrderUseCase = new CreateOrderUseCase(repository, offerAdapter);
   const updateOrderStatusUseCase = new UpdateOrderStatusUseCase(repository, offerAdapter, eventBus);
   const getOrdersUseCase = new GetOrdersUseCase(repository);
 
-  const getSessionUseCase = new GetSessionUseCase(new SessionRepository(), tokenService);
+  const getSessionUseCase = new GetSessionUseCase(new SessionRepository(db), tokenService);
 
   return new Elysia({ prefix: "/orders", tags: ["Orders"] })
     .derive(async ({ headers }: { headers: Record<string, string | undefined> }) => {
