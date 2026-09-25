@@ -11,27 +11,30 @@ if (!token || !id) {
 }
 
 // Fetch current user
-const { data: authData } = await client.auth.me.get({
+const { data: authDataRes } = await client.auth.me.get({
   headers: { authorization: `Bearer ${token}` }
 });
+const authData = (authDataRes as { data?: { account: { id: string } } })?.data;
 
 if (!authData?.account) {
   return Astro.redirect("/login");
 }
 
-const { data: currentUserData } = await client.users.me.get({
+const { data: currentUserRes } = await client.users.me.get({
   headers: { authorization: `Bearer ${token}` }
 });
+const currentUserData = (currentUserRes as { data?: { id?: string } })?.data;
 
 // Fetch offer
-const { data: offer, error } = await client.offers({ id }).get();
+const { data: offerRes, error } = await client.offers({ id }).get();
+const offer = (offerRes as { data?: { id: string; userId: string; [key: string]: unknown } })?.data;
 
 if (error || !offer) {
   return Astro.redirect("/my-offers");
 }
 
 // Verify ownership
-if (!currentUserData || (currentUserData as { id?: string }).id !== offer.userId) {
+if (!currentUserData || currentUserData.id !== offer.userId) {
   return Astro.redirect(`/offers/${offer.id}`);
 }
 ---
