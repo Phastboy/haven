@@ -1,19 +1,34 @@
 import { createSignal } from "solid-js";
 import { api } from "../lib/browser-api";
 
-export default function OfferForm(props: {
-  token: string;
-  initialData?: {
-    id?: string;
-    title?: string;
-    description?: string;
-    price?: number;
-    offerType?: string;
-    images?: string[];
-    [key: string]: unknown;
-  };
-  isEdit?: boolean;
-}) {
+type OfferFormProps = { token: string } & (
+  | {
+      isEdit: true;
+      initialData: {
+        id: string;
+        title?: string;
+        description?: string;
+        price?: number;
+        offerType?: string;
+        images?: string[];
+        [key: string]: unknown;
+      };
+    }
+  | {
+      isEdit?: false;
+      initialData?: {
+        id?: string;
+        title?: string;
+        description?: string;
+        price?: number;
+        offerType?: string;
+        images?: string[];
+        [key: string]: unknown;
+      };
+    }
+);
+
+export default function OfferForm(props: OfferFormProps) {
   const [title, setTitle] = createSignal(props.initialData?.title || "");
   const [description, setDescription] = createSignal(props.initialData?.description || "");
   const [price, setPrice] = createSignal(
