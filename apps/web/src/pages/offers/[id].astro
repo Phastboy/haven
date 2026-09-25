@@ -11,28 +11,28 @@ if (!id) return Astro.redirect("/directory");
 // Offer, creator and session all start together instead of one after another.
 const session = await getSession(Astro);
 const { data: offerRes, error } = await client.offers({ id }).get();
-const offer = (offerRes as { data?: { userId: string; [key: string]: unknown } })?.data;
+const offer = (offerRes as { data?: { id: string; title: string; userId: string; offerType?: string; description?: string | null; price: number; images?: string[]; createdAt: string | number | Date } })?.data;
 if (error || !offer) return Astro.redirect("/directory");
 
 const { data: creatorRes } = offer.userId
   ? await client.users({ id: offer.userId }).get()
   : { data: null };
-const creator = (creatorRes as { data?: unknown })?.data;
+const creator = (creatorRes as { data?: { data?: { name?: string | null; username?: string | null; profilePictureUrl?: string | null } } })?.data?.data;
 
-const author = creator as Record<string, unknown>;
+const author = creator;
 const isOwner = !!session?.user && (session.user as { id?: string }).id === offer.userId;
-const isRequest = ((offer as { offerType?: string }).offerType ?? "").toUpperCase() === "REQUEST";
+const isRequest = (offer.offerType ?? "").toUpperCase() === "REQUEST";
 ---
 
-<Layout title={offer.title} description={(offer as any).description ?? undefined} bare={true}>
+<Layout title={offer.title} description={offer.description ?? undefined} bare={true}>
   <Fragment slot="head">
     <meta property="og:type" content="product" />
     <script is:inline type="application/ld+json" set:html={JSON.stringify({
       "@context": "https://schema.org",
       "@type": "Product",
       name: offer.title,
-      description: (offer as any).description ?? undefined,
-      offers: { "@type": "Offer", priceCurrency: "USD", price: ((offer as any).price / 100).toFixed(2) },
+      description: offer.description ?? undefined,
+      offers: { "@type": "Offer", priceCurrency: "USD", price: (offer.price / 100).toFixed(2) },
     })} />
   </Fragment>
 
@@ -45,8 +45,8 @@ const isRequest = ((offer as { offerType?: string }).offerType ?? "").toUpperCas
     </div>
 
     <div class="relative aspect-[4/3] w-full overflow-hidden bg-zinc-900 sm:aspect-video sm:rounded-2xl sm:border sm:border-zinc-800">
-      {(offer as any).images?.[0] ? (
-        <img src={(offer as any).images[0]} alt="" class="h-full w-full object-cover" />
+      {offer.images?.[0] ? (
+        <img src={offer.images[0]} alt="" class="h-full w-full object-cover" />
       ) : (
         <div class="grid h-full w-full place-items-center text-zinc-800">
           <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true">
@@ -66,7 +66,7 @@ const isRequest = ((offer as { offerType?: string }).offerType ?? "").toUpperCas
 
     <div class="px-4 sm:px-0">
       <h1 class="mt-5 text-2xl font-bold leading-tight tracking-tight sm:text-4xl">{offer.title}</h1>
-      <p class="mt-2 text-2xl font-bold sm:hidden">{formatPrice((offer as any).price)}</p>
+      <p class="mt-2 text-2xl font-bold sm:hidden">{formatPrice(offer.price)}</p>
 
       <div class="mt-5 flex items-center gap-3 border-y border-zinc-800 py-4">
         <div class="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full border border-zinc-700 bg-zinc-800 font-medium uppercase text-zinc-400">
@@ -76,14 +76,14 @@ const isRequest = ((offer as { offerType?: string }).offerType ?? "").toUpperCas
         </div>
         <div class="min-w-0">
           <p class="truncate font-medium">{author?.name || author?.username || "Anonymous"}</p>
-          <p class="text-sm text-zinc-500">Listed {formatDate((offer as any).createdAt)}</p>
+          <p class="text-sm text-zinc-500">Listed {formatDate(offer.createdAt)}</p>
         </div>
-        <p class="ml-auto hidden text-3xl font-bold sm:block">{formatPrice((offer as any).price)}</p>
+        <p class="ml-auto hidden text-3xl font-bold sm:block">{formatPrice(offer.price)}</p>
       </div>
 
       <h2 class="mt-6 text-sm font-semibold uppercase tracking-wider text-zinc-400">About this offer</h2>
       <p class="mt-2 whitespace-pre-wrap leading-relaxed text-zinc-300">
-        {(offer as any).description || "No description provided."}
+        {offer.description || "No description provided."}
       </p>
 
       {!isOwner && session && (
