@@ -7,6 +7,7 @@ export default function ProfileForm(props: {
     name?: string;
     bio?: string;
     profilePictureUrl?: string;
+    email?: string;
     [key: string]: unknown;
   };
   token: string;
