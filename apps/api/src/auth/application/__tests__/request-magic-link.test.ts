@@ -30,7 +30,10 @@ describe("RequestMagicLinkUseCase", () => {
     await useCase.execute("test@example.com");
 
     expect(mockMagicLinkRepo.create).toHaveBeenCalled();
-    const createCall = mockMagicLinkRepo.create.mock.calls[0]![0];
+    const createCall = mockMagicLinkRepo.create.mock.calls[0]![0] as {
+      email: string;
+      token: string;
+    };
     expect(createCall.email).toBe("test@example.com");
     expect(createCall.token).toBeDefined();
 
@@ -38,6 +41,6 @@ describe("RequestMagicLinkUseCase", () => {
     const sendCall = mockEmailService.send.mock.calls[0]!;
     expect(sendCall[0]).toBe("test@example.com");
     expect(sendCall[1]).toBe("Your Magic Login Link");
-    expect(sendCall[2]).toContain("http://192.168.0.50:4200/auth/magic-login");
+    expect(sendCall[2]).toContain(`${process.env["MAGIC_LINK_BASE_URL"]}/auth/magic-login`);
   });
 });
