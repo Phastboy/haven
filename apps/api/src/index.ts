@@ -25,15 +25,7 @@ const eventBus = new PostgresEventBusAdapter(config.DATABASE_URL);
 const db = createDb(config);
 const userRepo = new SqlUserRepository(db);
 
-export const app = new Elysia({ prefix: "/api" })
-  .use(cors({ origin: config.WEB_ORIGIN, credentials: true }))
-  .use(serverTiming())
-  .error(globalErrorHandler)
-  .use(
-    openapi({
-      references: fromTypes(),
-    }),
-  )
+const v1 = new Elysia()
   .use(createUserPlugin(db))
   .use(
     createAuthPlugin(
@@ -46,16 +38,30 @@ export const app = new Elysia({ prefix: "/api" })
       db
     ),
   )
-  .use(createOfferPlugin(db))
+  .use(createOfferPlugin(db));
+
+const v2 = new Elysia()
   .use(createOrderPlugin(eventBus, db))
   .use(createFulfillmentPlugin(db))
   .use(createMessagePlugin(eventBus, db))
-  .use(createWsPlugin(db))
+  .use(createWsPlugin(db));
+
+export const app = new Elysia({ prefix: "/api" })
+  .use(cors({ origin: config.WEB_ORIGIN, credentials: true }))
+  .use(serverTiming())
+  .error(globalErrorHandler)
+  .use(
+    openapi({
+      references: fromTypes(),
+    }),
+  )
+  .use(v1)
+  .use(v2)
   .get("/", () => "Hello Elysia")
   .get("/health", () => ({ status: "ok", timestamp: new Date().toISOString() }));
 
 // Fix the event subscribers to actually have the app reference for WS publishing
-await setupEventSubscribers(eventBus, app as any, db);
+await setupEventSubscribers(eventBus, app, db);
 
 export type App = typeof app;
 

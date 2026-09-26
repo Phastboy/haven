@@ -24,8 +24,8 @@ export const OfferSchema = t.Object({
   status: OfferStatusSchema,
   offerType: OfferTypeSchema,
   images: t.Union([t.Array(t.String({ format: "uri" })), t.Null()]),
-  createdAt: t.Date(),
-  updatedAt: t.Date(),
+  createdAt: t.Union([t.String({ format: "date-time" }), t.Date()]),
+  updatedAt: t.Union([t.String({ format: "date-time" }), t.Date()]),
 });
 export type Offer = Static<typeof OfferSchema>;
 

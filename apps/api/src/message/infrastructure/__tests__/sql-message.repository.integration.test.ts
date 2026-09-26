@@ -1,5 +1,5 @@
 import { config } from "../../../config";
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { describe, it, expect, beforeEach, afterEach, afterAll } from "bun:test";
 import { createDb } from "../../../database/db";
 const db = createDb(config);
 
@@ -38,6 +38,10 @@ describe("SqlMessageRepository Integration", () => {
   afterEach(async () => {
     await db.delete(accounts).where(eq(accounts.id, account1Id));
     await db.delete(accounts).where(eq(accounts.id, account2Id));
+  });
+
+  afterAll(async () => {
+    await db.$client.end();
   });
 
   it("should create and find a thread", async () => {

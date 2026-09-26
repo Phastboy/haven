@@ -6,5 +6,5 @@ import type { App } from "@haven/api";
  * adds the session token from the httpOnly cookie. Islands never touch the token.
  */
 export const api = treaty<App>(
-  import.meta.env.SSR ? "http://localhost:4200/api" : `${window.location.origin}/api`,
-);
+  import.meta.env.SSR ? "http://localhost:4200" : `${window.location.origin}`,
+).api;

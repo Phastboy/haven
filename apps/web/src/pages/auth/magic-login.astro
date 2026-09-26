@@ -3,6 +3,16 @@ import { client } from "../../api";
 
 const token = Astro.url.searchParams.get("token");
 
+// Safely consume the returnUrl cookie
+const returnUrlCookie = Astro.cookies.get("returnUrl")?.value;
+Astro.cookies.delete("returnUrl", { path: "/" });
+
+const isSafeRedirectTarget = (url: string | undefined): boolean => {
+  if (!url) return false;
+  return url.startsWith("/") && !url.startsWith("//") && !url.includes("\\");
+};
+const safeRedirect = isSafeRedirectTarget(returnUrlCookie) ? returnUrlCookie! : "/directory";
+
 if (!token) {
   return Astro.redirect("/login?error=missing_token");
 }
@@ -25,7 +35,7 @@ try {
     maxAge: 30 * 24 * 60 * 60 // 30 days
   });
 
-  return Astro.redirect("/");
+  return Astro.redirect(safeRedirect);
 } catch (e) {
   return Astro.redirect("/login?error=invalid_token");
 }

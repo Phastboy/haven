@@ -15,7 +15,7 @@
     "test:api": "bun run --cwd apps/api test"
   },
   "dependencies": {
-    "elysia": "2.0.0-beta.16"
+    "elysia": "2.0.0-beta.19"
   },
   "devDependencies": {
     "@types/bun": "^1.4.2",
@@ -25,7 +25,11 @@
     "oxfmt": "^0.68.0",
     "oxlint": "^1.83.0",
     "oxlint-tsgolint": "^7.0.2003",
-    "typescript": "^7.0.2"
+    "typescript": "6.0.3"
+  },
+  "overrides": {
+    "elysia": "2.0.0-beta.19",
+    "typescript": "6.0.3"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
