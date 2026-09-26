@@ -13,9 +13,9 @@ export const fulfillmentSchema = t.Object({
   orderId: t.String(),
   status: fulfillmentStatusSchema,
   deliveryMessage: t.Union([t.String(), t.Null()]),
-  reviewDeadline: t.Union([t.Date(), t.Null()]),
-  createdAt: t.Date(),
-  updatedAt: t.Date(),
+  reviewDeadline: t.Optional(t.Union([t.String({ format: "date-time" }), t.Date(), t.Null()])),
+  createdAt: t.Union([t.String({ format: "date-time" }), t.Date()]),
+  updatedAt: t.Union([t.String({ format: "date-time" }), t.Date()]),
 });
 
 export const deliverFulfillmentBodySchema = t.Object({

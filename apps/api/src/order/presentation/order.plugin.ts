@@ -14,7 +14,9 @@ import { UnauthorizedError } from "../../auth/domain/errors";
 import type { DB } from "../../database/db";
 import { users } from "../../database/schema";
 import { eq } from "drizzle-orm";
-import { createOrderBodySchema, updateOrderStatusBodySchema } from "../domain/order.schema";
+import { createOrderBodySchema, updateOrderStatusBodySchema, orderSchema } from "../domain/order.schema";
+import { t } from "elysia";
+import { PaginatedResponseSchema } from "../../shared/domain/pagination";
 
 import type { IEventBus } from "../../shared/domain/event-bus.interface";
 
@@ -54,13 +56,15 @@ export const createOrderPlugin = (eventBus: IEventBus | undefined, db: DB) => {
       "/",
       {
         body: createOrderBodySchema,
+        response: {
+          201: t.Object({ data: orderSchema })
+        }
       },
       async ({ body, user, session, set }) => {
         requireAuth({ session, set });
 
         if (!user) {
-          set.status = 404;
-          return { error: "User profile not found." };
+          throw new UnauthorizedError("User profile not found.");
         }
 
         const order = await createOrderUseCase.execute({
@@ -70,43 +74,56 @@ export const createOrderPlugin = (eventBus: IEventBus | undefined, db: DB) => {
           ...(body.message && { message: body.message }),
         });
         set.status = 201;
-        return { data: order };
+        return { data: order } as any;
       },
     )
-    .get("/me", async ({ user, session, set }) => {
+    .get("/me", 
+      {
+        response: {
+          200: PaginatedResponseSchema(t.Any()) // Using t.Any() here because it might include joined tables (like offer details). If strictly order, use orderSchema
+        }
+      },
+      async ({ user, session, set }) => {
       requireAuth({ session, set });
 
       if (!user) {
-        set.status = 404;
-        return { error: "User profile not found." };
+        throw new UnauthorizedError("User profile not found.");
       }
 
-      return getOrdersUseCase.getRequesterOrders(user.id);
+      return await getOrdersUseCase.getRequesterOrders(user.id);
     })
-    .get("/received", async ({ user, session, set }) => {
+    .get("/received", 
+      {
+        response: {
+          200: PaginatedResponseSchema(t.Any())
+        }
+      },
+      async ({ user, session, set }) => {
       requireAuth({ session, set });
 
       if (!user) {
-        set.status = 404;
-        return { error: "User profile not found." };
+        throw new UnauthorizedError("User profile not found.");
       }
 
-      return getOrdersUseCase.getReceivedOrders(user.id);
+      return await getOrdersUseCase.getReceivedOrders(user.id);
     })
     .patch(
-      "/:id/status",
+      "/:orderId/status",
       {
         body: updateOrderStatusBodySchema,
+        response: {
+          200: t.Object({ data: orderSchema })
+        }
       },
       async ({ params, body, user, session, set }) => {
         requireAuth({ session, set });
 
         const order = await updateOrderStatusUseCase.execute({
-          orderId: params.id,
+          orderId: params.orderId,
           accountId: user!.id,
           newStatus: body.status,
         });
-        return { data: order };
+        return { data: order } as any;
       },
     );
 };
