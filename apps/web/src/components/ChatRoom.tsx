@@ -16,7 +16,7 @@ export default function ChatRoom(props: ChatRoomProps) {
   const [inputText, setInputText] = createSignal("");
   const [isSending, setIsSending] = createSignal(false);
 
-  let chatContainerRef: HTMLDivElement | undefined = undefined;
+  let chatContainerRef!: HTMLDivElement;
   let pollingInterval: number | ReturnType<typeof setInterval> | undefined = undefined;
 
   // Auto-scroll to bottom
@@ -71,7 +71,7 @@ export default function ChatRoom(props: ChatRoomProps) {
       id: `temp-${Date.now()}`,
       content,
       senderId: props.currentUserId,
-      isRead: false,
+      readAt: null,
       createdAt: new Date().toISOString(),
     };
 
@@ -160,9 +160,9 @@ export default function ChatRoom(props: ChatRoomProps) {
                     {msg.content}
                   </div>
                   <span class="text-[10px] text-zinc-500 mt-1 px-1 flex items-center gap-1">
-                    {formatTime(msg.createdAt)}
+                    {formatTime(msg.createdAt as string)}
                     {isMine && (
-                      <span class={msg.isRead ? "text-brand-400" : "text-zinc-600"}>
+                      <span class={!!msg.readAt ? "text-brand-400" : "text-zinc-600"}>
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           width="12"

@@ -6,7 +6,7 @@ import { requireSession } from "../lib/session";
 const guard = await requireSession(Astro);
 if (guard.redirect) return guard.redirect;
 const session = guard.session;
-const user = { ...session.user, email: (session.user as Record<string, unknown>)?.email || session.account.email };
+const user = { ...(session.user), email: ((session.user)?.email as string) || session.account.email };
 ---
 
 <Layout title="Profile">
@@ -15,7 +15,7 @@ const user = { ...session.user, email: (session.user as Record<string, unknown>)
       <h1 class="text-2xl font-bold tracking-tight sm:text-3xl">Your profile</h1>
       <p class="mt-1 text-sm text-zinc-400">Your public information and account settings.</p>
     </header>
-    <ProfileForm client:load user={user} />
+    <ProfileForm client:load user={user} token={session.token} />
 
     <div class="mt-8 flex justify-center">
       <form method="post" action="/logout">

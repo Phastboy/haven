@@ -3,36 +3,24 @@ import Layout from "../../layouts/Layout.astro";
 import { client } from "../../api";
 import ChatRoom from "../../components/ChatRoom";
 import type { ChatMessage } from "../../types";
+import { requireSession } from "../../lib/session";
 
-const token = Astro.cookies.get("token")?.value;
-
-if (!token) {
-  return Astro.redirect("/login");
-}
-
-const { data: authDataRes, error: authError } = await client.auth.me.get({
-  headers: {
-    authorization: `Bearer ${token}`
-  }
-});
-const authData = (authDataRes as { data?: { account: { id: string } } })?.data;
-
-if (authError || !authData?.account) {
-  return Astro.redirect("/login");
-}
-
-const user = authData.account;
+const guard = await requireSession(Astro);
+if (guard.redirect) return guard.redirect;
+const session = guard.session;
+const user = session.account;
+const token = session.token;
 const threadId = Astro.params.id as string;
 
 // Fetch all threads to find the details of this specific thread
-const { data: threadsRes, error: threadsError } = await client.messages.threads.get({
+const { data: threadsRes } = await client.messages.threads.get({
   headers: {
     authorization: `Bearer ${token}`
   }
 });
 const threads = (threadsRes as { data?: Array<{ id: string; participant1: { id: string; name?: string | null; profilePictureUrl?: string | null; username?: string | null }; participant2: { id: string; name?: string | null; profilePictureUrl?: string | null; username?: string | null } }> })?.data;
 
-if (threadsError || !threads) {
+if (!threads) {
   return Astro.redirect("/messages");
 }
 
@@ -46,7 +34,7 @@ const isUser1 = thread.participant1.id === user.id;
 const otherUser = isUser1 ? thread.participant2 : thread.participant1;
 
 // Fetch initial messages for SSR
-const { data: messagesRes, error: messagesError } = await client.messages.threads({ threadId }).get({
+const { data: messagesRes } = await client.messages.threads({ threadId }).get({
   headers: {
     authorization: `Bearer ${token}`
   }

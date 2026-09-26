@@ -31,7 +31,7 @@ export default function MatchCard(props: MatchCardProps) {
 
   createEffect(() => {
     if (status() === "ACCEPTED" || status() === "COMPLETED") {
-      api.orders[props.order.id].fulfillment.get().then((res) => {
+      api.orders({ orderId: props.order.id }).fulfillment.get().then((res) => {
         if (res.data?.data)
           setFulfillment(res.data.data as { status: string; [key: string]: unknown });
       });
@@ -43,7 +43,7 @@ export default function MatchCard(props: MatchCardProps) {
     setError("");
 
     try {
-      const result = await api.orders[props.order.id].status.patch({ status: newStatus });
+      const result = await api.orders({ orderId: props.order.id }).status.patch({ status: newStatus });
 
       if (result.error) {
         setError((result.error.value as { error?: string })?.error || `Failed to update status`);
@@ -61,7 +61,7 @@ export default function MatchCard(props: MatchCardProps) {
     setLoading(true);
     setError("");
     try {
-      const result = await api.orders[props.order.id].fulfillment.deliver.post({
+      const result = await api.orders({ orderId: props.order.id }).fulfillment.deliver.post({
         message: "Delivered via Haven.",
       });
       if (result.error) {
@@ -80,7 +80,7 @@ export default function MatchCard(props: MatchCardProps) {
     setLoading(true);
     setError("");
     try {
-      const result = await api.orders[props.order.id].fulfillment.accept.post();
+      const result = await api.orders({ orderId: props.order.id }).fulfillment.accept.post();
       if (result.error) {
         setError((result.error.value as { error?: string })?.error || "Failed to accept");
       } else {
@@ -98,7 +98,7 @@ export default function MatchCard(props: MatchCardProps) {
     setLoading(true);
     setError("");
     try {
-      const result = await api.orders[props.order.id].fulfillment["request-revision"].post({
+      const result = await api.orders({ orderId: props.order.id }).fulfillment["request-revision"].post({
         reason: "Please revise.",
       });
       if (result.error) {
@@ -262,8 +262,8 @@ export default function MatchCard(props: MatchCardProps) {
       <Show when={props.isReceived && status() === "ACCEPTED"}>
         <div class="mt-6 pt-4 border-t border-zinc-800">
           {(!fulfillment() ||
-            fulfillment().status === "PENDING" ||
-            fulfillment().status === "REVISION_REQUESTED") && (
+            fulfillment()?.status === "PENDING" ||
+            fulfillment()?.status === "REVISION_REQUESTED") && (
             <button
               onClick={deliverFulfillment}
               disabled={loading()}

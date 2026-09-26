@@ -25,11 +25,8 @@ export function NotificationProvider(props: { token: string }) {
     });
 
     onCleanup(() => {
-      // Access the native WebSocket instance or close directly if provided
-      if (typeof ws.close === "function") {
+      if (ws && typeof ws.close === "function") {
         ws.close();
-      } else if (ws.raw && typeof ws.raw.close === "function") {
-        ws.raw.close();
       }
     });
   });

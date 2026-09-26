@@ -14,7 +14,7 @@ interface Props {
 
 const { title, description, bare = false } = Astro.props;
 const session = await getSession(Astro);
-const user = session?.user ?? null;
+const user = (session?.user as any) ?? null;
 const account = session?.account ?? null;
 
 const pageTitle = title ? `${title} · Haven` : "Haven — the community for skills & services";
