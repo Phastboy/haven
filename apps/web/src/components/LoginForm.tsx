@@ -1,5 +1,6 @@
 import { createSignal, onMount, onCleanup, Show } from "solid-js";
 import { api } from "../lib/browser-api";
+import { toast } from "solid-toaster";
 
 // ── Google Identity Services types ────────────────────────────────────────────
 // We declare only what we use so there's no need for @types/google.accounts.
@@ -49,7 +50,6 @@ export default function LoginForm(props: Props) {
   const [loading, setLoading] = createSignal(false);
   const [googleLoading, setGoogleLoading] = createSignal(false);
   const [success, setSuccess] = createSignal(false);
-  const [error, setError] = createSignal("");
 
   let googleButtonRef: HTMLDivElement | undefined = undefined;
 
@@ -58,18 +58,27 @@ export default function LoginForm(props: Props) {
     e.preventDefault();
     if (!email()) return;
     setLoading(true);
-    setError("");
     try {
       const { error: apiError } = await api.auth["magic-link"].request.post({
         email: email(),
       });
       if (apiError) {
-        setError((apiError.value as { error?: string })?.error ?? "Failed to send magic link.");
+        const errVal = apiError.value as any;
+        if (errVal?.errors && Array.isArray(errVal.errors) && errVal.errors.length > 0) {
+          errVal.errors.forEach((err: { name: string; reason: string }) => {
+            toast.error(`${err.name === "root" || err.name === "" ? "" : err.name + ": "}${err.reason}`);
+          });
+        } else if (errVal?.detail) {
+          toast.error(errVal.detail);
+        } else {
+          toast.error("Failed to send magic link.");
+        }
       } else {
         setSuccess(true);
+        toast.success("Magic link sent successfully!");
       }
     } catch {
-      setError("An unexpected error occurred.");
+      toast.error("An unexpected error occurred.");
     } finally {
       setLoading(false);
     }
@@ -78,7 +87,6 @@ export default function LoginForm(props: Props) {
   // ── Google credential callback ─────────────────────────────────────────────
   const handleGoogleCredential = (response: CredentialResponse) => {
     setGoogleLoading(true);
-    setError("");
 
     // Submit a hidden form so the session cookie is set server-side (SSR route).
     // This mirrors the magic-link pattern and keeps the token out of JS.
@@ -226,12 +234,6 @@ export default function LoginForm(props: Props) {
             disabled={loading()}
           />
         </div>
-
-        <Show when={error()}>
-          <div class="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400">
-            {error()}
-          </div>
-        </Show>
 
         <button
           type="submit"

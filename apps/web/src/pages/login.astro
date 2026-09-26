@@ -1,6 +1,28 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import LoginForm from "../components/LoginForm";
+import { getSession } from "../lib/session";
+
+// 1. If already authenticated, redirect away
+const session = await getSession(Astro);
+if (session) {
+  // Try to use 'next' param if safe, otherwise default to '/directory'
+  const nextParam = Astro.url.searchParams.get("next");
+  const isSafeNext = nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//") && !nextParam.includes("\\");
+  return Astro.redirect(isSafeNext ? nextParam : "/directory");
+}
+
+// 2. Set returnUrl cookie for post-auth callbacks if a safe 'next' param exists
+const nextParam = Astro.url.searchParams.get("next");
+if (nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//") && !nextParam.includes("\\")) {
+  Astro.cookies.set("returnUrl", nextParam, {
+    path: "/",
+    httpOnly: true,
+    secure: import.meta.env.PROD,
+    sameSite: "lax", // Lax allows the cookie to be sent during Google's cross-site top-level navigation
+    maxAge: 10 * 60, // 10 minutes is plenty for an auth flow
+  });
+}
 
 const errorParam = Astro.url.searchParams.get("error");
 let errorMessage = "";
