@@ -76,7 +76,7 @@ const isRequest = (offer.offerType ?? "").toUpperCase() === "REQUEST";
         </div>
         <div class="min-w-0">
           <p class="truncate font-medium">{author?.name || author?.username || "Anonymous"}</p>
-          <p class="text-sm text-zinc-500">Listed {formatDate(offer.createdAt)}</p>
+          <p class="text-sm text-zinc-500">Listed {formatDate(offer.createdAt as string)}</p>
         </div>
         <p class="ml-auto hidden text-3xl font-bold sm:block">{formatPrice(offer.price)}</p>
       </div>

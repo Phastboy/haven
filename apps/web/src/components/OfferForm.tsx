@@ -1,7 +1,7 @@
 import { createSignal } from "solid-js";
 import { api } from "../lib/browser-api";
 
-type OfferFormProps = { token: string } & (
+type OfferFormProps = (
   | {
       isEdit: true;
       initialData: {
@@ -48,15 +48,15 @@ export default function OfferForm(props: OfferFormProps) {
     try {
       const payload = {
         title: title(),
-        description: description() || null,
+        description: description() || undefined,
         price: parseInt((parseFloat(price()) * 100).toFixed(0)), // Convert to cents
-        offerType: offerType(),
-        images: imageUrl() ? [imageUrl()] : null,
+        offerType: offerType() as "PRODUCT" | "SERVICE" | "APPOINTMENT",
+        images: imageUrl() ? [imageUrl()] : undefined,
       };
 
       let result;
       if (props.isEdit) {
-        result = await api.offers[props.initialData.id].patch(payload);
+        result = await api.offers({ id: props.initialData.id }).patch(payload);
       } else {
         result = await api.offers.post(payload);
       }
@@ -85,7 +85,7 @@ export default function OfferForm(props: OfferFormProps) {
     setError("");
 
     try {
-      const result = await api.offers[props.initialData.id].delete();
+      const result = await api.offers({ id: props.initialData.id }).delete();
       if (result.error) {
         setError((result.error.value as { error?: string })?.error || "Failed to delete offer");
         setLoading(false);

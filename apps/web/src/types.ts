@@ -3,4 +3,5 @@ export type ChatMessage = {
   senderId: string;
   content: string;
   createdAt: string | number | Date;
+  readAt?: string | Date | null;
 };

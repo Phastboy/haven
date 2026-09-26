@@ -71,7 +71,7 @@ const tabs = [
       </div>
     ) : (
       <ul class="grid gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
-        {orders.map((order: any, i: number) => (
+        {orders.map((order: any) => (
           <li>
             {/* Only the first cards hydrate immediately; the rest wait until scrolled to. */}
             <MatchCard client:visible order={order} isReceived={tab === "received"} />
