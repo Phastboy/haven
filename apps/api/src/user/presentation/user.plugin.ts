@@ -6,12 +6,14 @@ import { GetUserUseCase } from "../application/get-user.usecase";
 import { ListUsersUseCase } from "../application/list-users.usecase";
 import { UpdateUserUseCase } from "../application/update-user.usecase";
 import { SqlUserRepository } from "../infrastructure/sql-user.repository";
-import { UpdateUserBody, UserIdParam } from "./user.dto";
+import { UpdateUserBody, UserIdParam, UserResponse } from "./user.dto";
+import { t } from "elysia";
 import { requireAuth } from "../../auth/presentation/middleware/session.middleware";
 import { UnauthorizedError } from "../../auth/domain/errors";
 import { GetSessionUseCase } from "../../auth/application/use-cases/get-session.use-case";
 import { SessionRepository } from "../../auth/infrastructure/repositories/session.repository";
 import { TokenService } from "../../auth/infrastructure/services/token.service";
+import { PaginatedResponseSchema } from "../../shared/domain/pagination";
 const tokenService = new TokenService(config);
 
 /**
@@ -52,11 +54,29 @@ export function createUserPlugin(db: DB) {
       }
     })
 
-    .get("/", { detail: { summary: "List all profiles" } }, async () => listUsers.execute())
+    .get(
+      "/",
+      {
+        response: {
+          200: PaginatedResponseSchema(UserResponse),
+        },
+        detail: { summary: "List all profiles" },
+      },
+      async () => {
+        const users = await listUsers.execute();
+        return users; // PaginatedResponse already has data/meta
+      },
+    )
 
     .get(
       "/:id",
-      { params: UserIdParam, detail: { summary: "Get a profile by ID" } },
+      {
+        params: UserIdParam,
+        response: {
+          200: t.Object({ data: UserResponse }),
+        },
+        detail: { summary: "Get a profile by ID" },
+      },
       async ({ params }) => {
         const user = await getUser.execute(params.id);
         return { data: user };
@@ -67,6 +87,9 @@ export function createUserPlugin(db: DB) {
       "/me",
       {
         body: UpdateUserBody,
+        response: {
+          200: t.Object({ data: UserResponse }),
+        },
         beforeHandle: [requireAuth],
         detail: { summary: "Update my profile" },
       },
@@ -79,6 +102,9 @@ export function createUserPlugin(db: DB) {
     .get(
       "/me",
       {
+        response: {
+          200: t.Object({ data: UserResponse }),
+        },
         beforeHandle: [requireAuth],
         detail: { summary: "Get my profile" },
       },

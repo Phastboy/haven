@@ -25,7 +25,7 @@ const getHttpStatusPhrase = (status: number): string => {
  * Ensures no raw SQL, stack traces, or Postgres internals ever reach the client
  * for errors that no plugin handler claimed.
  */
-export const globalErrorHandler = (context: any) => {
+export const globalErrorHandler = (context: any): any => {
     const { error, set, request } = context;
     const asRecordContext = context as unknown as Record<string, unknown>;
     const asRecordError = error as unknown as Record<string, unknown>;
@@ -98,6 +98,7 @@ export const globalErrorHandler = (context: any) => {
     // 3. Parse Errors (Malformed JSON)
     if (code === "PARSE") {
       set.status = 400;
+      set.headers = Object.assign(set.headers || {}, { "content-type": "application/problem+json" });
       return {
         type: "about:blank",
         title: "Bad Request",

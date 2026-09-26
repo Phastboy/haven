@@ -17,7 +17,9 @@ import { eq } from "drizzle-orm";
 import {
   deliverFulfillmentBodySchema,
   requestRevisionBodySchema,
+  fulfillmentSchema,
 } from "../domain/fulfillment.schema";
+import { t } from "elysia";
 
 export const createFulfillmentPlugin = (db: DB) => {
   const repository = new SqlFulfillmentRepository(db);
@@ -48,7 +50,13 @@ export const createFulfillmentPlugin = (db: DB) => {
         throw e;
       }
     })
-    .get("/", async ({ params: { orderId }, session, set }) => {
+    .get("/", 
+      {
+        response: {
+          200: t.Object({ data: fulfillmentSchema })
+        }
+      },
+      async ({ params: { orderId }, session, set }) => {
       requireAuth({ session, set });
 
       // Ideally we would also verify if the user has access to this order (owner or requester)
@@ -57,19 +65,21 @@ export const createFulfillmentPlugin = (db: DB) => {
         set.status = 404;
         return { error: "Fulfillment not found." };
       }
-      return { data: fulfillment };
+      return { data: fulfillment } as any;
     })
     .post(
       "/deliver",
       {
         body: deliverFulfillmentBodySchema,
+        response: {
+          200: t.Object({ data: fulfillmentSchema }) // or 201 depending on the logic, let's use 200 since it returns fulfillment
+        }
       },
       async ({ params: { orderId }, body, user, session, set }) => {
         requireAuth({ session, set });
 
         if (!user) {
-          set.status = 404;
-          return { error: "User profile not found." };
+          throw new UnauthorizedError("User profile not found.");
         }
 
         const fulfillment = await deliverFulfillment.execute({
@@ -78,34 +88,41 @@ export const createFulfillmentPlugin = (db: DB) => {
           ...(body.message && { deliveryMessage: body.message }),
           autoReviewDays: 3, // Default auto-complete threshold
         });
-        return { data: fulfillment };
+        return { data: fulfillment } as any;
       },
     )
-    .post("/accept", async ({ params: { orderId }, user, session, set }) => {
+    .post("/accept", 
+      {
+        response: {
+          200: t.Object({ data: fulfillmentSchema })
+        }
+      },
+      async ({ params: { orderId }, user, session, set }) => {
       requireAuth({ session, set });
 
       if (!user) {
-        set.status = 404;
-        return { error: "User profile not found." };
+        throw new UnauthorizedError("User profile not found.");
       }
 
       const fulfillment = await acceptFulfillment.execute({
         orderId,
         accountId: user.id,
       });
-      return { data: fulfillment };
+      return { data: fulfillment } as any;
     })
     .post(
       "/request-revision",
       {
         body: requestRevisionBodySchema,
+        response: {
+          200: t.Object({ data: fulfillmentSchema })
+        }
       },
       async ({ params: { orderId }, body, user, session, set }) => {
         requireAuth({ session, set });
 
         if (!user) {
-          set.status = 404;
-          return { error: "User profile not found." };
+          throw new UnauthorizedError("User profile not found.");
         }
 
         const fulfillment = await requestRevision.execute({
@@ -113,7 +130,7 @@ export const createFulfillmentPlugin = (db: DB) => {
           accountId: user.id,
           reason: body.reason,
         });
-        return { data: fulfillment };
+        return { data: fulfillment } as any;
       },
     );
 };

@@ -1,5 +1,6 @@
-import { Type } from "@sinclair/typebox";
-import { Value } from "@sinclair/typebox/value";
+import { Type } from "typebox";
+import { Value } from "typebox/value";
+import type { Static } from "typebox";
 
 export const ConfigSchema = Type.Object({
   NODE_ENV: Type.Union(
@@ -15,7 +16,7 @@ export const ConfigSchema = Type.Object({
   MAGIC_LINK_TTL_MINUTES: Type.Number({ default: 15 }),
   MAGIC_LINK_BASE_URL: Type.String({ minLength: 1 }),
   GOOGLE_CLIENT_ID: Type.Optional(Type.String()),
-  
+
   // Email/SMTP Configuration
   ENABLE_CONSOLE_EMAIL: Type.Boolean({ default: false }),
   EMAIL_FROM: Type.String({ default: "noreply@haven.app" }),
@@ -25,7 +26,7 @@ export const ConfigSchema = Type.Object({
   SMTP_PASS: Type.Optional(Type.String()),
 });
 
-export type Config = typeof ConfigSchema.static;
+export type Config = Static<typeof ConfigSchema>;
 
 /**
  * Parses and validates environment variables against ConfigSchema.
@@ -34,7 +35,7 @@ export type Config = typeof ConfigSchema.static;
 export function loadConfig(env: Record<string, string | undefined> = process.env): Config {
   // Coerce specific types from string env vars before validation
   const coercedEnv = { ...env };
-  
+
   if (coercedEnv["PORT"] !== undefined) {
     coercedEnv["PORT"] = Number(coercedEnv["PORT"]) as any;
   }
@@ -56,7 +57,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
 
   if (!Value.Check(ConfigSchema, configWithDefaults)) {
     const errors = [...Value.Errors(ConfigSchema, configWithDefaults)];
-    const errorDetails = errors.map((e) => `${e.path}: ${e.message}`).join("\n");
+    const errorDetails = errors.map((e) => `${e.schemaPath}: ${e.message}`).join("\n");
     throw new Error(`Configuration Validation Error:\n${errorDetails}`);
   }
 

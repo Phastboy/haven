@@ -17,8 +17,8 @@ export const orderSchema = t.Object({
   quantity: t.Number(),
   status: orderStatusSchema,
   message: t.Union([t.String(), t.Null()]),
-  createdAt: t.Date(),
-  updatedAt: t.Date(),
+  createdAt: t.Union([t.String({ format: "date-time" }), t.Date()]),
+  updatedAt: t.Union([t.String({ format: "date-time" }), t.Date()]),
 });
 
 export const createOrderBodySchema = t.Object({

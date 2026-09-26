@@ -1,6 +1,9 @@
 import { config } from "../../config";
 import { Elysia } from "elysia";
 import { CreateOfferBody, UpdateOfferBody, OfferIdParam, UserIdParam } from "./offer.dto";
+import { OfferSchema } from "../domain/offer.schema";
+import { t } from "elysia";
+import { PaginatedResponseSchema } from "../../shared/domain/pagination";
 import { SqlOfferRepository } from "../infrastructure/sql-offer.repository";
 import { CreateOfferUseCase } from "../application/create-offer.usecase";
 import { UpdateOfferUseCase } from "../application/update-offer.usecase";
@@ -58,6 +61,9 @@ export const createOfferPlugin = (db: DB) => {
       "/:id",
       {
         params: OfferIdParam,
+        response: {
+          200: t.Object({ data: OfferSchema })
+        }
       },
       async ({ params, user }) => {
         const offer = await getOffer.execute(params.id);
@@ -65,13 +71,16 @@ export const createOfferPlugin = (db: DB) => {
         if (offer.status === "ARCHIVED" && offer.userId !== user?.id) {
           throw new OfferNotFoundError();
         }
-        return { data: offer };
+        return { data: offer } as any;
       },
     )
     .get(
       "/user/:userId",
       {
         params: UserIdParam,
+        response: {
+          200: PaginatedResponseSchema(OfferSchema)
+        }
       },
       async ({ params, user }) => {
         // Pass the requester's user.id so the use-case can decide visibility.
@@ -82,18 +91,20 @@ export const createOfferPlugin = (db: DB) => {
       "/",
       {
         body: CreateOfferBody,
+        response: {
+          201: t.Object({ data: OfferSchema })
+        }
       },
       async ({ body, user, session, set }) => {
         requireAuth({ session, set });
 
         if (!user) {
-          set.status = 404;
-          return { error: "User profile not found." };
+          throw new UnauthorizedError("User profile not found.");
         }
 
         const offer = await createOffer.execute(user.id, body);
         set.status = 201;
-        return { data: offer };
+        return { data: offer } as any;
       },
     )
     .patch(
@@ -101,12 +112,15 @@ export const createOfferPlugin = (db: DB) => {
       {
         params: OfferIdParam,
         body: UpdateOfferBody,
+        response: {
+          200: t.Object({ data: OfferSchema })
+        }
       },
       async ({ params, body, user, session, set }) => {
         requireAuth({ session, set });
 
         const offer = await updateOffer.execute(user!.id, params.id, body);
-        return { data: offer };
+        return { data: offer } as any;
       },
     )
     .delete(
