@@ -20,12 +20,14 @@ const getHttpStatusPhrase = (status: number): string => {
   }
 };
 
+import type { Context } from "elysia";
+
 /**
  * Global last-resort error handler Plugin.
  * Ensures no raw SQL, stack traces, or Postgres internals ever reach the client
  * for errors that no plugin handler claimed.
  */
-export const globalErrorHandler = (context: any): any => {
+export const globalErrorHandler = (context: Context & { error: unknown; code?: string }): unknown => {
     const { error, set, request } = context;
     const asRecordContext = context as unknown as Record<string, unknown>;
     const asRecordError = error as unknown as Record<string, unknown>;
