@@ -1,4 +1,4 @@
-import { createSignal } from "solid-js";
+import { createSignal, Show } from "solid-js";
 import { api as client } from "../../lib/browser-api";
 import { toast } from "solid-toaster";
 import { parseProblemDetails } from "../../lib/problem-details";
@@ -34,8 +34,31 @@ export function MagicLinkForm() {
     }
   };
 
-  if (success()) {
-    return (
+  return (
+    <Show
+      when={success()}
+      fallback={
+        <form onSubmit={handleSubmit} class="space-y-4">
+          <Input
+            label="Email address"
+            id="email"
+            type="email"
+            required
+            inputmode="email"
+            autocomplete="email"
+            autocapitalize="none"
+            spellcheck={false}
+            placeholder="you@example.com"
+            value={email()}
+            onInput={(e) => setEmail(e.currentTarget.value)}
+            disabled={loading()}
+          />
+          <Button type="submit" loading={loading()} disabled={!email()}>
+            Send Magic Link
+          </Button>
+        </form>
+      }
+    >
       <div class="text-center space-y-6">
         <div class="w-16 h-16 bg-brand-500/20 text-brand-400 rounded-full flex items-center justify-center mx-auto">
           <svg
@@ -67,28 +90,6 @@ export function MagicLinkForm() {
           Try another email
         </button>
       </div>
-    );
-  }
-
-  return (
-    <form onSubmit={handleSubmit} class="space-y-4">
-      <Input
-        label="Email address"
-        id="email"
-        type="email"
-        required
-        inputmode="email"
-        autocomplete="email"
-        autocapitalize="none"
-        spellcheck={false}
-        placeholder="you@example.com"
-        value={email()}
-        onInput={(e) => setEmail(e.currentTarget.value)}
-        disabled={loading()}
-      />
-      <Button type="submit" loading={loading()} disabled={!email()}>
-        Send Magic Link
-      </Button>
-    </form>
+    </Show>
   );
 }
