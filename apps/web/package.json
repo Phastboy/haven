@@ -7,7 +7,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "lint": "oxlint src/",
-    "astro": "astro"
+    "astro": "astro",
+    "typecheck": "astro check"
   },
   "dependencies": {
     "@astrojs/solid-js": "^7.0.2",
