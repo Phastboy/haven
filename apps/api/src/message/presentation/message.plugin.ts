@@ -5,6 +5,7 @@ import { CreateThreadUseCase } from "../application/create-thread.usecase";
 import { SendMessageUseCase } from "../application/send-message.usecase";
 import { GetThreadsUseCase } from "../application/get-threads.usecase";
 import { GetMessagesUseCase } from "../application/get-messages.usecase";
+import { MarkThreadAsReadUseCase } from "../application/mark-thread-as-read.usecase";
 import { requireAuth } from "../../auth/presentation/middleware/session.middleware";
 import { GetSessionUseCase } from "../../auth/application/use-cases/get-session.use-case";
 import { SessionRepository } from "../../auth/infrastructure/repositories/session.repository";
@@ -26,6 +27,7 @@ export const createMessagePlugin = (eventBus: IEventBus, db: DB) => {
   const sendMessageUseCase = new SendMessageUseCase(repository, eventBus);
   const getThreadsUseCase = new GetThreadsUseCase(repository);
   const getMessagesUseCase = new GetMessagesUseCase(repository);
+  const markThreadAsReadUseCase = new MarkThreadAsReadUseCase(repository);
 
   const getSessionUseCase = new GetSessionUseCase(new SessionRepository(db), tokenService);
 
@@ -135,7 +137,7 @@ export const createMessagePlugin = (eventBus: IEventBus, db: DB) => {
         if (!user) {
           throw new UnauthorizedError("User profile not found.");
         }
-        await repository.markMessagesAsRead(params.threadId, user.id);
+        await markThreadAsReadUseCase.execute(params.threadId, user.id);
         return { success: true };
       }
     );
