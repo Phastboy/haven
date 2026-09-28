@@ -1,5 +1,5 @@
 import type { DB } from "../database/db";
-import { Elysia } from "elysia";
+import { Elysia, type AnyElysia as PluginElysia } from "elysia";
 import { cron } from "@elysia/cron";
 import { AutoCompleteExpiredUseCase } from "../fulfillment/application/auto-complete-expired.usecase";
 import { SqlFulfillmentRepository } from "../fulfillment/infrastructure/sql-fulfillment.repository";
@@ -9,8 +9,8 @@ import { OrderFulfillmentAdapter } from "../fulfillment/infrastructure/order-ful
 // croner's `Cron` type in the inferred type, gives up ("cannot be named without a
 // reference to 'Cron' ... not portable"), and falls back to `any` — which then
 // collapses the WHOLE app type at the `.use()` call site and kills Eden's types.
-// This plugin registers no routes, so `Elysia` is all the caller needs to know.
-export const createAutoCompletePlugin = (db: DB): Elysia => {
+// This plugin registers no routes, so `PluginElysia` is all the caller needs to know.
+export const createAutoCompletePlugin = (db: DB): PluginElysia => {
   const repository = new SqlFulfillmentRepository(db);
   const adapter = new OrderFulfillmentAdapter(db);
   const autoCompleteUseCase = new AutoCompleteExpiredUseCase(repository, adapter);

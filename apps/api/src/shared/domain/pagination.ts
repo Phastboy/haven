@@ -16,10 +16,7 @@ export interface PaginatedResponse<T> {
   data: T[];
   meta: PaginationMeta;
 }
-
-import type { TSchema } from "@sinclair/typebox";
-
-export const PaginatedResponseSchema = (dataSchema: TSchema) => t.Object({
+export const PaginatedResponseSchema = (dataSchema: Parameters<typeof t.Array>[0]) => t.Object({
   data: t.Array(dataSchema),
   meta: PaginationMetaSchema,
 });
