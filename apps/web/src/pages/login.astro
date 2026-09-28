@@ -5,6 +5,7 @@ import { getSession } from "../lib/session";
 
 const isSafeRedirectTarget = (url: string | null): boolean => {
   if (!url) return false;
+  // eslint-disable-next-line no-control-regex
   if (/[\x00-\x1F\x7F]/.test(url)) return false;
   return url.startsWith("/") && !url.startsWith("//") && !url.includes("\\");
 };
