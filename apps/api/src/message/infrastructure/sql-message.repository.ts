@@ -114,16 +114,16 @@ export class SqlMessageRepository {
     return message!;
   }
 
-  async markMessagesAsRead(_threadId: string, _userId: string): Promise<void> {
-    // A simple implementation: any message in this thread NOT sent by userId gets readAt = now
-    // Drizzle doesn't support an easy `notEq` update without sql`` so we just do this:
-    // Actually, we can just do: where threadId = x and readAt is null
-    // But for a robust version, we'd only mark the OTHER person's messages as read.
-    // For simplicity, we can ignore this or implement a basic version.
-    /*
+  async markMessagesAsRead(threadId: string, userId: string): Promise<void> {
+    const { ne, isNull } = await import("drizzle-orm");
     await this.#db.update(messages)
       .set({ readAt: new Date() })
-      .where(and(eq(messages.threadId, threadId), isNull(messages.readAt))); 
-    */
+      .where(
+        and(
+          eq(messages.threadId, threadId),
+          ne(messages.senderId, userId),
+          isNull(messages.readAt)
+        )
+      );
   }
 }
