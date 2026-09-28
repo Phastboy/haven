@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { API_URL } from "../../api";
+import { BASE_URL } from "../../api";
 
 // Same-origin proxy for browser islands.
 //
@@ -11,7 +11,9 @@ const HOP_BY_HOP = new Set(["host", "connection", "content-length", "cookie"]);
 
 const forward: APIRoute = async ({ params, request, cookies, url }) => {
   const token = cookies.get("token")?.value;
-  const target = `${API_URL}/${params.path ?? ""}${url.search}`;
+  // Elysia backend runs with prefix: "/api". Our frontend proxy matches /api/...
+  // params.path contains the rest (e.g. "auth/magic-link/request").
+  const target = `${BASE_URL}/api/${params.path ?? ""}${url.search}`;
 
   const headers = new Headers();
   request.headers.forEach((value, key) => {
