@@ -14,12 +14,12 @@ if (Astro.request.method !== "POST") {
   return Astro.redirect("/login");
 }
 
-// Safely consume the returnUrl cookie
+// Read returnUrl, but don't delete yet. If verification fails, retries preserve the intended destination.
 const returnUrlCookie = Astro.cookies.get("returnUrl")?.value;
-Astro.cookies.delete("returnUrl", { path: "/" });
 
 const isSafeRedirectTarget = (url: string | undefined | null): boolean => {
   if (!url) return false;
+  if (/[\x00-\x1F\x7F]/.test(url)) return false;
   return url.startsWith("/") && !url.startsWith("//") && !url.includes("\\");
 };
 const safeRedirect = isSafeRedirectTarget(returnUrlCookie) ? returnUrlCookie! : "/directory";
@@ -54,6 +54,8 @@ try {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   });
 
+  // Verification succeeded, safely consume the returnUrl cookie
+  Astro.cookies.delete("returnUrl", { path: "/" });
   return Astro.redirect(safeRedirect);
 } catch {
   return Astro.redirect("/login?error=google_failed");
