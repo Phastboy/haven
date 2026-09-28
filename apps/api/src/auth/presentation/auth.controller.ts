@@ -6,8 +6,8 @@ import {
   RequestMagicLinkResponseDTO,
   AuthSuccessResponseDTO,
   MeResponseDTO,
-  ErrorResponseDTO,
 } from "./dtos/auth.dtos";
+import { ErrorResponseDTO } from "../../shared/presentation/error.dto";
 import { requireAuth } from "./middleware/session.middleware";
 import { UnauthorizedError } from "../domain/errors";
 
@@ -48,14 +48,19 @@ export const createAuthPlugin = (profileCreator: IProfileCreator, config: Config
   const googleTokenService = new GoogleTokenService(config);
 
   // Instantiate use cases
-  const requestMagicLinkUC = new RequestMagicLinkUseCase(magicLinkRepo, emailService, tokenService, config);
+  const requestMagicLinkUC = new RequestMagicLinkUseCase(
+    magicLinkRepo,
+    emailService,
+    tokenService,
+    config,
+  );
   const verifyMagicLinkUC = new VerifyMagicLinkUseCase(
     magicLinkRepo,
     accountRepo,
     sessionRepo,
     tokenService,
     profileCreator,
-    config
+    config,
   );
   const loginWithGoogleUC = new LoginWithGoogleUseCase(
     accountRepo,
