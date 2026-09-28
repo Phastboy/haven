@@ -53,7 +53,8 @@ export const createFulfillmentPlugin = (db: DB) => {
     .get("/", 
       {
         response: {
-          200: t.Object({ data: fulfillmentSchema })
+          200: t.Object({ data: fulfillmentSchema }),
+          404: t.Object({ error: t.String() })
         }
       },
       async ({ params: { orderId }, session, set }) => {
