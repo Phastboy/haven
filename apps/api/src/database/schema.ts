@@ -35,6 +35,7 @@ export const offers = pgTable("Offer", {
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
   price: integer("price").notNull().default(0), // stored in cents
+  currency: varchar("currency", { length: 3 }).notNull().default("NGN"),
   status: offerStatusEnum("status").notNull().default("ACTIVE"),
   offerType: offerTypeEnum("offerType").notNull().default("PRODUCT"),
   images: text("images").array(),
@@ -59,6 +60,7 @@ export const orders = pgTable("Order", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   price: integer("price").notNull(), // stored in cents (snapshot of offer price at time of order)
+  currency: varchar("currency", { length: 3 }).notNull(),
   quantity: integer("quantity").notNull().default(1),
   status: orderStatusEnum("status").notNull().default("PENDING"),
   message: text("message"),
@@ -112,6 +114,16 @@ export const messages = pgTable("Message", {
     .references(() => users.id, { onDelete: "cascade" }),
   content: text("content").notNull(),
   readAt: timestamp("readAt", { withTimezone: true }),
+  createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const messageContexts = pgTable("MessageContext", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  messageId: varchar("messageId", { length: 36 })
+    .notNull()
+    .references(() => messages.id, { onDelete: "cascade" }),
+  offerId: varchar("offerId", { length: 36 })
+    .references(() => offers.id, { onDelete: "set null" }), // nullable
   createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -242,7 +254,7 @@ export const threadsRelations = relations(threads, ({ one, many }) => ({
   messages: many(messages),
 }));
 
-export const messagesRelations = relations(messages, ({ one }) => ({
+export const messagesRelations = relations(messages, ({ one, many }) => ({
   thread: one(threads, {
     fields: [messages.threadId],
     references: [threads.id],
@@ -250,6 +262,18 @@ export const messagesRelations = relations(messages, ({ one }) => ({
   sender: one(users, {
     fields: [messages.senderId],
     references: [users.id],
+  }),
+  contexts: many(messageContexts),
+}));
+
+export const messageContextsRelations = relations(messageContexts, ({ one }) => ({
+  message: one(messages, {
+    fields: [messageContexts.messageId],
+    references: [messages.id],
+  }),
+  offer: one(offers, {
+    fields: [messageContexts.offerId],
+    references: [offers.id],
   }),
 }));
 
@@ -300,3 +324,6 @@ export type NewThread = typeof threads.$inferInsert;
 
 export type MessageRecord = typeof messages.$inferSelect;
 export type NewMessage = typeof messages.$inferInsert;
+
+export type MessageContextRecord = typeof messageContexts.$inferSelect;
+export type NewMessageContext = typeof messageContexts.$inferInsert;

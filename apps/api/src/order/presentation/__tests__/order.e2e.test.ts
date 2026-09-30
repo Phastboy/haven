@@ -31,7 +31,7 @@ describe("Order API E2E", () => {
       .values({ id: ownerAccountId, email: `owner-${Date.now()}@example.com` });
     await db
       .insert(users)
-      .values({ id: ownerUserId, accountId: ownerAccountId, username: `owner-${Date.now()}` });
+      .values({ id: ownerUserId, accountId: ownerAccountId, username: `owner-${Date.now()}`, name: "Owner Name" });
 
     ownerSessionToken = randomUUID();
     const hashedOwnerToken = await tokenService.hash(ownerSessionToken);
@@ -52,6 +52,7 @@ describe("Order API E2E", () => {
       id: requesterUserId,
       accountId: requesterAccountId,
       username: `req-${Date.now()}`,
+      name: "Requester Name"
     });
 
     requesterSessionToken = randomUUID();

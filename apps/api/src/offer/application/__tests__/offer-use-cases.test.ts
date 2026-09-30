@@ -14,7 +14,7 @@ const mockOffer: Offer = {
   title: "Test Offer",
   description: "Test Desc",
   price: 100,
-  status: "ACTIVE",
+  currency: "NGN", status: "ACTIVE",
   offerType: "PRODUCT",
   images: null,
   createdAt: new Date(),

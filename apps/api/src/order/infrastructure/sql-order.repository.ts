@@ -17,6 +17,7 @@ export class SqlOrderRepository implements IOrderRepository {
     offerId: string;
     requesterId: string;
     price: number;
+    currency: string;
     quantity: number;
     message?: string | null;
   }): Promise<Order> {
@@ -27,6 +28,7 @@ export class SqlOrderRepository implements IOrderRepository {
         offerId: data.offerId,
         requesterId: data.requesterId,
         price: data.price,
+        currency: data.currency,
         quantity: data.quantity,
         message: data.message,
       })

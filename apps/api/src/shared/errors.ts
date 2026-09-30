@@ -17,3 +17,9 @@ export class ValidationError extends DomainError {
     super("validation_error", "Validation Failed", 422, message);
   }
 }
+
+export class ProfileIncompleteError extends DomainError {
+  constructor(message: string = "Profile incomplete. Set your display name to continue.") {
+    super("profile_incomplete", "Profile Incomplete", 403, message);
+  }
+}

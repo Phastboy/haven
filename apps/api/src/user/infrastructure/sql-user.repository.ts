@@ -84,10 +84,11 @@ export class SqlUserRepository implements IUserRepository {
     return {
       id: row.id,
       accountId: row.accountId,
-      username: row.username ?? null,
+      username: row.username as string, // Guaranteed non-null by creation flow
       name: row.name ?? null,
       bio: row.bio ?? null,
       profilePictureUrl: row.profilePictureUrl ?? null,
+      profileComplete: row.name !== null,
       createdAt: toIso(row.createdAt),
       updatedAt: toIso(row.updatedAt),
     };

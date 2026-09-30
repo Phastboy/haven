@@ -21,6 +21,7 @@ export const OfferSchema = t.Object({
   title: t.String({ minLength: 1, maxLength: 255 }),
   description: t.Union([t.String(), t.Null()]),
   price: t.Integer({ minimum: 0 }),
+  currency: t.String({ minLength: 3, maxLength: 3 }),
   status: OfferStatusSchema,
   offerType: OfferTypeSchema,
   images: t.Union([t.Array(t.String({ format: "uri" })), t.Null()]),
@@ -33,6 +34,7 @@ export const CreateOfferDataSchema = t.Object({
   title: t.String({ minLength: 1, maxLength: 255 }),
   description: t.Optional(t.String()),
   price: t.Optional(t.Integer({ minimum: 0 })),
+  currency: t.Optional(t.String({ minLength: 3, maxLength: 3 })),
   offerType: t.Optional(OfferTypeSchema),
   images: t.Optional(t.Array(t.String({ format: "uri" }))),
 });

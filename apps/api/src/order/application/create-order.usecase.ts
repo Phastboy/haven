@@ -11,7 +11,7 @@ import {
 export interface IOfferService {
   getOfferPriceAndOwnerAndStatus(
     offerId: string,
-  ): Promise<{ price: number; ownerId: string; status: string } | null>;
+  ): Promise<{ price: number; currency: string; ownerId: string; status: string } | null>;
 }
 
 export class CreateOrderUseCase {
@@ -54,6 +54,7 @@ export class CreateOrderUseCase {
       offerId: params.offerId,
       requesterId: params.requesterId,
       price: offer.price,
+      currency: offer.currency,
       quantity: params.quantity,
       ...(params.message && { message: params.message }),
     });

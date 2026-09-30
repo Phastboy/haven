@@ -31,7 +31,8 @@ const v1 = new Elysia()
     createAuthPlugin(
       {
         async createProfileForAccount(accountId: string) {
-          await userRepo.create({ accountId });
+          const slug = `haven_${accountId.replace(/-/g, "").slice(0, 8)}`;
+          await userRepo.create({ accountId, username: slug });
         },
       },
       config,

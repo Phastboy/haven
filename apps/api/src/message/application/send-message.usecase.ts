@@ -1,6 +1,7 @@
 import type { SqlMessageRepository } from "../infrastructure/sql-message.repository";
+import type { MessageContextRecord } from "../../database/schema";
 import type { MessageRecord } from "../../database/schema";
-import { ThreadNotFoundError, UnauthorizedThreadAccessError } from "../domain/errors";
+import { ThreadNotFoundError, UnauthorizedThreadAccessError, TooManyContextsError } from "../domain/errors";
 
 import type { IEventBus } from "../../shared/domain/event-bus.interface";
 
@@ -10,7 +11,11 @@ export class SendMessageUseCase {
     private readonly eventBus: IEventBus,
   ) {}
 
-  async execute(threadId: string, senderId: string, content: string): Promise<MessageRecord> {
+  async execute(threadId: string, senderId: string, content: string, contextOfferIds?: string[]): Promise<MessageRecord & { contexts: MessageContextRecord[] }> {
+    if (contextOfferIds && contextOfferIds.length > 5) {
+      throw new TooManyContextsError();
+    }
+
     const thread = await this.messageRepo.findThreadById(threadId);
     if (!thread) {
       throw new ThreadNotFoundError();
@@ -20,7 +25,7 @@ export class SendMessageUseCase {
       throw new UnauthorizedThreadAccessError();
     }
 
-    const message = await this.messageRepo.sendMessage(threadId, senderId, content);
+    const message = await this.messageRepo.sendMessage(threadId, senderId, content, contextOfferIds);
 
     // Determine receiver
     const receiverId =

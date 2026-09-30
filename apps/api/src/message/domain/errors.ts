@@ -39,3 +39,9 @@ export class SelfThreadError extends DomainError {
     );
   }
 }
+
+export class TooManyContextsError extends DomainError {
+  constructor() {
+    super("too_many_contexts", "Too Many Contexts", 422, "A message can reference at most 5 offers.");
+  }
+}

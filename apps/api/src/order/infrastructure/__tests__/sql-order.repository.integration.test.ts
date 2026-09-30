@@ -69,6 +69,7 @@ describe("SqlOrderRepository Integration", () => {
       offerId: testOfferId1,
       requesterId: testUserId2,
       price: 1000,
+      currency: "NGN",
       quantity: 2,
       message: "Hello",
     });
@@ -90,6 +91,7 @@ describe("SqlOrderRepository Integration", () => {
       offerId: testOfferId1,
       requesterId: testUserId2,
       price: 1000,
+      currency: "NGN",
       quantity: 1,
     });
 
@@ -107,6 +109,7 @@ describe("SqlOrderRepository Integration", () => {
       offerId: testOfferId1,
       requesterId: testUserId2,
       price: 1000,
+      currency: "NGN",
       quantity: 1,
     });
 
@@ -123,6 +126,7 @@ describe("SqlOrderRepository Integration", () => {
       offerId: testOfferId2, // Owned by testUserId1
       requesterId: testUserId2,
       price: 2000,
+      currency: "NGN",
       quantity: 1,
     });
 

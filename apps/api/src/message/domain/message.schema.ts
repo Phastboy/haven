@@ -6,6 +6,7 @@ export const createThreadBodySchema = t.Object({
 
 export const sendMessageBodySchema = t.Object({
   content: t.String({ minLength: 1, maxLength: 5000 }),
+  contextOfferIds: t.Optional(t.Array(t.String({ format: "uuid" }), { maxItems: 5 })),
 });
 
 export const ThreadResponse = t.Object({
@@ -16,11 +17,17 @@ export const ThreadResponse = t.Object({
   updatedAt: t.Union([t.String({ format: "date-time" }), t.Date()]),
 });
 
+export const MessageContextResponse = t.Object({
+  id: t.String({ format: "uuid" }),
+  offerId: t.Union([t.String({ format: "uuid" }), t.Null()]),
+});
+
 export const MessageResponse = t.Object({
   id: t.String({ format: "uuid" }),
   threadId: t.String({ format: "uuid" }),
   senderId: t.String({ format: "uuid" }),
   content: t.String(),
+  contexts: t.Optional(t.Array(MessageContextResponse)),
   readAt: t.Optional(t.Union([t.String({ format: "date-time" }), t.Date(), t.Null()])),
   createdAt: t.Union([t.String({ format: "date-time" }), t.Date()]),
 });
