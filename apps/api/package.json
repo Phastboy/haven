@@ -1,6 +1,6 @@
 {
   "name": "@haven/api",
-  "version": "1.0.50",
+  "version": "0.1.0",
   "type": "module",
   "module": "src/index.js",
   "exports": {
