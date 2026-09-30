@@ -26,7 +26,12 @@ describe("Message Plugin E2E", () => {
     await db.insert(accounts).values({ id: account1Id, email: `e2e1_${randomUUID()}@example.com` });
     await db
       .insert(users)
-      .values({ id: user1Id, accountId: account1Id, username: `e2e1_${randomUUID()}`, name: "User 1" });
+      .values({
+        id: user1Id,
+        accountId: account1Id,
+        username: `e2e1_${randomUUID()}`,
+        name: "User 1",
+      });
     await db.insert(sessions).values({
       id: randomUUID(),
       accountId: account1Id,
@@ -40,7 +45,12 @@ describe("Message Plugin E2E", () => {
     await db.insert(accounts).values({ id: account2Id, email: `e2e2_${randomUUID()}@example.com` });
     await db
       .insert(users)
-      .values({ id: user2Id, accountId: account2Id, username: `e2e2_${randomUUID()}`, name: "User 2" });
+      .values({
+        id: user2Id,
+        accountId: account2Id,
+        username: `e2e2_${randomUUID()}`,
+        name: "User 2",
+      });
     await db.insert(sessions).values({
       id: randomUUID(),
       accountId: account2Id,
@@ -90,7 +100,7 @@ describe("Message Plugin E2E", () => {
       }),
     );
     expect(response.status).toBe(200);
-    const body = await response.json();
+    const body = (await response.json()) as { data: unknown[] };
     expect(Array.isArray(body.data)).toBe(true);
   });
 
@@ -170,7 +180,9 @@ describe("Message Plugin E2E", () => {
       }),
     );
     expect(sendRes.status).toBe(201);
-    const sendBody = (await sendRes.json()) as { data?: { content?: string, contexts?: any[] } };
+    const sendBody = (await sendRes.json()) as {
+      data?: { content?: string; contexts?: unknown[] };
+    };
     expect(sendBody.data?.content).toBe("Tagging two offers");
     expect(sendBody.data?.contexts?.length).toBe(2);
 
@@ -184,7 +196,7 @@ describe("Message Plugin E2E", () => {
       }),
     );
     expect(getRes.status).toBe(200);
-    const getBody = (await getRes.json()) as { data: { content?: string, contexts?: any[] }[] };
+    const getBody = (await getRes.json()) as { data: { content?: string; contexts?: unknown[] }[] };
     const latestMessage = getBody.data[getBody.data.length - 1];
     expect(latestMessage?.content).toBe("Tagging two offers");
     expect(latestMessage?.contexts?.length).toBe(2);

@@ -32,7 +32,7 @@ describe("loadConfig", () => {
 
   test("should throw if required variables are missing", () => {
     const envWithoutDb = { ...validBaseEnv };
-    delete (envWithoutDb as any).DATABASE_URL;
+    delete (envWithoutDb as Record<string, unknown>)["DATABASE_URL"];
 
     expect(() => loadConfig(envWithoutDb)).toThrow(/DATABASE_URL/);
   });

@@ -5,7 +5,7 @@ import type { Static } from "typebox";
 export const ConfigSchema = Type.Object({
   NODE_ENV: Type.Union(
     [Type.Literal("development"), Type.Literal("test"), Type.Literal("production")],
-    { default: "development" }
+    { default: "development" },
   ),
   PORT: Type.Number({ default: 3000 }),
   HOST: Type.String({ default: "0.0.0.0" }),
@@ -37,19 +37,19 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   const coercedEnv = { ...env };
 
   if (coercedEnv["PORT"] !== undefined) {
-    coercedEnv["PORT"] = Number(coercedEnv["PORT"]) as any;
+    coercedEnv["PORT"] = Number(coercedEnv["PORT"]) as never;
   }
   if (coercedEnv["SESSION_TTL_DAYS"] !== undefined) {
-    coercedEnv["SESSION_TTL_DAYS"] = Number(coercedEnv["SESSION_TTL_DAYS"]) as any;
+    coercedEnv["SESSION_TTL_DAYS"] = Number(coercedEnv["SESSION_TTL_DAYS"]) as never;
   }
   if (coercedEnv["MAGIC_LINK_TTL_MINUTES"] !== undefined) {
-    coercedEnv["MAGIC_LINK_TTL_MINUTES"] = Number(coercedEnv["MAGIC_LINK_TTL_MINUTES"]) as any;
+    coercedEnv["MAGIC_LINK_TTL_MINUTES"] = Number(coercedEnv["MAGIC_LINK_TTL_MINUTES"]) as never;
   }
   if (coercedEnv["SMTP_PORT"] !== undefined) {
-    coercedEnv["SMTP_PORT"] = Number(coercedEnv["SMTP_PORT"]) as any;
+    coercedEnv["SMTP_PORT"] = Number(coercedEnv["SMTP_PORT"]) as never;
   }
   if (coercedEnv["ENABLE_CONSOLE_EMAIL"] !== undefined) {
-    coercedEnv["ENABLE_CONSOLE_EMAIL"] = (coercedEnv["ENABLE_CONSOLE_EMAIL"] === "true") as any;
+    coercedEnv["ENABLE_CONSOLE_EMAIL"] = (coercedEnv["ENABLE_CONSOLE_EMAIL"] === "true") as never;
   }
 
   // Value.Default applies TypeBox schema defaults to missing optional fields

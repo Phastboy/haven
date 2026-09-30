@@ -4,7 +4,7 @@ import { ConsoleEmailService } from "../console-email.service";
 describe("ConsoleEmailService", () => {
   test("send logs email details to stdout", async () => {
     const consoleSpy = spyOn(console, "log");
-    const service = new ConsoleEmailService({ ENABLE_CONSOLE_EMAIL: true } as any);
+    const service = new ConsoleEmailService({ ENABLE_CONSOLE_EMAIL: true } as never);
 
     await service.send("test@example.com", "Test Subject", "Test Body");
 

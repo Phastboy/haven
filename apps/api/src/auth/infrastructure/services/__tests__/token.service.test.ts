@@ -4,7 +4,7 @@ import * as crypto from "crypto";
 
 describe("TokenService", () => {
   it("should generate a 64-byte token successfully as a 128-character hex string", () => {
-    const tokenService = new TokenService({ TOKEN_SECRET: "test-secret" } as any);
+    const tokenService = new TokenService({ TOKEN_SECRET: "test-secret" } as never);
     const token = tokenService.generate(64);
 
     expect(typeof token).toBe("string");
@@ -12,7 +12,7 @@ describe("TokenService", () => {
   });
 
   it("should consistently hash the token", () => {
-    const tokenService = new TokenService({ TOKEN_SECRET: "test-secret" } as any);
+    const tokenService = new TokenService({ TOKEN_SECRET: "test-secret" } as never);
 
     const token =
       "12158192c818405d553d888d2d629d998ef9c213c75841681ed767b9783b21dc4fc0274684eb8e85ff66cceabbe7876a2cb4a17f8241987a0e2280aa0b5ae563";

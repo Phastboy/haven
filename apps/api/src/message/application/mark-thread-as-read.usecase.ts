@@ -1,4 +1,4 @@
-import { SqlMessageRepository } from "../infrastructure/sql-message.repository";
+import type { SqlMessageRepository } from "../infrastructure/sql-message.repository";
 import { UnauthorizedError } from "../../auth/domain/errors";
 
 export class MarkThreadAsReadUseCase {
