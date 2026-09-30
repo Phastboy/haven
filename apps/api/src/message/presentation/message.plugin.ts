@@ -15,7 +15,12 @@ const tokenService = new TokenService(config);
 import { UnauthorizedError } from "../../auth/domain/errors";
 import type { DB } from "../../database/db";
 import { SqlUserRepository } from "../../user/infrastructure/sql-user.repository";
-import { createThreadBodySchema, sendMessageBodySchema, ThreadResponse, MessageResponse } from "../domain/message.schema";
+import {
+  createThreadBodySchema,
+  sendMessageBodySchema,
+  ThreadResponse,
+  MessageResponse,
+} from "../domain/message.schema";
 import { t } from "elysia";
 import { PaginatedResponseSchema } from "../../shared/domain/pagination";
 
@@ -56,25 +61,26 @@ export const createMessagePlugin = (eventBus: IEventBus, db: DB) => {
       {
         response: {
           200: PaginatedResponseSchema(t.Any()), // Array of threads with latestMessage (complex type, t.Any() is fine to stop recursion if it's too nested, or just t.Array(t.Object({ ...ThreadResponse.properties, latestMessage: t.Any() })))
-        }
+        },
       },
       async ({ user, session, set }) => {
-      requireAuth({ session, set });
-      requireProfileComplete({ user, set });
+        requireAuth({ session, set });
+        requireProfileComplete({ user, set });
 
-      if (!user) {
-        throw new UnauthorizedError("User profile not found.");
-      }
+        if (!user) {
+          throw new UnauthorizedError("User profile not found.");
+        }
 
-      return await getThreadsUseCase.execute(user.id);
-    })
+        return await getThreadsUseCase.execute(user.id);
+      },
+    )
     .post(
       "/threads",
       {
         body: createThreadBodySchema,
         response: {
           201: t.Object({ data: ThreadResponse }),
-        }
+        },
       },
       async ({ body, user, session, set }) => {
         requireAuth({ session, set });
@@ -86,7 +92,7 @@ export const createMessagePlugin = (eventBus: IEventBus, db: DB) => {
 
         const thread = await createThreadUseCase.execute(user.id, body.participantId);
         set.status = 201;
-        return { data: thread } as any;
+        return { data: thread } as never;
       },
     )
     .get(
@@ -94,25 +100,26 @@ export const createMessagePlugin = (eventBus: IEventBus, db: DB) => {
       {
         response: {
           200: PaginatedResponseSchema(MessageResponse),
-        }
+        },
       },
       async ({ params, user, session, set }) => {
-      requireAuth({ session, set });
-      requireProfileComplete({ user, set });
+        requireAuth({ session, set });
+        requireProfileComplete({ user, set });
 
-      if (!user) {
-        throw new UnauthorizedError("User profile not found.");
-      }
+        if (!user) {
+          throw new UnauthorizedError("User profile not found.");
+        }
 
-      return await getMessagesUseCase.execute(params.threadId, user.id);
-    })
+        return await getMessagesUseCase.execute(params.threadId, user.id);
+      },
+    )
     .post(
       "/threads/:threadId",
       {
         body: sendMessageBodySchema,
         response: {
           201: t.Object({ data: MessageResponse }),
-        }
+        },
       },
       async ({ params, body, user, session, set }) => {
         requireAuth({ session, set });
@@ -122,9 +129,14 @@ export const createMessagePlugin = (eventBus: IEventBus, db: DB) => {
           throw new UnauthorizedError("User profile not found.");
         }
 
-        const message = await sendMessageUseCase.execute(params.threadId, user.id, body.content, body.contextOfferIds);
+        const message = await sendMessageUseCase.execute(
+          params.threadId,
+          user.id,
+          body.content,
+          body.contextOfferIds,
+        );
         set.status = 201;
-        return { data: message } as any;
+        return { data: message } as never;
       },
     )
     .patch(
@@ -132,7 +144,7 @@ export const createMessagePlugin = (eventBus: IEventBus, db: DB) => {
       {
         response: {
           200: t.Object({ success: t.Boolean() }),
-        }
+        },
       },
       async ({ params, user, session, set }) => {
         requireAuth({ session, set });
@@ -141,6 +153,6 @@ export const createMessagePlugin = (eventBus: IEventBus, db: DB) => {
         }
         await markThreadAsReadUseCase.execute(params.threadId, user.id);
         return { success: true };
-      }
+      },
     );
 };

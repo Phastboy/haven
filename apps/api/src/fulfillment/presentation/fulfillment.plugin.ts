@@ -50,31 +50,33 @@ export const createFulfillmentPlugin = (db: DB) => {
         throw e;
       }
     })
-    .get("/", 
+    .get(
+      "/",
       {
         response: {
           200: t.Object({ data: fulfillmentSchema }),
-          404: t.Object({ error: t.String() })
-        }
+          404: t.Object({ error: t.String() }),
+        },
       },
       async ({ params: { orderId }, session, set }) => {
-      requireAuth({ session, set });
+        requireAuth({ session, set });
 
-      // Ideally we would also verify if the user has access to this order (owner or requester)
-      const fulfillment = await repository.getFulfillmentByOrderId(orderId);
-      if (!fulfillment) {
-        set.status = 404;
-        return { error: "Fulfillment not found." };
-      }
-      return { data: fulfillment } as any;
-    })
+        // Ideally we would also verify if the user has access to this order (owner or requester)
+        const fulfillment = await repository.getFulfillmentByOrderId(orderId);
+        if (!fulfillment) {
+          set.status = 404;
+          return { error: "Fulfillment not found." };
+        }
+        return { data: fulfillment } as never;
+      },
+    )
     .post(
       "/deliver",
       {
         body: deliverFulfillmentBodySchema,
         response: {
-          200: t.Object({ data: fulfillmentSchema }) // or 201 depending on the logic, let's use 200 since it returns fulfillment
-        }
+          200: t.Object({ data: fulfillmentSchema }), // or 201 depending on the logic, let's use 200 since it returns fulfillment
+        },
       },
       async ({ params: { orderId }, body, user, session, set }) => {
         requireAuth({ session, set });
@@ -89,35 +91,37 @@ export const createFulfillmentPlugin = (db: DB) => {
           ...(body.message && { deliveryMessage: body.message }),
           autoReviewDays: 3, // Default auto-complete threshold
         });
-        return { data: fulfillment } as any;
+        return { data: fulfillment } as never;
       },
     )
-    .post("/accept", 
+    .post(
+      "/accept",
       {
         response: {
-          200: t.Object({ data: fulfillmentSchema })
-        }
+          200: t.Object({ data: fulfillmentSchema }),
+        },
       },
       async ({ params: { orderId }, user, session, set }) => {
-      requireAuth({ session, set });
+        requireAuth({ session, set });
 
-      if (!user) {
-        throw new UnauthorizedError("User profile not found.");
-      }
+        if (!user) {
+          throw new UnauthorizedError("User profile not found.");
+        }
 
-      const fulfillment = await acceptFulfillment.execute({
-        orderId,
-        accountId: user.id,
-      });
-      return { data: fulfillment } as any;
-    })
+        const fulfillment = await acceptFulfillment.execute({
+          orderId,
+          accountId: user.id,
+        });
+        return { data: fulfillment } as never;
+      },
+    )
     .post(
       "/request-revision",
       {
         body: requestRevisionBodySchema,
         response: {
-          200: t.Object({ data: fulfillmentSchema })
-        }
+          200: t.Object({ data: fulfillmentSchema }),
+        },
       },
       async ({ params: { orderId }, body, user, session, set }) => {
         requireAuth({ session, set });
@@ -131,7 +135,7 @@ export const createFulfillmentPlugin = (db: DB) => {
           accountId: user.id,
           reason: body.reason,
         });
-        return { data: fulfillment } as any;
+        return { data: fulfillment } as never;
       },
     );
 };

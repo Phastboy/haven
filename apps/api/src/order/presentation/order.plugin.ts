@@ -14,7 +14,11 @@ const tokenService = new TokenService(config);
 import { UnauthorizedError } from "../../auth/domain/errors";
 import type { DB } from "../../database/db";
 import { SqlUserRepository } from "../../user/infrastructure/sql-user.repository";
-import { createOrderBodySchema, updateOrderStatusBodySchema, orderSchema } from "../domain/order.schema";
+import {
+  createOrderBodySchema,
+  updateOrderStatusBodySchema,
+  orderSchema,
+} from "../domain/order.schema";
 import { t } from "elysia";
 import { PaginatedResponseSchema } from "../../shared/domain/pagination";
 
@@ -55,8 +59,8 @@ export const createOrderPlugin = (eventBus: IEventBus | undefined, db: DB) => {
       {
         body: createOrderBodySchema,
         response: {
-          201: t.Object({ data: orderSchema })
-        }
+          201: t.Object({ data: orderSchema }),
+        },
       },
       async ({ body, user, session, set }) => {
         requireAuth({ session, set });
@@ -73,46 +77,50 @@ export const createOrderPlugin = (eventBus: IEventBus | undefined, db: DB) => {
           ...(body.message && { message: body.message }),
         });
         set.status = 201;
-        return { data: order } as any;
+        return { data: order } as never;
       },
     )
-    .get("/me", 
+    .get(
+      "/me",
       {
         response: {
-          200: PaginatedResponseSchema(t.Any()) // Using t.Any() here because it might include joined tables (like offer details). If strictly order, use orderSchema
-        }
+          200: PaginatedResponseSchema(t.Any()), // Using t.Any() here because it might include joined tables (like offer details). If strictly order, use orderSchema
+        },
       },
       async ({ user, session, set }) => {
-      requireAuth({ session, set });
+        requireAuth({ session, set });
 
-      if (!user) {
-        throw new UnauthorizedError("User profile not found.");
-      }
+        if (!user) {
+          throw new UnauthorizedError("User profile not found.");
+        }
 
-      return await getOrdersUseCase.getRequesterOrders(user.id);
-    })
-    .get("/received", 
+        return await getOrdersUseCase.getRequesterOrders(user.id);
+      },
+    )
+    .get(
+      "/received",
       {
         response: {
-          200: PaginatedResponseSchema(t.Any())
-        }
+          200: PaginatedResponseSchema(t.Any()),
+        },
       },
       async ({ user, session, set }) => {
-      requireAuth({ session, set });
+        requireAuth({ session, set });
 
-      if (!user) {
-        throw new UnauthorizedError("User profile not found.");
-      }
+        if (!user) {
+          throw new UnauthorizedError("User profile not found.");
+        }
 
-      return await getOrdersUseCase.getReceivedOrders(user.id);
-    })
+        return await getOrdersUseCase.getReceivedOrders(user.id);
+      },
+    )
     .patch(
       "/:orderId/status",
       {
         body: updateOrderStatusBodySchema,
         response: {
-          200: t.Object({ data: orderSchema })
-        }
+          200: t.Object({ data: orderSchema }),
+        },
       },
       async ({ params, body, user, session, set }) => {
         requireAuth({ session, set });
@@ -122,7 +130,7 @@ export const createOrderPlugin = (eventBus: IEventBus | undefined, db: DB) => {
           accountId: user!.id,
           newStatus: body.status,
         });
-        return { data: order } as any;
+        return { data: order } as never;
       },
     );
 };

@@ -60,8 +60,8 @@ export const createOfferPlugin = (db: DB) => {
       {
         params: OfferIdParam,
         response: {
-          200: t.Object({ data: OfferSchema })
-        }
+          200: t.Object({ data: OfferSchema }),
+        },
       },
       async ({ params, user }) => {
         const offer = await getOffer.execute(params.id);
@@ -69,7 +69,7 @@ export const createOfferPlugin = (db: DB) => {
         if (offer.status === "ARCHIVED" && offer.userId !== user?.id) {
           throw new OfferNotFoundError();
         }
-        return { data: offer } as any;
+        return { data: offer } as never;
       },
     )
     .get(
@@ -77,8 +77,8 @@ export const createOfferPlugin = (db: DB) => {
       {
         params: UserIdParam,
         response: {
-          200: PaginatedResponseSchema(OfferSchema)
-        }
+          200: PaginatedResponseSchema(OfferSchema),
+        },
       },
       async ({ params, user }) => {
         // Pass the requester's user.id so the use-case can decide visibility.
@@ -90,8 +90,8 @@ export const createOfferPlugin = (db: DB) => {
       {
         body: CreateOfferBody,
         response: {
-          201: t.Object({ data: OfferSchema })
-        }
+          201: t.Object({ data: OfferSchema }),
+        },
       },
       async ({ body, user, session, set }) => {
         requireAuth({ session, set });
@@ -103,7 +103,7 @@ export const createOfferPlugin = (db: DB) => {
 
         const offer = await createOffer.execute(user.id, body);
         set.status = 201;
-        return { data: offer } as any;
+        return { data: offer } as never;
       },
     )
     .patch(
@@ -112,14 +112,14 @@ export const createOfferPlugin = (db: DB) => {
         params: OfferIdParam,
         body: UpdateOfferBody,
         response: {
-          200: t.Object({ data: OfferSchema })
-        }
+          200: t.Object({ data: OfferSchema }),
+        },
       },
       async ({ params, body, user, session, set }) => {
         requireAuth({ session, set });
 
         const offer = await updateOffer.execute(user!.id, params.id, body);
-        return { data: offer } as any;
+        return { data: offer } as never;
       },
     )
     .delete(
