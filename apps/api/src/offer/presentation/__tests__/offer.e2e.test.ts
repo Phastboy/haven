@@ -34,6 +34,7 @@ describe("Offer Plugin E2E", () => {
       id: testUserId1,
       accountId: testAccountId1,
       username: `offer1-${Date.now()}`,
+      name: "Offer User 1"
     });
     await db.insert(sessions).values({
       id: randomUUID(),
@@ -54,6 +55,7 @@ describe("Offer Plugin E2E", () => {
       id: testUserId2,
       accountId: testAccountId2,
       username: `offer2-${Date.now()}`,
+      name: "Offer User 2"
     });
     await db.insert(sessions).values({
       id: randomUUID(),

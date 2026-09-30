@@ -13,10 +13,11 @@ export class OfferAdapterService implements IOfferService, IOfferOwnerService {
 
   async getOfferPriceAndOwnerAndStatus(
     offerId: string,
-  ): Promise<{ price: number; ownerId: string; status: string } | null> {
+  ): Promise<{ price: number; currency: string; ownerId: string; status: string } | null> {
     const [offer] = await this.#db
       .select({
         price: offers.price,
+        currency: offers.currency,
         ownerId: offers.userId,
         status: offers.status,
       })

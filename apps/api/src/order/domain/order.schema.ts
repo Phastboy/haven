@@ -14,6 +14,7 @@ export const orderSchema = t.Object({
   offerId: t.String(),
   requesterId: t.String(),
   price: t.Number(),
+  currency: t.String({ minLength: 3, maxLength: 3 }),
   quantity: t.Number(),
   status: orderStatusSchema,
   message: t.Union([t.String(), t.Null()]),

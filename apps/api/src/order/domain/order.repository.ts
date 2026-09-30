@@ -6,6 +6,7 @@ export interface IOrderRepository {
     offerId: string;
     requesterId: string;
     price: number;
+    currency: string;
     quantity: number;
     message?: string | null;
   }): Promise<Order>;

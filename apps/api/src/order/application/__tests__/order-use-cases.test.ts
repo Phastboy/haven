@@ -29,7 +29,7 @@ describe("Order Use Cases", () => {
         getOfferPriceAndOwnerAndStatus: mock(async () => ({
           price: 1000,
           ownerId: "owner-123",
-          status: "ACTIVE",
+          currency: "NGN", status: "ACTIVE",
         })),
       };
 
@@ -53,7 +53,7 @@ describe("Order Use Cases", () => {
         getOfferPriceAndOwnerAndStatus: mock(async () => ({
           price: 1000,
           ownerId: "owner-123",
-          status: "PAUSED",
+          currency: "NGN", status: "PAUSED",
         })),
       };
 
@@ -69,7 +69,7 @@ describe("Order Use Cases", () => {
         getOfferPriceAndOwnerAndStatus: mock(async () => ({
           price: 1000,
           ownerId: "req-1",
-          status: "ACTIVE",
+          currency: "NGN", status: "ACTIVE",
         })),
       };
 
@@ -98,7 +98,7 @@ describe("Order Use Cases", () => {
         getOfferPriceAndOwnerAndStatus: mock(async () => ({
           price: 1000,
           ownerId: "owner-123",
-          status: "ACTIVE",
+          currency: "NGN", status: "ACTIVE",
         })),
       };
 

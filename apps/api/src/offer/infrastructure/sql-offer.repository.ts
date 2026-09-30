@@ -28,6 +28,7 @@ export class SqlOfferRepository implements IOfferRepository {
         title: data.title,
         description: data.description ?? null,
         price: data.price ?? 0,
+        currency: data.currency ?? "NGN",
         offerType: data.offerType ?? "PRODUCT",
         images: data.images ?? null,
         status: "ACTIVE",
@@ -64,6 +65,7 @@ export class SqlOfferRepository implements IOfferRepository {
     if (data.title !== undefined) updateData.title = data.title;
     if (data.description !== undefined) updateData.description = data.description;
     if (data.price !== undefined) updateData.price = data.price;
+    if (data.currency !== undefined) updateData.currency = data.currency;
     if (data.offerType !== undefined) updateData.offerType = data.offerType;
     if (data.images !== undefined) updateData.images = data.images;
 
@@ -90,6 +92,7 @@ export class SqlOfferRepository implements IOfferRepository {
       title: record.title,
       description: record.description,
       price: record.price,
+      currency: record.currency,
       status: record.status as OfferStatus,
       offerType: record.offerType as OfferType,
       images: record.images as string[] | null,

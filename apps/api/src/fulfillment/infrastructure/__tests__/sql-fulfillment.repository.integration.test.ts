@@ -46,6 +46,7 @@ describe("SqlFulfillmentRepository Integration", () => {
       offerId: testOfferId,
       requesterId: testUserId, // for test simplicity, same user
       price: 1000,
+      currency: "NGN",
       quantity: 1,
     });
   });
@@ -77,6 +78,7 @@ describe("SqlFulfillmentRepository Integration", () => {
       offerId: testOfferId,
       requesterId: testUserId,
       price: 1000,
+      currency: "NGN",
       quantity: 1,
     });
 
@@ -101,6 +103,7 @@ describe("SqlFulfillmentRepository Integration", () => {
       offerId: testOfferId,
       requesterId: testUserId,
       price: 1000,
+      currency: "NGN",
       quantity: 1,
     });
 

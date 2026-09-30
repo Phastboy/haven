@@ -19,10 +19,11 @@ import type { Static } from "typebox";
 export const UserSchema = t.Object({
   id: t.String(),
   accountId: t.String(),
-  username: t.Union([t.String(), t.Null()]),
+  username: t.String(),
   name: t.Union([t.String(), t.Null()]),
   bio: t.Union([t.String(), t.Null()]),
   profilePictureUrl: t.Union([t.String(), t.Null()]),
+  profileComplete: t.Boolean(),
   createdAt: t.String(),
   updatedAt: t.String(),
 });

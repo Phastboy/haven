@@ -1,6 +1,7 @@
 import type { DB } from "../../database/db";
-import type { ThreadRecord, MessageRecord } from "../../database/schema";
-import { threads, messages } from "../../database/schema";
+import type { ThreadRecord, MessageContextRecord } from "../../database/schema";
+import type { MessageRecord } from "../../database/schema";
+import { threads, messages, messageContexts } from "../../database/schema";
 import { eq, or, and, desc, asc } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
@@ -89,15 +90,17 @@ export class SqlMessageRepository {
     }));
   }
 
-  async getThreadMessages(threadId: string): Promise<MessageRecord[]> {
-    return this.#db
-      .select()
-      .from(messages)
-      .where(eq(messages.threadId, threadId))
-      .orderBy(asc(messages.createdAt));
+  async getThreadMessages(threadId: string): Promise<(MessageRecord & { contexts: MessageContextRecord[] })[]> {
+    return this.#db.query.messages.findMany({
+      where: eq(messages.threadId, threadId),
+      with: {
+        contexts: true,
+      },
+      orderBy: [asc(messages.createdAt)],
+    });
   }
 
-  async sendMessage(threadId: string, senderId: string, content: string): Promise<MessageRecord> {
+  async sendMessage(threadId: string, senderId: string, content: string, contextOfferIds?: string[]): Promise<MessageRecord & { contexts: MessageContextRecord[] }> {
     const [message] = await this.#db
       .insert(messages)
       .values({
@@ -108,10 +111,24 @@ export class SqlMessageRepository {
       })
       .returning();
 
+    let contexts: MessageContextRecord[] = [];
+    if (contextOfferIds && contextOfferIds.length > 0) {
+      contexts = await this.#db
+        .insert(messageContexts)
+        .values(
+          contextOfferIds.map((offerId) => ({
+            id: randomUUID(),
+            messageId: message!.id,
+            offerId,
+          }))
+        )
+        .returning();
+    }
+
     // Update thread's updatedAt
     await this.#db.update(threads).set({ updatedAt: new Date() }).where(eq(threads.id, threadId));
 
-    return message!;
+    return { ...message!, contexts };
   }
 
   async markMessagesAsRead(threadId: string, userId: string): Promise<void> {

@@ -81,6 +81,7 @@ describe("Fulfillment API E2E", () => {
       offerId: testOfferId,
       requesterId: requesterUserId,
       price: 1500,
+      currency: "NGN",
       quantity: 1,
       status: "ACCEPTED",
     });

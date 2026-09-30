@@ -6,14 +6,14 @@ import { CreateOrderUseCase } from "../application/create-order.usecase";
 import { UpdateOrderStatusUseCase } from "../application/update-order-status.usecase";
 import { GetOrdersUseCase } from "../application/get-orders.usecase";
 import { requireAuth } from "../../auth/presentation/middleware/session.middleware";
+import { requireProfileComplete } from "../../shared/middleware/profile-complete.middleware";
 import { GetSessionUseCase } from "../../auth/application/use-cases/get-session.use-case";
 import { SessionRepository } from "../../auth/infrastructure/repositories/session.repository";
 import { TokenService } from "../../auth/infrastructure/services/token.service";
 const tokenService = new TokenService(config);
 import { UnauthorizedError } from "../../auth/domain/errors";
 import type { DB } from "../../database/db";
-import { users } from "../../database/schema";
-import { eq } from "drizzle-orm";
+import { SqlUserRepository } from "../../user/infrastructure/sql-user.repository";
 import { createOrderBodySchema, updateOrderStatusBodySchema, orderSchema } from "../domain/order.schema";
 import { t } from "elysia";
 import { PaginatedResponseSchema } from "../../shared/domain/pagination";
@@ -40,10 +40,8 @@ export const createOrderPlugin = (eventBus: IEventBus | undefined, db: DB) => {
       const token = authHeader.substring(7);
       try {
         const sessionWithAccount = await getSessionUseCase.execute(token);
-        const [user] = await db
-          .select()
-          .from(users)
-          .where(eq(users.accountId, sessionWithAccount.account.id));
+        const userRepo = new SqlUserRepository(db);
+        const user = await userRepo.findByAccountId(sessionWithAccount.account.id);
         return { session: sessionWithAccount, account: sessionWithAccount.account, user };
       } catch (e: unknown) {
         if (e instanceof UnauthorizedError) {
@@ -62,6 +60,7 @@ export const createOrderPlugin = (eventBus: IEventBus | undefined, db: DB) => {
       },
       async ({ body, user, session, set }) => {
         requireAuth({ session, set });
+        requireProfileComplete({ user, set });
 
         if (!user) {
           throw new UnauthorizedError("User profile not found.");

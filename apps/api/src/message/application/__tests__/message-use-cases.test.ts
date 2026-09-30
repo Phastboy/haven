@@ -90,7 +90,7 @@ describe("Message Use Cases", () => {
 
       const msg = await useCase.execute("thread1", "user1", "hello");
       expect(msg.id).toBe("msg1");
-      expect(mockRepo.sendMessage).toHaveBeenCalledWith("thread1", "user1", "hello");
+      expect(mockRepo.sendMessage).toHaveBeenCalledWith("thread1", "user1", "hello", undefined);
     });
   });
 
