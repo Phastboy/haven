@@ -9,20 +9,24 @@ This file serves as a git-tracked history of Haven's true capabilities over time
 
 Copy this block to the top of the history when recording a new run.
 
-### Run: YYYY-MM-DD — git sha xxxxxxx
+## History
+
+### Run: 2026-10-01 — git sha eea0a49 (First Contract Baseline)
 
 **Normal (500 RPS)**
 | Metric         | Target   | Actual  | Status |
 | -------------- | -------- | ------- | ------ |
-| Achieved RPS   | ≥ 500    | ???     | ⏳     |
-| p50            | < 10ms   | ???     | ⏳     |
-| p95            | < 50ms   | ???     | ⏳     |
-| p99            | < 100ms  | ???     | ⏳     |
-| Error rate     | < 0.1%   | ???     | ⏳     |
-| Correctness    | 100%     | ???     | ⏳     |
-| CPU peak       | < 80%    | ???     | ⏳     |
-| RSS peak       | -        | ???     | 📊     |
-| DB conn peak   | ≤ 20     | ???     | ⏳     |
+| Achieved RPS   | ≥ 500    | 328     | ❌     |
+| p50            | < 10ms   | 725ms   | ❌     |
+| p95            | < 50ms   | 2.30s   | ❌     |
+| p99            | < 100ms  | 2.68s   | ❌     |
+| Error rate     | < 0.1%   | 0.00%   | ✓      |
+| Correctness    | 100%     | 100%    | ✓      |
+| CPU peak       | < 80%    | n/a     | ⚠️     |
+| RSS peak       | -        | n/a     | ⚠️     |
+| DB conn peak   | ≤ 20     | n/a     | ⚠️     |
+
+*(System monitor failed to attach to the API process on this run. Data will be collected on the next test.)*
 
 **High Load (1,000 RPS)**
 | Metric         | Target   | Actual  | Status |

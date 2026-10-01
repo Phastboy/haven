@@ -17,8 +17,7 @@ OUT_FILE="$RESULTS_DIR/system-saturation-$TIMESTAMP.csv"
 TARGET_PID=$1
 if [ -z "$TARGET_PID" ]; then
   # Try to auto-detect the Bun API process
-  # Filtering out grep itself and any test runners
-  TARGET_PID=$(pgrep -f "bun.*apps/api/src/index.ts" | head -n 1)
+  TARGET_PID=$(pgrep -f "bun run.*src/index.ts" | head -n 1)
   
   if [ -z "$TARGET_PID" ]; then
     echo "❌ Could not auto-detect API process."
