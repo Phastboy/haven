@@ -1,0 +1,17 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import ProfileView from "../../features/profile/ProfileView.astro";
+import { toProfileUser } from "../../features/profile/subject";
+import { requireSession } from "../../lib/session";
+
+const guard = await requireSession(Astro);
+if (guard.redirect) return guard.redirect;
+
+// getSession already loaded /users/me, so the owner's own profile needs no extra request.
+const { user } = guard.session;
+if (!user) return new Response(null, { status: 404 });
+---
+
+<Layout title="Profile">
+  <ProfileView subject={toProfileUser(user)} isOwner />
+</Layout>

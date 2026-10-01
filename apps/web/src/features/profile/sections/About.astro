@@ -1,0 +1,26 @@
+---
+import type { SectionProps } from "../types";
+
+type Props = SectionProps;
+const { subject, isOwner } = Astro.props;
+---
+
+{
+  subject.bio ? (
+    <section aria-labelledby="about-heading">
+      <h2 id="about-heading" class="text-sm font-semibold text-zinc-300">
+        About
+      </h2>
+      <p class="mt-2 max-w-prose whitespace-pre-line text-base leading-relaxed text-zinc-300">
+        {subject.bio}
+      </p>
+    </section>
+  ) : isOwner ? (
+    <a
+      href="/profile/edit"
+      class="rounded-xl border border-dashed border-zinc-700 p-4 text-sm text-zinc-400 transition-colors hover:border-zinc-500 hover:text-zinc-200"
+    >
+      Tell people what you offer. Add a bio.
+    </a>
+  ) : null
+}
