@@ -1,0 +1,17 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import ProfileView from "../../features/profile/ProfileView.astro";
+import { resolveSubject } from "../../features/profile/subject";
+import { getSession } from "../../lib/session";
+
+const { id } = Astro.params;
+const subject = id ? await resolveSubject(id) : null;
+if (!subject) return new Response(null, { status: 404 });
+
+const session = await getSession(Astro);
+const isOwner = (session?.user as { id?: string } | null)?.id === subject.id;
+---
+
+<Layout title={subject.name || subject.username}>
+  <ProfileView subject={subject} isOwner={isOwner} />
+</Layout>
