@@ -10,8 +10,8 @@
 --
 -- All indexes use CONCURRENTLY to avoid table locks (safe during live operations).
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS "Offer_userId_idx"
-  ON "Offer" ("userId");
+CREATE INDEX CONCURRENTLY IF NOT EXISTS "Offer_userId_createdAt_idx"
+  ON "Offer" ("userId", "createdAt" DESC);
 
 CREATE INDEX CONCURRENTLY IF NOT EXISTS "Order_requesterId_idx"
   ON "Order" ("requesterId");
