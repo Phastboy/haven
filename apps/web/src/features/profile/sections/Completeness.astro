@@ -1,0 +1,20 @@
+---
+// Owner-only. The API decides what "complete" means (UserSchema.profileComplete);
+// this section only reacts to it, so the definition can change without touching the web.
+import type { SectionProps } from "../types";
+
+type Props = SectionProps;
+const { subject } = Astro.props;
+---
+
+{
+  !subject.profileComplete && (
+    <a
+      href="/profile/edit"
+      class="flex items-center justify-between gap-4 rounded-xl border border-brand-500/30 bg-brand-500/10 p-4 text-sm text-zinc-200 transition-colors hover:bg-brand-500/15"
+    >
+      <span>Your profile is missing details. Finish it so people know who they are dealing with.</span>
+      <span class="shrink-0 font-medium text-brand-400">Finish profile</span>
+    </a>
+  )
+}

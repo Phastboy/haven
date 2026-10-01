@@ -1,0 +1,47 @@
+---
+import { initials } from "../../../lib/format";
+import type { SectionProps } from "../types";
+
+type Props = SectionProps;
+const { subject, isOwner } = Astro.props;
+
+const displayName = subject.name || subject.username;
+const since = new Intl.DateTimeFormat("en", { month: "long", year: "numeric" }).format(
+  new Date(subject.createdAt),
+);
+const button =
+  "rounded-xl px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60";
+---
+
+<section class="flex flex-col items-center gap-4 text-center sm:flex-row sm:gap-6 sm:text-left">
+  <div
+    class="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-full border border-zinc-700 bg-zinc-800 text-2xl font-semibold sm:h-28 sm:w-28 sm:text-3xl"
+  >
+    {
+      subject.profilePictureUrl ? (
+        <img src={subject.profilePictureUrl} alt="" class="h-full w-full object-cover" />
+      ) : (
+        initials(subject.name, subject.username)
+      )
+    }
+  </div>
+
+  <div class="min-w-0 flex-1">
+    <h1 class="truncate text-2xl font-bold tracking-tight sm:text-3xl">{displayName}</h1>
+    {subject.name && <p class="text-zinc-400">@{subject.username}</p>}
+    <p class="mt-1 text-sm text-zinc-500">Member since {since}</p>
+  </div>
+
+  {
+    isOwner && (
+      <div class="flex gap-2">
+        <a href="/profile/edit" class={`${button} bg-white text-zinc-950 hover:bg-zinc-200`}>
+          Edit profile
+        </a>
+        <a href="/settings" class={`${button} border border-zinc-700 text-zinc-200 hover:bg-white/5`}>
+          Settings
+        </a>
+      </div>
+    )
+  }
+</section>

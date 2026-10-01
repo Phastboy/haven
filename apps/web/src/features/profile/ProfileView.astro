@@ -1,0 +1,17 @@
+---
+// The assembly. It knows the list of sections, never what is inside them.
+import { sections } from "./registry";
+import type { SectionProps } from "./types";
+
+type Props = SectionProps;
+const { subject, isOwner } = Astro.props;
+
+const audience = isOwner ? "owner" : "visitor";
+const visible = sections
+  .filter((s) => s.audience === "both" || s.audience === audience)
+  .sort((a, b) => a.order - b.order);
+---
+
+<div class="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-10">
+  {visible.map(({ component: Section }) => <Section subject={subject} isOwner={isOwner} />)}
+</div>

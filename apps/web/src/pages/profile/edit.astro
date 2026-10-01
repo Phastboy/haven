@@ -1,0 +1,18 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import ProfileForm from "../../components/ProfileForm";
+import { requireSession } from "../../lib/session";
+
+const guard = await requireSession(Astro);
+if (guard.redirect) return guard.redirect;
+const session = guard.session;
+const user = { ...session.user, email: (session.user?.email as string) || session.account.email };
+---
+
+<Layout title="Edit profile" bare>
+  <div class="mx-auto w-full max-w-2xl px-4 py-6 sm:px-6 sm:py-10">
+    <a href="/profile" class="text-sm text-zinc-400 transition-colors hover:text-white">Back to profile</a>
+    <h1 class="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">Edit profile</h1>
+    <ProfileForm client:load user={user} />
+  </div>
+</Layout>
