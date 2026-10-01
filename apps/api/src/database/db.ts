@@ -8,7 +8,11 @@ import type { Config } from "../config";
  * @param cfg The config containing the database URL
  */
 export function createDb(cfg: Config) {
-  const client = postgres(cfg.DATABASE_URL);
+  const client = postgres(cfg.DATABASE_URL, {
+    max: cfg.DB_POOL_MAX,
+    idle_timeout: cfg.DB_IDLE_TIMEOUT,
+    connect_timeout: 10,
+  });
   return drizzle(client, { schema });
 }
 
