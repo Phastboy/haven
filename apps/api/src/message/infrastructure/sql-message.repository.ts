@@ -121,16 +121,24 @@ export class SqlMessageRepository {
 
       let contexts: MessageContextRecord[] = [];
       if (contextOfferIds && contextOfferIds.length > 0) {
-        contexts = await tx
-          .insert(messageContexts)
-          .values(
-            contextOfferIds.map((offerId) => ({
-              id: randomUUID(),
-              messageId: message!.id,
-              offerId,
-            })),
-          )
-          .returning();
+        try {
+          contexts = await tx
+            .insert(messageContexts)
+            .values(
+              contextOfferIds.map((offerId) => ({
+                id: randomUUID(),
+                messageId: message!.id,
+                offerId,
+              })),
+            )
+            .returning();
+        } catch (e: unknown) {
+          if (isDbError(e) && e.code === "23503") {
+            const { OfferNotFoundError } = await import("../../offer/domain/errors");
+            throw new OfferNotFoundError();
+          }
+          throw e;
+        }
       }
 
       // Update thread's updatedAt
