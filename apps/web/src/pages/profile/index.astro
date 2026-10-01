@@ -8,7 +8,11 @@ const guard = await requireSession(Astro);
 if (guard.redirect) return guard.redirect;
 
 // getSession already loaded /users/me, so the owner's own profile needs no extra request.
-const { user } = guard.session;
+const { user, userError } = guard.session;
+if (userError) {
+  if (userError.status === 404) return new Response(null, { status: 404 });
+  return new Response(null, { status: userError.status >= 500 ? userError.status : 500 });
+}
 if (!user) return new Response(null, { status: 404 });
 ---
 
