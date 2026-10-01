@@ -10,6 +10,10 @@ export const ConfigSchema = Type.Object({
   PORT: Type.Number({ default: 3000 }),
   HOST: Type.String({ default: "0.0.0.0" }),
   DATABASE_URL: Type.String({ minLength: 1, description: "Postgres connection string" }),
+  // Connection pool — tune based on Postgres max_connections (default 100).
+  // A single API instance should not exceed ~20% of max_connections.
+  DB_POOL_MAX: Type.Number({ default: 20, description: "Max postgres.js pool connections" }),
+  DB_IDLE_TIMEOUT: Type.Number({ default: 30, description: "Idle connection timeout in seconds" }),
   WEB_ORIGIN: Type.String({ default: "http://localhost:4200" }),
   TOKEN_SECRET: Type.String({ minLength: 16 }),
   SESSION_TTL_DAYS: Type.Number({ default: 30 }),
@@ -38,6 +42,12 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
 
   if (coercedEnv["PORT"] !== undefined) {
     coercedEnv["PORT"] = Number(coercedEnv["PORT"]) as never;
+  }
+  if (coercedEnv["DB_POOL_MAX"] !== undefined) {
+    coercedEnv["DB_POOL_MAX"] = Number(coercedEnv["DB_POOL_MAX"]) as never;
+  }
+  if (coercedEnv["DB_IDLE_TIMEOUT"] !== undefined) {
+    coercedEnv["DB_IDLE_TIMEOUT"] = Number(coercedEnv["DB_IDLE_TIMEOUT"]) as never;
   }
   if (coercedEnv["SESSION_TTL_DAYS"] !== undefined) {
     coercedEnv["SESSION_TTL_DAYS"] = Number(coercedEnv["SESSION_TTL_DAYS"]) as never;
