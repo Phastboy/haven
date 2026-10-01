@@ -1,0 +1,32 @@
+---
+// Deliberate stub: the API only exposes email (via /auth/me) and logout today.
+// Grow this with the same registry pattern once sessions/providers endpoints exist.
+import Layout from "../layouts/Layout.astro";
+import { requireSession } from "../lib/session";
+
+const guard = await requireSession(Astro);
+if (guard.redirect) return guard.redirect;
+const { account } = guard.session;
+---
+
+<Layout title="Settings">
+  <div class="mx-auto w-full max-w-2xl px-4 py-6 sm:px-6 sm:py-10">
+    <a href="/profile" class="text-sm text-zinc-400 transition-colors hover:text-white">Back to profile</a>
+    <h1 class="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">Settings</h1>
+
+    <div class="mt-6 divide-y divide-zinc-800 rounded-2xl border border-zinc-800 bg-zinc-900">
+      <div class="p-4 sm:p-5">
+        <p class="text-sm text-zinc-400">Email</p>
+        <p class="mt-1 break-all">{account.email}</p>
+      </div>
+      <form method="post" action="/logout" class="p-4 sm:p-5">
+        <button
+          type="submit"
+          class="text-sm font-medium text-red-500 transition-colors hover:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50"
+        >
+          Log out
+        </button>
+      </form>
+    </div>
+  </div>
+</Layout>
