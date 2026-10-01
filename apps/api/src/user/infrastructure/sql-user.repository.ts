@@ -36,12 +36,13 @@ export class SqlUserRepository implements IUserRepository {
 
   async create(data: CreateUserData): Promise<User> {
     const id = crypto.randomUUID();
+    const generatedUsername = `user_${id.replace(/-/g, "").substring(0, 10)}`;
     const rows = await this.#db
       .insert(users)
       .values({
         id,
         accountId: data.accountId,
-        username: data.username ?? null,
+        username: data.username ?? generatedUsername,
         name: data.name ?? null,
         bio: data.bio ?? null,
         profilePictureUrl: data.profilePictureUrl ?? null,
@@ -81,10 +82,11 @@ export class SqlUserRepository implements IUserRepository {
   }
 
   #toUser(row: typeof users.$inferSelect): User {
+    const finalUsername = row.username ?? `user_${row.id.replace(/-/g, "").substring(0, 10)}`;
     return {
       id: row.id,
       accountId: row.accountId,
-      username: row.username as string, // Guaranteed non-null by creation flow
+      username: finalUsername,
       name: row.name ?? null,
       bio: row.bio ?? null,
       profilePictureUrl: row.profilePictureUrl ?? null,
