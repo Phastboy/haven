@@ -8,8 +8,10 @@ export class ListUsersUseCase {
     this.#userRepository = userRepository;
   }
 
-  async execute(): Promise<PaginatedResponse<User>> {
-    const data = await this.#userRepository.findAll();
-    return createPaginatedResponse(data, { total: data.length });
+  async execute(limit = 50, offset = 0): Promise<PaginatedResponse<User>> {
+    const data = await this.#userRepository.findAll(limit, offset);
+    return createPaginatedResponse(data, {
+      hasMore: data.length === limit,
+    });
   }
 }
