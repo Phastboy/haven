@@ -66,9 +66,11 @@ export class SqlMessageRepository {
     }
   }
 
-  async getUserThreads(userId: string): Promise<ThreadWithParticipants[]> {
+  async getUserThreads(userId: string, limit: number, offset: number): Promise<ThreadWithParticipants[]> {
     const userThreads = await this.#db.query.threads.findMany({
       where: or(eq(threads.participant1Id, userId), eq(threads.participant2Id, userId)),
+      limit,
+      offset,
       with: {
         participant1: {
           columns: { id: true, name: true, profilePictureUrl: true },
@@ -92,9 +94,13 @@ export class SqlMessageRepository {
 
   async getThreadMessages(
     threadId: string,
+    limit: number,
+    offset: number,
   ): Promise<(MessageRecord & { contexts: MessageContextRecord[] })[]> {
     return this.#db.query.messages.findMany({
       where: eq(messages.threadId, threadId),
+      limit,
+      offset,
       with: {
         contexts: true,
       },

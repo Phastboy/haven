@@ -5,13 +5,13 @@ import { createPaginatedResponse, type PaginatedResponse } from "../../shared/do
 export class GetOrdersUseCase {
   constructor(private readonly orderRepository: IOrderRepository) {}
 
-  async getRequesterOrders(requesterId: string): Promise<PaginatedResponse<Order>> {
-    const data = await this.orderRepository.getOrdersByRequester(requesterId);
+  async getRequesterOrders(requesterId: string, limit = 50, offset = 0): Promise<PaginatedResponse<Order>> {
+    const data = await this.orderRepository.getOrdersByRequester(requesterId, limit, offset);
     return createPaginatedResponse(data, { total: data.length });
   }
 
-  async getReceivedOrders(ownerId: string): Promise<PaginatedResponse<Order>> {
-    const data = await this.orderRepository.getOrdersByOfferOwner(ownerId);
+  async getReceivedOrders(ownerId: string, limit = 50, offset = 0): Promise<PaginatedResponse<Order>> {
+    const data = await this.orderRepository.getOrdersByOfferOwner(ownerId, limit, offset);
     return createPaginatedResponse(data, { total: data.length });
   }
 }
