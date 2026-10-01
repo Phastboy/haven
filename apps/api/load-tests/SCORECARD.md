@@ -11,6 +11,23 @@ Copy this block to the top of the history when recording a new run.
 
 ## History
 
+### Run: 2026-10-01 — git sha 8e22215 (Composite Index Optimized)
+
+**Normal (500 RPS)**
+| Metric         | Target   | Actual  | Status |
+| -------------- | -------- | ------- | ------ |
+| Achieved RPS   | ≥ 500    | 341     | ❌     |
+| p50            | < 10ms   | 649ms   | ❌     |
+| p95            | < 50ms   | 2.0s    | ❌     |
+| p99            | < 100ms  | 2.65s   | ❌     |
+| Error rate     | < 0.1%   | 0.00%   | ✓      |
+| Correctness    | 100%     | 100%    | ✓      |
+| CPU peak       | < 80%    | 28.3%   | ✓      |
+| RSS peak       | -        | 191 MB  | 📊     |
+| DB conn peak   | ≤ 20     | 15      | ✓      |
+
+*(Note: DB is now perfectly healthy. Remaining latency is caused by API-side N+1 auth queries blocking the event loop and connection pool)*
+
 ### Run: 2026-10-01 — git sha eea0a49 (First Contract Baseline)
 
 **Normal (500 RPS)**
