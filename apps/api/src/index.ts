@@ -54,6 +54,8 @@ export const app = new Elysia({ prefix: "/api" })
   .use(
     openapi({
       references: fromTypes(),
+      path: "/docs",
+      specPath: "/docs/json",
     }),
   )
   .use(v1)
