@@ -5,6 +5,7 @@ export type Session = {
   token: string;
   account: { id: string; email: string };
   user: Record<string, unknown> | null;
+  userError?: any;
 };
 
 /**
@@ -33,6 +34,7 @@ export async function getSession(ctx: APIContext): Promise<Session | null> {
       (userRes.data as { data?: Record<string, unknown> })?.data ??
       (userRes.data as Record<string, unknown>) ??
       null,
+    userError: userRes.error,
   };
 }
 

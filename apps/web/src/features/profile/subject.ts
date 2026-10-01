@@ -24,7 +24,11 @@ export function toProfileUser(raw: Record<string, unknown>): ProfileUser {
  */
 export async function resolveSubject(handle: string): Promise<ProfileUser | null> {
   const { data, error } = await client.users({ id: handle }).get();
-  if (error || !data) return null;
+  if (error) {
+    if (error.status === 404) return null;
+    throw error;
+  }
+  if (!data) return null;
   const body = (data as { data?: Record<string, unknown> }).data;
   return body ? toProfileUser(body) : null;
 }

@@ -10,7 +10,6 @@ export default function ProfileForm(props: {
     email?: string;
     [key: string]: unknown;
   };
-  token: string;
 }) {
   const [username, setUsername] = createSignal(props.user.username || "");
   const [name, setName] = createSignal(props.user.name || "");
