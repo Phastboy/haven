@@ -20,7 +20,7 @@
     },
     "apps/api": {
       "name": "@haven/api",
-      "version": "1.0.50",
+      "version": "0.1.0",
       "dependencies": {
         "@elysia/cors": "2.0.0-beta.1",
         "@elysia/cron": "2.0.0-beta.1",

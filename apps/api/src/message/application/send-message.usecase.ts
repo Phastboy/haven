@@ -1,18 +1,33 @@
 import type { SqlMessageRepository } from "../infrastructure/sql-message.repository";
 import type { MessageContextRecord } from "../../database/schema";
 import type { MessageRecord } from "../../database/schema";
-import { ThreadNotFoundError, UnauthorizedThreadAccessError, TooManyContextsError } from "../domain/errors";
+import {
+  ThreadNotFoundError,
+  UnauthorizedThreadAccessError,
+  TooManyContextsError,
+} from "../domain/errors";
 
 import type { IEventBus } from "../../shared/domain/event-bus.interface";
+
+import type { IOfferRepository } from "../../offer/domain/offer.repository";
+import { OfferNotFoundError, UnauthorizedOfferActionError } from "../../offer/domain/errors";
 
 export class SendMessageUseCase {
   constructor(
     private readonly messageRepo: SqlMessageRepository,
     private readonly eventBus: IEventBus,
+    private readonly offerRepo: IOfferRepository,
   ) {}
 
-  async execute(threadId: string, senderId: string, content: string, contextOfferIds?: string[]): Promise<MessageRecord & { contexts: MessageContextRecord[] }> {
-    if (contextOfferIds && contextOfferIds.length > 5) {
+  async execute(
+    threadId: string,
+    senderId: string,
+    content: string,
+    contextOfferIds?: string[],
+  ): Promise<MessageRecord & { contexts: MessageContextRecord[] }> {
+    const uniqueOfferIds = contextOfferIds ? [...new Set(contextOfferIds)] : [];
+
+    if (uniqueOfferIds.length > 5) {
       throw new TooManyContextsError();
     }
 
@@ -25,7 +40,19 @@ export class SendMessageUseCase {
       throw new UnauthorizedThreadAccessError();
     }
 
-    const message = await this.messageRepo.sendMessage(threadId, senderId, content, contextOfferIds);
+    if (uniqueOfferIds.length > 0) {
+      for (const offerId of uniqueOfferIds) {
+        const offer = await this.offerRepo.findById(offerId);
+        if (!offer) {
+          throw new OfferNotFoundError();
+        }
+        if (offer.userId !== thread.participant1Id && offer.userId !== thread.participant2Id) {
+          throw new UnauthorizedOfferActionError();
+        }
+      }
+    }
+
+    const message = await this.messageRepo.sendMessage(threadId, senderId, content, uniqueOfferIds);
 
     // Determine receiver
     const receiverId =

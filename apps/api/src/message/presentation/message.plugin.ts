@@ -26,10 +26,13 @@ import { PaginatedResponseSchema } from "../../shared/domain/pagination";
 
 import type { IEventBus } from "../../shared/domain/event-bus.interface";
 
+import { SqlOfferRepository } from "../../offer/infrastructure/sql-offer.repository";
+
 export const createMessagePlugin = (eventBus: IEventBus, db: DB) => {
   const repository = new SqlMessageRepository(db);
+  const offerRepo = new SqlOfferRepository(db);
   const createThreadUseCase = new CreateThreadUseCase(repository);
-  const sendMessageUseCase = new SendMessageUseCase(repository, eventBus);
+  const sendMessageUseCase = new SendMessageUseCase(repository, eventBus, offerRepo);
   const getThreadsUseCase = new GetThreadsUseCase(repository);
   const getMessagesUseCase = new GetMessagesUseCase(repository);
   const markThreadAsReadUseCase = new MarkThreadAsReadUseCase(repository);

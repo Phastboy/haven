@@ -90,7 +90,9 @@ export class SqlMessageRepository {
     }));
   }
 
-  async getThreadMessages(threadId: string): Promise<(MessageRecord & { contexts: MessageContextRecord[] })[]> {
+  async getThreadMessages(
+    threadId: string,
+  ): Promise<(MessageRecord & { contexts: MessageContextRecord[] })[]> {
     return this.#db.query.messages.findMany({
       where: eq(messages.threadId, threadId),
       with: {
@@ -100,47 +102,55 @@ export class SqlMessageRepository {
     });
   }
 
-  async sendMessage(threadId: string, senderId: string, content: string, contextOfferIds?: string[]): Promise<MessageRecord & { contexts: MessageContextRecord[] }> {
-    const [message] = await this.#db
-      .insert(messages)
-      .values({
-        id: randomUUID(),
-        threadId,
-        senderId,
-        content,
-      })
-      .returning();
-
-    let contexts: MessageContextRecord[] = [];
-    if (contextOfferIds && contextOfferIds.length > 0) {
-      contexts = await this.#db
-        .insert(messageContexts)
-        .values(
-          contextOfferIds.map((offerId) => ({
-            id: randomUUID(),
-            messageId: message!.id,
-            offerId,
-          }))
-        )
+  async sendMessage(
+    threadId: string,
+    senderId: string,
+    content: string,
+    contextOfferIds?: string[],
+  ): Promise<MessageRecord & { contexts: MessageContextRecord[] }> {
+    return await this.#db.transaction(async (tx) => {
+      const [message] = await tx
+        .insert(messages)
+        .values({
+          id: randomUUID(),
+          threadId,
+          senderId,
+          content,
+        })
         .returning();
-    }
 
-    // Update thread's updatedAt
-    await this.#db.update(threads).set({ updatedAt: new Date() }).where(eq(threads.id, threadId));
+      let contexts: MessageContextRecord[] = [];
+      if (contextOfferIds && contextOfferIds.length > 0) {
+        contexts = await tx
+          .insert(messageContexts)
+          .values(
+            contextOfferIds.map((offerId) => ({
+              id: randomUUID(),
+              messageId: message!.id,
+              offerId,
+            })),
+          )
+          .returning();
+      }
 
-    return { ...message!, contexts };
+      // Update thread's updatedAt
+      await tx.update(threads).set({ updatedAt: new Date() }).where(eq(threads.id, threadId));
+
+      return { ...message!, contexts };
+    });
   }
 
   async markMessagesAsRead(threadId: string, userId: string): Promise<void> {
     const { ne, isNull } = await import("drizzle-orm");
-    await this.#db.update(messages)
+    await this.#db
+      .update(messages)
       .set({ readAt: new Date() })
       .where(
         and(
           eq(messages.threadId, threadId),
           ne(messages.senderId, userId),
-          isNull(messages.readAt)
-        )
+          isNull(messages.readAt),
+        ),
       );
   }
 }
