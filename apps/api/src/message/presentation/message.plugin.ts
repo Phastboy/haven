@@ -62,11 +62,15 @@ export const createMessagePlugin = (eventBus: IEventBus, db: DB) => {
     .get(
       "/threads",
       {
+        query: t.Object({
+          page:  t.Optional(t.Numeric({ minimum: 1, default: 1 })),
+          limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100, default: 50 })),
+        }),
         response: {
           200: PaginatedResponseSchema(t.Any()), // Array of threads with latestMessage (complex type, t.Any() is fine to stop recursion if it's too nested, or just t.Array(t.Object({ ...ThreadResponse.properties, latestMessage: t.Any() })))
         },
       },
-      async ({ user, session, set }) => {
+      async ({ user, session, set, query }) => {
         requireAuth({ session, set });
         requireProfileComplete({ user, set });
 
@@ -74,7 +78,10 @@ export const createMessagePlugin = (eventBus: IEventBus, db: DB) => {
           throw new UnauthorizedError("User profile not found.");
         }
 
-        return await getThreadsUseCase.execute(user.id);
+        const limit  = query.limit  ?? 50;
+        const offset = ((query.page ?? 1) - 1) * limit;
+
+        return await getThreadsUseCase.execute(user.id, limit, offset);
       },
     )
     .post(
@@ -101,11 +108,15 @@ export const createMessagePlugin = (eventBus: IEventBus, db: DB) => {
     .get(
       "/threads/:threadId",
       {
+        query: t.Object({
+          page:  t.Optional(t.Numeric({ minimum: 1, default: 1 })),
+          limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100, default: 50 })),
+        }),
         response: {
           200: PaginatedResponseSchema(MessageResponse),
         },
       },
-      async ({ params, user, session, set }) => {
+      async ({ params, user, session, set, query }) => {
         requireAuth({ session, set });
         requireProfileComplete({ user, set });
 
@@ -113,7 +124,10 @@ export const createMessagePlugin = (eventBus: IEventBus, db: DB) => {
           throw new UnauthorizedError("User profile not found.");
         }
 
-        return await getMessagesUseCase.execute(params.threadId, user.id);
+        const limit  = query.limit  ?? 50;
+        const offset = ((query.page ?? 1) - 1) * limit;
+
+        return await getMessagesUseCase.execute(params.threadId, user.id, limit, offset);
       },
     )
     .post(

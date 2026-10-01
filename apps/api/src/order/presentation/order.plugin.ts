@@ -83,35 +83,49 @@ export const createOrderPlugin = (eventBus: IEventBus | undefined, db: DB) => {
     .get(
       "/me",
       {
+        query: t.Object({
+          page:  t.Optional(t.Numeric({ minimum: 1, default: 1 })),
+          limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100, default: 50 })),
+        }),
         response: {
           200: PaginatedResponseSchema(t.Any()), // Using t.Any() here because it might include joined tables (like offer details). If strictly order, use orderSchema
         },
       },
-      async ({ user, session, set }) => {
+      async ({ user, session, set, query }) => {
         requireAuth({ session, set });
 
         if (!user) {
           throw new UnauthorizedError("User profile not found.");
         }
 
-        return await getOrdersUseCase.getRequesterOrders(user.id);
+        const limit  = query.limit  ?? 50;
+        const offset = ((query.page ?? 1) - 1) * limit;
+
+        return await getOrdersUseCase.getRequesterOrders(user.id, limit, offset);
       },
     )
     .get(
       "/received",
       {
+        query: t.Object({
+          page:  t.Optional(t.Numeric({ minimum: 1, default: 1 })),
+          limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100, default: 50 })),
+        }),
         response: {
           200: PaginatedResponseSchema(t.Any()),
         },
       },
-      async ({ user, session, set }) => {
+      async ({ user, session, set, query }) => {
         requireAuth({ session, set });
 
         if (!user) {
           throw new UnauthorizedError("User profile not found.");
         }
 
-        return await getOrdersUseCase.getReceivedOrders(user.id);
+        const limit  = query.limit  ?? 50;
+        const offset = ((query.page ?? 1) - 1) * limit;
+
+        return await getOrdersUseCase.getReceivedOrders(user.id, limit, offset);
       },
     )
     .patch(

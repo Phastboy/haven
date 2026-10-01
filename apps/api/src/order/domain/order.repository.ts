@@ -13,9 +13,9 @@ export interface IOrderRepository {
 
   getOrderById(id: string): Promise<Order | null>;
 
-  getOrdersByRequester(requesterId: string): Promise<Order[]>;
+  getOrdersByRequester(requesterId: string, limit: number, offset: number): Promise<Order[]>;
 
-  getOrdersByOfferOwner(ownerId: string): Promise<Order[]>;
+  getOrdersByOfferOwner(ownerId: string, limit: number, offset: number): Promise<Order[]>;
 
   updateOrderStatus(id: string, status: OrderStatus): Promise<Order>;
 

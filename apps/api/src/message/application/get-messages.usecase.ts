@@ -7,7 +7,7 @@ import { createPaginatedResponse, type PaginatedResponse } from "../../shared/do
 export class GetMessagesUseCase {
   constructor(private readonly messageRepo: SqlMessageRepository) {}
 
-  async execute(threadId: string, userId: string): Promise<PaginatedResponse<MessageRecord & { contexts: MessageContextRecord[] }>> {
+  async execute(threadId: string, userId: string, limit = 50, offset = 0): Promise<PaginatedResponse<MessageRecord & { contexts: MessageContextRecord[] }>> {
     const thread = await this.messageRepo.findThreadById(threadId);
     if (!thread) {
       throw new ThreadNotFoundError();
@@ -17,7 +17,7 @@ export class GetMessagesUseCase {
       throw new UnauthorizedThreadAccessError();
     }
 
-    const data = await this.messageRepo.getThreadMessages(threadId);
+    const data = await this.messageRepo.getThreadMessages(threadId, limit, offset);
     return createPaginatedResponse(data, { total: data.length });
   }
 }

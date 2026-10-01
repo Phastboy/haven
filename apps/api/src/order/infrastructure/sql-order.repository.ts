@@ -41,15 +41,17 @@ export class SqlOrderRepository implements IOrderRepository {
     return order || null;
   }
 
-  async getOrdersByRequester(requesterId: string): Promise<Order[]> {
+  async getOrdersByRequester(requesterId: string, limit: number, offset: number): Promise<Order[]> {
     return this.#db
       .select()
       .from(orders)
       .where(eq(orders.requesterId, requesterId))
-      .orderBy(orders.createdAt);
+      .orderBy(orders.createdAt)
+      .limit(limit)
+      .offset(offset);
   }
 
-  async getOrdersByOfferOwner(ownerId: string): Promise<Order[]> {
+  async getOrdersByOfferOwner(ownerId: string, limit: number, offset: number): Promise<Order[]> {
     // Join with offers to find orders where offer.userId === ownerId
     const result = await this.#db
       .select({
@@ -58,7 +60,9 @@ export class SqlOrderRepository implements IOrderRepository {
       .from(orders)
       .innerJoin(offers, eq(orders.offerId, offers.id))
       .where(eq(offers.userId, ownerId))
-      .orderBy(orders.createdAt);
+      .orderBy(orders.createdAt)
+      .limit(limit)
+      .offset(offset);
 
     return result.map((r) => r.order);
   }
