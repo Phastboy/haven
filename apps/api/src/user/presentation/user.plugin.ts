@@ -57,14 +57,19 @@ export function createUserPlugin(db: DB) {
     .get(
       "/",
       {
+        query: t.Object({
+          page:  t.Optional(t.Numeric({ minimum: 1, default: 1 })),
+          limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100, default: 50 })),
+        }),
         response: {
           200: PaginatedResponseSchema(UserResponse),
         },
         detail: { summary: "List all profiles" },
       },
-      async () => {
-        const users = await listUsers.execute();
-        return users; // PaginatedResponse already has data/meta
+      async ({ query }) => {
+        const limit  = query.limit  ?? 50;
+        const offset = ((query.page ?? 1) - 1) * limit;
+        return listUsers.execute(limit, offset);
       },
     )
 

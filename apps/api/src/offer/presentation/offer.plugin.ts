@@ -76,13 +76,18 @@ export const createOfferPlugin = (db: DB) => {
       "/user/:userId",
       {
         params: UserIdParam,
+        query: t.Object({
+          page:  t.Optional(t.Numeric({ minimum: 1, default: 1 })),
+          limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100, default: 50 })),
+        }),
         response: {
           200: PaginatedResponseSchema(OfferSchema),
         },
       },
-      async ({ params, user }) => {
-        // Pass the requester's user.id so the use-case can decide visibility.
-        return listUserOffers.execute(params.userId, user?.id);
+      async ({ params, user, query }) => {
+        const limit  = query.limit  ?? 50;
+        const offset = ((query.page ?? 1) - 1) * limit;
+        return listUserOffers.execute(params.userId, user?.id, limit, offset);
       },
     )
     .post(

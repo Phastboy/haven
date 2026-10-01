@@ -27,9 +27,12 @@ export class SqlUserRepository implements IUserRepository {
     return row ? this.#toUser(row) : null;
   }
 
-  async findAll(): Promise<User[]> {
+  async findAll(limit = 50, offset = 0): Promise<User[]> {
+    const safeLimit = Math.min(limit, 100);
     const rows = await this.#db.query.users.findMany({
       orderBy: [desc(users.createdAt)],
+      limit: safeLimit,
+      offset,
     });
     return rows.map((r) => this.#toUser(r));
   }

@@ -44,16 +44,25 @@ export class SqlOfferRepository implements IOfferRepository {
     return this.mapToDomain(record);
   }
 
-  async findByUserId(userId: string): Promise<Offer[]> {
-    const records = await this.#db.select().from(offers).where(eq(offers.userId, userId));
-    return records.map(this.mapToDomain);
-  }
-
-  async findActiveByUserId(userId: string): Promise<Offer[]> {
+  async findByUserId(userId: string, limit = 50, offset = 0): Promise<Offer[]> {
+    const safeLimit = Math.min(limit, 100);
     const records = await this.#db
       .select()
       .from(offers)
-      .where(and(eq(offers.userId, userId), ne(offers.status, "ARCHIVED")));
+      .where(eq(offers.userId, userId))
+      .limit(safeLimit)
+      .offset(offset);
+    return records.map(this.mapToDomain);
+  }
+
+  async findActiveByUserId(userId: string, limit = 50, offset = 0): Promise<Offer[]> {
+    const safeLimit = Math.min(limit, 100);
+    const records = await this.#db
+      .select()
+      .from(offers)
+      .where(and(eq(offers.userId, userId), ne(offers.status, "ARCHIVED")))
+      .limit(safeLimit)
+      .offset(offset);
     return records.map(this.mapToDomain);
   }
 
