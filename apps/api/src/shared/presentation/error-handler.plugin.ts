@@ -55,16 +55,20 @@ export const globalErrorHandler = (
 
     const extractErrors = (errors: unknown[]) => {
       const mapped = errors.map((err) => {
-        const asRecord = err as Record<string, string | undefined>;
-        let name = asRecord["instancePath"] || asRecord["path"] || "";
+        const asRecord = err as Record<string, unknown>;
+        let name = asRecord["instancePath"]
+          ? String(asRecord["instancePath"])
+          : asRecord["path"]
+            ? String(asRecord["path"])
+            : "";
         if (name === "" || name === "root") {
-          const schemaPath = asRecord["schemaPath"] || "";
+          const schemaPath = asRecord["schemaPath"] ? String(asRecord["schemaPath"]) : "";
           const match = schemaPath.match(/#\/properties\/([^/]+)/);
           name = match?.[1] || "body";
         } else {
           name = name.replace(/^\//, "");
         }
-        return { name, reason: asRecord["message"] || "" };
+        return { name, reason: asRecord["message"] ? String(asRecord["message"]) : "" };
       });
 
       const errorMap = new Map<string, string[]>();
