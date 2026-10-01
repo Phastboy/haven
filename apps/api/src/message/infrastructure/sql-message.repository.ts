@@ -108,20 +108,20 @@ export class SqlMessageRepository {
     content: string,
     contextOfferIds?: string[],
   ): Promise<MessageRecord & { contexts: MessageContextRecord[] }> {
-    return await this.#db.transaction(async (tx) => {
-      const [message] = await tx
-        .insert(messages)
-        .values({
-          id: randomUUID(),
-          threadId,
-          senderId,
-          content,
-        })
-        .returning();
+    try {
+      return await this.#db.transaction(async (tx) => {
+        const [message] = await tx
+          .insert(messages)
+          .values({
+            id: randomUUID(),
+            threadId,
+            senderId,
+            content,
+          })
+          .returning();
 
-      let contexts: MessageContextRecord[] = [];
-      if (contextOfferIds && contextOfferIds.length > 0) {
-        try {
+        let contexts: MessageContextRecord[] = [];
+        if (contextOfferIds && contextOfferIds.length > 0) {
           contexts = await tx
             .insert(messageContexts)
             .values(
@@ -132,20 +132,20 @@ export class SqlMessageRepository {
               })),
             )
             .returning();
-        } catch (e: unknown) {
-          if (isDbError(e) && e.code === "23503") {
-            const { OfferNotFoundError } = await import("../../offer/domain/errors");
-            throw new OfferNotFoundError();
-          }
-          throw e;
         }
+
+        // Update thread's updatedAt
+        await tx.update(threads).set({ updatedAt: new Date() }).where(eq(threads.id, threadId));
+
+        return { ...message!, contexts };
+      });
+    } catch (e: unknown) {
+      if (isDbError(e) && e.code === "23503" && contextOfferIds?.length) {
+        const { OfferNotFoundError } = await import("../../offer/domain/errors");
+        throw new OfferNotFoundError();
       }
-
-      // Update thread's updatedAt
-      await tx.update(threads).set({ updatedAt: new Date() }).where(eq(threads.id, threadId));
-
-      return { ...message!, contexts };
-    });
+      throw e;
+    }
   }
 
   async markMessagesAsRead(threadId: string, userId: string): Promise<void> {
