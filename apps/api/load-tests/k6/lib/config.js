@@ -26,3 +26,13 @@ export const TEST_OFFER_ID = __ENV.TEST_OFFER_ID || '9af24220-9472-4b5d-8889-6a8
 
 // Results dir (relative to where k6 is invoked from)
 export const RESULTS_DIR = 'apps/api/load-tests/results';
+
+// ─── PERFORMANCE CONTRACT TARGETS ─────────────────────────────────────────────
+// Source of truth: apps/api/load-tests/PERFORMANCE_CONTRACT.md
+export const CONTRACT = {
+  normal:   { rps: 500,  p95: 50,   p99: 100,  errorPct: 0.001 },
+  highLoad: { rps: 1000, p95: 100,  p99: 250,  errorPct: 0.001 },
+  spike:    { burstRps: 2000, spikeP95Ms: 1000, recoveryP95Ms: 100, errorPct: 0.01 },
+  soak:     { rps: 500,  p95: 100,  p99: 250,  errorPct: 0.001, durationMin: 30 },
+  capacity: { abortP95Ms: 250, abortErrorPct: 0.01 },
+};
