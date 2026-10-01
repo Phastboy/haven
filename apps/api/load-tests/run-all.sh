@@ -8,16 +8,17 @@
 #
 # Options (env vars):
 #   SKIP_SMOKE=1          skip scenario 01
-#   SKIP_STEADY=1         skip scenario 02
-#   SKIP_SPIKE=1          skip scenario 03
-#   SKIP_SOAK=1           skip scenario 04
-#   SKIP_BREAKPOINT=1     skip scenario 05
+#   SKIP_NORMAL=1         skip scenario 02
+#   SKIP_HIGH_LOAD=1      skip scenario 03
+#   SKIP_SPIKE=1          skip scenario 04
+#   SKIP_SOAK=1           skip scenario 05
+#   SKIP_CAPACITY=1       skip scenario 06
 #   SKIP_OHA=1            skip oha baseline
-#   MAX_VUS=5000          override break-point ceiling (default 10000)
+#   MAX_VUS=5000          override capacity ceiling (default 5000)
 #   BASE_URL=http://...   override API base URL
 #
-# Example — just run smoke + breakpoint:
-#   SKIP_STEADY=1 SKIP_SPIKE=1 SKIP_SOAK=1 SKIP_OHA=1 ./apps/api/load-tests/run-all.sh
+# Example — just run smoke + capacity:
+#   SKIP_NORMAL=1 SKIP_HIGH_LOAD=1 SKIP_SPIKE=1 SKIP_SOAK=1 SKIP_OHA=1 ./apps/api/load-tests/run-all.sh
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
@@ -83,25 +84,26 @@ run_k6() {
 check_deps
 check_api
 
-# ─── Start memory monitor in background ──────────────────────────────────────
-banner "Memory Monitor — starting"
-bash "${SCRIPT_DIR}/monitor/memory-watch.sh" 5 3000 &
+# ─── Start system saturation monitor in background ───────────────────────────
+banner "System Monitor — starting"
+bash "${SCRIPT_DIR}/monitor/system-watch.sh" &
 MONITOR_PID=$!
-echo "  Memory monitor PID: ${MONITOR_PID}"
+echo "  System monitor PID: ${MONITOR_PID}"
 sleep 2  # let it log an initial sample
 
 # ─── Scenarios ────────────────────────────────────────────────────────────────
 [[ "${SKIP_SMOKE:-0}" != "1" ]]       && run_k6 "01-smoke.js"       "01-smoke"
-[[ "${SKIP_STEADY:-0}" != "1" ]]      && run_k6 "02-steady-state.js" "02-steady-state"
-[[ "${SKIP_SPIKE:-0}" != "1" ]]       && run_k6 "03-spike.js"        "03-spike"
-[[ "${SKIP_SOAK:-0}" != "1" ]]        && run_k6 "04-soak.js"         "04-soak"
-[[ "${SKIP_BREAKPOINT:-0}" != "1" ]]  && \
-  MAX_VUS="${MAX_VUS:-10000}" k6 run \
+[[ "${SKIP_NORMAL:-0}" != "1" ]]      && run_k6 "02-normal.js"      "02-normal"
+[[ "${SKIP_HIGH_LOAD:-0}" != "1" ]]   && run_k6 "03-high-load.js"   "03-high-load"
+[[ "${SKIP_SPIKE:-0}" != "1" ]]       && run_k6 "04-spike.js"       "04-spike"
+[[ "${SKIP_SOAK:-0}" != "1" ]]        && run_k6 "05-soak.js"        "05-soak"
+[[ "${SKIP_CAPACITY:-0}" != "1" ]]    && \
+  MAX_VUS="${MAX_VUS:-5000}" k6 run \
     --env BASE_URL="$BASE_URL" \
-    --env MAX_VUS="${MAX_VUS:-10000}" \
-    --summary-export="${RESULTS_DIR}/k6-05-breakpoint-${TIMESTAMP}.json" \
-    "${SCRIPT_DIR}/k6/scenarios/05-breakpoint.js" \
-    2>&1 | tee "${RESULTS_DIR}/k6-05-breakpoint-${TIMESTAMP}.log"
+    --env MAX_VUS="${MAX_VUS:-5000}" \
+    --summary-export="${RESULTS_DIR}/k6-06-capacity-${TIMESTAMP}.json" \
+    "${SCRIPT_DIR}/k6/scenarios/06-capacity.js" \
+    2>&1 | tee "${RESULTS_DIR}/k6-06-capacity-${TIMESTAMP}.log"
 
 # ─── oha baseline ─────────────────────────────────────────────────────────────
 [[ "${SKIP_OHA:-0}" != "1" ]] && {
@@ -109,8 +111,8 @@ sleep 2  # let it log an initial sample
   bash "${SCRIPT_DIR}/oha/run-baseline.sh" "$BASE_URL"
 }
 
-# ─── Stop memory monitor ──────────────────────────────────────────────────────
-banner "Stopping memory monitor"
+# ─── Stop system monitor ──────────────────────────────────────────────────────
+banner "Stopping system monitor"
 kill "$MONITOR_PID" 2>/dev/null || true
 wait "$MONITOR_PID" 2>/dev/null || true
 
@@ -125,8 +127,8 @@ echo "  oha JSON results:"
 ls -1 "${RESULTS_DIR}"/oha-*-"${TIMESTAMP}".json 2>/dev/null | sed 's/^/    /'
 
 echo ""
-echo "  Memory CSV:"
-ls -1 "${RESULTS_DIR}"/memory-*.csv 2>/dev/null | tail -1 | sed 's/^/    /'
+echo "  System Saturation CSV:"
+ls -1 "${RESULTS_DIR}"/system-saturation-*.csv 2>/dev/null | tail -1 | sed 's/^/    /'
 
 echo ""
 echo "  Quick RPS snapshot (k6 — http_reqs):"
