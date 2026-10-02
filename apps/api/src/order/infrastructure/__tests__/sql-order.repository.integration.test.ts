@@ -113,7 +113,7 @@ describe("SqlOrderRepository Integration", () => {
       quantity: 1,
     });
 
-    const ordersList = await repository.getOrdersByRequester(testUserId2);
+    const ordersList = await repository.getOrdersByRequester(testUserId2, 50, 0);
     expect(ordersList.length).toBeGreaterThan(0);
     const found = ordersList.find((o) => o.id === orderId);
     expect(found).toBeDefined();
@@ -130,7 +130,7 @@ describe("SqlOrderRepository Integration", () => {
       quantity: 1,
     });
 
-    const receivedList = await repository.getOrdersByOfferOwner(testUserId1);
+    const receivedList = await repository.getOrdersByOfferOwner(testUserId1, 50, 0);
     expect(receivedList.length).toBeGreaterThan(0);
     const found = receivedList.find((o) => o.id === orderId);
     expect(found).toBeDefined();
