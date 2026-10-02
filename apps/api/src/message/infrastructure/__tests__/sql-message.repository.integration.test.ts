@@ -61,7 +61,7 @@ describe("SqlMessageRepository Integration", () => {
     await repo.sendMessage(thread.id, user1Id, "Hello");
     await repo.sendMessage(thread.id, user2Id, "World");
 
-    const messages = await repo.getThreadMessages(thread.id);
+    const messages = await repo.getThreadMessages(thread.id, 50, 0);
     expect(messages).toHaveLength(2);
     expect(messages[0]?.content).toBe("Hello");
     expect(messages[1]?.content).toBe("World");
@@ -71,7 +71,7 @@ describe("SqlMessageRepository Integration", () => {
     const thread = await repo.createThread(user1Id, user2Id);
     await repo.sendMessage(thread.id, user1Id, "Latest test");
 
-    const threads = await repo.getUserThreads(user1Id);
+    const threads = await repo.getUserThreads(user1Id, 50, 0);
     const found = threads.find((t) => t.id === thread.id);
     expect(found).toBeDefined();
     expect(found?.latestMessage?.content).toBe("Latest test");
