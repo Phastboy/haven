@@ -1,8 +1,28 @@
 [workspace]
-resolver = "3"
+resolver = "2"
 members = ["crates/*"]
-name = "haven"
+
+[workspace.package]
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [workspace.dependencies]
+# Domain
+uuid = { version = "1", features = ["v4", "serde"] }
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+sha2 = "0.10"
+rand = "0.8"
+chrono = { version = "0.4", features = ["serde"] }
+hex = "0.4"
+
+# DB
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "migrate", "macros"] }
+
+# Web
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+topcoat = { version = "0.9.0", features = ["mail", "session", "router", "tailwind"] }
+
+# Internal
+haven-domain = { path = "crates/haven-domain" }
+haven-db = { path = "crates/haven-db" }
