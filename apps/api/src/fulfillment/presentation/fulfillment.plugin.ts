@@ -12,8 +12,7 @@ import { TokenService } from "../../auth/infrastructure/services/token.service";
 const tokenService = new TokenService(config);
 import { UnauthorizedError } from "../../auth/domain/errors";
 import type { DB } from "../../database/db";
-import { users } from "../../database/schema";
-import { eq } from "drizzle-orm";
+
 import {
   deliverFulfillmentBodySchema,
   requestRevisionBodySchema,
@@ -39,12 +38,12 @@ export const createFulfillmentPlugin = (db: DB) => {
       }
       const token = authHeader.substring(7);
       try {
-        const sessionWithAccount = await getSessionUseCase.execute(token);
-        const [user] = await db
-          .select()
-          .from(users)
-          .where(eq(users.accountId, sessionWithAccount.account.id));
-        return { session: sessionWithAccount, account: sessionWithAccount.account, user };
+        const sessionContext = await getSessionUseCase.execute(token);
+        return {
+          session: sessionContext,
+          account: sessionContext.account,
+          user: sessionContext.user,
+        };
       } catch (e: unknown) {
         if (e instanceof UnauthorizedError) return { session: null, account: null, user: null };
         throw e;

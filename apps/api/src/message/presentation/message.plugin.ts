@@ -14,7 +14,7 @@ import { TokenService } from "../../auth/infrastructure/services/token.service";
 const tokenService = new TokenService(config);
 import { UnauthorizedError } from "../../auth/domain/errors";
 import type { DB } from "../../database/db";
-import { SqlUserRepository } from "../../user/infrastructure/sql-user.repository";
+
 import {
   createThreadBodySchema,
   sendMessageBodySchema,
@@ -48,10 +48,12 @@ export const createMessagePlugin = (eventBus: IEventBus, db: DB) => {
 
       const token = authHeader.substring(7);
       try {
-        const sessionWithAccount = await getSessionUseCase.execute(token);
-        const userRepo = new SqlUserRepository(db);
-        const user = await userRepo.findByAccountId(sessionWithAccount.account.id);
-        return { session: sessionWithAccount, account: sessionWithAccount.account, user };
+        const sessionContext = await getSessionUseCase.execute(token);
+        return {
+          session: sessionContext,
+          account: sessionContext.account,
+          user: sessionContext.user,
+        };
       } catch (e: unknown) {
         if (e instanceof UnauthorizedError) {
           return { session: null, account: null, user: null };

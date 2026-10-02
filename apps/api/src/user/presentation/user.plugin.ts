@@ -36,19 +36,20 @@ export function createUserPlugin(db: DB) {
     .derive(async ({ headers }: { headers: Record<string, string | undefined> }) => {
       const authHeader = headers["authorization"];
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return { session: null, account: null };
+        return { session: null, account: null, user: null };
       }
 
       const token = authHeader.substring(7);
       try {
-        const sessionWithAccount = await getSessionUseCase.execute(token);
+        const sessionContext = await getSessionUseCase.execute(token);
         return {
-          session: sessionWithAccount,
-          account: sessionWithAccount.account,
+          session: sessionContext,
+          account: sessionContext.account,
+          user: sessionContext.user,
         };
       } catch (e: unknown) {
         if (e instanceof UnauthorizedError) {
-          return { session: null, account: null };
+          return { session: null, account: null, user: null };
         }
         throw e;
       }

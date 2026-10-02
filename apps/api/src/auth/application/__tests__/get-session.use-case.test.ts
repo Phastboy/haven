@@ -3,7 +3,7 @@ import type { TokenService } from "../../infrastructure/services/token.service";
 import { GetSessionUseCase } from "../use-cases/get-session.use-case";
 import type { ISessionRepository } from "../../domain/ports/ISessionRepository";
 import { UnauthorizedError } from "../../domain/errors";
-import type { SessionWithAccount } from "../../domain/session.schema";
+import type { SessionContext } from "../../domain/session.schema";
 
 describe("GetSessionUseCase", () => {
   const mockTokenService = {
@@ -12,7 +12,7 @@ describe("GetSessionUseCase", () => {
   } as unknown as TokenService;
 
   it("should successfully return an active session", async () => {
-    const mockSession: SessionWithAccount = {
+    const mockSession: SessionContext = {
       id: "session-id",
       accountId: "account-id",
       token: "hashed_raw_token",
@@ -25,6 +25,7 @@ describe("GetSessionUseCase", () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
+      user: null,
     };
 
     const mockRepo = {
@@ -60,7 +61,7 @@ describe("GetSessionUseCase", () => {
   });
 
   it("should throw UnauthorizedError and delete session if expired", async () => {
-    const mockSession: SessionWithAccount = {
+    const mockSession: SessionContext = {
       id: "session-id",
       accountId: "account-id",
       token: "hashed_expired_token",
@@ -73,6 +74,7 @@ describe("GetSessionUseCase", () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
+      user: null,
     };
 
     const mockRepo = {

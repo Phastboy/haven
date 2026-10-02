@@ -19,7 +19,7 @@ const tokenService = new TokenService(config);
 import { UnauthorizedError } from "../../auth/domain/errors";
 import { OfferNotFoundError } from "../domain/errors";
 import type { DB } from "../../database/db";
-import { SqlUserRepository } from "../../user/infrastructure/sql-user.repository";
+
 
 export const createOfferPlugin = (db: DB) => {
   const repository = new SqlOfferRepository(db);
@@ -40,13 +40,11 @@ export const createOfferPlugin = (db: DB) => {
 
       const token = authHeader.substring(7);
       try {
-        const sessionWithAccount = await getSessionUseCase.execute(token);
-        const userRepo = new SqlUserRepository(db);
-        const user = await userRepo.findByAccountId(sessionWithAccount.account.id);
+        const sessionContext = await getSessionUseCase.execute(token);
         return {
-          session: sessionWithAccount,
-          account: sessionWithAccount.account,
-          user,
+          session: sessionContext,
+          account: sessionContext.account,
+          user: sessionContext.user,
         };
       } catch (e: unknown) {
         if (e instanceof UnauthorizedError) {
