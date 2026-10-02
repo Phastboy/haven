@@ -1,0 +1,8 @@
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+name = "haven"
+version = "0.1.0"
+edition = "2024"
+
+[workspace.dependencies]
