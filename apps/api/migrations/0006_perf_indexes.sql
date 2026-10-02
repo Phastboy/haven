@@ -1,3 +1,4 @@
+-- no transaction
 -- Migration: 0006_perf_indexes
 -- Description: Add indexes on hot FK query columns identified during load testing.
 --
