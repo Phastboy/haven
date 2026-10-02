@@ -7,8 +7,11 @@ const TEST_USER_ID = "9c630b3d-9641-4a0d-b76f-4e5bdda5ed85";
 const TEST_OFFER_ID = "9af24220-9472-4b5d-8889-6a8e914b167f";
 const ACCOUNT_ID = "12345678-1234-1234-1234-123456789012";
 const SESSION_ID = "87654321-4321-4321-4321-210987654321";
-const BEARER_TOKEN =
-  "f6263838172babc84ab986cdd6ed496dee859ff2cfa79104794c9889cfba1540d49873817a94303123df5d937c3accb0da8c3082f1d7d119d2a16ab77ee3d183";
+const BEARER_TOKEN = process.env.BEARER_TOKEN;
+if (!BEARER_TOKEN) {
+  console.error("Environment variable BEARER_TOKEN must be set");
+  process.exit(1);
+}
 
 const db = createDb(config);
 const tokenService = new TokenService(config);

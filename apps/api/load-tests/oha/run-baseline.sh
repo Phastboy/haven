@@ -11,7 +11,7 @@
 set -euo pipefail
 
 BASE_URL="${1:-http://localhost:3000/api}"
-TOKEN="f6263838172babc84ab986cdd6ed496dee859ff2cfa79104794c9889cfba1540d49873817a94303123df5d937c3accb0da8c3082f1d7d119d2a16ab77ee3d183"
+TOKEN="${LOAD_TEST_TOKEN:?Environment variable LOAD_TEST_TOKEN must be set}"
 RESULTS_DIR="apps/api/load-tests/results"
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 

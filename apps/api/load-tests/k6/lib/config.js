@@ -6,9 +6,10 @@
 export const BASE_URL = __ENV.BASE_URL || 'http://localhost:3000/api';
 
 // Long-lived session token (30-day TTL). Rotate via BEARER_TOKEN env var.
-export const BEARER_TOKEN =
-  __ENV.BEARER_TOKEN ||
-  'f6263838172babc84ab986cdd6ed496dee859ff2cfa79104794c9889cfba1540d49873817a94303123df5d937c3accb0da8c3082f1d7d119d2a16ab77ee3d183';
+export const BEARER_TOKEN = __ENV.BEARER_TOKEN;
+if (!BEARER_TOKEN) {
+  throw new Error('Environment variable BEARER_TOKEN must be set');
+}
 
 export const AUTH_HEADERS = {
   Authorization: `Bearer ${BEARER_TOKEN}`,
