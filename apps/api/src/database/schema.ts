@@ -9,7 +9,7 @@ import {
   pgEnum,
   integer,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, desc } from "drizzle-orm";
 
 export const users = pgTable(
   "User",
@@ -49,7 +49,7 @@ export const offers = pgTable(
     createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("Offer_userId_createdAt_idx").on(t.userId, t.createdAt)],
+  (t) => [index("Offer_userId_createdAt_idx").on(t.userId, desc(t.createdAt))],
 );
 
 export const orderStatusEnum = pgEnum("OrderStatus", [
@@ -78,7 +78,7 @@ export const orders = pgTable(
     createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("Order_requesterId_createdAt_idx").on(t.requesterId, t.createdAt)],
+  (t) => [index("Order_requesterId_createdAt_idx").on(t.requesterId, desc(t.createdAt))],
 );
 
 export const fulfillmentStatusEnum = pgEnum("FulfillmentStatus", [

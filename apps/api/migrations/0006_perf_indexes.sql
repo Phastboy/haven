@@ -14,8 +14,8 @@
 CREATE INDEX CONCURRENTLY IF NOT EXISTS "Offer_userId_createdAt_idx"
   ON "Offer" ("userId", "createdAt" DESC);
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS "Order_requesterId_idx"
-  ON "Order" ("requesterId");
+CREATE INDEX CONCURRENTLY IF NOT EXISTS "Order_requesterId_createdAt_idx"
+  ON "Order" ("requesterId", "createdAt" DESC);
 
 CREATE INDEX CONCURRENTLY IF NOT EXISTS "Order_offerId_idx"
   ON "Order" ("offerId");

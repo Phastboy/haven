@@ -9,7 +9,7 @@ import type {
 import type { DB } from "../../database/db";
 import { offers } from "../../database/schema";
 import { randomUUID } from "crypto";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, ne, desc } from "drizzle-orm";
 
 export class SqlOfferRepository implements IOfferRepository {
   readonly #db: DB;
@@ -50,6 +50,7 @@ export class SqlOfferRepository implements IOfferRepository {
       .select()
       .from(offers)
       .where(eq(offers.userId, userId))
+      .orderBy(desc(offers.createdAt), desc(offers.id))
       .limit(safeLimit)
       .offset(offset);
     return records.map(this.mapToDomain);
@@ -61,6 +62,7 @@ export class SqlOfferRepository implements IOfferRepository {
       .select()
       .from(offers)
       .where(and(eq(offers.userId, userId), ne(offers.status, "ARCHIVED")))
+      .orderBy(desc(offers.createdAt), desc(offers.id))
       .limit(safeLimit)
       .offset(offset);
     return records.map(this.mapToDomain);

@@ -9,6 +9,6 @@ export class GetThreadsUseCase {
 
   async execute(userId: string, limit = 50, offset = 0): Promise<PaginatedResponse<ThreadWithParticipants>> {
     const data = await this.messageRepo.getUserThreads(userId, limit, offset);
-    return createPaginatedResponse(data, { total: data.length });
+    return createPaginatedResponse(data, { hasMore: data.length === limit });
   }
 }

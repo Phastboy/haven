@@ -18,6 +18,6 @@ export class GetMessagesUseCase {
     }
 
     const data = await this.messageRepo.getThreadMessages(threadId, limit, offset);
-    return createPaginatedResponse(data, { total: data.length });
+    return createPaginatedResponse(data, { hasMore: data.length === limit });
   }
 }
