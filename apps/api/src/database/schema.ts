@@ -5,43 +5,52 @@ import {
   boolean,
   timestamp,
   uniqueIndex,
+  index,
   pgEnum,
   integer,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
-export const users = pgTable("User", {
-  id: varchar("id", { length: 36 }).primaryKey(),
-  accountId: varchar("accountId", { length: 36 })
-    .unique()
-    .notNull()
-    .references(() => accounts.id, { onDelete: "cascade" }),
-  username: text("username").unique(),
-  name: text("name"),
-  bio: text("bio"),
-  profilePictureUrl: text("profilePictureUrl"),
-  createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
-});
+export const users = pgTable(
+  "User",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    accountId: varchar("accountId", { length: 36 })
+      .unique()
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    username: text("username").unique(),
+    name: text("name"),
+    bio: text("bio"),
+    profilePictureUrl: text("profilePictureUrl"),
+    createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("User_createdAt_idx").on(t.createdAt)],
+);
 
 export const offerStatusEnum = pgEnum("OfferStatus", ["ACTIVE", "PAUSED", "ARCHIVED"]);
 export const offerTypeEnum = pgEnum("OfferType", ["PRODUCT", "SERVICE", "APPOINTMENT"]);
 
-export const offers = pgTable("Offer", {
-  id: varchar("id", { length: 36 }).primaryKey(),
-  userId: varchar("userId", { length: 36 })
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  title: varchar("title", { length: 255 }).notNull(),
-  description: text("description"),
-  price: integer("price").notNull().default(0), // stored in cents
-  currency: varchar("currency", { length: 3 }).notNull().default("NGN"),
-  status: offerStatusEnum("status").notNull().default("ACTIVE"),
-  offerType: offerTypeEnum("offerType").notNull().default("PRODUCT"),
-  images: text("images").array(),
-  createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
-});
+export const offers = pgTable(
+  "Offer",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    userId: varchar("userId", { length: 36 })
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: varchar("title", { length: 255 }).notNull(),
+    description: text("description"),
+    price: integer("price").notNull().default(0), // stored in cents
+    currency: varchar("currency", { length: 3 }).notNull().default("NGN"),
+    status: offerStatusEnum("status").notNull().default("ACTIVE"),
+    offerType: offerTypeEnum("offerType").notNull().default("PRODUCT"),
+    images: text("images").array(),
+    createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("Offer_userId_createdAt_idx").on(t.userId, t.createdAt)],
+);
 
 export const orderStatusEnum = pgEnum("OrderStatus", [
   "PENDING",
@@ -51,22 +60,26 @@ export const orderStatusEnum = pgEnum("OrderStatus", [
   "COMPLETED",
 ]);
 
-export const orders = pgTable("Order", {
-  id: varchar("id", { length: 36 }).primaryKey(),
-  offerId: varchar("offerId", { length: 36 })
-    .notNull()
-    .references(() => offers.id, { onDelete: "cascade" }),
-  requesterId: varchar("requesterId", { length: 36 })
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  price: integer("price").notNull(), // stored in cents (snapshot of offer price at time of order)
-  currency: varchar("currency", { length: 3 }).notNull(),
-  quantity: integer("quantity").notNull().default(1),
-  status: orderStatusEnum("status").notNull().default("PENDING"),
-  message: text("message"),
-  createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
-});
+export const orders = pgTable(
+  "Order",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    offerId: varchar("offerId", { length: 36 })
+      .notNull()
+      .references(() => offers.id, { onDelete: "cascade" }),
+    requesterId: varchar("requesterId", { length: 36 })
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    price: integer("price").notNull(), // stored in cents (snapshot of offer price at time of order)
+    currency: varchar("currency", { length: 3 }).notNull(),
+    quantity: integer("quantity").notNull().default(1),
+    status: orderStatusEnum("status").notNull().default("PENDING"),
+    message: text("message"),
+    createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("Order_requesterId_createdAt_idx").on(t.requesterId, t.createdAt)],
+);
 
 export const fulfillmentStatusEnum = pgEnum("FulfillmentStatus", [
   "PENDING",
@@ -122,8 +135,7 @@ export const messageContexts = pgTable("MessageContext", {
   messageId: varchar("messageId", { length: 36 })
     .notNull()
     .references(() => messages.id, { onDelete: "cascade" }),
-  offerId: varchar("offerId", { length: 36 })
-    .references(() => offers.id, { onDelete: "set null" }), // nullable
+  offerId: varchar("offerId", { length: 36 }).references(() => offers.id, { onDelete: "set null" }), // nullable
   createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
 });
 
