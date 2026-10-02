@@ -1,14 +1,9 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+use sqlx::PgPool;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub mod accounts;
+pub mod magic_links;
+pub mod offers;
+pub mod sessions;
+pub mod users;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub type DbPool = PgPool;
