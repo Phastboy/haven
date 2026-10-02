@@ -7,11 +7,11 @@ export class GetOrdersUseCase {
 
   async getRequesterOrders(requesterId: string, limit = 50, offset = 0): Promise<PaginatedResponse<Order>> {
     const data = await this.orderRepository.getOrdersByRequester(requesterId, limit, offset);
-    return createPaginatedResponse(data, { total: data.length });
+    return createPaginatedResponse(data, { hasMore: data.length === limit });
   }
 
   async getReceivedOrders(ownerId: string, limit = 50, offset = 0): Promise<PaginatedResponse<Order>> {
     const data = await this.orderRepository.getOrdersByOfferOwner(ownerId, limit, offset);
-    return createPaginatedResponse(data, { total: data.length });
+    return createPaginatedResponse(data, { hasMore: data.length === limit });
   }
 }

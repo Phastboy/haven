@@ -103,21 +103,21 @@ describe("Offer Use Cases", () => {
       const useCase = new ListUserOffersUseCase(repository);
       const result = await useCase.execute("user-1", "user-1");
       expect(result.data).toEqual([mockOffer]);
-      expect(repository.findByUserId).toHaveBeenCalledWith("user-1");
+      expect(repository.findByUserId).toHaveBeenCalledWith("user-1", 50, 0);
     });
 
     it("should call findActiveByUserId for a third-party requester", async () => {
       const useCase = new ListUserOffersUseCase(repository);
       const result = await useCase.execute("user-1", "user-2");
       expect(result.data).toEqual([mockOffer]);
-      expect(repository.findActiveByUserId).toHaveBeenCalledWith("user-1");
+      expect(repository.findActiveByUserId).toHaveBeenCalledWith("user-1", 50, 0);
     });
 
     it("should call findActiveByUserId for an unauthenticated requester", async () => {
       const useCase = new ListUserOffersUseCase(repository);
       const result = await useCase.execute("user-1");
       expect(result.data).toEqual([mockOffer]);
-      expect(repository.findActiveByUserId).toHaveBeenCalledWith("user-1");
+      expect(repository.findActiveByUserId).toHaveBeenCalledWith("user-1", 50, 0);
     });
   });
 });
