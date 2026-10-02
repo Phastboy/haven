@@ -22,3 +22,16 @@ export const SessionWithAccountSchema = Type.Intersect([
 ]);
 
 export type SessionWithAccount = Static<typeof SessionWithAccountSchema>;
+
+import type { User } from "../../user/domain/user.schema";
+
+export const SessionContextSchema = Type.Intersect([
+  SessionWithAccountSchema,
+  Type.Object({
+    user: Type.Any(), // Using Any here to avoid circular dependency with User module at schema level
+  }),
+]);
+
+export type SessionContext = Omit<Static<typeof SessionContextSchema>, "user"> & {
+  user: User | null;
+};

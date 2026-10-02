@@ -1,6 +1,6 @@
 import type { ISessionRepository } from "../../domain/ports/ISessionRepository";
 import type { TokenService } from "../../infrastructure/services/token.service";
-import type { SessionWithAccount } from "../../domain/session.schema";
+import type { SessionContext } from "../../domain/session.schema";
 import { UnauthorizedError } from "../../domain/errors";
 
 export class GetSessionUseCase {
@@ -12,7 +12,7 @@ export class GetSessionUseCase {
     this.#tokenService = tokenService;
   }
 
-  async execute(rawToken: string): Promise<SessionWithAccount> {
+  async execute(rawToken: string): Promise<SessionContext> {
     const hashedToken = this.#tokenService.hash(rawToken);
     const session = await this.#sessionRepo.findByToken(hashedToken);
 

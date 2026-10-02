@@ -1,4 +1,4 @@
-import type { Session, SessionWithAccount } from "../session.schema";
+import type { Session, SessionContext } from "../session.schema";
 
 export interface CreateSessionDTO {
   accountId: string;
@@ -10,7 +10,7 @@ export interface CreateSessionDTO {
 
 export interface ISessionRepository {
   create(data: CreateSessionDTO): Promise<Session>;
-  findByToken(token: string): Promise<SessionWithAccount | null>;
+  findByToken(token: string): Promise<SessionContext | null>;
   deleteByToken(token: string): Promise<void>;
   deleteExpired(): Promise<void>;
 }
