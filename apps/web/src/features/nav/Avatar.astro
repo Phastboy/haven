@@ -1,0 +1,26 @@
+---
+import { initials } from "../../lib/format";
+import type { NavUser } from "./types";
+
+interface Props {
+  user: NavUser;
+  /** Caller supplies size, border and text size. */
+  class?: string;
+}
+const { user, class: className } = Astro.props;
+---
+
+<span
+  class:list={[
+    "grid shrink-0 place-items-center overflow-hidden rounded-full bg-zinc-800 font-semibold",
+    className,
+  ]}
+>
+  {
+    user.profilePictureUrl ? (
+      <img src={user.profilePictureUrl} alt="" class="h-full w-full object-cover" />
+    ) : (
+      initials(user.name, user.username ?? user.email)
+    )
+  }
+</span>

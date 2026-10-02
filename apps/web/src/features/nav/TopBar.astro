@@ -1,0 +1,43 @@
+---
+import DesktopNav from "./DesktopNav.astro";
+import AccountMenu from "./AccountMenu.astro";
+import type { NavUser } from "./types";
+
+interface Props {
+  path: string;
+  user: NavUser | null;
+}
+const { path, user } = Astro.props;
+const isMember = !!user;
+---
+
+<!-- Members on a phone navigate with the bottom tab bar, so the bar is hidden there
+     (the page owns its own title). Desktop and guests keep it: it is their only navigation. -->
+<header
+  class:list={[
+    "sticky top-0 z-40 border-b border-white/5 bg-zinc-950/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl",
+    isMember && "hidden sm:block",
+  ]}
+>
+  <div class="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-3 px-4 sm:h-16 sm:px-6">
+    <a href="/" class="flex items-center gap-2 text-lg font-bold tracking-tight">
+      <span class="h-6 w-6 rounded-lg bg-brand-500"></span>
+      Haven
+    </a>
+
+    <DesktopNav isMember={isMember} path={path} />
+
+    {
+      user ? (
+        <AccountMenu user={user} />
+      ) : (
+        <a
+          href="/login"
+          class="rounded-xl bg-white px-4 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-zinc-200"
+        >
+          Log in
+        </a>
+      )
+    }
+  </div>
+</header>

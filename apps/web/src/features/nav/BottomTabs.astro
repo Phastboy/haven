@@ -1,0 +1,59 @@
+---
+import { navFor, isActive } from "./select";
+import Avatar from "./Avatar.astro";
+import type { NavUser } from "./types";
+
+interface Props {
+  path: string;
+  user: NavUser;
+}
+const { path, user } = Astro.props;
+const items = navFor("tabs", true);
+---
+
+<nav
+  aria-label="Primary"
+  class="fixed inset-x-0 bottom-0 z-40 border-t border-white/5 bg-zinc-950/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl sm:hidden"
+>
+  <ul class="mx-auto flex max-w-lg">
+    {
+      items.map((item) => (
+        <li class="flex-1">
+          <a
+            href={item.href}
+            aria-current={isActive(item, path) ? "page" : undefined}
+            class:list={[
+              "flex min-h-14 flex-col items-center justify-center gap-1 px-1 py-2 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500/60",
+              isActive(item, path) ? "text-brand-400" : "text-zinc-500 active:text-zinc-300",
+            ]}
+          >
+            {item.avatar ? (
+              <Avatar
+                user={user}
+                class:list={[
+                  "h-[22px] w-[22px] text-[10px]",
+                  isActive(item, path) ? "ring-2 ring-brand-400" : "ring-1 ring-zinc-700",
+                ]}
+              />
+            ) : (
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d={item.icon} />
+              </svg>
+            )}
+            {item.label}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</nav>

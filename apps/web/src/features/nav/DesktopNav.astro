@@ -1,0 +1,29 @@
+---
+import { navFor, isActive } from "./select";
+
+interface Props {
+  isMember: boolean;
+  path: string;
+}
+const { isMember, path } = Astro.props;
+const items = navFor("desktop", isMember);
+---
+
+<!-- Members get the bottom tab bar on phones, so this is desktop-only for them.
+     Guests have no tab bar, so it stays visible on every size. -->
+<nav aria-label="Primary" class:list={["items-center gap-1 text-sm font-medium", isMember ? "hidden sm:flex" : "flex"]}>
+  {
+    items.map((item) => (
+      <a
+        href={item.href}
+        aria-current={isActive(item, path) ? "page" : undefined}
+        class:list={[
+          "rounded-lg px-3 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60",
+          isActive(item, path) ? "bg-white/10 text-white" : "text-zinc-400 hover:text-white",
+        ]}
+      >
+        {item.label}
+      </a>
+    ))
+  }
+</nav>
