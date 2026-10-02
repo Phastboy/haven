@@ -10,9 +10,11 @@ export const ConfigSchema = Type.Object({
   PORT: Type.Number({ default: 3000 }),
   HOST: Type.String({ default: "0.0.0.0" }),
   DATABASE_URL: Type.String({ minLength: 1, description: "Postgres connection string" }),
-  // Connection pool — tune based on Postgres max_connections (default 100).
-  // We set it to 80 to maximize throughput without hitting the 100 connection limit.
-  DB_POOL_MAX: Type.Number({ default: 80, description: "Max postgres.js pool connections" }),
+  // Connection pool sizing — ensure total connections across ALL instances remain under
+  // Postgres max_connections (default 100) minus a buffer for background tasks (~5-10).
+  // Formula: (max_connections - 10) / num_instances.
+  // Defaulting to 20 safely supports ~4 API instances on a default Postgres setup.
+  DB_POOL_MAX: Type.Number({ default: 20, description: "Max postgres.js pool connections per instance" }),
   DB_IDLE_TIMEOUT: Type.Number({ default: 30, description: "Idle connection timeout in seconds" }),
   WEB_ORIGIN: Type.String({ default: "http://localhost:4200" }),
   TOKEN_SECRET: Type.String({ minLength: 16 }),
