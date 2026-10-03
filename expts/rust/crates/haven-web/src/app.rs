@@ -5,8 +5,8 @@ use topcoat::{
     Result as TopcoatResult,
 };
 
-// pub mod auth;
-// pub mod offers;
+pub mod auth;
+pub mod offers;
 // pub mod _not_found;
 
 #[topcoat::router::layer]
