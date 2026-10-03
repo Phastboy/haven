@@ -5,6 +5,7 @@ pub async fn create(
     pool: &DbPool,
     user_id: UserId,
     create_offer: &CreateOffer,
+    idempotency_key: uuid::Uuid,
 ) -> sqlx::Result<Offer> {
     let u_id = user_id.as_uuid();
     let price_val = create_offer.price.map(|p| p.as_i32());
@@ -12,15 +13,18 @@ pub async fn create(
 
     let row = sqlx::query!(
         r#"
-        INSERT INTO offer (user_id, title, description, price, currency)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO offer (user_id, title, description, price, currency, idempotency_key)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        ON CONFLICT (user_id, idempotency_key)
+        DO UPDATE SET title = EXCLUDED.title 
         RETURNING id, user_id, title, description, price, currency, created_at, updated_at
         "#,
         u_id,
         create_offer.title,
         create_offer.description,
         price_val,
-        currency_val as Option<&str>
+        currency_val as Option<&str>,
+        idempotency_key
     )
     .fetch_one(pool)
     .await?;
