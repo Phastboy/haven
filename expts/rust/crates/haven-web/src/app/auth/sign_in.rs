@@ -1,7 +1,7 @@
 #![allow(unused_variables)]
 use topcoat::{
     context::Cx,
-    router::error::redirect,
+    router::error::see_other,
     Result as TopcoatResult,
 };
 
@@ -36,11 +36,11 @@ pub async fn submit_sign_in(
     let email_ok = limiter.try_acquire(&email_str).is_ok();
     
     if !ip_ok || !email_ok {
-        return Err(redirect("/auth/sent").into());
+        return Err(see_other("/auth/sent").into());
     }
     
     let Ok(email) = haven_domain::account::Email::parse(&email_str) else {
-        return Err(redirect("/auth/sent").into());
+        return Err(see_other("/auth/sent").into());
     };
     
     let db = crate::cx_helpers::db(cx);
@@ -66,5 +66,5 @@ pub async fn submit_sign_in(
     
     topcoat::mail::send(cx, mail).await?;
     
-    Err(redirect("/auth/sent").into())
+    Err(see_other("/auth/sent").into())
 }

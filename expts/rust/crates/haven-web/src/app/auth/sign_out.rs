@@ -1,7 +1,7 @@
 #![allow(unused_variables)]
 use topcoat::{
     context::Cx,
-    router::error::redirect,
+    router::error::see_other,
     Result as TopcoatResult,
 };
 
@@ -15,5 +15,5 @@ pub async fn sign_out(cx: &Cx) -> TopcoatResult<()> {
             haven_db::sessions::delete(db, session.id).await.map_err(topcoat::Error::from)?;
         }
     }
-    Err(redirect("/").into())
+    Err(see_other("/").into())
 }

@@ -1,7 +1,7 @@
 #![allow(unused_variables)]
 use topcoat::{
     context::Cx,
-    router::error::redirect,
+    router::error::see_other,
     view::view,
     Result as TopcoatResult,
 };
@@ -73,5 +73,5 @@ pub async fn update_offer(
     let db = crate::cx_helpers::db(cx);
     haven_db::offers::update(db, offer_id, &update_req).await.map_err(topcoat::Error::from)?;
     
-    Err(redirect(format!("/offers/{}", offer_id)).into())
+    Err(see_other(format!("/offers/{}", offer_id)).into())
 }
