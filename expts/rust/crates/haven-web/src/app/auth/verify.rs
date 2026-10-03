@@ -43,7 +43,7 @@ pub async fn verify_submit(
     let magic_link = haven_db::magic_links::find_by_token_hash(db, &hashed)
         .await
         .map_err(topcoat::Error::from)?
-        .ok_or_else(|| topcoat::router::error::not_found())?;
+        .ok_or_else(|| topcoat::router::error::unauthorized())?;
         
     if magic_link.used_at.is_some() || chrono::Utc::now() > magic_link.expires_at {
         return Err(topcoat::router::error::unauthorized().into());
