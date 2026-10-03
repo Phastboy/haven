@@ -31,7 +31,7 @@ impl std::fmt::Display for OfferId {
 }
 
 /// Newtype wrapping a UUID that identifies a User (platform participant).
-/// Cannot be confused with AccountId.
+/// Cannot be confused with `AccountId`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct UserId(pub Uuid);
 
@@ -109,10 +109,8 @@ pub struct Offer {
 impl Offer {
     /// Domain invariant: currency is required when price > 0.
     pub fn validate_price_currency(&self) -> Result<(), DomainError> {
-        if let Some(p) = self.price {
-            if p.as_i32() > 0 && self.currency.is_none() {
-                return Err(DomainError::CurrencyRequiredWhenPriced);
-            }
+        if self.price.is_some_and(|p| p.as_i32() > 0) && self.currency.is_none() {
+            return Err(DomainError::CurrencyRequiredWhenPriced);
         }
         Ok(())
     }
@@ -135,10 +133,8 @@ impl CreateOffer {
         if self.title.len() > 255 {
             return Err(DomainError::TitleTooLong);
         }
-        if let Some(p) = self.price {
-            if p.as_i32() > 0 && self.currency.is_none() {
-                return Err(DomainError::CurrencyRequiredWhenPriced);
-            }
+        if self.price.is_some_and(|p| p.as_i32() > 0) && self.currency.is_none() {
+            return Err(DomainError::CurrencyRequiredWhenPriced);
         }
         Ok(())
     }
@@ -161,10 +157,8 @@ impl UpdateOffer {
         if self.title.len() > 255 {
             return Err(DomainError::TitleTooLong);
         }
-        if let Some(p) = self.price {
-            if p.as_i32() > 0 && self.currency.is_none() {
-                return Err(DomainError::CurrencyRequiredWhenPriced);
-            }
+        if self.price.is_some_and(|p| p.as_i32() > 0) && self.currency.is_none() {
+            return Err(DomainError::CurrencyRequiredWhenPriced);
         }
         Ok(())
     }

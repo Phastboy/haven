@@ -12,5 +12,8 @@ uuid = { workspace = true, features = ["v4", "serde"] }
 chrono = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 sqlx = { workspace = true }
-http = "1.1"
+http = "1.5"
 dotenvy = "0.15"
+
+[lints]
+workspace=true

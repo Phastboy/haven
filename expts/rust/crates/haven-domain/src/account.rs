@@ -5,7 +5,7 @@ use uuid::Uuid;
 use crate::DomainError;
 
 /// Newtype wrapping a UUID that identifies an Account.
-/// Cannot be confused with OfferId, SessionId, or UserId at compile time.
+/// Cannot be confused with `OfferId`, `SessionId`, or `UserId` at compile time.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct AccountId(pub Uuid);
 
