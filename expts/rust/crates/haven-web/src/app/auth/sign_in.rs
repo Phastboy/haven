@@ -63,7 +63,7 @@ pub async fn submit_sign_in(
         to: email.as_str(),
         subject: "Sign in to Haven",
         text: format!("Click here to sign in: http://localhost:8080/auth/verify?token={}", plaintext_token.as_str())
-    }.map_err(topcoat::Error::from)?;
+    }?;
     
     topcoat::mail::send(cx, mail).await?;
     

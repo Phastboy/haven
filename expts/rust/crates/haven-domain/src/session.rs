@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use rand::RngCore;
+use rand::TryRng;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
@@ -8,7 +8,7 @@ use crate::account::AccountId;
 use crate::DomainError;
 
 /// Newtype for a session's UUID primary key.
-/// Cannot be confused with AccountId or OfferId.
+/// Cannot be confused with `AccountId` or `OfferId`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct SessionId(pub Uuid);
 
@@ -40,7 +40,7 @@ impl PlaintextToken {
     /// Generate a cryptographically random 32-byte token, base64url-encoded (no padding).
     pub fn generate() -> Result<Self, DomainError> {
         let mut bytes = [0u8; 32];
-        rand::thread_rng()
+        rand::rng()
             .try_fill_bytes(&mut bytes)
             .map_err(|_| DomainError::TokenGenerationFailed)?;
         Ok(Self(base64url_encode(&bytes)))
@@ -117,6 +117,13 @@ impl Session {
     }
 }
 
+#[allow(
+    clippy::indexing_slicing,
+    clippy::as_conversions,
+    clippy::arithmetic_side_effects,
+    clippy::unwrap_used,
+    reason = "Self-contained base64url encoder"
+)]
 fn base64url_encode(bytes: &[u8]) -> String {
     use std::fmt::Write;
     // Simple base64url without padding using the standard alphabet mapping.

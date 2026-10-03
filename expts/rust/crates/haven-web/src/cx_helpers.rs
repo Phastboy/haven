@@ -2,9 +2,9 @@
 //!
 //! Depends on two `haven-db` functions that must be added:
 //!   - `haven_db::users::find_by_session(pool, token_hash: &str) -> sqlx::Result<Option<User>>`
-//!       joins session -> user via account_id, and checks `expires_at > now()` in SQL
+//!     joins session -> user via account_id, and checks `expires_at > now()` in SQL
 //!   - `haven_db::offers::find_owned(pool, OfferId, UserId) -> sqlx::Result<Option<Offer>>`
-//!       `WHERE id = $1 AND user_id = $2`
+//!     `WHERE id = $1 AND user_id = $2`
 
 use std::{
     collections::HashMap,

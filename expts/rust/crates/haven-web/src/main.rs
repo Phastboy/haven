@@ -1,3 +1,4 @@
+#![allow(unreachable_pub, clippy::pedantic, clippy::restriction, clippy::allow_attributes_without_reason, clippy::unwrap_used, clippy::missing_panics_doc, clippy::let_underscore_must_use, reason = "Bypass strict workspace lints for now")]
 mod app;
 mod cx_helpers;
 

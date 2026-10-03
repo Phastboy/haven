@@ -6,7 +6,7 @@ use crate::account::Email;
 use crate::session::{HashedToken, PlaintextToken};
 
 /// A single-use credential delivered to a user's email address.
-/// Conceptually identical to a PlaintextToken, alias added for domain clarity.
+/// Conceptually identical to a `PlaintextToken`, alias added for domain clarity.
 pub type VerificationToken = PlaintextToken;
 
 /// A magic link record tracking the lifecycle of an authentication attempt.

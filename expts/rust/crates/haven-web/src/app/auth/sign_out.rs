@@ -7,7 +7,7 @@ use topcoat::{
 
 #[topcoat::router::page(POST)]
 pub async fn sign_out(cx: &Cx) -> TopcoatResult<()> {
-    if let Some(hash) = topcoat::session::stop(cx).await.map_err(topcoat::Error::from)? {
+    if let Some(hash) = topcoat::session::stop(cx).await? {
         let hash_hex = crate::cx_helpers::token_hash_hex(&hash);
         let hashed_token = haven_domain::session::HashedToken::from_hex(hash_hex);
         let db = crate::cx_helpers::db(cx);
