@@ -1,3 +1,4 @@
+mod app;
 mod cx_helpers;
 
 use sqlx::postgres::PgPoolOptions;
