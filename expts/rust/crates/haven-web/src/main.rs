@@ -1,27 +1,37 @@
+mod cx_helpers;
+
+use sqlx::postgres::PgPoolOptions;
+use std::env;
 use topcoat::{
-    Result,
-    router::{module_router, page},
-    view::{View, component, view},
+    cookie::RouterBuilderCookieExt,
+    mail::{FileTransport, RouterBuilderMailExt},
+    router::{RouterBuilderDiscoverExt, module_router},
+    session::{RouterBuilderSessionExt, SessionConfig},
 };
 
 #[tokio::main]
-async fn main() {
-    topcoat::start(module_router!().build()).await.unwrap();
-}
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
-#[page]
-async fn home() -> Result<impl View> {
-    Ok(view! {
-        <!DOCTYPE html>
-        <html>
-            <body>
-                hello(name: "World")
-            </body>
-        </html>
-    })
-}
+    let pool = PgPoolOptions::new()
+        .max_connections(20)
+        .connect(&database_url)
+        .await?;
 
-#[component]
-async fn hello(name: &str) -> Result<impl View> {
-    Ok(view! { <h1>"Hello, " (name) "!"</h1> })
+    let router = module_router!()
+        .cookies()
+        .sessions(SessionConfig::default())
+        .app_context(pool)
+        .app_context(cx_helpers::SignInLimiter::new())
+        .app_context(cx_helpers::CreateOfferLimiter::new())
+        .mail(
+            topcoat::mail::MailConfig::builder()
+                .transport(FileTransport::new("target/mail"))
+                .build(),
+        )
+        .discover()
+        .build();
+
+    topcoat::start(router).await.unwrap();
+    Ok(())
 }
