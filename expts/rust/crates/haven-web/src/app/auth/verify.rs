@@ -1,7 +1,7 @@
 #![allow(unused_variables)]
 use topcoat::{
     context::Cx,
-    router::error::redirect,
+    router::error::see_other,
     Result as TopcoatResult,
 };
 
@@ -70,5 +70,8 @@ pub async fn verify_submit(
         .await
         .map_err(topcoat::Error::from)?;
         
-    Err(redirect("/offers").into())
+    // Ensure the User record exists (created on first sign-in)
+    haven_db::users::find_or_create(db, account.id).await.map_err(topcoat::Error::from)?;
+        
+    Err(see_other("/offers").into())
 }

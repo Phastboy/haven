@@ -1,7 +1,7 @@
 #![allow(unused_variables)]
 use topcoat::{
     context::Cx,
-    router::error::redirect,
+    router::error::see_other,
     view::view,
     Result as TopcoatResult,
 };
@@ -71,5 +71,5 @@ pub async fn create_offer(
     let db = crate::cx_helpers::db(cx);
     let offer = haven_db::offers::create(db, user.id, &create_req, form.0.idempotency_key).await.map_err(topcoat::Error::from)?;
     
-    Err(redirect(format!("/offers/{}", offer.id)).into())
+    Err(see_other(format!("/offers/{}", offer.id)).into())
 }

@@ -1,7 +1,7 @@
 #![allow(unused_variables)]
 use topcoat::{
     context::Cx,
-    router::error::redirect,
+    router::error::see_other,
     Result as TopcoatResult,
 };
 
@@ -16,5 +16,5 @@ pub async fn delete_offer(cx: &Cx) -> TopcoatResult<()> {
     let db = crate::cx_helpers::db(cx);
     haven_db::offers::delete(db, offer_id).await.map_err(topcoat::Error::from)?;
     
-    Err(redirect("/offers").into())
+    Err(see_other("/offers").into())
 }
