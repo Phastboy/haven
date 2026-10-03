@@ -4,5 +4,12 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros"] }
-topcoat = "0.9.0"
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time", "sync"] }
+topcoat = { version = "0.9.0", features = ["router", "view", "discover", "session", "mail", "cookie", "mail-smtp"] }
+haven-domain = { path = "../haven-domain" }
+haven-db = { path = "../haven-db" }
+uuid = { workspace = true, features = ["v4", "serde"] }
+chrono = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+sqlx = { workspace = true }
+http = "1.1"
