@@ -121,7 +121,7 @@ fn base64url_encode(bytes: &[u8]) -> String {
     use std::fmt::Write;
     // Simple base64url without padding using the standard alphabet mapping.
     const CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
-    let mut out = String::with_capacity((bytes.len() * 4 + 2) / 3);
+    let mut out = String::with_capacity((bytes.len() * 4).div_ceil(3));
     let mut i = 0;
     while i + 2 < bytes.len() {
         let b0 = bytes[i] as usize;
