@@ -11,7 +11,7 @@ pub async fn find_by_token_hash(
         r#"
         SELECT id, account_id, token_hash, expires_at, created_at, ip_address, user_agent
         FROM session
-        WHERE token_hash = $1
+        WHERE token_hash = $1 AND expires_at > now()
         "#,
         hash_str
     )
