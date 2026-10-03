@@ -1,4 +1,4 @@
-#![allow(unused_variables)]
+
 pub mod new;
 pub mod id;
 

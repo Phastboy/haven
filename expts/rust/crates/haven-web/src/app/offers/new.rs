@@ -1,4 +1,4 @@
-#![allow(unused_variables)]
+
 use topcoat::{
     context::Cx,
     router::error::see_other,
@@ -8,7 +8,7 @@ use topcoat::{
 
 #[topcoat::router::page]
 pub async fn new_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
-    let user = crate::cx_helpers::require_auth(cx).await?;
+    let _ = crate::cx_helpers::require_auth(cx).await?;
     let idempotency_key = uuid::Uuid::new_v4().to_string();
     Ok(view! {
         <div class="new-offer">

@@ -1,4 +1,4 @@
-#![allow(unused_variables)]
+
 pub mod edit;
 pub mod delete;
 
@@ -8,7 +8,7 @@ use topcoat::{
     Result as TopcoatResult,
 };
 
-use topcoat::router::error::bad_request;
+
 topcoat::router::path_param!(id: uuid::Uuid, error = bad_request);
 
 #[topcoat::router::page]

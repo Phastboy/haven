@@ -6,7 +6,7 @@ use std::env;
 use topcoat::{
     cookie::RouterBuilderCookieExt,
     mail::{FileTransport, RouterBuilderMailExt},
-    router::{RouterBuilderDiscoverExt, module_router},
+    router::RouterBuilderDiscoverExt,
     session::{RouterBuilderSessionExt, SessionConfig},
 };
 

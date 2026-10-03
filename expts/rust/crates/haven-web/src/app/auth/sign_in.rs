@@ -1,4 +1,4 @@
-#![allow(unused_variables)]
+
 use topcoat::{
     context::Cx,
     router::error::see_other,
@@ -7,6 +7,7 @@ use topcoat::{
 
 #[topcoat::router::page]
 pub async fn sign_in_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
+    let _ = cx;
     Ok(topcoat::view::view! {
         <div class="sign-in">
             <h1>"Sign In"</h1>
@@ -46,7 +47,7 @@ pub async fn submit_sign_in(
     let db = crate::cx_helpers::db(cx);
     
     // Find or create account
-    let account = match haven_db::accounts::find_by_email(db, &email).await.map_err(topcoat::Error::from)? {
+    let _ = match haven_db::accounts::find_by_email(db, &email).await.map_err(topcoat::Error::from)? {
         Some(acc) => acc,
         None => haven_db::accounts::create(db, &email).await.map_err(topcoat::Error::from)?,
     };
