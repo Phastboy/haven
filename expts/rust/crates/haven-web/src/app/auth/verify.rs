@@ -1,4 +1,4 @@
-#![allow(unused_variables)]
+
 use topcoat::{
     context::Cx,
     router::error::see_other,
