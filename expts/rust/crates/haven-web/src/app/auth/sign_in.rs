@@ -26,13 +26,45 @@ pub struct SignInForm {
 #[topcoat::router::page(POST)]
 pub async fn submit_sign_in(
     cx: &Cx,
-    _form: topcoat::router::content::Form<SignInForm>,
+    form: topcoat::router::content::Form<SignInForm>,
 ) -> TopcoatResult<()> {
+    let email_str = form.0.email;
     let ip = crate::cx_helpers::client_ip_key(cx);
     let limiter = crate::cx_helpers::sign_in_limiter(cx);
-    crate::cx_helpers::enforce(limiter, &ip)?;
     
-    // Simulate DB interaction for now
+    let ip_ok = limiter.try_acquire(&ip).is_ok();
+    let email_ok = limiter.try_acquire(&email_str).is_ok();
+    
+    if !ip_ok || !email_ok {
+        return Err(redirect("/auth/sent").into());
+    }
+    
+    let Ok(email) = haven_domain::account::Email::parse(&email_str) else {
+        return Err(redirect("/auth/sent").into());
+    };
+    
+    let db = crate::cx_helpers::db(cx);
+    
+    // Find or create account
+    let account = match haven_db::accounts::find_by_email(db, &email).await.map_err(topcoat::Error::from)? {
+        Some(acc) => acc,
+        None => haven_db::accounts::create(db, &email).await.map_err(topcoat::Error::from)?,
+    };
+    
+    let plaintext_token = haven_domain::session::PlaintextToken::generate().map_err(topcoat::Error::from)?;
+    let hashed_token = plaintext_token.to_hashed();
+    let expires_at = chrono::Utc::now() + chrono::Duration::minutes(15);
+    
+    haven_db::magic_links::create(db, &email, &hashed_token, expires_at).await.map_err(topcoat::Error::from)?;
+    
+    let mail = topcoat::mail::mail! {
+        from: "noreply@haven.localhost",
+        to: email.as_str(),
+        subject: "Sign in to Haven",
+        text: format!("Click here to sign in: http://localhost:8080/auth/verify?token={}", plaintext_token.as_str())
+    }.map_err(topcoat::Error::from)?;
+    
+    topcoat::mail::send(cx, mail).await?;
     
     Err(redirect("/auth/sent").into())
 }
