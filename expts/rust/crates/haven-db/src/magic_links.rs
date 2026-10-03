@@ -14,6 +14,13 @@ pub async fn create(
 ) -> sqlx::Result<MagicLink> {
     let email_str = email.as_str();
     let hash_str = token_hash.as_str();
+    
+    // Invalidate previous magic links for this email
+    sqlx::query!(
+        "UPDATE magic_link SET used_at = now() WHERE email = $1 AND used_at IS NULL",
+        email_str
+    ).execute(pool).await?;
+
     let row = sqlx::query!(
         r#"
         INSERT INTO magic_link (email, token_hash, expires_at)
@@ -46,7 +53,7 @@ pub async fn find_by_token_hash(
         r#"
         SELECT id, email, token_hash, expires_at, used_at, created_at
         FROM magic_link
-        WHERE token_hash = $1
+        WHERE token_hash = $1 AND expires_at > now()
         "#,
         hash_str
     )
