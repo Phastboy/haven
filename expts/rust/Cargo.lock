@@ -92,6 +92,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-trait"
+version = "0.1.92"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "82f6aeea286b8eb4dd3431a1be1b59d290ace00f5bfd8e2a159bc2a05e2c1667"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.6",
+]
+
+[[package]]
 name = "atoi"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -779,8 +790,16 @@ dependencies = [
 name = "haven-web"
 version = "0.1.0"
 dependencies = [
+ "chrono",
+ "dotenvy",
+ "haven-db",
+ "haven-domain",
+ "http",
+ "serde",
+ "sqlx",
  "tokio",
  "topcoat",
+ "uuid",
 ]
 
 [[package]]
@@ -1116,15 +1135,26 @@ version = "0.11.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f2c646bd5cc763b1087b15493e29a64be6147ba8f19342004fa52048ee596eae"
 dependencies = [
+ "async-trait",
+ "base64 0.23.1",
  "email-encoding",
  "email_address",
  "fastrand",
+ "futures-io",
+ "futures-util",
  "hostname",
  "httpdate",
  "idna",
  "mime",
  "nom",
+ "percent-encoding",
  "quoted_printable",
+ "rustls",
+ "socket2",
+ "tokio",
+ "tokio-rustls",
+ "url",
+ "webpki-roots 1.0.9",
 ]
 
 [[package]]
@@ -1604,6 +1634,7 @@ version = "0.23.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d41d731c7d2f962d1ccc364cec258de3c0e93b38c2fb3ba97ac74513048d634"
 dependencies = [
+ "log",
  "once_cell",
  "ring",
  "rustls-pki-types",
@@ -2194,6 +2225,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "tokio-rustls"
+version = "0.26.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c9cc2678c2cdd569ef8215e2afd7954ada2ae20b4fdd2c5fe6139a3b02d105db"
+dependencies = [
+ "rustls",
+ "tokio",
+]
+
+[[package]]
 name = "tokio-stream"
 version = "0.1.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2301,6 +2342,7 @@ dependencies = [
  "topcoat-icon",
  "topcoat-icon-macro",
  "topcoat-mail",
+ "topcoat-mail-macro",
  "topcoat-router",
  "topcoat-router-macro",
  "topcoat-runtime",
@@ -2473,6 +2515,31 @@ dependencies = [
  "topcoat-core",
  "topcoat-router",
  "topcoat-view",
+]
+
+[[package]]
+name = "topcoat-mail-grammar"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c835101c2b7193237447429dc4a1ead94ad4f8bacc5f0a72428e62fe2062db56"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.6",
+ "topcoat-core-grammar",
+ "topcoat-mail",
+ "topcoat-view-grammar",
+]
+
+[[package]]
+name = "topcoat-mail-macro"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "79e6b556b77d00f6697efad4ff9def4579cdff36427eb66aed5be8f099380bae"
+dependencies = [
+ "quote",
+ "syn 3.0.6",
+ "topcoat-mail-grammar",
 ]
 
 [[package]]

@@ -13,3 +13,4 @@ chrono = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 sqlx = { workspace = true }
 http = "1.1"
+dotenvy = "0.15"

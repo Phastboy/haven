@@ -12,6 +12,7 @@ use topcoat::{
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    dotenvy::dotenv().ok();
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
     let pool = PgPoolOptions::new()
@@ -19,7 +20,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .connect(&database_url)
         .await?;
 
-    let router = module_router!()
+    let router = app::router()
         .cookies()
         .sessions(SessionConfig::default())
         .app_context(pool)

@@ -7,7 +7,10 @@ use topcoat::{
 
 pub mod auth;
 pub mod offers;
-// pub mod _not_found;
+
+pub fn router() -> topcoat::router::RouterBuilder {
+    topcoat::router::module_router!()
+}
 
 #[topcoat::router::layer]
 pub async fn csp_layer(cx: &Cx, body: Body, next: Next<'_>) -> TopcoatResult<Response> {
