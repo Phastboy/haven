@@ -1,0 +1,5 @@
+[env]
+# Force SQLx into offline mode by default so that Cargo check/clippy builds never fail
+# when the database container is down or wiped. To update queries, you must run:
+# cargo sqlx prepare --workspace
+SQLX_OFFLINE = "true"
