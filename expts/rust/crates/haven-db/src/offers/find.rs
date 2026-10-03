@@ -1,5 +1,5 @@
-use haven_domain::offer::{CurrencyCode, Offer, OfferId, Price, UserId};
 use crate::DbPool;
+use haven_domain::offer::{CurrencyCode, Offer, OfferId, Price, UserId};
 
 pub async fn find_by_id(pool: &DbPool, offer_id: OfferId) -> sqlx::Result<Option<Offer>> {
     let o_id = offer_id.as_uuid();
@@ -26,7 +26,7 @@ pub async fn find_by_id(pool: &DbPool, offer_id: OfferId) -> sqlx::Result<Option
     }))
 }
 
-/// Retrieves all offers for a given user. 
+/// Retrieves all offers for a given user.
 /// NOTE: Currently unbounded `fetch_all`. In v0.1.x, users have a small bounded number of offers.
 /// As usage grows, an explicit limit/pagination strategy must be implemented per DB guardrails.
 pub async fn find_by_user(pool: &DbPool, user_id: UserId) -> sqlx::Result<Vec<Offer>> {
@@ -56,4 +56,38 @@ pub async fn find_by_user(pool: &DbPool, user_id: UserId) -> sqlx::Result<Vec<Of
             updated_at: r.updated_at,
         })
         .collect())
+}
+
+/// The offer only if it belongs to `user_id`. Ownership is part of the query,
+/// so callers cannot forget the check, and "missing" and "not yours" are the
+/// same `None`.
+pub async fn find_owned(
+    pool: &DbPool,
+    offer_id: OfferId,
+    user_id: UserId,
+) -> sqlx::Result<Option<Offer>> {
+    let o_id = offer_id.as_uuid();
+    let u_id = user_id.as_uuid();
+    let row = sqlx::query!(
+        r#"
+        SELECT id, user_id, title, description, price, currency, created_at, updated_at
+        FROM offer
+        WHERE id = $1 AND user_id = $2
+        "#,
+        o_id,
+        u_id
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(row.map(|r| Offer {
+        id: OfferId(r.id),
+        user_id: UserId(r.user_id),
+        title: r.title,
+        description: r.description,
+        price: r.price.map(|p| Price::new(p).unwrap()),
+        currency: r.currency.map(|c| CurrencyCode::parse(&c).unwrap()),
+        created_at: r.created_at,
+        updated_at: r.updated_at,
+    }))
 }
