@@ -15,17 +15,13 @@ impl PostgresOfferRepository {
         user_id: Uuid,
         title: String,
         description: Option<String>,
-        price: Option<i32>,
-        currency: Option<String>,
+        price: i32,
+        currency: &str,
         created_at: chrono::DateTime<chrono::Utc>,
         updated_at: chrono::DateTime<chrono::Utc>,
     ) -> Result<Offer, RepoError> {
-        let p = price
-            .map(|p| Price::new(p).map_err(|_| RepoError::Corrupt("Invalid price".into())))
-            .transpose()?;
-        let c = currency
-            .map(|c| CurrencyCode::parse(&c).map_err(|_| RepoError::Corrupt("Invalid currency".into())))
-            .transpose()?;
+        let p = Price::new(price).map_err(|_| RepoError::Corrupt("Invalid price".into()))?;
+        let c = CurrencyCode::parse(currency).map_err(|_| RepoError::Corrupt("Invalid currency".into()))?;
 
         Ok(Offer {
             id: OfferId(id),
@@ -69,7 +65,7 @@ impl OfferRepository for PostgresOfferRepository {
                 r.title,
                 r.description,
                 r.price,
-                r.currency,
+                &r.currency,
                 r.created_at,
                 r.updated_at,
             )
@@ -100,7 +96,7 @@ impl OfferRepository for PostgresOfferRepository {
                 r.title,
                 r.description,
                 r.price,
-                r.currency,
+                &r.currency,
                 r.created_at,
                 r.updated_at,
             )?);
@@ -115,8 +111,8 @@ impl OfferRepository for PostgresOfferRepository {
         create_offer: &CreateOffer,
     ) -> Result<Offer, RepoError> {
         let u_id = user_id.as_uuid();
-        let price_val = create_offer.price.map(|p| p.as_i32());
-        let currency_val = create_offer.currency.as_ref().map(CurrencyCode::as_str);
+        let price_val = create_offer.price.as_i32();
+        let currency_val = create_offer.currency.as_str();
         let k = key.0;
 
         let row = sqlx::query!(
@@ -144,7 +140,7 @@ impl OfferRepository for PostgresOfferRepository {
                 r.title,
                 r.description,
                 r.price,
-                r.currency,
+                &r.currency,
                 r.created_at,
                 r.updated_at,
             )
@@ -168,7 +164,7 @@ impl OfferRepository for PostgresOfferRepository {
                 r.title,
                 r.description,
                 r.price,
-                r.currency,
+                &r.currency,
                 r.created_at,
                 r.updated_at,
             )
@@ -189,7 +185,7 @@ impl OfferRepository for PostgresOfferRepository {
         let row = sqlx::query!(
             r#"
             UPDATE offer
-            SET title = $1, description = $2, price = $3, currency = $4, updated_at = NOW()
+            SET title = $1, description = $2, price = COALESCE($3, price), currency = COALESCE($4, currency), updated_at = NOW()
             WHERE id = $5 AND user_id = $6
             RETURNING id, user_id, title, description, price, currency, created_at, updated_at
             "#,
@@ -211,7 +207,7 @@ impl OfferRepository for PostgresOfferRepository {
                 r.title,
                 r.description,
                 r.price,
-                r.currency,
+                &r.currency,
                 r.created_at,
                 r.updated_at,
             ),
@@ -240,5 +236,82 @@ impl OfferRepository for PostgresOfferRepository {
         } else {
             Ok(())
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use haven_domain::offer::{CreateOffer, UpdateOffer, Price, CurrencyCode};
+    use haven_domain::ports::{IdempotencyKey, OfferRepository};
+    use sqlx::PgPool;
+    use uuid::Uuid;
+
+    #[tokio::test]
+    async fn test_update_patch_semantics() {
+        let db_url = std::env::var("DATABASE_URL")
+            .unwrap_or_else(|_| "postgres://user:password@127.0.0.1:5433/haven_rust".to_string());
+        
+        let pool = match PgPool::connect(&db_url).await {
+            Ok(p) => p,
+            Err(_) => return, // Skip if DB is not available
+        };
+
+        let repo = PostgresOfferRepository { pool: pool.clone() };
+
+        // 1. Create a dummy account and user
+        let account_id = Uuid::new_v4();
+        sqlx::query!("INSERT INTO account (id, email) VALUES ($1, $2)", account_id, format!("{}@example.com", account_id))
+            .execute(&pool).await.unwrap();
+
+        let user_id = UserId(Uuid::new_v4());
+        sqlx::query!("INSERT INTO \"user\" (id, account_id) VALUES ($1, $2)", user_id.as_uuid(), account_id)
+            .execute(&pool).await.unwrap();
+
+        // 2. Create an offer
+        let co = CreateOffer {
+            title: "Original Title".to_string(),
+            description: None,
+            price: Price::new(100).unwrap(),
+            currency: CurrencyCode::parse("USD").unwrap(),
+        };
+        let offer = repo.create(user_id, IdempotencyKey(Uuid::new_v4()), &co).await.unwrap();
+
+        assert_eq!(offer.price.as_i32(), 100);
+        assert_eq!(offer.currency.as_str(), "USD");
+
+        // 3. Update title, leave price and currency unchanged (None)
+        let uo1 = UpdateOffer {
+            title: "New Title".to_string(),
+            description: None,
+            price: None,
+            currency: None,
+        };
+        let offer1 = repo.update(offer.id, user_id, &uo1).await.unwrap();
+        assert_eq!(offer1.title, "New Title");
+        assert_eq!(offer1.price.as_i32(), 100); // Unchanged
+        assert_eq!(offer1.currency.as_str(), "USD"); // Unchanged
+
+        // 4. Update price only
+        let uo2 = UpdateOffer {
+            title: "New Title".to_string(),
+            description: None,
+            price: Some(Price::new(200).unwrap()),
+            currency: None,
+        };
+        let offer2 = repo.update(offer.id, user_id, &uo2).await.unwrap();
+        assert_eq!(offer2.price.as_i32(), 200);
+        assert_eq!(offer2.currency.as_str(), "USD"); // Unchanged
+
+        // 5. Update currency only
+        let uo3 = UpdateOffer {
+            title: "New Title".to_string(),
+            description: None,
+            price: None,
+            currency: Some(CurrencyCode::parse("NGN").unwrap()),
+        };
+        let offer3 = repo.update(offer.id, user_id, &uo3).await.unwrap();
+        assert_eq!(offer3.price.as_i32(), 200); // Unchanged
+        assert_eq!(offer3.currency.as_str(), "NGN");
     }
 }
