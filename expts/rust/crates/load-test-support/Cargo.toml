@@ -17,6 +17,7 @@ clap = { version = "4", features = ["derive"] }
 dotenvy = "0.15"
 chrono.workspace = true
 topcoat.workspace = true
+url = "2.5.8"
 
 [lints]
 workspace = true

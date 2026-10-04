@@ -21,7 +21,7 @@ The following automated/manual tests must pass:
 ## 3. Load Testing (Performance Contract)
 Using the open-model (arrival-rate) `k6` executor defined in `PERFORMANCE_CONTRACT.md`:
 - **Target**: 1,000 RPS (Steady State) for 5 minutes.
-- **Gate**: `p95 <= 200ms` and `p99 <= 500ms`.
+- **Gate**: `p95 <= 200ms` and `p99 <= 250ms`.
 - **Error Rate**: `0%`.
 - **Correctness**: `100%` checks passing.
 - **Metrics to observe**: DB pool wait time, memory (RSS) drift over the 5 minutes, and latency drift.
