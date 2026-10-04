@@ -29,7 +29,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let router = app::router()
         .cookies()
-        .sessions(SessionConfig::default())
+        .sessions(SessionConfig::builder()
+            .token_store(topcoat::session::cookie::CookieTokenStore::new().name("sid"))
+            .build()
+        )
         .app_context(state)
         .app_context(cx_helpers::SignInLimiter::new())
         .app_context(cx_helpers::CreateOfferLimiter::new())
