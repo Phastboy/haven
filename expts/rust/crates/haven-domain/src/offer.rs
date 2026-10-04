@@ -62,6 +62,8 @@ impl std::fmt::Display for UserId {
 pub struct Price(i32);
 
 impl Price {
+    pub const ZERO: Self = Self(0);
+
     pub fn new(value: i32) -> Result<Self, DomainError> {
         if value < 0 {
             return Err(DomainError::InvalidPrice);
@@ -79,6 +81,10 @@ impl Price {
 pub struct CurrencyCode(String);
 
 impl CurrencyCode {
+    pub fn default_code() -> Self {
+        Self("NGN".to_string())
+    }
+
     pub fn parse(raw: &str) -> Result<Self, DomainError> {
         let code = raw.trim().to_uppercase();
         if code.len() == 3 && code.chars().all(|c| c.is_ascii_uppercase()) {
@@ -100,20 +106,13 @@ pub struct Offer {
     pub user_id: UserId,
     pub title: String,
     pub description: Option<String>,
-    pub price: Option<Price>,
-    pub currency: Option<CurrencyCode>,
+    pub price: Price,
+    pub currency: CurrencyCode,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
 
 impl Offer {
-    /// Domain invariant: currency is required when price > 0.
-    pub fn validate_price_currency(&self) -> Result<(), DomainError> {
-        if self.price.is_some_and(|p| p.as_i32() > 0) && self.currency.is_none() {
-            return Err(DomainError::CurrencyRequiredWhenPriced);
-        }
-        Ok(())
-    }
 }
 
 /// Data needed to create a new offer.
@@ -121,8 +120,8 @@ impl Offer {
 pub struct CreateOffer {
     pub title: String,
     pub description: Option<String>,
-    pub price: Option<Price>,
-    pub currency: Option<CurrencyCode>,
+    pub price: Price,
+    pub currency: CurrencyCode,
 }
 
 impl CreateOffer {
@@ -132,9 +131,6 @@ impl CreateOffer {
         }
         if self.title.len() > 255 {
             return Err(DomainError::TitleTooLong);
-        }
-        if self.price.is_some_and(|p| p.as_i32() > 0) && self.currency.is_none() {
-            return Err(DomainError::CurrencyRequiredWhenPriced);
         }
         Ok(())
     }
@@ -156,9 +152,6 @@ impl UpdateOffer {
         }
         if self.title.len() > 255 {
             return Err(DomainError::TitleTooLong);
-        }
-        if self.price.is_some_and(|p| p.as_i32() > 0) && self.currency.is_none() {
-            return Err(DomainError::CurrencyRequiredWhenPriced);
         }
         Ok(())
     }
@@ -189,26 +182,12 @@ mod tests {
         let mut co = CreateOffer {
             title: "  ".into(),
             description: None,
-            price: None,
-            currency: None,
+            price: Price::ZERO,
+            currency: CurrencyCode::default_code(),
         };
         assert!(matches!(co.validate(), Err(DomainError::BlankTitle)));
 
         co.title = "A".repeat(256);
         assert!(matches!(co.validate(), Err(DomainError::TitleTooLong)));
-    }
-
-    #[test]
-    fn create_offer_validates_currency_when_priced() {
-        let co = CreateOffer {
-            title: "Valid".into(),
-            description: None,
-            price: Some(Price::new(100).unwrap()),
-            currency: None, // Missing!
-        };
-        assert!(matches!(
-            co.validate(),
-            Err(DomainError::CurrencyRequiredWhenPriced)
-        ));
     }
 }
