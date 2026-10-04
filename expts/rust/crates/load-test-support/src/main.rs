@@ -18,7 +18,6 @@ use haven_domain::ports::Registry;
 use serde::Serialize;
 use sqlx::postgres::PgPoolOptions;
 use std::env;
-use std::fs::File;
 use std::path::PathBuf;
 use std::sync::Arc;
 
