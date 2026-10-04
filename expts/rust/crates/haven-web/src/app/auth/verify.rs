@@ -41,16 +41,10 @@ pub async fn verify_submit(
     let registry = crate::cx_helpers::registry(cx);
     let map_err = crate::cx_helpers::map_repo_err;
     
-    let magic_link = registry.magic_links().find_by_token_hash(&hashed)
+    let magic_link = registry.magic_links().consume(&hashed)
         .await
         .map_err(map_err)?
         .ok_or_else(topcoat::router::error::unauthorized)?;
-        
-    if magic_link.used_at.is_some() || chrono::Utc::now() > magic_link.expires_at {
-        return Err(topcoat::router::error::unauthorized().into());
-    }
-    
-    registry.magic_links().mark_used(magic_link.id).await.map_err(map_err)?;
     
     let account = registry.accounts().find_by_email(&magic_link.email)
         .await

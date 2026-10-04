@@ -69,7 +69,7 @@ pub trait UserRepository: Send + Sync {
 
 #[async_trait]
 pub trait MagicLinkRepository: Send + Sync {
-    async fn find_by_token_hash(
+    async fn consume(
         &self,
         token_hash: &HashedToken,
     ) -> Result<Option<MagicLink>, RepoError>;
@@ -80,8 +80,6 @@ pub trait MagicLinkRepository: Send + Sync {
         token_hash: &HashedToken,
         expires_at: DateTime<Utc>,
     ) -> Result<MagicLink, RepoError>;
-    
-    async fn mark_used(&self, magic_link_id: Uuid) -> Result<(), RepoError>;
 }
 
 #[async_trait]

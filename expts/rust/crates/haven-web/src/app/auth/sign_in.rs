@@ -29,20 +29,20 @@ pub async fn submit_sign_in(
     cx: &Cx,
     form: topcoat::router::content::Form<SignInForm>,
 ) -> TopcoatResult<()> {
-    let email_str = form.0.email;
     let ip = crate::cx_helpers::client_ip_key(cx);
     let limiter = crate::cx_helpers::sign_in_limiter(cx);
     
-    let ip_ok = limiter.try_acquire(&ip).is_ok();
-    let email_ok = limiter.try_acquire(&email_str).is_ok();
-    
-    if !ip_ok || !email_ok {
+    if limiter.try_acquire(&ip).is_err() {
         return Err(see_other("/auth/sent").into());
     }
     
-    let Ok(email) = haven_domain::account::Email::parse(&email_str) else {
+    let Ok(email) = haven_domain::account::Email::parse(&form.0.email) else {
         return Err(see_other("/auth/sent").into());
     };
+    
+    if limiter.try_acquire(email.as_str()).is_err() {
+        return Err(see_other("/auth/sent").into());
+    }
     
     let registry = crate::cx_helpers::registry(cx);
     let map_err = crate::cx_helpers::map_repo_err;
@@ -59,11 +59,16 @@ pub async fn submit_sign_in(
     
     registry.magic_links().create(&email, &hashed_token, expires_at).await.map_err(map_err)?;
     
+    let mut public_base_url = std::env::var("PUBLIC_BASE_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
+    if !public_base_url.starts_with("http://localhost") && public_base_url.starts_with("http://") {
+        public_base_url = public_base_url.replacen("http://", "https://", 1);
+    }
+    
     let mail = topcoat::mail::mail! {
         from: "noreply@haven.localhost",
         to: email.as_str(),
         subject: "Sign in to Haven",
-        text: format!("Click here to sign in: http://localhost:8080/auth/verify?token={}", plaintext_token.as_str())
+        text: format!("Click here to sign in: {}/auth/verify?token={}", public_base_url, plaintext_token.as_str())
     }?;
     
     topcoat::mail::send(cx, mail).await?;

@@ -34,17 +34,18 @@ impl PostgresMagicLinkRepository {
 
 #[async_trait]
 impl MagicLinkRepository for PostgresMagicLinkRepository {
-    /// Finds an unused, unexpired magic link by its token hash.
-    async fn find_by_token_hash(
+    /// Consumes an unused, unexpired magic link by its token hash, returning it.
+    async fn consume(
         &self,
         token_hash: &HashedToken,
     ) -> Result<Option<MagicLink>, RepoError> {
         let hash_str = token_hash.as_str();
         let row = sqlx::query!(
             r#"
-            SELECT id, email, token_hash, expires_at, used_at, created_at
-            FROM magic_link
-            WHERE token_hash = $1 AND expires_at > now()
+            UPDATE magic_link
+            SET used_at = now()
+            WHERE token_hash = $1 AND used_at IS NULL AND expires_at > now()
+            RETURNING id, email, token_hash, expires_at, used_at, created_at
             "#,
             hash_str
         )
@@ -113,25 +114,4 @@ impl MagicLinkRepository for PostgresMagicLinkRepository {
         )
     }
 
-    /// Marks a magic link as used. Requires the link to be currently unused and not expired.
-    async fn mark_used(&self, magic_link_id: Uuid) -> Result<(), RepoError> {
-        let rows_affected = sqlx::query!(
-            r#"
-            UPDATE magic_link
-            SET used_at = now()
-            WHERE id = $1 AND used_at IS NULL AND expires_at > now()
-            "#,
-            magic_link_id
-        )
-        .execute(&self.pool)
-        .await
-        .map_err(crate::map_sqlx_err)?
-        .rows_affected();
-
-        if rows_affected == 0 {
-            Err(RepoError::NotFound)
-        } else {
-            Ok(())
-        }
-    }
 }
