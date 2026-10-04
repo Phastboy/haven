@@ -51,30 +51,30 @@ verify the round-trip: create → retrieve → confirm match.
 
 ## The Contract
 
-### 1. Normal — 500 RPS sustained
+### 1. Normal (Steady State) — 1,000 RPS sustained
 
-This is the most important tier. The API must maintain these characteristics
+This is the required baseline tier for Haven. The API must maintain these characteristics
 under continuous production-representative load.
 
 | Metric | Target |
 |--------|--------|
-| Sustained RPS | ≥ 500 |
-| p50 | < 10 ms |
-| p95 | < 50 ms |
-| p99 | < 100 ms |
-| Error rate | < 0.1% |
+| Sustained RPS | ≥ 1,000 |
+| p95 | ≤ 200 ms |
+| p99 | ≤ 500 ms |
+| Error rate | 0% |
 | Correctness (write round-trip) | 100% |
 
-### 2. High Load — 1,000 RPS sustained
+### 2. High Load (Stress) — ≥ 1,500 RPS
 
-The API must be able to sustain double normal load within acceptable latency degradation.
+We push beyond the steady state to discover where the contract fails.
+The goal here isn't necessarily to pass, but to observe saturation and degradation.
 
-| Metric | Target |
+| Metric | Goal |
 |--------|--------|
-| Sustained RPS | ≥ 1,000 |
-| p95 | < 100 ms |
-| p99 | < 250 ms |
-| Error rate | < 0.1% |
+| Sustained RPS | Observe point of failure |
+| p95 | Observe |
+| p99 | Observe |
+| Error rate | Observe |
 
 ### 3. Spike — 100 → 2,000 → 100 RPS
 
@@ -99,19 +99,20 @@ A sudden burst followed by a full recovery. Two separate criteria:
 A server that survives a spike but remains unhealthy afterward has not handled the spike.
 The recovery criterion is a hard gate.
 
-### 4. Soak — 500 RPS × 30 minutes
+### 4. Soak — 1,000 RPS × 30+ minutes
 
 Sustained load over time, designed to surface memory leaks, connection pool exhaustion,
 event loop drift, and any resource that accumulates without bound.
 
 | Metric | Target |
 |--------|--------|
-| Sustained RPS | ≥ 500 |
-| p95 | < 100 ms |
-| p99 | < 250 ms |
-| Error rate | < 0.1% |
+| Sustained RPS | ≥ 1,000 |
+| p95 | ≤ 200 ms |
+| p99 | ≤ 500 ms |
+| Error rate | 0% |
+| CPU | Leave meaningful headroom |
 | RSS growth | ≈ 0 (no unbounded growth) |
-| Latency drift | None — p95 must hold for the full 30 minutes |
+| Latency drift | None — p95 must hold for the full 30+ minutes |
 
 Memory target is not a fixed ceiling — it is a growth rate.
 A system that uses 300 MB and holds it is fine.

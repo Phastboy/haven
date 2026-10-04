@@ -20,9 +20,9 @@ The following automated/manual tests must pass:
 
 ## 3. Load Testing (Performance Contract)
 Using the open-model (arrival-rate) `k6` executor defined in `PERFORMANCE_CONTRACT.md`:
-- **Target**: 500 RPS (Normal Tier) to 1000 RPS (High Load Tier) for 5 minutes.
-- **Gate**: `p99 < 250ms`.
-- **Error Rate**: `< 0.1%`.
+- **Target**: 1,000 RPS (Steady State) for 5 minutes.
+- **Gate**: `p95 <= 200ms` and `p99 <= 500ms`.
+- **Error Rate**: `0%`.
 - **Correctness**: `100%` checks passing.
 - **Metrics to observe**: DB pool wait time, memory (RSS) drift over the 5 minutes, and latency drift.
 - **Stress Step**: Push beyond 1000 RPS to discover the actual breaking point (capacity ceiling) and record it.
