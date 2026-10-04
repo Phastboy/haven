@@ -16,7 +16,7 @@ export const options = {
             maxVUs: 5000, // Safe up to 10k max users
             stages: [
                 { duration: '30s', target: 826 }, // Warm-up to 1k RPS (826 iter/s)
-                { duration: '4m30s', target: 826 }, // Steady state plateau
+                { duration: '5m', target: 826 }, // Steady state plateau
             ]
         }
     },
@@ -25,6 +25,7 @@ export const options = {
         http_req_failed: ['rate==0.0'],
         dropped_iterations: ['count==0'],
         checks: ['rate==1.0'], // 100% correctness
+        http_reqs: ['rate>=950'], // Validate achieved RPS
         
         // Detailed latency gates by route tag
         'http_req_duration{name:GET /offers}': ['p(95)<=200', 'p(99)<=500'],
@@ -48,14 +49,14 @@ export default function () {
 
     if (rand < 0.50) {
         // 50%: GET /offers (list)
-        let res = http.get(`${BASE_URL}/offers`, { headers, tags: { name: 'GET /offers' } });
+        let res = http.get(`${BASE_URL}/offers`, { headers, redirects: 0, tags: { name: 'GET /offers' } });
         check(res, { 'list is 200': (r) => r.status === 200 });
     } else if (rand < 0.85) {
         // 35%: GET /offers/{id} (detail)
         // Pick a random offer from the seeded data for this user
         if (session.offer_ids && session.offer_ids.length > 0) {
             const offerId = session.offer_ids[Math.floor(Math.random() * session.offer_ids.length)];
-            let res = http.get(`${BASE_URL}/offers/${offerId}`, { headers, tags: { name: 'GET /offers/id' } });
+            let res = http.get(`${BASE_URL}/offers/${offerId}`, { headers, redirects: 0, tags: { name: 'GET /offers/id' } });
             check(res, { 'detail is 200': (r) => r.status === 200 });
         }
     } else if (rand < 0.97) {
@@ -71,6 +72,7 @@ export default function () {
         check(res, { 'new form is 200': (r) => r.status === 200 });
         
         const idempKey = extractIdempotencyKey(res.body);
+        check(idempKey, { 'extracted idempotency key': (k) => !!k });
         if (!idempKey) return; // Cannot continue if parsing fails
 
         const createPayload = {
@@ -89,6 +91,7 @@ export default function () {
 
         check(res, { 'create redirects': (r) => r.status === 303 });
         const location = res.headers['Location'];
+        check(location, { 'location header present': (l) => !!l });
         if (!location) return;
 
         // View detail (assert title and price)
