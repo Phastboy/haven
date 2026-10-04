@@ -59,8 +59,12 @@ impl OfferRepository for FakeOfferRepository {
         };
         offer.title.clone_from(&req.title);
         offer.description.clone_from(&req.description);
-        offer.price = req.price;
-        offer.currency.clone_from(&req.currency);
+        if let Some(p) = req.price {
+            offer.price = p;
+        }
+        if let Some(ref c) = req.currency {
+            offer.currency = c.clone();
+        }
         offer.updated_at = Utc::now();
         Ok(offer.clone())
     }
@@ -112,8 +116,8 @@ mod tests {
         let req = CreateOffer {
             title: "Test Offer".to_string(),
             description: None,
-            price: None,
-            currency: None,
+            price: crate::offer::Price::ZERO,
+            currency: crate::offer::CurrencyCode::default_code(),
         };
 
         // 20 concurrent creates
