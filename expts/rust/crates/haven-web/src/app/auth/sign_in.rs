@@ -60,8 +60,12 @@ pub async fn submit_sign_in(
     registry.magic_links().create(&email, &hashed_token, expires_at).await.map_err(map_err)?;
     
     let mut public_base_url = std::env::var("PUBLIC_BASE_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
-    if !public_base_url.starts_with("http://localhost") && public_base_url.starts_with("http://") {
-        public_base_url = public_base_url.replacen("http://", "https://", 1);
+    if let Ok(mut parsed_url) = url::Url::parse(&public_base_url) {
+        let host = parsed_url.host_str().unwrap_or("");
+        if parsed_url.scheme() == "http" && host != "localhost" && host != "127.0.0.1" && host != "[::1]" {
+            parsed_url.set_scheme("https").ok();
+            public_base_url = parsed_url.to_string().trim_end_matches('/').to_string();
+        }
     }
     
     let mail = topcoat::mail::mail! {

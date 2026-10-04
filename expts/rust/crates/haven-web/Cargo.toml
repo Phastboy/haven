@@ -14,6 +14,7 @@ serde = { workspace = true, features = ["derive"] }
 sqlx = { workspace = true }
 http = "1.5"
 dotenvy = "0.15"
+url = "2.5.8"
 
 [lints]
 workspace=true
