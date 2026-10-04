@@ -14,7 +14,9 @@ docker run -d \
   postgres:15
 
 echo "==> Waiting for postgres to be ready..."
-sleep 3
+until docker exec haven-postgres pg_isready -U user -d haven_rust; do
+  sleep 1
+done
 
 echo "==> Running migrations via sqlx..."
 cargo sqlx database setup

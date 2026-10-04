@@ -34,6 +34,7 @@ impl PostgresMagicLinkRepository {
 
 #[async_trait]
 impl MagicLinkRepository for PostgresMagicLinkRepository {
+    /// Finds an unused, unexpired magic link by its token hash.
     async fn find_by_token_hash(
         &self,
         token_hash: &HashedToken,
@@ -64,6 +65,8 @@ impl MagicLinkRepository for PostgresMagicLinkRepository {
         .transpose()
     }
 
+    /// Creates a new magic link and invalidates any previous unused links for the same email
+    /// within a single transaction.
     async fn create(
         &self,
         email: &Email,
@@ -73,12 +76,14 @@ impl MagicLinkRepository for PostgresMagicLinkRepository {
         let email_str = email.as_str();
         let hash_str = token_hash.as_str();
 
+        let mut tx = self.pool.begin().await.map_err(crate::map_sqlx_err)?;
+
         // Invalidate previous magic links for this email
         sqlx::query!(
             "UPDATE magic_link SET used_at = now() WHERE email = $1 AND used_at IS NULL",
             email_str
         )
-        .execute(&self.pool)
+        .execute(&mut *tx)
         .await
         .map_err(crate::map_sqlx_err)?;
 
@@ -92,9 +97,11 @@ impl MagicLinkRepository for PostgresMagicLinkRepository {
             hash_str,
             expires_at
         )
-        .fetch_one(&self.pool)
+        .fetch_one(&mut *tx)
         .await
         .map_err(crate::map_sqlx_err)?;
+
+        tx.commit().await.map_err(crate::map_sqlx_err)?;
 
         Self::map_row(
             row.id,
@@ -106,12 +113,13 @@ impl MagicLinkRepository for PostgresMagicLinkRepository {
         )
     }
 
+    /// Marks a magic link as used. Requires the link to be currently unused and not expired.
     async fn mark_used(&self, magic_link_id: Uuid) -> Result<(), RepoError> {
         let rows_affected = sqlx::query!(
             r#"
             UPDATE magic_link
             SET used_at = now()
-            WHERE id = $1
+            WHERE id = $1 AND used_at IS NULL AND expires_at > now()
             "#,
             magic_link_id
         )
