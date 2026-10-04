@@ -97,8 +97,7 @@ async fn session_user(cx: &Cx) -> Result<Option<User>, AuthLookupFailed> {
     let domain_hash = haven_domain::session::HashedToken::from_hex(token_hash_hex(&hash));
     registry(cx).users().find_by_session(&domain_hash)
         .await
-        .map_err(|e| {
-            eprintln!("Session DB lookup error: {:?}", e);
+        .map_err(|_e| {
             // Intentionally swallow error if user lookup fails
             AuthLookupFailed
         })
