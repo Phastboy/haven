@@ -9,7 +9,7 @@ use topcoat::{
 };
 
 
-topcoat::router::path_param!(id: uuid::Uuid, error = bad_request);
+topcoat::router::module_param!(id: uuid::Uuid, error = bad_request);
 
 #[topcoat::router::page]
 pub async fn view_offer(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
