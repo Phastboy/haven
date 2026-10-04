@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        INSERT INTO magic_link (email, token_hash, expires_at)\n        VALUES ($1, $2, $3)\n        RETURNING id, email, token_hash, expires_at, used_at, created_at\n        ",
+  "query": "\n            INSERT INTO magic_link (email, token_hash, expires_at)\n            VALUES ($1, $2, $3)\n            RETURNING id, email, token_hash, expires_at, used_at, created_at\n            ",
   "describe": {
     "columns": [
       {
@@ -86,5 +86,5 @@
       false
     ]
   },
-  "hash": "29d42d87efdd03dacc013391f7c0a69dcbe4fc785139a7d97d7f53c2198934ce"
+  "hash": "e5bb100d6b03c9764283fcfba5bafa117677264b8d495132f342a3d550a00faf"
 }

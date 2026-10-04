@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT id, email, email_verified, created_at, updated_at\n        FROM account\n        WHERE email = $1\n        ",
+  "query": "\n            SELECT id, email, token_hash, expires_at, used_at, created_at\n            FROM magic_link\n            WHERE token_hash = $1 AND expires_at > now()\n            ",
   "describe": {
     "columns": [
       {
@@ -9,7 +9,7 @@
         "type_info": "Uuid",
         "origin": {
           "Table": {
-            "table": "account",
+            "table": "magic_link",
             "name": "id"
           }
         }
@@ -20,41 +20,52 @@
         "type_info": "Text",
         "origin": {
           "Table": {
-            "table": "account",
+            "table": "magic_link",
             "name": "email"
           }
         }
       },
       {
         "ordinal": 2,
-        "name": "email_verified",
-        "type_info": "Bool",
+        "name": "token_hash",
+        "type_info": "Text",
         "origin": {
           "Table": {
-            "table": "account",
-            "name": "email_verified"
+            "table": "magic_link",
+            "name": "token_hash"
           }
         }
       },
       {
         "ordinal": 3,
-        "name": "created_at",
+        "name": "expires_at",
         "type_info": "Timestamptz",
         "origin": {
           "Table": {
-            "table": "account",
-            "name": "created_at"
+            "table": "magic_link",
+            "name": "expires_at"
           }
         }
       },
       {
         "ordinal": 4,
-        "name": "updated_at",
+        "name": "used_at",
         "type_info": "Timestamptz",
         "origin": {
           "Table": {
-            "table": "account",
-            "name": "updated_at"
+            "table": "magic_link",
+            "name": "used_at"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "magic_link",
+            "name": "created_at"
           }
         }
       }
@@ -69,8 +80,9 @@
       false,
       false,
       false,
+      true,
       false
     ]
   },
-  "hash": "4b05e9fbdb9ca12e1d026dd609ada70a8d11d6c1337235cd00bede0109be9965"
+  "hash": "6478fcab1f5073a9bd9e8baf246a845de0cb4932e38e81067d50c9417c905f15"
 }

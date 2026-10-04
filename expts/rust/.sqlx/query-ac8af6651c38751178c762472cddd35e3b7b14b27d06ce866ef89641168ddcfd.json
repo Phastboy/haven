@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT id, account_id, created_at, updated_at\n        FROM \"user\"\n        WHERE account_id = $1\n        ",
+  "query": "\n            SELECT id, account_id, created_at, updated_at\n            FROM \"user\"\n            WHERE account_id = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -60,5 +60,5 @@
       false
     ]
   },
-  "hash": "ea9e2dfd002d731a343f93865eca6d314369483f7a5de124a63b3eaeade10e94"
+  "hash": "ac8af6651c38751178c762472cddd35e3b7b14b27d06ce866ef89641168ddcfd"
 }

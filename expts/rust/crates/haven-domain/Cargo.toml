@@ -11,6 +11,11 @@ sha2 = { workspace = true }
 rand = { workspace = true }
 chrono = { workspace = true }
 hex = { workspace = true }
+async-trait = "0.1.92"
 
 [lints]
 workspace=true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
+futures = "0.3"

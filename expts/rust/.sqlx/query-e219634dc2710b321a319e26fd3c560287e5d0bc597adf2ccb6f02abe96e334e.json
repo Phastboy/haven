@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT id, account_id, token_hash, expires_at, created_at, ip_address, user_agent\n        FROM session\n        WHERE token_hash = $1 AND expires_at > now()\n        ",
+  "query": "\n            INSERT INTO session (account_id, token_hash, expires_at, ip_address, user_agent)\n            VALUES ($1, $2, $3, $4, $5)\n            RETURNING id, account_id, token_hash, expires_at, created_at, ip_address, user_agent\n            ",
   "describe": {
     "columns": [
       {
@@ -83,6 +83,10 @@
     ],
     "parameters": {
       "Left": [
+        "Uuid",
+        "Text",
+        "Timestamptz",
+        "Text",
         "Text"
       ]
     },
@@ -96,5 +100,5 @@
       true
     ]
   },
-  "hash": "3f54f1fb5fc67de3c8c34b4768837fed11d07c918db5a39eca9a330917f7bf36"
+  "hash": "e219634dc2710b321a319e26fd3c560287e5d0bc597adf2ccb6f02abe96e334e"
 }

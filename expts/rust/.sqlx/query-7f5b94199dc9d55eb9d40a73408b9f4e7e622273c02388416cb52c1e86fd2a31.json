@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT id, account_id, created_at, updated_at\n        FROM \"user\"\n        WHERE id = $1\n        ",
+  "query": "\n            INSERT INTO \"user\" (account_id)\n            VALUES ($1)\n            RETURNING id, account_id, created_at, updated_at\n            ",
   "describe": {
     "columns": [
       {
@@ -60,5 +60,5 @@
       false
     ]
   },
-  "hash": "767ca1ce49e8805fc7ae89cba7a1b7ae7ae2cd3b2ef1122cc95dd086b4662a33"
+  "hash": "7f5b94199dc9d55eb9d40a73408b9f4e7e622273c02388416cb52c1e86fd2a31"
 }
