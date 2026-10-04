@@ -1,6 +1,7 @@
 
 pub mod new;
 pub mod id;
+pub mod fields;
 
 use topcoat::{
     context::Cx,

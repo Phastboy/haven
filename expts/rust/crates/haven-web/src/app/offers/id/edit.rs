@@ -27,11 +27,11 @@ pub async fn edit_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View>
                 </label>
                 <label>
                     "Price (minor units):"
-                    <input type="number" name="price" value=(offer.price.map(|p| p.as_i32().to_string()).unwrap_or_default()) />
+                    <input type="number" name="price" value=(offer.price.as_i32().to_string()) />
                 </label>
                 <label>
                     "Currency:"
-                    <input type="text" name="currency" value=(offer.currency.map(|c| c.as_str().to_string()).unwrap_or_default()) />
+                    <input type="text" name="currency" value=(offer.currency.as_str().to_string()) />
                 </label>
                 <button type="submit">"Save"</button>
             </form>
@@ -43,7 +43,7 @@ pub async fn edit_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View>
 pub struct EditOfferForm {
     pub title: String,
     pub description: Option<String>,
-    pub price: Option<i32>,
+    pub price: Option<String>,
     pub currency: Option<String>,
 }
 
@@ -58,8 +58,7 @@ pub async fn update_offer(
     // Authorization check
     let _offer = crate::cx_helpers::owned_offer(cx, offer_id).await?;
     
-    let price = form.0.price.map(haven_domain::offer::Price::new).transpose().map_err(|_| bad_request("invalid price"))?;
-    let currency = form.0.currency.filter(|c| !c.is_empty()).map(|c| haven_domain::offer::CurrencyCode::parse(&c)).transpose().map_err(|_| bad_request("invalid currency"))?;
+    let (price, currency) = super::super::fields::parse_for_patch(form.0.price.as_deref(), form.0.currency.as_deref())?;
     
     let update_req = haven_domain::offer::UpdateOffer {
         title: form.0.title,

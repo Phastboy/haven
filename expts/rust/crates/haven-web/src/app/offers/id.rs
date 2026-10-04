@@ -20,6 +20,14 @@ pub async fn view_offer(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
         <div class="view-offer">
             <h1>(offer.title)</h1>
             <p>(offer.description.unwrap_or_default())</p>
+            <div class="meta">
+                "Price: " 
+                (if offer.price.as_i32() == 0 {
+                    "Free".to_string()
+                } else {
+                    format!("{} {}", offer.price.as_i32(), offer.currency.as_str())
+                })
+            </div>
             <a href=(format!("/offers/{}/edit", offer.id)) class="button">"Edit"</a>
             <form method="post" action=(format!("/offers/{}/delete", offer.id))>
                 <button type="submit" class="button">"Delete"</button>

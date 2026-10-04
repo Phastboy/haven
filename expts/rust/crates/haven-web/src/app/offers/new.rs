@@ -42,7 +42,7 @@ pub struct NewOfferForm {
     pub idempotency_key: uuid::Uuid,
     pub title: String,
     pub description: Option<String>,
-    pub price: Option<i32>,
+    pub price: Option<String>,
     pub currency: Option<String>,
 }
 
@@ -56,8 +56,7 @@ pub async fn create_offer(
     let limiter = crate::cx_helpers::create_offer_limiter(cx);
     crate::cx_helpers::enforce(limiter, &user.id.to_string())?;
 
-    let price = form.0.price.map(haven_domain::offer::Price::new).transpose().map_err(|_| topcoat::router::error::bad_request("invalid price"))?;
-    let currency = form.0.currency.filter(|c| !c.is_empty()).map(|c| haven_domain::offer::CurrencyCode::parse(&c)).transpose().map_err(|_| topcoat::router::error::bad_request("invalid currency"))?;
+    let (price, currency) = super::fields::parse_for_create(form.0.price.as_deref(), form.0.currency.as_deref())?;
     
     let create_req = haven_domain::offer::CreateOffer {
         title: form.0.title,
