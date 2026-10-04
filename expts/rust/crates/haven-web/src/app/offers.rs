@@ -11,9 +11,7 @@ use topcoat::{
 #[topcoat::router::page]
 pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
     let user = crate::cx_helpers::require_auth(cx).await?;
-    let db = crate::cx_helpers::db(cx);
-    
-    let offers = haven_db::offers::find_by_user(db, user.id).await.map_err(topcoat::Error::from)?;
+    let offers = crate::cx_helpers::registry(cx).offers().find_by_user(user.id).await.map_err(crate::cx_helpers::map_repo_err)?;
     
     Ok(view! {
         <div class="offers">

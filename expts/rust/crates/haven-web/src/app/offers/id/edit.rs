@@ -70,8 +70,8 @@ pub async fn update_offer(
     
     update_req.validate().map_err(|_| bad_request("invalid offer data"))?;
     
-    let db = crate::cx_helpers::db(cx);
-    haven_db::offers::update(db, offer_id, &update_req).await.map_err(topcoat::Error::from)?;
+    let user = crate::cx_helpers::require_auth(cx).await?;
+    crate::cx_helpers::registry(cx).offers().update(offer_id, user.id, &update_req).await.map_err(crate::cx_helpers::map_repo_err)?;
     
-    Err(see_other(format!("/offers/{}", offer_id)).into())
+    Err(see_other(format!("/offers/{offer_id}")).into())
 }

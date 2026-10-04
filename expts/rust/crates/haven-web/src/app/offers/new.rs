@@ -68,8 +68,7 @@ pub async fn create_offer(
     
     create_req.validate().map_err(|_| topcoat::router::error::bad_request("invalid offer data"))?;
 
-    let db = crate::cx_helpers::db(cx);
-    let offer = haven_db::offers::create(db, user.id, &create_req, form.0.idempotency_key).await.map_err(topcoat::Error::from)?;
+    let offer = crate::cx_helpers::registry(cx).offers().create(user.id, haven_domain::ports::IdempotencyKey(form.0.idempotency_key), &create_req).await.map_err(crate::cx_helpers::map_repo_err)?;
     
     Err(see_other(format!("/offers/{}", offer.id)).into())
 }
