@@ -1,62 +1,102 @@
+use async_trait::async_trait;
 use haven_domain::account::{Account, AccountId, Email};
-
+use haven_domain::ports::{AccountRepository, RepoError};
 use crate::DbPool;
+use uuid::Uuid;
 
-pub async fn find_by_email(pool: &DbPool, email: &Email) -> sqlx::Result<Option<Account>> {
-    let email_str = email.as_str();
-    let row = sqlx::query!(
-        r#"
-        SELECT id, email, email_verified, created_at, updated_at
-        FROM account
-        WHERE email = $1
-        "#,
-        email_str
-    )
-    .fetch_optional(pool)
-    .await?;
-
-    Ok(row.map(|r| Account {
-        id: AccountId(r.id),
-        email: Email::parse(&r.email).expect("db email must be valid"),
-        email_verified: r.email_verified,
-        created_at: r.created_at,
-        updated_at: r.updated_at,
-    }))
+pub struct PostgresAccountRepository {
+    pub pool: DbPool,
 }
 
-pub async fn create(pool: &DbPool, email: &Email) -> sqlx::Result<Account> {
-    let email_str = email.as_str();
-    let row = sqlx::query!(
-        r#"
-        INSERT INTO account (email)
-        VALUES ($1)
-        RETURNING id, email, email_verified, created_at, updated_at
-        "#,
-        email_str
-    )
-    .fetch_one(pool)
-    .await?;
-
-    Ok(Account {
-        id: AccountId(row.id),
-        email: Email::parse(&row.email).expect("db email must be valid"),
-        email_verified: row.email_verified,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-    })
+impl PostgresAccountRepository {
+    fn map_row(
+        id: Uuid,
+        email: &str,
+        email_verified: bool,
+        created_at: chrono::DateTime<chrono::Utc>,
+        updated_at: chrono::DateTime<chrono::Utc>,
+    ) -> Result<Account, RepoError> {
+        let e = Email::parse(email).map_err(|_| RepoError::Corrupt("Invalid email in DB".into()))?;
+        Ok(Account {
+            id: AccountId(id),
+            email: e,
+            email_verified,
+            created_at,
+            updated_at,
+        })
+    }
 }
 
-pub async fn mark_verified(pool: &DbPool, account_id: AccountId) -> sqlx::Result<()> {
-    let id_uuid = account_id.as_uuid();
-    sqlx::query!(
-        r#"
-        UPDATE account
-        SET email_verified = true, updated_at = now()
-        WHERE id = $1
-        "#,
-        id_uuid
-    )
-    .execute(pool)
-    .await?;
-    Ok(())
+#[async_trait]
+impl AccountRepository for PostgresAccountRepository {
+    async fn find_by_email(&self, email: &Email) -> Result<Option<Account>, RepoError> {
+        let email_str = email.as_str();
+        let row = sqlx::query!(
+            r#"
+            SELECT id, email, email_verified, created_at, updated_at
+            FROM account
+            WHERE email = $1
+            "#,
+            email_str
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(crate::map_sqlx_err)?;
+
+        row.map(|r| {
+            Self::map_row(
+                r.id,
+                &r.email,
+                r.email_verified,
+                r.created_at,
+                r.updated_at,
+            )
+        })
+        .transpose()
+    }
+
+    async fn create(&self, email: &Email) -> Result<Account, RepoError> {
+        let email_str = email.as_str();
+        let row = sqlx::query!(
+            r#"
+            INSERT INTO account (email)
+            VALUES ($1)
+            RETURNING id, email, email_verified, created_at, updated_at
+            "#,
+            email_str
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(crate::map_sqlx_err)?;
+
+        Self::map_row(
+            row.id,
+            &row.email,
+            row.email_verified,
+            row.created_at,
+            row.updated_at,
+        )
+    }
+
+    async fn mark_verified(&self, account_id: AccountId) -> Result<(), RepoError> {
+        let id_uuid = account_id.as_uuid();
+        let rows_affected = sqlx::query!(
+            r#"
+            UPDATE account
+            SET email_verified = true, updated_at = now()
+            WHERE id = $1
+            "#,
+            id_uuid
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(crate::map_sqlx_err)?
+        .rows_affected();
+        
+        if rows_affected == 0 {
+            Err(RepoError::NotFound)
+        } else {
+            Ok(())
+        }
+    }
 }
