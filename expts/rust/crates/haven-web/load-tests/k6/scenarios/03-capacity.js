@@ -52,6 +52,7 @@ export default function () {
     } else {
         let res = http.get(`${BASE_URL}/offers/new`, { headers, tags: { name: 'GET /offers/new' } });
         const idempKey = extractIdempotencyKey(res.body);
+        check(idempKey, { 'extracted idempotency key': (k) => !!k });
         if (!idempKey) return;
 
         const createPayload = {
@@ -67,7 +68,10 @@ export default function () {
             tags: { name: 'POST /offers/new' }
         });
 
+        check(res, { 'create redirects': (r) => r.status === 303 });
+
         const location = res.headers['Location'];
+        check(location, { 'location header present': (l) => !!l });
         if (!location) return;
 
         res = http.get(`${BASE_URL}${location}`, { headers, tags: { name: 'GET /offers/id' } });
