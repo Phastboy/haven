@@ -4,7 +4,7 @@ crates/haven-web/load-tests/data/
 # Load testing
 crates/haven-web/load-tests/results/
 crates/haven-web/load-tests/data/
-test*
-*.html
-*.py
-*.txt
+crates/haven-web/load-tests/test*
+crates/haven-web/load-tests/*.html
+crates/haven-web/load-tests/*.py
+crates/haven-web/load-tests/*.txt
