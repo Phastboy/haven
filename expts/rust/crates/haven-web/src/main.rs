@@ -5,6 +5,7 @@ mod cx_helpers;
 
 use sqlx::postgres::PgPoolOptions;
 use std::env;
+use std::io::Write;
 use std::sync::Arc;
 use haven_db::PostgresRegistry;
 use topcoat::{
@@ -19,8 +20,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv().ok();
     let database_url = env::var("DATABASE_URL").map_err(|_| "DATABASE_URL must be set")?;
 
+    let pool_size: u32 = env::var("DB_POOL_SIZE")
+        .unwrap_or_else(|_| "20".to_string())
+        .parse()
+        .map_err(|_| "DB_POOL_SIZE must be a number")?;
+    
+    writeln!(std::io::stdout(), "Effective DB_POOL_SIZE: {pool_size}").unwrap_or(());
+
     let pool = PgPoolOptions::new()
-        .max_connections(20)
+        .max_connections(pool_size)
         .connect(&database_url)
         .await?;
 
