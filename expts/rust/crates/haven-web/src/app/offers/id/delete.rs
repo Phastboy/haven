@@ -13,8 +13,8 @@ pub async fn delete_offer(cx: &Cx) -> TopcoatResult<()> {
     // Authorization check
     let _offer = crate::cx_helpers::owned_offer(cx, offer_id).await?;
     
-    let db = crate::cx_helpers::db(cx);
-    haven_db::offers::delete(db, offer_id).await.map_err(topcoat::Error::from)?;
+    let user = crate::cx_helpers::require_auth(cx).await?;
+    crate::cx_helpers::registry(cx).offers().delete(offer_id, user.id).await.map_err(crate::cx_helpers::map_repo_err)?;
     
     Err(see_other("/offers").into())
 }

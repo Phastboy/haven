@@ -44,19 +44,20 @@ pub async fn submit_sign_in(
         return Err(see_other("/auth/sent").into());
     };
     
-    let db = crate::cx_helpers::db(cx);
+    let registry = crate::cx_helpers::registry(cx);
+    let map_err = crate::cx_helpers::map_repo_err;
     
     // Find or create account
-    let _ = match haven_db::accounts::find_by_email(db, &email).await.map_err(topcoat::Error::from)? {
+    let _ = match registry.accounts().find_by_email(&email).await.map_err(map_err)? {
         Some(acc) => acc,
-        None => haven_db::accounts::create(db, &email).await.map_err(topcoat::Error::from)?,
+        None => registry.accounts().create(&email).await.map_err(map_err)?,
     };
     
     let plaintext_token = haven_domain::session::PlaintextToken::generate().map_err(topcoat::Error::from)?;
     let hashed_token = plaintext_token.to_hashed();
-    let expires_at = chrono::Utc::now() + chrono::Duration::minutes(15);
+    let expires_at = chrono::Utc::now().checked_add_signed(chrono::Duration::minutes(15)).ok_or_else(|| topcoat::Error::msg("Time overflow"))?;
     
-    haven_db::magic_links::create(db, &email, &hashed_token, expires_at).await.map_err(topcoat::Error::from)?;
+    registry.magic_links().create(&email, &hashed_token, expires_at).await.map_err(map_err)?;
     
     let mail = topcoat::mail::mail! {
         from: "noreply@haven.localhost",
