@@ -30,7 +30,7 @@ struct Args {
     users: usize,
 
     /// Output JSON file for the session tokens
-    #[arg(short, long, default_value = "../../load-tests/data/sessions.json")]
+    #[arg(short, long, default_value = concat!(env!("CARGO_MANIFEST_DIR"), "/../haven-web/load-tests/data/sessions.json"))]
     output: PathBuf,
 }
 
@@ -47,8 +47,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    if !database_url.contains("localhost") && !database_url.contains("127.0.0.1") {
-        panic!("Safety check failed: DATABASE_URL must point to a local database for seeding tests.");
+    let parsed_url = url::Url::parse(&database_url).expect("DATABASE_URL must be a valid URL");
+    let host = parsed_url.host_str().expect("DATABASE_URL must have a host");
+    if host != "localhost" && host != "127.0.0.1" && host != "::1" {
+        panic!("Safety check failed: DATABASE_URL host must be exactly localhost, 127.0.0.1, or ::1 (got {host}).");
     }
 
     println!("Connecting to database...");
@@ -147,7 +149,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(parent) = args.output.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    let file = File::create(&args.output)?;
+    let mut options = std::fs::OpenOptions::new();
+    options.write(true).create(true).truncate(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
+    }
+    let file = options.open(&args.output)?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        file.set_permissions(std::fs::Permissions::from_mode(0o600))?;
+    }
     serde_json::to_writer_pretty(file, &sessions)?;
 
     println!("Done. Seeded {} sessions.", sessions.len());
