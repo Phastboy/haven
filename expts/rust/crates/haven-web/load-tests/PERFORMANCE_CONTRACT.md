@@ -159,17 +159,17 @@ Format: `date · git sha · pass/fail per tier`
 
 ---
 
-### Current Baseline
+### Historical JS Baseline
 
 **Date:** 2026-10-03
 **Branch:** `perf/load-test-optimizations`
 **Commit:** `d4b537a`
 **Executor model:** `ramping-arrival-rate` (Open Model)
 
-> ⚠️ The following measurements were taken with the old `ramping-vus` executor
-> at 50 VUs over 4 minutes. They do not directly represent RPS-contract compliance.
-> They are the baseline from which the contract suite will be built.
-> The upcoming tests MUST use the open model (`ramping-arrival-rate` or `constant-arrival-rate`) to prevent coordinated omission.
+> ⚠️ The following measurements were taken against the old Node.js implementation with the old `ramping-vus` executor
+> at 50 VUs over 4 minutes. They do not directly represent RPS-contract compliance for the Rust implementation.
+> They are the historical baseline from which the contract suite was built.
+> The upcoming Rust tests MUST use the open model (`ramping-arrival-rate` or `constant-arrival-rate`) to prevent coordinated omission.
 
 | Metric | Measured |
 |--------|----------|
@@ -190,8 +190,8 @@ Format: `date · git sha · pass/fail per tier`
 | p99 | 347 ms | 30 ms | 11.6× |
 | data_received / 4 min | 1.9 GB | 101 MB | 18.8× |
 
-**Fixes applied:**
-- DB indexes added: `Offer.userId`, `Order.requesterId`, `Order.offerId` (+ composite + `Session.expiresAt`)
+**Fixes applied (historical):**
+- DB indexes added: `offer(user_id)` (+ composite + `session(expires_at)`)
 - Connection pool: 10 → 20 (configurable via `DB_POOL_MAX`)
 - Pagination enforced at DB level: `LIMIT`/`OFFSET` on all list endpoints, max 100 rows
 
@@ -228,39 +228,39 @@ which psql
 
 ```bash
 # Smoke — always run first to confirm the API is up
-k6 run apps/api/load-tests/k6/scenarios/01-smoke.js
+k6 run crates/haven-web/load-tests/k6/scenarios/01-smoke.js
 
 # Normal contract (500 RPS, 5 min)
-k6 run apps/api/load-tests/k6/scenarios/02-normal.js
+k6 run crates/haven-web/load-tests/k6/scenarios/02-normal.js
 
 # High-load contract (1,000 RPS, 5 min)
-k6 run apps/api/load-tests/k6/scenarios/03-high-load.js
+k6 run crates/haven-web/load-tests/k6/scenarios/03-high-load.js
 
 # Spike + recovery
-k6 run apps/api/load-tests/k6/scenarios/04-spike.js
+k6 run crates/haven-web/load-tests/k6/scenarios/04-spike.js
 
 # Soak (500 RPS × 30 min) — start system monitor first
-./apps/api/load-tests/monitor/system-watch.sh &
-k6 run apps/api/load-tests/k6/scenarios/05-soak.js
+./crates/haven-web/load-tests/monitor/system-watch.sh &
+k6 run crates/haven-web/load-tests/k6/scenarios/05-soak.js
 
 # Capacity — find the ceiling
-./apps/api/load-tests/monitor/system-watch.sh &
-k6 run apps/api/load-tests/k6/scenarios/06-capacity.js
+./crates/haven-web/load-tests/monitor/system-watch.sh &
+k6 run crates/haven-web/load-tests/k6/scenarios/06-capacity.js
 ```
 
 ### Full suite
 
 ```bash
-./apps/api/load-tests/run-all.sh
+./crates/haven-web/load-tests/run-all.sh
 ```
 
-Results are written to `apps/api/load-tests/results/` (git-ignored).
+Results are written to `crates/haven-web/load-tests/results/` (git-ignored).
 
 ### Environment variables
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `BASE_URL` | `http://localhost:3000/api` | API base URL |
+| `BASE_URL` | `http://localhost:8080` | Application base URL |
 | `TOKEN` | (see `config.js`) | Auth token for authenticated scenarios |
 | `TEST_USER_ID` | (see `config.js`) | User ID for offer listing tests |
 | `TEST_OFFER_ID` | (see `config.js`) | Offer ID for single-offer GET tests |

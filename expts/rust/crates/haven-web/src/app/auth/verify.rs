@@ -72,5 +72,5 @@ pub async fn verify_submit(
         registry.users().create(account.id).await.map_err(map_err)?;
     }
         
-    Err(see_other("/offers").into())
+    Err(see_other("/offers/new").into())
 }

@@ -16,5 +16,5 @@ pub async fn delete_offer(cx: &Cx) -> TopcoatResult<()> {
     let user = crate::cx_helpers::require_auth(cx).await?;
     crate::cx_helpers::registry(cx).offers().delete(offer_id, user.id).await.map_err(crate::cx_helpers::map_repo_err)?;
     
-    Err(see_other("/offers").into())
+    Err(see_other("/offers/new").into())
 }
