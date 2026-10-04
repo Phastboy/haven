@@ -19,5 +19,5 @@ To run the full suite:
 
 To run a specific scenario:
 ```bash
-SKIP_CAPACITY=1 SKIP_AUTHORIZATION=1 ./run-all.sh
+SKIP_STEADY_STATE=1 SKIP_CAPACITY=1 SKIP_AUTHORIZATION=1 ./run-all.sh
 ```

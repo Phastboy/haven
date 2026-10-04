@@ -27,18 +27,18 @@ banner() {
 }
 
 check_deps() {
-  local missing=0
-  for cmd in k6 lsof; do
-    if ! command -v "$cmd" &>/dev/null; then
-      echo "❌  Missing dependency: $cmd"
-      missing=1
-    fi
-  done
-  [[ $missing -eq 1 ]] && exit 1
-  echo "✅  All dependencies found (k6, lsof)"
+  if ! command -v k6 &>/dev/null; then
+    echo "❌  Missing dependency: k6"
+    exit 1
+  fi
+  echo "✅  Core dependency found (k6)"
 }
 
 check_api() {
+  if ! command -v curl &>/dev/null; then
+    echo "⚠️  Skipping API check (curl missing)"
+    return
+  fi
   echo -n "🔎  Checking API at ${BASE_URL}/ ... "
   local status
   status=$(curl -s -o /dev/null -w "%{http_code}" "${BASE_URL}/") || true
@@ -71,11 +71,17 @@ check_deps
 check_api
 
 # ─── Start system saturation monitor in background ───────────────────────────
-banner "System Monitor — starting"
-bash "${SCRIPT_DIR}/monitor/system-watch.sh" &
-MONITOR_PID=$!
-echo "  System monitor PID: ${MONITOR_PID}"
-sleep 2  # let it log an initial sample
+MONITOR_PID=""
+if command -v vmstat &>/dev/null; then
+  banner "System Monitor — starting"
+  bash "${SCRIPT_DIR}/monitor/system-watch.sh" &
+  MONITOR_PID=$!
+  trap 'echo ""; banner "Stopping system monitor"; kill "$MONITOR_PID" 2>/dev/null || true; wait "$MONITOR_PID" 2>/dev/null || true' EXIT
+  echo "  System monitor PID: ${MONITOR_PID}"
+  sleep 2  # let it log an initial sample
+else
+  echo "⚠️  Skipping System Monitor (vmstat missing)"
+fi
 
 # ─── Scenarios ────────────────────────────────────────────────────────────────
 [[ "${SKIP_SMOKE:-0}" != "1" ]]       && run_k6 "01-smoke.js"       "01-smoke"
@@ -83,10 +89,7 @@ sleep 2  # let it log an initial sample
 [[ "${SKIP_CAPACITY:-0}" != "1" ]]    && run_k6 "03-capacity.js"    "03-capacity"
 [[ "${SKIP_AUTHORIZATION:-0}" != "1" ]] && run_k6 "04-authorization.js" "04-authorization"
 
-# ─── Stop system monitor ──────────────────────────────────────────────────────
-banner "Stopping system monitor"
-kill "$MONITOR_PID" 2>/dev/null || true
-wait "$MONITOR_PID" 2>/dev/null || true
+# ─── Stop system monitor (handled by EXIT trap) ─────────────────────────────
 
 # ─── Final summary ────────────────────────────────────────────────────────────
 banner "ALL DONE — Results in ${RESULTS_DIR}/"
@@ -100,8 +103,12 @@ ls -1 "${RESULTS_DIR}"/system-saturation-*.csv 2>/dev/null | tail -1 | sed 's/^/
 
 echo ""
 echo "  Quick RPS snapshot (k6 — http_reqs):"
-for f in "${RESULTS_DIR}"/k6-*-"${TIMESTAMP}".json; do
-  name=$(basename "$f" .json | sed "s/-${TIMESTAMP}//")
-  jq -r '"    \(input_filename): http_reqs=\(.metrics.http_reqs.values.rate | round // "n/a") rps, p95=\(.metrics.http_req_duration.values["p(95)"] | round // "n/a")ms"' \
-    "$f" 2>/dev/null | sed "s|${RESULTS_DIR}/||" || true
-done
+if command -v jq &>/dev/null; then
+  for f in "${RESULTS_DIR}"/k6-*-"${TIMESTAMP}".json; do
+    name=$(basename "$f" .json | sed "s/-${TIMESTAMP}//")
+    jq -r '"    \(input_filename): http_reqs=\(.metrics.http_reqs.values.rate | round // "n/a") rps, p95=\(.metrics.http_req_duration.values["p(95)"] | round // "n/a")ms"' \
+      "$f" 2>/dev/null | sed "s|${RESULTS_DIR}/||" || true
+  done
+else
+  echo "    (jq not installed, skipping snapshot parsing)"
+fi
