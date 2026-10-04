@@ -33,8 +33,14 @@ impl std::fmt::Display for SessionId {
 /// A raw session (or magic link) token — the string that goes in the cookie / URL.
 /// MUST NOT be stored in the database. Store `HashedToken` instead.
 /// The type system prevents storing a `PlaintextToken` where `HashedToken` is expected.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone)]
 pub struct PlaintextToken(String);
+
+impl std::fmt::Debug for PlaintextToken {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("PlaintextToken([REDACTED])")
+    }
+}
 
 impl PlaintextToken {
     /// Generate a cryptographically random 32-byte token, base64url-encoded (no padding).
@@ -62,7 +68,7 @@ impl PlaintextToken {
 
 impl std::fmt::Display for PlaintextToken {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.0)
+        f.write_str("[REDACTED]")
     }
 }
 

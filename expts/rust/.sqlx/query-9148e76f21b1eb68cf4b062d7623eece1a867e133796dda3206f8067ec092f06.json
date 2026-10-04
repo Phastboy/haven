@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE magic_link\n            SET used_at = now()\n            WHERE id = $1 AND used_at IS NULL AND expires_at > now()\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "9148e76f21b1eb68cf4b062d7623eece1a867e133796dda3206f8067ec092f06"
+}
