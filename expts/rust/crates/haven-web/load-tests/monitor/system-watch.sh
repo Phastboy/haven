@@ -18,16 +18,17 @@ while true; do
   ts=$(date +%s)
   
   # CPU & Mem from vmstat (skipping headers)
-  vm_line=$(vmstat -SM 1 2 | tail -1 | tr -s ' ')
+  vm_line=$(vmstat -SM 1 2 | tail -1)
+  read -r -a vm_fields <<< "$vm_line"
   
-  mem_free=$(echo "$vm_line" | cut -d' ' -f5)
-  mem_buff=$(echo "$vm_line" | cut -d' ' -f6)
-  mem_cache=$(echo "$vm_line" | cut -d' ' -f7)
+  mem_free="${vm_fields[3]:-0}"
+  mem_buff="${vm_fields[4]:-0}"
+  mem_cache="${vm_fields[5]:-0}"
   
-  cpu_usr=$(echo "$vm_line" | cut -d' ' -f14)
-  cpu_sys=$(echo "$vm_line" | cut -d' ' -f15)
-  cpu_idl=$(echo "$vm_line" | cut -d' ' -f16)
-  cpu_iow=$(echo "$vm_line" | cut -d' ' -f17)
+  cpu_usr="${vm_fields[12]:-0}"
+  cpu_sys="${vm_fields[13]:-0}"
+  cpu_idl="${vm_fields[14]:-0}"
+  cpu_iow="${vm_fields[15]:-0}"
 
   # Network state (Linux specific, fallback to 0 if not available)
   if command -v ss &>/dev/null; then

@@ -1,5 +1,5 @@
 import http from 'k6/http';
-import { check } from 'k6';
+import { check, fail } from 'k6';
 import { getSession, getHeaders, extractIdempotencyKey } from '../lib/lib.js';
 
 export const options = {
@@ -18,13 +18,15 @@ export default function () {
     const userA = getSession(1, 1);
     const userB = getSession(2, 1);
 
+    check(userA.user_id !== userB.user_id, { 'users are distinct': (v) => v });
+    if (userA.user_id === userB.user_id) fail("Not enough seeded users for distinct roles");
+
     const headersA = getHeaders(userA.session_token);
     const headersB = getHeaders(userB.session_token);
 
-    // Pick an offer from User B's seeded list
+    check(userB, { 'User B has offers': (u) => u.offer_ids && u.offer_ids.length > 0 });
     if (!userB.offer_ids || userB.offer_ids.length === 0) {
-        console.error("User B has no seeded offers to test authorization against.");
-        return;
+        fail("User B has no seeded offers to test authorization against.");
     }
     const offerIdB = userB.offer_ids[0];
     const locationB = `/offers/${offerIdB}`;
@@ -74,34 +76,32 @@ export default function () {
     // 4. Assert replayed idempotency_key creates one offer, not two
     res = http.get(`${BASE_URL}/offers/new`, { headers: headersA });
     const idempKey = extractIdempotencyKey(res.body);
-    if (idempKey) {
-        const createPayload = {
-            title: `Idempotency Test`,
-            price: '500',
-            currency: 'NGN',
-            idempotency_key: idempKey
-        };
+    
+    check(idempKey, { 'extracted idempotency key': (k) => !!k });
+    if (!idempKey) fail("Missing idempotency key in /offers/new response");
 
-        const postArgs = {
-            headers: Object.assign({}, headersA, { 'Content-Type': 'application/x-www-form-urlencoded' }),
-            redirects: 0
-        };
+    const createPayload = {
+        title: `Idempotency Test`,
+        price: '500',
+        currency: 'NGN',
+        idempotency_key: idempKey
+    };
 
-        // Fire two requests with same key concurrently
-        const responses = http.batch([
-            ['POST', `${BASE_URL}/offers/new`, createPayload, postArgs],
-            ['POST', `${BASE_URL}/offers/new`, createPayload, postArgs]
-        ]);
+    const postArgs = {
+        headers: Object.assign({}, headersA, { 'Content-Type': 'application/x-www-form-urlencoded' }),
+        redirects: 0
+    };
 
-        // One should succeed (303), the other should fail or gracefully handle it (often 409, 303 to same URL, or rate limited)
-        // Let's assert that at least one request didn't result in a new creation (we'd check the DB, but realistically we expect one 303 and one 4xx/5xx or same 303)
-        // Depending on idempotency implementation, it might return the same Location header, or an error.
-        // We'll just verify the response status combination.
-        const statuses = responses.map(r => r.status);
-        check(statuses, {
-            'Idempotency prevents duplicate creation': (s) => 
-                (s[0] === 303 && s[1] !== 303) || (s[1] === 303 && s[0] !== 303) || 
-                (s[0] === 303 && s[1] === 303 && responses[0].headers['Location'] === responses[1].headers['Location'])
-        });
-    }
+    // Fire two requests with same key concurrently
+    const responses = http.batch([
+        ['POST', `${BASE_URL}/offers/new`, createPayload, postArgs],
+        ['POST', `${BASE_URL}/offers/new`, createPayload, postArgs]
+    ]);
+
+    const statuses = responses.map(r => r.status);
+    check(statuses, {
+        'Idempotency prevents duplicate creation': (s) => 
+            (s[0] === 303 && s[1] !== 303) || (s[1] === 303 && s[0] !== 303) || 
+            (s[0] === 303 && s[1] === 303 && responses[0].headers['Location'] === responses[1].headers['Location'])
+    });
 }
