@@ -1,1 +1,10 @@
 /target
+crates/haven-web/load-tests/data/
+
+# Load testing
+crates/haven-web/load-tests/results/
+crates/haven-web/load-tests/data/
+test*
+*.html
+*.py
+*.txt
