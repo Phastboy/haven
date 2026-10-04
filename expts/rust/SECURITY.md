@@ -35,6 +35,6 @@ Any changes to the codebase must conform to these rules.
 ## Idempotency
 
 1. **Idempotency Keys:** Endpoints that create resources (e.g. `POST /offers/new`) must require an idempotency key. This key should be minted when the form is requested and submitted via a hidden field.
-2. **Database Enforcement:** Enforce idempotency at the database level using `UNIQUE (owner_id, idempotency_key)` constraints and `ON CONFLICT DO NOTHING`.
+2. **Database Enforcement:** Enforce idempotency at the database level using `UNIQUE (user_id, idempotency_key)` constraints and `ON CONFLICT DO NOTHING`.
 3. **No Check-Then-Insert:** Rely on the database constraints to handle concurrency. Do not perform a `SELECT` check before an `INSERT` to ensure uniqueness.
-4. **Atomic Consumption:** Consuming single-use tokens must be atomic (e.g., `UPDATE magic_links SET consumed_at = NOW() WHERE token_hash = $1 AND consumed_at IS NULL RETURNING *`).
+4. **Atomic Consumption:** Consuming single-use tokens must be atomic (e.g., `UPDATE magic_link SET used_at = NOW() WHERE id = $1 AND used_at IS NULL RETURNING *`).
