@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT id, user_id, title, description, price, currency, created_at, updated_at\n        FROM offer\n        WHERE id = $1 AND user_id = $2\n        ",
+  "query": "\n            UPDATE offer\n            SET title = $1, description = $2, price = $3, currency = $4, updated_at = NOW()\n            WHERE id = $5 AND user_id = $6\n            RETURNING id, user_id, title, description, price, currency, created_at, updated_at\n            ",
   "describe": {
     "columns": [
       {
@@ -94,6 +94,10 @@
     ],
     "parameters": {
       "Left": [
+        "Varchar",
+        "Text",
+        "Int4",
+        "Bpchar",
         "Uuid",
         "Uuid"
       ]
@@ -109,5 +113,5 @@
       false
     ]
   },
-  "hash": "92ee6a9a1d34d644ee54d050c76bf5ccc4b0f444a284742546f5c38198b5390f"
+  "hash": "afac05f122b258b97f1e1248e3140c6ea2b70051902dfb36be00d10a12d91070"
 }

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT u.id, u.account_id, u.created_at, u.updated_at\n        FROM session s\n        JOIN \"user\" u ON u.account_id = s.account_id\n        WHERE s.token_hash = $1 AND s.expires_at > now()\n        ",
+  "query": "\n            INSERT INTO account (email)\n            VALUES ($1)\n            RETURNING id, email, email_verified, created_at, updated_at\n            ",
   "describe": {
     "columns": [
       {
@@ -9,40 +9,51 @@
         "type_info": "Uuid",
         "origin": {
           "Table": {
-            "table": "\"user\"",
+            "table": "account",
             "name": "id"
           }
         }
       },
       {
         "ordinal": 1,
-        "name": "account_id",
-        "type_info": "Uuid",
+        "name": "email",
+        "type_info": "Text",
         "origin": {
           "Table": {
-            "table": "\"user\"",
-            "name": "account_id"
+            "table": "account",
+            "name": "email"
           }
         }
       },
       {
         "ordinal": 2,
-        "name": "created_at",
-        "type_info": "Timestamptz",
+        "name": "email_verified",
+        "type_info": "Bool",
         "origin": {
           "Table": {
-            "table": "\"user\"",
-            "name": "created_at"
+            "table": "account",
+            "name": "email_verified"
           }
         }
       },
       {
         "ordinal": 3,
+        "name": "created_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "account",
+            "name": "created_at"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
         "name": "updated_at",
         "type_info": "Timestamptz",
         "origin": {
           "Table": {
-            "table": "\"user\"",
+            "table": "account",
             "name": "updated_at"
           }
         }
@@ -57,8 +68,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "33efa92ff8cb460c62cc7fa0e927a7b2eb7a7200996bdfa36913a7e218da506d"
+  "hash": "0ac16bda6366f62e3b5469e21f665717eac23e8d8f5dc1753b911e9e6ebc8494"
 }

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT id, user_id, title, description, price, currency, created_at, updated_at\n        FROM offer\n        WHERE user_id = $1\n        ORDER BY created_at DESC\n        ",
+  "query": "\n                SELECT id, user_id, title, description, price, currency, created_at, updated_at\n                FROM offer\n                WHERE user_id = $1 AND idempotency_key = $2\n                ",
   "describe": {
     "columns": [
       {
@@ -94,6 +94,7 @@
     ],
     "parameters": {
       "Left": [
+        "Uuid",
         "Uuid"
       ]
     },
@@ -108,5 +109,5 @@
       false
     ]
   },
-  "hash": "4b13f4af52f034e18987d0df072b86fb7be1d328ec0e23f2ab78050e6456091f"
+  "hash": "f6cd5fbd63020259223eab84b976f354649ba03189208080b221bc7127303d11"
 }
