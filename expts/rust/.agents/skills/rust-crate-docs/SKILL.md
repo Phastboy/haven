@@ -48,7 +48,10 @@ cargo tree -p <crate> --depth 0
 grep -A2 'name = "<crate>"' Cargo.lock
 
 # Enabled features for the crate in this build
-cargo tree -p <crate> -e features --depth 1
+cargo tree -p <crate> --format "{p} {f}" --depth 0
+
+# Trace why those features are enabled
+cargo tree --workspace -e features -i <crate>
 ```
 
 If several versions of the crate exist in the tree (`cargo tree -d`), work out which one the project crate actually depends on before reading anything.
@@ -171,7 +174,8 @@ Keep it to the file and line you actually read. If part of the answer is unverif
 
 ```sh
 cargo tree -p <crate> --depth 0                      # locked version
-cargo tree -p <crate> -e features --depth 1          # enabled features
+cargo tree -p <crate> --format "{p} {f}" --depth 0   # enabled features
+cargo tree --workspace -e features -i <crate>        # trace why features are enabled
 cargo tree -d                                        # duplicate versions
 cargo metadata --format-version 1 | jq -r '.packages[]|select(.name=="<crate>")|.manifest_path'
 cargo doc -p <crate> --no-deps                       # build rustdoc
