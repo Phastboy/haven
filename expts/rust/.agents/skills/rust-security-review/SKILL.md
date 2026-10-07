@@ -21,7 +21,7 @@ description: >-
 3. **Read the project's own rules first:** `ENGINEERING.md`, `SECURITY.md`, `PERFORMANCE_CONTRACT.md`. Findings that contradict them are higher severity. Do not claim a guarantee those files or the code do not support.
 4. **Review mode is read-only by default.** Report findings; change code only when asked. Never "fix" by weakening a check, adding `#[allow]`, or removing a test.
 5. **Every fix gets a regression test** where one is practical (a unit test, integration test, or a k6 authorization case). A fix without a test can silently regress.
-6. **If you cannot verify something, say so and stop.** An honest "unverified" is better than a confident guess.
+6. **If you cannot verify something, record it as unverified and continue.** Record the uncertainty and what is needed to verify it, then continue with independently verifiable checks rather than guessing or stopping the rest of the review. An honest "unverified" is better than a confident guess.
 
 ## How to run a review
 
