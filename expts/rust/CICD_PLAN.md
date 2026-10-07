@@ -216,7 +216,7 @@ Triggered on every PR and push affecting `expts/rust/**`.
 2. [x] **Application Endpoints**:
    - Add `GET /health` endpoint in `haven-web`.
    - Add `sqlx::migrate!("../../migrations").run(&pool).await?;` in `haven-web/src/main.rs`.
-3. [ ] **CI Workflows**:
+3. [x] **CI Workflows**:
    - Create `.github/workflows/haven-rust-ci.yml` (formatting, clippy, test with postgres service, doctest, doc check).
    - Create `expts/rust/deny.toml` and `.github/workflows/haven-rust-security.yml`.
 4. [ ] **Dockerization**:
