@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 CMD=${1:?start|stop}; DIR=${2:?results dir}
-SSH_OPTS=(-o BatchMode=yes -o ConnectTimeout=5 -o ControlMaster=auto -o ControlPath=/tmp/haven-%C -o ControlPersist=15m)
+SSH_CTL="${SSH_CTL:-/tmp/haven-%C}"
+SSH_OPTS=(-o BatchMode=yes -o ConnectTimeout=5 -o ControlMaster=auto -o ControlPath="$SSH_CTL" -o ControlPersist=15m)
 g() { ssh "${SSH_OPTS[@]}" root@10.10.0.2 "$@"; }
 
 case $CMD in
