@@ -1,10 +1,10 @@
+use crate::DbPool;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use haven_domain::account::AccountId;
 use haven_domain::ports::{RepoError, SessionRepository};
 use haven_domain::session::{HashedToken, Session, SessionId};
 use std::net::IpAddr;
-use crate::DbPool;
 use uuid::Uuid;
 
 pub struct PostgresSessionRepository {

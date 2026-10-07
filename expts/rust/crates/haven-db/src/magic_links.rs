@@ -1,10 +1,10 @@
+use crate::DbPool;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use haven_domain::account::Email;
 use haven_domain::magic_link::MagicLink;
 use haven_domain::ports::{MagicLinkRepository, RepoError};
 use haven_domain::session::HashedToken;
-use crate::DbPool;
 use uuid::Uuid;
 
 pub struct PostgresMagicLinkRepository {
@@ -35,10 +35,7 @@ impl PostgresMagicLinkRepository {
 #[async_trait]
 impl MagicLinkRepository for PostgresMagicLinkRepository {
     /// Consumes an unused, unexpired magic link by its token hash, returning it.
-    async fn consume(
-        &self,
-        token_hash: &HashedToken,
-    ) -> Result<Option<MagicLink>, RepoError> {
+    async fn consume(&self, token_hash: &HashedToken) -> Result<Option<MagicLink>, RepoError> {
         let hash_str = token_hash.as_str();
         let row = sqlx::query!(
             r#"
@@ -113,5 +110,4 @@ impl MagicLinkRepository for PostgresMagicLinkRepository {
             row.created_at,
         )
     }
-
 }

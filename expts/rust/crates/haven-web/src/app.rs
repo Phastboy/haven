@@ -1,8 +1,8 @@
 use topcoat::{
-    context::Cx,
-    router::{response::Response, Body, Next},
-    view::view,
     Result as TopcoatResult,
+    context::Cx,
+    router::{Body, Next, response::Response},
+    view::view,
 };
 
 pub mod auth;
@@ -17,7 +17,9 @@ pub async fn csp_layer(cx: &Cx, body: Body, next: Next<'_>) -> TopcoatResult<Res
     let headers = topcoat::router::response::response_headers(cx);
     headers.append(
         topcoat::router::header::HeaderName::from_static("content-security-policy"),
-        topcoat::router::header::HeaderValue::from_static("default-src 'self'; frame-ancestors 'none'; form-action 'self'"),
+        topcoat::router::header::HeaderValue::from_static(
+            "default-src 'self'; frame-ancestors 'none'; form-action 'self'",
+        ),
     );
     headers.append(
         topcoat::router::header::HeaderName::from_static("referrer-policy"),
@@ -27,7 +29,9 @@ pub async fn csp_layer(cx: &Cx, body: Body, next: Next<'_>) -> TopcoatResult<Res
 }
 
 #[topcoat::router::layout]
-pub async fn root_layout(slot: topcoat::router::Slot<'_>) -> TopcoatResult<impl topcoat::view::View> {
+pub async fn root_layout(
+    slot: topcoat::router::Slot<'_>,
+) -> TopcoatResult<impl topcoat::view::View> {
     Ok(view! {
         <html lang="en">
             <head>

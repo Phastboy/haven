@@ -13,7 +13,6 @@ use std::{
     time::{Duration, Instant},
 };
 
-
 use haven_domain::{
     offer::{Offer, OfferId},
     user::User,
@@ -95,7 +94,9 @@ async fn session_user(cx: &Cx) -> Result<Option<User>, AuthLookupFailed> {
     };
 
     let domain_hash = haven_domain::session::HashedToken::from_hex(token_hash_hex(&hash));
-    registry(cx).users().find_by_session(&domain_hash)
+    registry(cx)
+        .users()
+        .find_by_session(&domain_hash)
         .await
         .map_err(|_e| {
             // Intentionally swallow error if user lookup fails
@@ -127,7 +128,9 @@ pub async fn require_auth(cx: &Cx) -> TopcoatResult<User> {
 pub async fn owned_offer(cx: &Cx, id: OfferId) -> TopcoatResult<Offer> {
     let user = require_auth(cx).await?;
 
-    let offer = registry(cx).offers().find_owned(id, user.id)
+    let offer = registry(cx)
+        .offers()
+        .find_owned(id, user.id)
         .await
         .map_err(map_repo_err)?;
 
@@ -178,7 +181,10 @@ impl RateLimiter {
     /// by the number of recently active keys.
     pub fn try_acquire(&self, key: &str) -> Result<(), Duration> {
         let now = Instant::now();
-        let mut guard = self.state.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut guard = self
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let state = &mut *guard;
 
         if now.duration_since(state.last_sweep) >= SWEEP_INTERVAL {

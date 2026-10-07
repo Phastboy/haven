@@ -112,8 +112,7 @@ pub struct Offer {
     pub updated_at: DateTime<Utc>,
 }
 
-impl Offer {
-}
+impl Offer {}
 
 /// Data needed to create a new offer.
 #[derive(Debug, Clone)]

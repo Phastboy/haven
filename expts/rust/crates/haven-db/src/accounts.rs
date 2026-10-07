@@ -1,7 +1,7 @@
+use crate::DbPool;
 use async_trait::async_trait;
 use haven_domain::account::{Account, AccountId, Email};
 use haven_domain::ports::{AccountRepository, RepoError};
-use crate::DbPool;
 use uuid::Uuid;
 
 pub struct PostgresAccountRepository {
@@ -16,7 +16,8 @@ impl PostgresAccountRepository {
         created_at: chrono::DateTime<chrono::Utc>,
         updated_at: chrono::DateTime<chrono::Utc>,
     ) -> Result<Account, RepoError> {
-        let e = Email::parse(email).map_err(|_| RepoError::Corrupt("Invalid email in DB".into()))?;
+        let e =
+            Email::parse(email).map_err(|_| RepoError::Corrupt("Invalid email in DB".into()))?;
         Ok(Account {
             id: AccountId(id),
             email: e,
@@ -43,16 +44,8 @@ impl AccountRepository for PostgresAccountRepository {
         .await
         .map_err(crate::map_sqlx_err)?;
 
-        row.map(|r| {
-            Self::map_row(
-                r.id,
-                &r.email,
-                r.email_verified,
-                r.created_at,
-                r.updated_at,
-            )
-        })
-        .transpose()
+        row.map(|r| Self::map_row(r.id, &r.email, r.email_verified, r.created_at, r.updated_at))
+            .transpose()
     }
 
     async fn create(&self, email: &Email) -> Result<Account, RepoError> {
@@ -92,7 +85,7 @@ impl AccountRepository for PostgresAccountRepository {
         .await
         .map_err(crate::map_sqlx_err)?
         .rows_affected();
-        
+
         if rows_affected == 0 {
             Err(RepoError::NotFound)
         } else {

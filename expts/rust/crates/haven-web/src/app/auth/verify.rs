@@ -1,9 +1,4 @@
-
-use topcoat::{
-    context::Cx,
-    router::error::see_other,
-    Result as TopcoatResult,
-};
+use topcoat::{Result as TopcoatResult, context::Cx, router::error::see_other};
 
 #[derive(serde::Deserialize)]
 pub struct VerifyQuery {
@@ -40,37 +35,53 @@ pub async fn verify_submit(
     let hashed = haven_domain::session::hash_token(&raw_token);
     let registry = crate::cx_helpers::registry(cx);
     let map_err = crate::cx_helpers::map_repo_err;
-    
-    let magic_link = registry.magic_links().consume(&hashed)
+
+    let magic_link = registry
+        .magic_links()
+        .consume(&hashed)
         .await
         .map_err(map_err)?
         .ok_or_else(topcoat::router::error::unauthorized)?;
-    
-    let account = registry.accounts().find_by_email(&magic_link.email)
+
+    let account = registry
+        .accounts()
+        .find_by_email(&magic_link.email)
         .await
         .map_err(map_err)?
         .ok_or_else(topcoat::router::error::not_found)?;
-        
+
     let session = topcoat::session::start(cx).await?;
     let hash_hex = crate::cx_helpers::token_hash_hex(&session.token_hash);
     let hashed_token = haven_domain::session::HashedToken::from_hex(hash_hex);
     let expires_at = chrono::DateTime::<chrono::Utc>::from(session.expires_at);
-    
+
     let ip = topcoat::router::request::client_ip(cx).map(|ip| ip.to_string());
     let user_agent = topcoat::router::request::headers(cx)
         .get("user-agent")
         .and_then(|h| h.to_str().ok().map(std::string::ToString::to_string));
-    
+
     let ip_addr = ip.and_then(|s| s.parse::<std::net::IpAddr>().ok());
-    registry.sessions().create(account.id, &hashed_token, expires_at, ip_addr, user_agent.as_deref())
+    registry
+        .sessions()
+        .create(
+            account.id,
+            &hashed_token,
+            expires_at,
+            ip_addr,
+            user_agent.as_deref(),
+        )
         .await
         .map_err(map_err)?;
-        
+
     // Ensure the User record exists (created on first sign-in)
-    let user = registry.users().find_by_account(account.id).await.map_err(map_err)?;
+    let user = registry
+        .users()
+        .find_by_account(account.id)
+        .await
+        .map_err(map_err)?;
     if user.is_none() {
         registry.users().create(account.id).await.map_err(map_err)?;
     }
-        
+
     Err(see_other("/offers/new").into())
 }

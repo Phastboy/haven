@@ -1,10 +1,4 @@
-
-use topcoat::{
-    context::Cx,
-    router::error::see_other,
-    view::view,
-    Result as TopcoatResult,
-};
+use topcoat::{Result as TopcoatResult, context::Cx, router::error::see_other, view::view};
 
 #[topcoat::router::page]
 pub async fn new_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
@@ -52,22 +46,33 @@ pub async fn create_offer(
     form: topcoat::router::content::Form<NewOfferForm>,
 ) -> TopcoatResult<()> {
     let user = crate::cx_helpers::require_auth(cx).await?;
-    
+
     let limiter = crate::cx_helpers::create_offer_limiter(cx);
     crate::cx_helpers::enforce(limiter, &user.id.to_string())?;
 
-    let (price, currency) = super::fields::parse_for_create(form.0.price.as_deref(), form.0.currency.as_deref())?;
-    
+    let (price, currency) =
+        super::fields::parse_for_create(form.0.price.as_deref(), form.0.currency.as_deref())?;
+
     let create_req = haven_domain::offer::CreateOffer {
         title: form.0.title,
         description: form.0.description.filter(|s| !s.is_empty()),
         price,
         currency,
     };
-    
-    create_req.validate().map_err(|_| topcoat::router::error::bad_request("invalid offer data"))?;
 
-    let offer = crate::cx_helpers::registry(cx).offers().create(user.id, haven_domain::ports::IdempotencyKey(form.0.idempotency_key), &create_req).await.map_err(crate::cx_helpers::map_repo_err)?;
-    
+    create_req
+        .validate()
+        .map_err(|_| topcoat::router::error::bad_request("invalid offer data"))?;
+
+    let offer = crate::cx_helpers::registry(cx)
+        .offers()
+        .create(
+            user.id,
+            haven_domain::ports::IdempotencyKey(form.0.idempotency_key),
+            &create_req,
+        )
+        .await
+        .map_err(crate::cx_helpers::map_repo_err)?;
+
     Err(see_other(format!("/offers/{}", offer.id)).into())
 }

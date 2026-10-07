@@ -3,11 +3,11 @@
 mod app;
 mod cx_helpers;
 
+use haven_db::PostgresRegistry;
 use sqlx::postgres::PgPoolOptions;
 use std::env;
 use std::io::Write;
 use std::sync::Arc;
-use haven_db::PostgresRegistry;
 use topcoat::{
     cookie::RouterBuilderCookieExt,
     mail::{FileTransport, RouterBuilderMailExt},
@@ -28,7 +28,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if pool_size == 0 {
         return Err("DB_POOL_SIZE must be greater than zero".into());
     }
-    
+
     writeln!(std::io::stdout(), "Effective DB_POOL_SIZE: {pool_size}").unwrap_or(());
 
     let pool = PgPoolOptions::new()
@@ -41,9 +41,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let router = app::router()
         .cookies()
-        .sessions(SessionConfig::builder()
-            .token_store(topcoat::session::cookie::CookieTokenStore::new().name("sid"))
-            .build()
+        .sessions(
+            SessionConfig::builder()
+                .token_store(topcoat::session::cookie::CookieTokenStore::new().name("sid"))
+                .build(),
         )
         .app_context(state)
         .app_context(cx_helpers::SignInLimiter::new())

@@ -33,23 +33,23 @@ pub trait OfferRepository: Send + Sync {
         offer_id: OfferId,
         user_id: UserId,
     ) -> Result<Option<Offer>, RepoError>;
-    
+
     async fn find_by_user(&self, user_id: UserId) -> Result<Vec<Offer>, RepoError>;
-    
+
     async fn create(
         &self,
         user_id: UserId,
         key: IdempotencyKey,
         offer: &CreateOffer,
     ) -> Result<Offer, RepoError>;
-    
+
     async fn update(
         &self,
         offer_id: OfferId,
         user_id: UserId,
         offer: &UpdateOffer,
     ) -> Result<Offer, RepoError>;
-    
+
     async fn delete(&self, offer_id: OfferId, user_id: UserId) -> Result<(), RepoError>;
 }
 
@@ -69,11 +69,8 @@ pub trait UserRepository: Send + Sync {
 
 #[async_trait]
 pub trait MagicLinkRepository: Send + Sync {
-    async fn consume(
-        &self,
-        token_hash: &HashedToken,
-    ) -> Result<Option<MagicLink>, RepoError>;
-    
+    async fn consume(&self, token_hash: &HashedToken) -> Result<Option<MagicLink>, RepoError>;
+
     async fn create(
         &self,
         email: &Email,
@@ -88,7 +85,7 @@ pub trait SessionRepository: Send + Sync {
         &self,
         token_hash: &HashedToken,
     ) -> Result<Option<Session>, RepoError>;
-    
+
     async fn create(
         &self,
         account_id: AccountId,
@@ -97,7 +94,7 @@ pub trait SessionRepository: Send + Sync {
         ip_address: Option<IpAddr>,
         user_agent: Option<&str>,
     ) -> Result<Session, RepoError>;
-    
+
     async fn delete(&self, session_id: SessionId) -> Result<(), RepoError>;
 }
 
