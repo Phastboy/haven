@@ -41,15 +41,20 @@ struct SessionOutput {
 }
 
 #[tokio::main]
+#[allow(clippy::too_many_lines, reason = "orchestration harness")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
     let args = Args::parse();
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let parsed_url = url::Url::parse(&database_url).expect("DATABASE_URL must be a valid URL");
-    let host = parsed_url.host_str().expect("DATABASE_URL must have a host");
+    let host = parsed_url
+        .host_str()
+        .expect("DATABASE_URL must have a host");
     if host != "localhost" && host != "127.0.0.1" && host != "::1" {
-        panic!("Safety check failed: DATABASE_URL host must be exactly localhost, 127.0.0.1, or ::1 (got {host}).");
+        panic!(
+            "Safety check failed: DATABASE_URL host must be exactly localhost, 127.0.0.1, or ::1 (got {host})."
+        );
     }
 
     println!("Connecting to database...");
@@ -64,7 +69,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut sessions = Vec::with_capacity(args.users);
 
-    // We can do this in batches using futures unordered to be faster, but for 10k it's fast enough 
+    // We can do this in batches using futures unordered to be faster, but for 10k it's fast enough
     // to just chunk it. We'll use tasks.
     let mut handles = Vec::new();
 
@@ -80,23 +85,42 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let email_str = format!("load-test-user-{}@test.haven.com", uuid::Uuid::new_v4());
                 let email = Email::parse(&email_str).expect("valid email");
 
-                let account = registry.accounts().create(&email).await.expect("create account");
-                registry.accounts().mark_verified(account.id).await.expect("mark verified");
-                let user = registry.users().create(account.id).await.expect("create user");
+                let account = registry
+                    .accounts()
+                    .create(&email)
+                    .await
+                    .expect("create account");
+                registry
+                    .accounts()
+                    .mark_verified(account.id)
+                    .await
+                    .expect("mark verified");
+                let user = registry
+                    .users()
+                    .create(account.id)
+                    .await
+                    .expect("create user");
 
                 let (raw_token, hashed_token) = {
                     let pt = topcoat::session::Token::random();
                     let hash_bytes = pt.hash();
-                    
+
                     let mut hex_string = String::with_capacity(64);
                     for byte in hash_bytes.iter() {
                         use std::fmt::Write;
+                        #[allow(
+                            clippy::let_underscore_must_use,
+                            reason = "writing to in-memory String is infallible"
+                        )]
                         let _ = write!(hex_string, "{byte:02x}");
                     }
-                    
-                    (pt.encode(), haven_domain::session::HashedToken::from_hex(hex_string))
+
+                    (
+                        pt.encode(),
+                        haven_domain::session::HashedToken::from_hex(hex_string),
+                    )
                 };
-                
+
                 let expires_at = chrono::Utc::now() + chrono::Duration::try_days(7).unwrap();
                 let _session = registry
                     .sessions()
@@ -104,24 +128,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .await
                     .expect("create session");
 
-                // Seed offers to make the database realistically populated. 
+                // Seed offers to make the database realistically populated.
                 // Mostly 10 per user, but every 100th user gets 200 offers to test unpaginated tails.
                 let mut user_offer_ids = Vec::new();
                 let num_offers = if i % 100 == 0 { 200 } else { 10 };
-                
+
                 for j in 0..num_offers {
                     let create_req = haven_domain::offer::CreateOffer {
                         title: format!("Test Offer {j} from User {i}"),
-                        description: Some("This is a seeded offer to fill the database.".to_string()),
+                        description: Some(
+                            "This is a seeded offer to fill the database.".to_string(),
+                        ),
                         price: haven_domain::offer::Price::new(1000 + j).unwrap(),
                         currency: haven_domain::offer::CurrencyCode::parse("NGN").unwrap(),
                     };
                     let offer = registry
                         .offers()
-                        .create(user.id, haven_domain::ports::IdempotencyKey(uuid::Uuid::new_v4()), &create_req)
+                        .create(
+                            user.id,
+                            haven_domain::ports::IdempotencyKey(uuid::Uuid::new_v4()),
+                            &create_req,
+                        )
                         .await
                         .expect("create offer");
-                        
+
                     user_offer_ids.push(offer.id.to_string());
                 }
 

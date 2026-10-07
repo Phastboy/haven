@@ -1,6 +1,6 @@
 use haven_domain::offer::{CurrencyCode, Price};
-use topcoat::router::error::bad_request;
 use topcoat::Error as TopcoatError;
+use topcoat::router::error::bad_request;
 
 /// Parses an optional string into a `Price`.
 /// Rejects commas or decimals. Returns a validation error for invalid formats.
@@ -55,6 +55,7 @@ pub fn parse_for_patch(
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, reason = "test assertions")]
 mod tests {
     use super::*;
 
@@ -64,18 +65,18 @@ mod tests {
         assert_eq!(p.as_i32(), 0);
         assert_eq!(c.as_str(), "NGN");
 
-        let (p, c) = parse_for_create(Some("".into()), Some("  ".into())).unwrap();
+        let (p, c) = parse_for_create(Some(""), Some("  ")).unwrap();
         assert_eq!(p.as_i32(), 0);
         assert_eq!(c.as_str(), "NGN");
     }
 
     #[test]
     fn create_rejects_invalid() {
-        assert!(parse_for_create(Some("50,000".into()), None).is_err());
-        assert!(parse_for_create(Some("50.0".into()), None).is_err());
-        assert!(parse_for_create(Some("abc".into()), None).is_err());
-        assert!(parse_for_create(Some("-5".into()), None).is_err());
-        assert!(parse_for_create(None, Some("usd1".into())).is_err());
+        assert!(parse_for_create(Some("50,000"), None).is_err());
+        assert!(parse_for_create(Some("50.0"), None).is_err());
+        assert!(parse_for_create(Some("abc"), None).is_err());
+        assert!(parse_for_create(Some("-5"), None).is_err());
+        assert!(parse_for_create(None, Some("usd1")).is_err());
     }
 
     #[test]
@@ -84,14 +85,14 @@ mod tests {
         assert!(p.is_none());
         assert!(c.is_none());
 
-        let (p, c) = parse_for_patch(Some("".into()), Some("  ".into())).unwrap();
+        let (p, c) = parse_for_patch(Some(""), Some("  ")).unwrap();
         assert!(p.is_none());
         assert!(c.is_none());
     }
 
     #[test]
     fn patch_parses_values() {
-        let (p, c) = parse_for_patch(Some("100".into()), Some("usd".into())).unwrap();
+        let (p, c) = parse_for_patch(Some("100"), Some("usd")).unwrap();
         assert_eq!(p.unwrap().as_i32(), 100);
         assert_eq!(c.unwrap().as_str(), "USD");
     }

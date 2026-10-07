@@ -45,9 +45,7 @@ impl Email {
             return Err(DomainError::InvalidEmail("email must not be empty".into()));
         }
         if !normalised.contains('@') {
-            return Err(DomainError::InvalidEmail(
-                "email must contain '@'".into(),
-            ));
+            return Err(DomainError::InvalidEmail("email must contain '@'".into()));
         }
         // Split on '@'; local part and domain must both be non-empty.
         let mut parts = normalised.splitn(2, '@');
@@ -85,6 +83,7 @@ pub struct Account {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, reason = "test assertions")]
 mod tests {
     use super::*;
 

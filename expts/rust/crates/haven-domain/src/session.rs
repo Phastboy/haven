@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
-use crate::account::AccountId;
 use crate::DomainError;
+use crate::account::AccountId;
 
 /// Newtype for a session's UUID primary key.
 /// Cannot be confused with `AccountId` or `OfferId`.
@@ -176,6 +176,7 @@ fn base64url_encode(bytes: &[u8]) -> String {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, reason = "test assertions")]
 mod tests {
     use super::*;
 

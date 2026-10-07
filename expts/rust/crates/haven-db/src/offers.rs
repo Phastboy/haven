@@ -1,7 +1,7 @@
+use crate::DbPool;
 use async_trait::async_trait;
 use haven_domain::offer::{CreateOffer, CurrencyCode, Offer, OfferId, Price, UpdateOffer, UserId};
 use haven_domain::ports::{IdempotencyKey, OfferRepository, RepoError};
-use crate::DbPool;
 use uuid::Uuid;
 
 pub struct PostgresOfferRepository {
@@ -21,7 +21,8 @@ impl PostgresOfferRepository {
         updated_at: chrono::DateTime<chrono::Utc>,
     ) -> Result<Offer, RepoError> {
         let p = Price::new(price).map_err(|_| RepoError::Corrupt("Invalid price".into()))?;
-        let c = CurrencyCode::parse(currency).map_err(|_| RepoError::Corrupt("Invalid currency".into()))?;
+        let c = CurrencyCode::parse(currency)
+            .map_err(|_| RepoError::Corrupt("Invalid currency".into()))?;
 
         Ok(Offer {
             id: OfferId(id),
@@ -240,9 +241,14 @@ impl OfferRepository for PostgresOfferRepository {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::manual_let_else,
+    reason = "test assertions and optional local db connectivity"
+)]
 mod tests {
     use super::*;
-    use haven_domain::offer::{CreateOffer, UpdateOffer, Price, CurrencyCode};
+    use haven_domain::offer::{CreateOffer, CurrencyCode, Price, UpdateOffer};
     use haven_domain::ports::{IdempotencyKey, OfferRepository};
     use sqlx::PgPool;
     use uuid::Uuid;
@@ -251,7 +257,7 @@ mod tests {
     async fn test_update_patch_semantics() {
         let db_url = std::env::var("DATABASE_URL")
             .unwrap_or_else(|_| "postgres://user:password@127.0.0.1:5433/haven_rust".to_string());
-        
+
         let pool = match PgPool::connect(&db_url).await {
             Ok(p) => p,
             Err(_) => return, // Skip if DB is not available
@@ -261,12 +267,24 @@ mod tests {
 
         // 1. Create a dummy account and user
         let account_id = Uuid::new_v4();
-        sqlx::query!("INSERT INTO account (id, email) VALUES ($1, $2)", account_id, format!("{}@example.com", account_id))
-            .execute(&pool).await.unwrap();
+        sqlx::query!(
+            "INSERT INTO account (id, email) VALUES ($1, $2)",
+            account_id,
+            format!("{}@example.com", account_id)
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
 
         let user_id = UserId(Uuid::new_v4());
-        sqlx::query!("INSERT INTO \"user\" (id, account_id) VALUES ($1, $2)", user_id.as_uuid(), account_id)
-            .execute(&pool).await.unwrap();
+        sqlx::query!(
+            "INSERT INTO \"user\" (id, account_id) VALUES ($1, $2)",
+            user_id.as_uuid(),
+            account_id
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
 
         // 2. Create an offer
         let co = CreateOffer {
@@ -275,7 +293,10 @@ mod tests {
             price: Price::new(100).unwrap(),
             currency: CurrencyCode::parse("USD").unwrap(),
         };
-        let offer = repo.create(user_id, IdempotencyKey(Uuid::new_v4()), &co).await.unwrap();
+        let offer = repo
+            .create(user_id, IdempotencyKey(Uuid::new_v4()), &co)
+            .await
+            .unwrap();
 
         assert_eq!(offer.price.as_i32(), 100);
         assert_eq!(offer.currency.as_str(), "USD");
