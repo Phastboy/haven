@@ -11,8 +11,6 @@ pub enum DomainError {
     #[error("invalid currency code: must be exactly 3 uppercase ASCII letters")]
     InvalidCurrencyCode,
 
-
-
     #[error("title must not be blank")]
     BlankTitle,
 

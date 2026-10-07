@@ -1,8 +1,4 @@
-
-use topcoat::{
-    context::Cx,
-    Result as TopcoatResult,
-};
+use topcoat::{Result as TopcoatResult, context::Cx};
 
 #[topcoat::router::page]
 pub async fn sent_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {

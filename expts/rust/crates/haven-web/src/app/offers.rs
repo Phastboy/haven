@@ -1,19 +1,18 @@
-
-pub mod new;
-pub mod id;
 pub mod fields;
+pub mod id;
+pub mod new;
 
-use topcoat::{
-    context::Cx,
-    view::view,
-    Result as TopcoatResult,
-};
+use topcoat::{Result as TopcoatResult, context::Cx, view::view};
 
 #[topcoat::router::page]
 pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
     let user = crate::cx_helpers::require_auth(cx).await?;
-    let offers = crate::cx_helpers::registry(cx).offers().find_by_user(user.id).await.map_err(crate::cx_helpers::map_repo_err)?;
-    
+    let offers = crate::cx_helpers::registry(cx)
+        .offers()
+        .find_by_user(user.id)
+        .await
+        .map_err(crate::cx_helpers::map_repo_err)?;
+
     Ok(view! {
         <div class="offers">
             <h1>"Your Offers"</h1>

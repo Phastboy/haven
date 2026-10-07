@@ -1,10 +1,10 @@
+use crate::DbPool;
 use async_trait::async_trait;
 use haven_domain::account::AccountId;
+use haven_domain::offer::UserId;
 use haven_domain::ports::{RepoError, UserRepository};
 use haven_domain::session::HashedToken;
 use haven_domain::user::User;
-use haven_domain::offer::UserId;
-use crate::DbPool;
 use uuid::Uuid;
 
 pub struct PostgresUserRepository {
@@ -43,14 +43,7 @@ impl UserRepository for PostgresUserRepository {
         .await
         .map_err(crate::map_sqlx_err)?;
 
-        Ok(row.map(|r| {
-            Self::map_row(
-                r.id,
-                r.account_id,
-                r.created_at,
-                r.updated_at,
-            )
-        }))
+        Ok(row.map(|r| Self::map_row(r.id, r.account_id, r.created_at, r.updated_at)))
     }
 
     async fn create(&self, account_id: AccountId) -> Result<User, RepoError> {
@@ -90,13 +83,6 @@ impl UserRepository for PostgresUserRepository {
         .await
         .map_err(crate::map_sqlx_err)?;
 
-        Ok(row.map(|r| {
-            Self::map_row(
-                r.id,
-                r.account_id,
-                r.created_at,
-                r.updated_at,
-            )
-        }))
+        Ok(row.map(|r| Self::map_row(r.id, r.account_id, r.created_at, r.updated_at)))
     }
 }
