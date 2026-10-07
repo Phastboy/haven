@@ -6,6 +6,7 @@ use topcoat::{
 };
 
 pub mod auth;
+pub mod health;
 pub mod offers;
 
 pub fn router() -> topcoat::router::RouterBuilder {
