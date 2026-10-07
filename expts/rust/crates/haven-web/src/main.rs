@@ -36,6 +36,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .connect(&database_url)
         .await?;
 
+    sqlx::migrate!("../../migrations").run(&pool).await?;
+
     let registry = Arc::new(PostgresRegistry::new(&pool));
     let state = cx_helpers::AppState { registry };
 
