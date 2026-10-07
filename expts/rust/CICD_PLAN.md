@@ -219,7 +219,7 @@ Triggered on every PR and push affecting `expts/rust/**`.
 3. [x] **CI Workflows**:
    - Create `.github/workflows/haven-rust-ci.yml` (formatting, clippy, test with postgres service, doctest, doc check).
    - Create `expts/rust/deny.toml` and `.github/workflows/haven-rust-security.yml`.
-4. [ ] **Dockerization**:
+4. [x] **Dockerization**:
    - Create `expts/rust/Dockerfile` and `expts/rust/.dockerignore`.
    - Verify local container build with `SQLX_OFFLINE=true`.
 5. [ ] **Publish & Deploy**:
