@@ -1,0 +1,141 @@
+name: Haven Rust CD
+
+on:
+  pull_request:
+    paths:
+      - 'expts/rust/**'
+      - '.github/workflows/haven-rust-cd.yml'
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+    paths:
+      - 'expts/rust/**'
+      - '.github/workflows/haven-rust-cd.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-verify:
+    name: Build, Scan & Smoke Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: expts/rust
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: haven
+          POSTGRES_PASSWORD: haven_test_password
+          POSTGRES_DB: haven_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image locally
+        run: |
+          docker build -t haven-web:test .
+
+      - name: Run Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: haven-web:test
+          format: table
+          exit-code: 0
+          severity: CRITICAL,HIGH
+
+      - name: Run container smoke test
+        run: |
+          docker run -d --name haven-app \
+            --network host \
+            -e DATABASE_URL=postgres://haven:haven_test_password@127.0.0.1:5432/haven_test \
+            -e HOST=127.0.0.1 \
+            -e PORT=8000 \
+            haven-web:test
+
+          echo "Waiting for Haven Web to become healthy..."
+          for i in {1..30}; do
+            if curl -sf http://127.0.0.1:8000/health | grep -q "ok"; then
+              echo "Smoke test passed: GET /health responded with 200 OK!"
+              docker stop haven-app
+              exit 0
+            fi
+            sleep 1
+          done
+
+          echo "Error: Health check timed out!"
+          docker logs haven-app
+          exit 1
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        if: github.event_name != 'pull_request'
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/haven-rust
+          tags: |
+            type=sha,prefix=sha-,format=long
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=semver,pattern={{version}}
+
+      - name: Push Docker image to GHCR
+        if: github.event_name != 'pull_request'
+        run: |
+          for tag in ${{ steps.meta.outputs.tags }}; do
+            docker tag haven-web:test "$tag"
+            docker push "$tag"
+          done
+
+  deploy:
+    name: Deploy to Koyeb
+    needs: build-and-verify
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Install Koyeb CLI
+        run: |
+          curl -fsSL https://github.com/koyeb/koyeb-cli/releases/download/v5.12.0/koyeb-cli_5.12.0_linux_amd64.tar.gz | sudo tar -xz -C /usr/local/bin koyeb
+
+      - name: Deploy image to Koyeb
+        env:
+          KOYEB_TOKEN: ${{ secrets.KOYEB_TOKEN }}
+          KOYEB_APP: ${{ vars.KOYEB_APP || 'haven-rust' }}
+          KOYEB_SERVICE: ${{ vars.KOYEB_SERVICE || 'web' }}
+          IMAGE_TAG: ghcr.io/${{ github.repository_owner }}/haven-rust:sha-${{ github.sha }}
+        run: |
+          if [ -z "$KOYEB_TOKEN" ]; then
+            echo "Notice: KOYEB_TOKEN secret is not configured; skipping automatic deployment."
+            exit 0
+          fi
+          koyeb service update "${KOYEB_APP}/${KOYEB_SERVICE}" --image "${IMAGE_TAG}"
