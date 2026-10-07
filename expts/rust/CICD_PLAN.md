@@ -213,9 +213,9 @@ Triggered on every PR and push affecting `expts/rust/**`.
    - Create [`rust-toolchain.toml`](file:///home/tgenericx/dev/github.com/phastboy/haven/expts/rust/rust-toolchain.toml) pinning `1.99.0` with `clippy` and `rustfmt`.
    - Run `cargo fmt --all` across the workspace to clear existing formatting differences.
    - Adjust `#[cfg(test)]` modules in domain/db to allow `unwrap_used` in test suites so `--all-targets` clippy passes.
-2. [ ] **Application Endpoints**:
+2. [x] **Application Endpoints**:
    - Add `GET /health` endpoint in `haven-web`.
-   - Add `sqlx::migrate!("./migrations").run(&pool).await?;` in `haven-web/src/main.rs`.
+   - Add `sqlx::migrate!("../../migrations").run(&pool).await?;` in `haven-web/src/main.rs`.
 3. [ ] **CI Workflows**:
    - Create `.github/workflows/haven-rust-ci.yml` (formatting, clippy, test with postgres service, doctest, doc check).
    - Create `expts/rust/deny.toml` and `.github/workflows/haven-rust-security.yml`.
