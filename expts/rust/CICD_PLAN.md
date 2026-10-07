@@ -1,6 +1,6 @@
 # CI/CD Plan: Haven Rust (`expts/rust`)
 
-Status: **Finalized plan, pending implementation.**  
+Status: **Fully implemented.**  
 Location: `expts/rust/CICD_PLAN.md` (beside `ENGINEERING.md`).
 
 ---
@@ -222,5 +222,5 @@ Triggered on every PR and push affecting `expts/rust/**`.
 4. [x] **Dockerization**:
    - Create `expts/rust/Dockerfile` and `expts/rust/.dockerignore`.
    - Verify local container build with `SQLX_OFFLINE=true`.
-5. [ ] **Publish & Deploy**:
+5. [x] **Publish & Deploy**:
    - Create `.github/workflows/haven-rust-cd.yml` (build, scan, smoke test, GHCR push, Koyeb deployment).
