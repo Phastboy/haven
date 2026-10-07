@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - 'expts/rust/**'
-      - '.github/workflows/haven-rust-cd.yml'
+      - '.github/workflows/haven-rust-*'
   push:
     branches:
       - main
@@ -12,7 +12,7 @@ on:
       - 'v*'
     paths:
       - 'expts/rust/**'
-      - '.github/workflows/haven-rust-cd.yml'
+      - '.github/workflows/haven-rust-*'
   workflow_dispatch:
 
 concurrency:

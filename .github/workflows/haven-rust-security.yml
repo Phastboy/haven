@@ -4,13 +4,13 @@ on:
   pull_request:
     paths:
       - 'expts/rust/**'
-      - '.github/workflows/haven-rust-security.yml'
+      - '.github/workflows/haven-rust-*'
   push:
     branches:
       - main
     paths:
       - 'expts/rust/**'
-      - '.github/workflows/haven-rust-security.yml'
+      - '.github/workflows/haven-rust-*'
   schedule:
     # Run weekly every Monday at 04:00 UTC
     - cron: '0 4 * * 1'
