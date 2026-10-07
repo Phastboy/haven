@@ -1,0 +1,4 @@
+#!usr/bin/env bash
+
+./host-root.sh
+./dry-run.sh
