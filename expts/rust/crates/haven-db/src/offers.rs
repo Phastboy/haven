@@ -263,6 +263,8 @@ mod tests {
             Err(_) => return, // Skip if DB is not available
         };
 
+        sqlx::migrate!("../../migrations").run(&pool).await.unwrap();
+
         let repo = PostgresOfferRepository { pool: pool.clone() };
 
         // 1. Create a dummy account and user
