@@ -1,4 +1,6 @@
-#!usr/bin/env bash
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")"
 
-./host-root.sh
+sudo ./host-root.sh
 ./dry-run.sh

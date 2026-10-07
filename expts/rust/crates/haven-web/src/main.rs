@@ -24,6 +24,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap_or_else(|_| "20".to_string())
         .parse()
         .map_err(|_| "DB_POOL_SIZE must be a number")?;
+
+    if pool_size == 0 {
+        return Err("DB_POOL_SIZE must be greater than zero".into());
+    }
     
     writeln!(std::io::stdout(), "Effective DB_POOL_SIZE: {pool_size}").unwrap_or(());
 

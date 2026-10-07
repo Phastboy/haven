@@ -12,6 +12,7 @@ K6_CORE=2 # CPU for k6
 X=1       # Guest vCPU pinned core
 Y=0       # QEMU helper / host core
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
 SESSIONS_JSON="$SCRIPT_DIR/../data/sessions.json"
 K6_SCENARIOS="$SCRIPT_DIR/../k6/scenarios"
 WARM_UP_MAX=180        # seconds to wait for warm-up stability
@@ -20,6 +21,7 @@ WARM_UP_RATE_DIVISOR=5 # warm-up rate = RATE / 5
 
 # ── SSH helpers (multiplexed) ─────────────────────────────────────────────────
 SSH_CTL="/tmp/haven-ctl-$$"
+export SSH_CTL
 SSH_OPTS=(-o BatchMode=yes -o ConnectTimeout=5
   -o ControlMaster=auto -o ControlPath="$SSH_CTL"
   -o ControlPersist=15m)
