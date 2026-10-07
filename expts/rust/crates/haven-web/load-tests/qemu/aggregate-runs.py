@@ -22,7 +22,7 @@ def get_meta(run_dir):
     return meta
 
 def main():
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 3:
         print("Usage: aggregate-runs.py <results_base_dir> <label>")
         sys.exit(1)
         
