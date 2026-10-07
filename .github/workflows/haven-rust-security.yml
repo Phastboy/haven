@@ -34,4 +34,3 @@ jobs:
         uses: EmbarkStudios/cargo-deny-action@v2
         with:
           manifest-path: expts/rust/Cargo.toml
-          command-arguments: "--config expts/rust/deny.toml"
