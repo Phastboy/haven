@@ -1,5 +1,6 @@
 import http from "k6/http";
 import { check } from "k6";
+import exec from "k6/execution";
 import { getSession, extractIdempotencyKey, getHeaders } from "../lib/lib.js";
 
 // Workload mix:
@@ -31,6 +32,8 @@ const RATE = Number(__ENV.RATE || 50);
 if (!Number.isFinite(RATE) || RATE <= 0) {
   throw new Error(`RATE must be a positive number, got: ${__ENV.RATE}`);
 }
+
+const RAMP_DURATION_MS = 30 * 1000;
 
 export const options = {
   scenarios: {
@@ -71,21 +74,24 @@ export const options = {
     // ~124 HTTP requests/s. A fixed `rate>=950` threshold would
     // incorrectly fail that capacity point.
 
-    // Detailed latency gates by route tag.
-    "http_req_duration{name:GET /offers}": ["p(95)<=200", "p(99)<=500"],
-    "http_req_duration{name:GET /offers/id}": ["p(95)<=200", "p(99)<=500"],
-    "http_req_duration{name:GET /}": ["p(95)<=200", "p(99)<=500"],
-    "http_req_duration{name:GET /offers/new}": ["p(95)<=200", "p(99)<=500"],
-    "http_req_duration{name:POST /offers/new}": ["p(95)<=200", "p(99)<=500"],
-    "http_req_duration{name:GET /offers/id/edit}": ["p(95)<=200", "p(99)<=500"],
-    "http_req_duration{name:POST /offers/id/edit}": ["p(95)<=200", "p(99)<=500"],
-    "http_req_duration{name:POST /offers/id/delete}": ["p(95)<=200", "p(99)<=500"],
+    // Detailed latency gates by route tag for the 5-minute hold stage.
+    "http_req_duration{stage:hold,name:GET /offers}": ["p(95)<=200", "p(99)<=500"],
+    "http_req_duration{stage:hold,name:GET /offers/id}": ["p(95)<=200", "p(99)<=500"],
+    "http_req_duration{stage:hold,name:GET /}": ["p(95)<=200", "p(99)<=500"],
+    "http_req_duration{stage:hold,name:GET /offers/new}": ["p(95)<=200", "p(99)<=500"],
+    "http_req_duration{stage:hold,name:POST /offers/new}": ["p(95)<=200", "p(99)<=500"],
+    "http_req_duration{stage:hold,name:GET /offers/id/edit}": ["p(95)<=200", "p(99)<=500"],
+    "http_req_duration{stage:hold,name:POST /offers/id/edit}": ["p(95)<=200", "p(99)<=500"],
+    "http_req_duration{stage:hold,name:POST /offers/id/delete}": ["p(95)<=200", "p(99)<=500"],
   },
 };
 
 const BASE_URL = __ENV.BASE_URL || "http://127.0.0.1:3000";
 
 export default function () {
+  exec.vu.tags["stage"] =
+    exec.instance.currentTestRunDuration >= RAMP_DURATION_MS ? "hold" : "ramp";
+
   const session = getSession(__VU, __ITER);
   const headers = getHeaders(session.session_token);
 
