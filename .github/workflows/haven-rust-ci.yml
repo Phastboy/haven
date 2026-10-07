@@ -1,0 +1,83 @@
+name: Haven Rust CI
+
+on:
+  pull_request:
+    paths:
+      - 'expts/rust/**'
+      - '.github/workflows/haven-rust-ci.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'expts/rust/**'
+      - '.github/workflows/haven-rust-ci.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: haven-rust-ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Lint, Test & Document
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: expts/rust
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: haven
+          POSTGRES_PASSWORD: haven_password
+          POSTGRES_DB: haven
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      CARGO_TERM_COLOR: always
+      DATABASE_URL: postgres://haven:haven_password@localhost:5432/haven
+      SQLX_OFFLINE: "true"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.99.0"
+          components: rustfmt, clippy
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "expts/rust -> target"
+
+      - name: Check code formatting
+        run: cargo fmt --all --check
+
+      - name: Lint with Clippy (-D warnings)
+        run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
+
+      - name: Build workspace
+        run: cargo build --workspace --locked
+
+      - name: Run unit & integration tests
+        run: cargo test --workspace --locked
+
+      - name: Run doctests
+        run: cargo test --doc --workspace --locked
+
+      - name: Validate documentation (-D warnings)
+        run: RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --document-private-items
