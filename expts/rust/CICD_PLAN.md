@@ -209,7 +209,7 @@ Triggered on every PR and push affecting `expts/rust/**`.
 
 ## 5. Step-by-Step Implementation Roadmap
 
-1. [ ] **Workspace Prerequisites**:
+1. [x] **Workspace Prerequisites**:
    - Create [`rust-toolchain.toml`](file:///home/tgenericx/dev/github.com/phastboy/haven/expts/rust/rust-toolchain.toml) pinning `1.99.0` with `clippy` and `rustfmt`.
    - Run `cargo fmt --all` across the workspace to clear existing formatting differences.
    - Adjust `#[cfg(test)]` modules in domain/db to allow `unwrap_used` in test suites so `--all-targets` clippy passes.
