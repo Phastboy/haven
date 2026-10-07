@@ -1,0 +1,40 @@
+# Build artifacts
+target
+**/target
+
+# Massive 21GB QEMU VM disk image and load-test data
+crates/haven-web/load-tests
+**/load-tests
+
+# Version control and agent workspace
+.git
+.gitignore
+.agents
+scratch
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Documentation
+*.md
+**/*.md
+
+# Logs and runtime outputs
+*.log
+**/*.log
+
+# Scratch HTML and temporary scripts
+*.html
+bin
+
+# Tooling and Docker metadata
+Dockerfile
+.dockerignore
+deny.toml
+
+# Editor and OS junk
+**/*.swp
+**/*~
+.DS_Store
