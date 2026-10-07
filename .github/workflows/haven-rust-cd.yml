@@ -112,8 +112,10 @@ jobs:
 
       - name: Push Docker image to GHCR
         if: github.event_name != 'pull_request'
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
         run: |
-          for tag in ${{ steps.meta.outputs.tags }}; do
+          for tag in $TAGS; do
             docker tag haven-web:test "$tag"
             docker push "$tag"
           done
@@ -141,4 +143,5 @@ jobs:
             echo "Notice: KOYEB_TOKEN secret is not configured; skipping automatic deployment."
             exit 0
           fi
+          IMAGE_TAG=$(echo "$IMAGE_TAG" | tr '[:upper:]' '[:lower:]')
           koyeb service update "${KOYEB_APP}/${KOYEB_SERVICE}" --image "${IMAGE_TAG}"
