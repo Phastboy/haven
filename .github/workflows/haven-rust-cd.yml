@@ -135,7 +135,7 @@ jobs:
       - name: Deploy image to Koyeb
         env:
           KOYEB_TOKEN: ${{ secrets.KOYEB_TOKEN }}
-          KOYEB_APP: ${{ vars.KOYEB_APP || 'haven-rust' }}
+          KOYEB_APP: ${{ vars.KOYEB_APP || 'haven' }}
           KOYEB_SERVICE: ${{ vars.KOYEB_SERVICE || 'web' }}
           IMAGE_TAG: ghcr.io/${{ github.repository_owner }}/haven-rust:sha-${{ github.sha }}
         run: |
@@ -144,4 +144,4 @@ jobs:
             exit 0
           fi
           IMAGE_TAG=$(echo "$IMAGE_TAG" | tr '[:upper:]' '[:lower:]')
-          koyeb service update "${KOYEB_APP}/${KOYEB_SERVICE}" --image "${IMAGE_TAG}"
+          koyeb service update "${KOYEB_APP}/${KOYEB_SERVICE}" --docker "${IMAGE_TAG}"
