@@ -1,72 +1,82 @@
 ---
 name: rust-security-review
 description: >-
-  Audits Rust and Topcoat web code for security vulnerabilities, invariant
-  violations, authentication/session leaks, XSS, CSRF, account enumeration,
-  missing idempotency, or rate-limiting bypasses. Use when reviewing code
-  changes, writing security-sensitive handlers, auditing SQL queries or session
-  management, or verifying compliance with SECURITY.md.
+  Reviews and hardens Rust web code in this workspace (haven-domain, haven-db,
+  haven-web) for security and performance problems: N+1 queries, SQL injection,
+  broken authentication, SSRF, XSS, CSRF, IDOR, security misconfiguration,
+  vulnerable components, HSTS and CSP. Use this skill when asked to audit,
+  review, or harden code; when adding or changing routes, handlers, queries,
+  sessions, cookies, forms, views, outbound HTTP calls, response headers, or
+  dependencies; and before declaring a feature done if it touches user input or
+  authorization. Do not use it for general documentation or dependency API
+  lookup; use `rust-doc-authoring` and `rust-crate-docs` for those.
 ---
 
-# Rust Security Review Skill (`rust-security-review`)
+# Rust security and performance review
 
-This skill governs security audits and code reviews for the Haven Rust workspace, enforcing the mandatory guardrails established in [`SECURITY.md`](file:///home/tgenericx/dev/github.com/phastboy/haven/expts/rust/SECURITY.md).
+## Core rules
 
----
+1. **Evidence, not assumption.** Every finding must point to a file and line you actually read. Every "this is safe" claim must be backed by code or docs you read. Never say the framework "handles it" unless you verified that in the code or docs.
+2. **Framework behaviour is verified with `rust-crate-docs`.** Topcoat, SQLx and any other dependency may or may not escape output, protect against CSRF, set headers, or sign cookies. Look it up in the locked version's source and docs. If you cannot confirm it, report it as **unverified** and say what you checked.
+3. **Read the project's own rules first:** `ENGINEERING.md`, `SECURITY.md`, `PERFORMANCE_CONTRACT.md`. Findings that contradict them are higher severity. Do not claim a guarantee those files or the code do not support.
+4. **Review mode is read-only by default.** Report findings; change code only when asked. Never "fix" by weakening a check, adding `#[allow]`, or removing a test.
+5. **Every fix gets a regression test** where one is practical (a unit test, integration test, or a k6 authorization case). A fix without a test can silently regress.
+6. **If you cannot verify something, say so and stop.** An honest "unverified" is better than a confident guess.
 
-## 1. The Six Security Pillars
+## How to run a review
 
-Whenever authoring, editing, or reviewing code in `haven-domain`, `haven-db`, or `haven-web`, audit against these 6 pillars:
+1. Identify the scope: which crates, routes, queries, or dependencies changed or are in question.
+2. Map the **attack surface** in the scope: every place user input enters (path, query, form, header, cookie, body), every query, every outbound request, every response written.
+3. Load the reference file(s) for the topics that apply (table below). Load only what you need.
+4. Trace each input from entry to sink. Check each item in the relevant checklist against the actual code.
+5. Report using the format at the end.
 
-### A. Cross-Site Scripting (XSS)
-- **Topcoat Auto-Escaping**: All dynamic template values inside `view!` must be auto-escaped.
-- **Forbidden Unescaped Methods**: Any call to `_unescaped` is strictly forbidden unless accompanied by a written justification and exhaustive manual sanitization.
-- **CSP Headers**: Verify that the CSP layer (`Content-Security-Policy: default-src 'self'`) is attached to router pipelines.
-- **Safe Attribute URLs**: Dynamic `href` attributes must be relative or strictly validate `http:`/`https:` schemes (never allow `javascript:` execution).
-- **No Reflected Input**: Never reflect query parameters (e.g. `?token=`) or user errors directly into the DOM.
-- **Open Redirects**: Any `next` or return URL parameter must be strictly validated as a relative path starting with `/` (reject `//`, `https://`, etc.).
+## Which reference to load
 
-### B. Cross-Site Request Forgery (CSRF)
-- **OriginPolicy**: State-changing requests (`POST`, `PUT`, `DELETE`) must enforce Topcoat's `OriginPolicy`.
-- **Cookie Flags**: Session cookies must have `SameSite=Lax` (or `Strict`), `Secure`, `HttpOnly`, and `Path=/`.
-- **No State Change on GET**: Never perform mutations or token consumption on `GET`. (e.g. `GET /auth/verify` only renders a confirmation page; the actual consumption must be a `POST`).
+| Touching... | Read |
+|---|---|
+| SQL, repositories, `haven-db`, loops that fetch data, authorization of records | `references/data-access.md` (SQL injection, N+1, IDOR, other query performance) |
+| Login, sessions, cookies, forms, state-changing routes | `references/auth-and-sessions.md` (broken authentication, CSRF) |
+| Views, templates, user-generated content, response headers, TLS | `references/output-and-headers.md` (XSS, CSP, HSTS, misconfiguration) |
+| Outbound HTTP, URL/webhook/import features, `Cargo.toml`, CI, Docker | `references/outbound-and-dependencies.md` (SSRF, component vulnerabilities) |
 
-### C. Authentication & Anti-Enumeration
-- **No User Enumeration**: Responses for sign-in or magic link generation must be completely identical whether an email exists or not. Never reveal account existence.
-- **Anti-Probing 404s**: When accessing a resource that does not belong to the authenticated user, return `404 Not Found` (never `403 Forbidden`). Returning 403 leaks that the resource ID exists.
-- **Hashed Session Tokens**: Raw session tokens (`PlaintextToken`) live exclusively in client cookies. Only SHA-256 hashes (`HashedToken`) are stored in PostgreSQL.
+A full audit loads all four.
 
-### D. Rate Limiting & Abuse Prevention
-- **Sign-In Flow**: `POST /auth/sign-in` must be rate-limited by IP address and email cooldown to prevent mail-bombing.
-- **Write Operations**: `POST /offers/new` and other mutations must be bounded per session via a token bucket (e.g. burst limit with refill).
-- **Rate Limit Responses**: Rate-limit errors must not leak account existence.
-- **Magic Link Lifespan**: Magic links must expire quickly (10-15 minutes) and are strictly single-use. Minting a new magic link must invalidate previous unused links.
+## What belongs in tooling, not just in this skill
 
-### E. Idempotency & Database Concurrency
-- **Idempotency Keys**: Endpoints creating resources (e.g. `POST /offers/new`) require an idempotency key submitted from the form.
-- **Database-Level Enforcement**: Idempotency must be guaranteed via PostgreSQL `UNIQUE (user_id, idempotency_key)` and `ON CONFLICT DO NOTHING`.
-- **No Check-Then-Insert**: Never use `SELECT` followed by `INSERT` in application code. Rely on database uniqueness constraints.
-- **Atomic Token Consumption**: Single-use tokens must be consumed in a single atomic SQL statement (e.g. `UPDATE magic_link SET used_at = NOW() WHERE id = $1 AND used_at IS NULL RETURNING *`).
+This skill guides review. Anything that can be enforced mechanically should also be enforced in CI (see `CICD_PLAN.md`):
 
-### F. Rust Memory & Code Safety
-- **Deny Unsafe**: `unsafe_code = "deny"` is enforced at the workspace level.
-- **No Panic in Production**: `panic`, `unwrap()`, and `expect()` are denied by Clippy in production crates. Errors must be modeled using `DomainError` or `Result`.
+- `cargo clippy ... -D warnings`, with lints such as `clippy::unwrap_used`, `clippy::expect_used`, `clippy::indexing_slicing`.
+- `#![forbid(unsafe_code)]` in crates that do not need `unsafe`.
+- `cargo deny check` and Dependabot (advisories, licenses, duplicates).
+- Authorization and ownership tests (k6 `04` authorization script and integration tests).
+- Trivy scan on the built image.
 
----
+If a finding could be caught by one of these, recommend adding the check, not only fixing the instance.
 
-## 2. Audit Workflow
+## Severity
 
-1. **Grep for Risky Patterns**:
-   ```bash
-   rg "_unescaped" crates/
-   rg "javascript:" crates/
-   rg "redirect\(" crates/
-   rg "sqlx::query" crates/
-   ```
-2. **Verify Route Semantics**:
-   - Check that all `GET` handlers are side-effect free.
-   - Check that mutation routes check session authentication and tenancy (`user.id`).
-3. **Verify Error Responses**:
-   - Confirm that ownership mismatches return `404` not `403`.
-4. **Consult Checklist**:
-   Read [Security Checklist](./references/security_checklist.md) for detailed grep heuristics and examples.
+| Level | Meaning |
+|---|---|
+| Critical | Exploitable now, by an unauthenticated or low-privilege user, with serious impact (auth bypass, SQL injection, cross-user data access) |
+| High | Exploitable with some precondition, or serious impact if the framework assumption is wrong |
+| Medium | Defense-in-depth gap or performance problem that violates the performance contract |
+| Low | Hardening or hygiene |
+| Unverified | Could not confirm either way; state what is needed to confirm |
+
+## Report format
+
+```
+[Severity] Short title
+Where: path/to/file.rs:LINE
+What: what the code does, in one or two sentences
+Why it matters: concrete attack or performance impact
+Evidence: what you read (code lines, docs, crate version)
+Fix: the smallest correct change
+Test: the regression test to add
+```
+
+End with:
+- **Checked and fine:** what you verified is safe, with evidence.
+- **Unverified:** what you could not confirm and what you need.
+- **Not reviewed:** scope you did not cover.
