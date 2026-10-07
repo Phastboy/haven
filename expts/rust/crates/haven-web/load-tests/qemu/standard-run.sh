@@ -359,7 +359,7 @@ WARM_RATE=$((RATE / WARM_UP_RATE_DIVISOR))
 [[ "$WARM_RATE" -ge 1 ]] || WARM_RATE=1
 
 taskset -c "$K6_CORE" k6 run --insecure-skip-tls-verify \
-  -e TARGET="$TARGET" -e RATE="$WARM_RATE" -e DURATION="600s" \
+  -e BASE_URL="$TARGET" -e TARGET="$TARGET" -e RATE="$WARM_RATE" -e DURATION="600s" \
   "$K6_SCENARIOS/warm-up.js" >"$RESULTS_DIR/warmup.log" 2>&1 &
 WARM_PID=$!
 

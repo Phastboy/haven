@@ -17,10 +17,10 @@ export const options = {
   },
 };
 
-const BASE_URL = __ENV.BASE_URL || "https://10.10.0.2";
+const BASE_URL = __ENV.BASE_URL || __ENV.TARGET || "https://10.10.0.2";
 
 export default function () {
-  const user = getSession(__VU, __ITER, options.scenarios.warm_up.maxVUs);
+  const user = getSession(__VU, __ITER);
   const headers = getHeaders(user.session_token);
 
   // Read-only endpoints to warm up caches without mutating the DB
