@@ -6,5 +6,5 @@ crates/haven-web/load-tests/results/
 crates/haven-web/load-tests/data/
 crates/haven-web/load-tests/test*
 crates/haven-web/load-tests/*.html
-crates/haven-web/load-tests/*.py
 crates/haven-web/load-tests/*.txt
+*.html
