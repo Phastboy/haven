@@ -1,13 +1,19 @@
-#![allow(clippy::unwrap_used, clippy::unimplemented, clippy::missing_panics_doc, reason = "Test utilities can panic")]
+#![allow(
+    clippy::unwrap_used,
+    clippy::unimplemented,
+    clippy::missing_panics_doc,
+    reason = "Test utilities can panic"
+)]
 
-use std::sync::{Arc, Mutex};
 use async_trait::async_trait;
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
+use crate::offer::{CreateOffer, Offer, OfferId, UpdateOffer, UserId};
 use crate::ports::{
-    AccountRepository, MagicLinkRepository, OfferRepository, Registry, SessionRepository, UserRepository, RepoError, IdempotencyKey
+    AccountRepository, IdempotencyKey, MagicLinkRepository, OfferRepository, Registry, RepoError,
+    SessionRepository, UserRepository,
 };
-use crate::offer::{Offer, OfferId, UserId, CreateOffer, UpdateOffer};
 use chrono::Utc;
 
 #[derive(Default, Clone)]
@@ -21,15 +27,27 @@ pub struct FakeOfferRepository {
 impl OfferRepository for FakeOfferRepository {
     async fn find_by_user(&self, user_id: UserId) -> Result<Vec<Offer>, RepoError> {
         let lock = self.offers.lock().unwrap();
-        Ok(lock.iter().filter(|o| o.user_id == user_id).cloned().collect())
+        Ok(lock
+            .iter()
+            .filter(|o| o.user_id == user_id)
+            .cloned()
+            .collect())
     }
 
     async fn find_owned(&self, id: OfferId, user_id: UserId) -> Result<Option<Offer>, RepoError> {
         let lock = self.offers.lock().unwrap();
-        Ok(lock.iter().find(|o| o.id == id && o.user_id == user_id).cloned())
+        Ok(lock
+            .iter()
+            .find(|o| o.id == id && o.user_id == user_id)
+            .cloned())
     }
 
-    async fn create(&self, user_id: UserId, idempotency_key: IdempotencyKey, req: &CreateOffer) -> Result<Offer, RepoError> {
+    async fn create(
+        &self,
+        user_id: UserId,
+        idempotency_key: IdempotencyKey,
+        req: &CreateOffer,
+    ) -> Result<Offer, RepoError> {
         let mut idemp = self.idemp.lock().unwrap();
         let key = (user_id, idempotency_key.0);
         if let Some(offer) = idemp.get(&key) {
@@ -52,7 +70,12 @@ impl OfferRepository for FakeOfferRepository {
         Ok(offer)
     }
 
-    async fn update(&self, id: OfferId, user_id: UserId, req: &UpdateOffer) -> Result<Offer, RepoError> {
+    async fn update(
+        &self,
+        id: OfferId,
+        user_id: UserId,
+        req: &UpdateOffer,
+    ) -> Result<Offer, RepoError> {
         let mut lock = self.offers.lock().unwrap();
         let Some(offer) = lock.iter_mut().find(|o| o.id == id && o.user_id == user_id) else {
             return Err(RepoError::NotFound);
@@ -71,7 +94,10 @@ impl OfferRepository for FakeOfferRepository {
 
     async fn delete(&self, id: OfferId, user_id: UserId) -> Result<(), RepoError> {
         let mut lock = self.offers.lock().unwrap();
-        let pos = lock.iter().position(|o| o.id == id && o.user_id == user_id).ok_or(RepoError::NotFound)?;
+        let pos = lock
+            .iter()
+            .position(|o| o.id == id && o.user_id == user_id)
+            .ok_or(RepoError::NotFound)?;
         lock.remove(pos);
         Ok(())
     }
@@ -96,14 +122,29 @@ impl FakeRegistry {
 }
 
 impl Registry for FakeRegistry {
-    fn offers(&self) -> &(dyn OfferRepository + 'static) { self.offers.as_ref() }
-    fn accounts(&self) -> &(dyn AccountRepository + 'static) { unimplemented!() }
-    fn users(&self) -> &(dyn UserRepository + 'static) { unimplemented!() }
-    fn magic_links(&self) -> &(dyn MagicLinkRepository + 'static) { unimplemented!() }
-    fn sessions(&self) -> &(dyn SessionRepository + 'static) { unimplemented!() }
+    fn offers(&self) -> &(dyn OfferRepository + 'static) {
+        self.offers.as_ref()
+    }
+    fn accounts(&self) -> &(dyn AccountRepository + 'static) {
+        unimplemented!()
+    }
+    fn users(&self) -> &(dyn UserRepository + 'static) {
+        unimplemented!()
+    }
+    fn magic_links(&self) -> &(dyn MagicLinkRepository + 'static) {
+        unimplemented!()
+    }
+    fn sessions(&self) -> &(dyn SessionRepository + 'static) {
+        unimplemented!()
+    }
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::indexing_slicing,
+    reason = "test assertions and indexing"
+)]
 mod tests {
     use super::*;
     use futures::future::join_all;
@@ -121,19 +162,19 @@ mod tests {
         };
 
         // 20 concurrent creates
-        let futures: Vec<_> = (0..20).map(|_| {
-            let repo = repo.clone();
-            let key = idempotency_key.clone();
-            let req = req.clone();
-            tokio::spawn(async move {
-                repo.create(user_id, key, &req).await.unwrap()
+        let futures: Vec<_> = (0..20)
+            .map(|_| {
+                let repo = repo.clone();
+                let key = idempotency_key;
+                let req = req.clone();
+                tokio::spawn(async move { repo.create(user_id, key, &req).await.unwrap() })
             })
-        }).collect();
+            .collect();
 
         let results = join_all(futures).await;
-        
+
         let first_id = results[0].as_ref().unwrap().id;
-        for res in results.iter() {
+        for res in &results {
             let offer = res.as_ref().unwrap();
             assert_eq!(offer.id, first_id);
         }
