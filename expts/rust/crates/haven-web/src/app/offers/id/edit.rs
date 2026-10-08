@@ -17,7 +17,7 @@ pub async fn edit_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View>
                 </label>
                 <label>
                     "Description:"
-                    <textarea name="description">(offer.description.unwrap_or_default())</textarea>
+                    <textarea name="description">(offer.description)</textarea>
                 </label>
                 <label>
                     "Price (minor units):"
@@ -56,7 +56,7 @@ pub async fn update_offer(
         super::super::fields::parse_for_patch(form.0.price.as_deref(), form.0.currency.as_deref())?;
 
     let update_req = haven_domain::offer::UpdateOffer {
-        title: form.0.title,
+        title: Some(form.0.title).filter(|s| !s.is_empty()),
         description: form.0.description.filter(|s| !s.is_empty()),
         price,
         currency,

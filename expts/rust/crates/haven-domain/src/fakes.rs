@@ -80,8 +80,12 @@ impl OfferRepository for FakeOfferRepository {
         let Some(offer) = lock.iter_mut().find(|o| o.id == id && o.user_id == user_id) else {
             return Err(RepoError::NotFound);
         };
-        offer.title.clone_from(&req.title);
-        offer.description.clone_from(&req.description);
+        if let Some(ref t) = req.title {
+            offer.title.clone_from(t);
+        }
+        if let Some(ref d) = req.description {
+            offer.description.clone_from(d);
+        }
         if let Some(p) = req.price {
             offer.price = p;
         }
@@ -156,7 +160,7 @@ mod tests {
         let idempotency_key = IdempotencyKey(uuid::Uuid::new_v4());
         let req = CreateOffer {
             title: "Test Offer".to_string(),
-            description: None,
+            description: "A concurrent test offer description.".to_string(),
             price: crate::offer::Price::ZERO,
             currency: crate::offer::CurrencyCode::default_code(),
         };
