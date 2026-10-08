@@ -2,12 +2,14 @@
 
 mod app;
 mod cx_helpers;
+pub mod token_store;
 
 use haven_db::PostgresRegistry;
 use sqlx::postgres::PgPoolOptions;
 use std::env;
 use std::io::Write;
 use std::sync::Arc;
+use token_store::AdaptiveCookieTokenStore;
 use topcoat::{
     cookie::RouterBuilderCookieExt,
     mail::{FileTransport, RouterBuilderMailExt},
@@ -64,7 +66,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .cookies()
         .sessions(
             SessionConfig::builder()
-                .token_store(topcoat::session::cookie::CookieTokenStore::new().name("sid"))
+                .token_store(AdaptiveCookieTokenStore::new().name("sid"))
                 .build(),
         )
         .app_context(state)

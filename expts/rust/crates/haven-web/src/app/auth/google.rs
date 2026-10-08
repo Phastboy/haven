@@ -616,7 +616,7 @@ mod tests {
             .cookies()
             .sessions(
                 topcoat::session::SessionConfig::builder()
-                    .token_store(topcoat::session::cookie::CookieTokenStore::new().name("sid"))
+                    .token_store(crate::token_store::AdaptiveCookieTokenStore::new().name("sid"))
                     .build(),
             )
             .app_context(state)
