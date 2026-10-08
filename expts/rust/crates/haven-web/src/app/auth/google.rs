@@ -185,8 +185,7 @@ pub async fn exchange_code_for_token(
 
     if !res.status().is_success() {
         let status = res.status();
-        let body = res.text().await.unwrap_or_default();
-        return Err(format!("Token exchange failed with HTTP {status}: {body}"));
+        return Err(format!("Token exchange failed with HTTP {status}"));
     }
 
     res.json::<GoogleTokenResponse>()
@@ -209,7 +208,9 @@ pub async fn fetch_user_info(
     if !res.status().is_success() {
         let status = res.status();
         let body = res.text().await.unwrap_or_default();
-        return Err(format!("Userinfo request failed with HTTP {status}: {body}"));
+        return Err(format!(
+            "Userinfo request failed with HTTP {status}: {body}"
+        ));
     }
 
     res.json::<GoogleUserInfo>()
@@ -295,14 +296,27 @@ pub async fn google_callback(cx: &topcoat::context::Cx) -> topcoat::Result<()> {
     let registry = crate::cx_helpers::registry(cx);
     let map_err = crate::cx_helpers::map_repo_err;
 
-    let account = if let Some(acc) = registry.accounts().find_by_email(&email).await.map_err(map_err)? {
+    let account = if let Some(acc) = registry
+        .accounts()
+        .find_by_email(&email)
+        .await
+        .map_err(map_err)?
+    {
         if !acc.email_verified {
-            registry.accounts().mark_verified(acc.id).await.map_err(map_err)?;
+            registry
+                .accounts()
+                .mark_verified(acc.id)
+                .await
+                .map_err(map_err)?;
         }
         acc
     } else {
         let acc = registry.accounts().create(&email).await.map_err(map_err)?;
-        registry.accounts().mark_verified(acc.id).await.map_err(map_err)?;
+        registry
+            .accounts()
+            .mark_verified(acc.id)
+            .await
+            .map_err(map_err)?;
         acc
     };
 
@@ -361,35 +375,20 @@ mod tests {
 
     #[test]
     fn parse_returns_none_when_credentials_are_empty_strings() {
-        let config = GoogleOAuthConfig::parse(
-            Some("  ".into()),
-            Some(String::new()),
-            None,
-            None,
-        )
-        .unwrap_or(None);
+        let config = GoogleOAuthConfig::parse(Some("  ".into()), Some(String::new()), None, None)
+            .unwrap_or(None);
         assert_eq!(config, None);
     }
 
     #[test]
     fn parse_rejects_missing_secret() {
-        let res = GoogleOAuthConfig::parse(
-            Some("my-client-id".into()),
-            None,
-            None,
-            None,
-        );
+        let res = GoogleOAuthConfig::parse(Some("my-client-id".into()), None, None, None);
         assert!(matches!(res, Err(OAuthConfigError::Incomplete(_))));
     }
 
     #[test]
     fn parse_rejects_missing_client_id() {
-        let res = GoogleOAuthConfig::parse(
-            None,
-            Some("my-client-secret".into()),
-            None,
-            None,
-        );
+        let res = GoogleOAuthConfig::parse(None, Some("my-client-secret".into()), None, None);
         assert!(matches!(res, Err(OAuthConfigError::Incomplete(_))));
     }
 
@@ -420,7 +419,10 @@ mod tests {
         .unwrap_or(None)
         .unwrap_or_else(|| panic!("expected Some(config)"));
 
-        assert_eq!(config.redirect_uri, "https://haven.app/auth/google/callback");
+        assert_eq!(
+            config.redirect_uri,
+            "https://haven.app/auth/google/callback"
+        );
     }
 
     #[test]
@@ -468,7 +470,10 @@ mod tests {
             Some("secure-csrf-token")
         );
         assert_eq!(pairs.get("access_type").map(String::as_str), Some("online"));
-        assert_eq!(pairs.get("prompt").map(String::as_str), Some("select_account"));
+        assert_eq!(
+            pairs.get("prompt").map(String::as_str),
+            Some("select_account")
+        );
     }
 
     #[test]
@@ -527,18 +532,27 @@ mod tests {
 
     fn test_router(oauth_config: Option<GoogleOAuthConfig>) -> topcoat::router::Router {
         use topcoat::{
-            cookie::RouterBuilderCookieExt,
-            router::RouterBuilderDiscoverExt,
+            cookie::RouterBuilderCookieExt, router::RouterBuilderDiscoverExt,
             session::RouterBuilderSessionExt,
         };
 
         struct DummyRegistry;
         impl haven_domain::ports::Registry for DummyRegistry {
-            fn offers(&self) -> &(dyn haven_domain::ports::OfferRepository + 'static) { unimplemented!() }
-            fn accounts(&self) -> &(dyn haven_domain::ports::AccountRepository + 'static) { unimplemented!() }
-            fn users(&self) -> &(dyn haven_domain::ports::UserRepository + 'static) { unimplemented!() }
-            fn magic_links(&self) -> &(dyn haven_domain::ports::MagicLinkRepository + 'static) { unimplemented!() }
-            fn sessions(&self) -> &(dyn haven_domain::ports::SessionRepository + 'static) { unimplemented!() }
+            fn offers(&self) -> &(dyn haven_domain::ports::OfferRepository + 'static) {
+                unimplemented!()
+            }
+            fn accounts(&self) -> &(dyn haven_domain::ports::AccountRepository + 'static) {
+                unimplemented!()
+            }
+            fn users(&self) -> &(dyn haven_domain::ports::UserRepository + 'static) {
+                unimplemented!()
+            }
+            fn magic_links(&self) -> &(dyn haven_domain::ports::MagicLinkRepository + 'static) {
+                unimplemented!()
+            }
+            fn sessions(&self) -> &(dyn haven_domain::ports::SessionRepository + 'static) {
+                unimplemented!()
+            }
         }
 
         let state = crate::cx_helpers::AppState {
@@ -573,7 +587,12 @@ mod tests {
         let response = router.handle(request).await;
         assert_eq!(response.status(), http::StatusCode::SEE_OTHER);
         assert_eq!(
-            response.headers().get("location").unwrap().to_str().unwrap(),
+            response
+                .headers()
+                .get("location")
+                .unwrap()
+                .to_str()
+                .unwrap(),
             "/auth/sign-in"
         );
     }
@@ -595,14 +614,27 @@ mod tests {
         let response = router.handle(request).await;
         assert_eq!(response.status(), http::StatusCode::SEE_OTHER);
 
-        let location = response.headers().get("location").unwrap().to_str().unwrap();
+        let location = response
+            .headers()
+            .get("location")
+            .unwrap()
+            .to_str()
+            .unwrap();
         assert!(location.starts_with("https://accounts.google.com/o/oauth2/v2/auth?"));
         assert!(location.contains("client_id=test-client-id.apps.googleusercontent.com"));
-        assert!(location.contains("redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fgoogle%2Fcallback"));
+        assert!(
+            location
+                .contains("redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fgoogle%2Fcallback")
+        );
         assert!(location.contains("state="));
 
         // Ensure CSRF state cookie is set
-        let set_cookie = response.headers().get("set-cookie").unwrap().to_str().unwrap();
+        let set_cookie = response
+            .headers()
+            .get("set-cookie")
+            .unwrap()
+            .to_str()
+            .unwrap();
         assert!(set_cookie.contains("g_oauth_state="));
         assert!(set_cookie.contains("Path=/auth/google"));
         assert!(set_cookie.contains("HttpOnly"));
@@ -621,7 +653,12 @@ mod tests {
         let response = router.handle(request).await;
         assert_eq!(response.status(), http::StatusCode::SEE_OTHER);
         assert_eq!(
-            response.headers().get("location").unwrap().to_str().unwrap(),
+            response
+                .headers()
+                .get("location")
+                .unwrap()
+                .to_str()
+                .unwrap(),
             "/auth/sign-in?error=google_cancelled"
         );
     }
@@ -638,7 +675,12 @@ mod tests {
         let response = router.handle(request).await;
         assert_eq!(response.status(), http::StatusCode::SEE_OTHER);
         assert_eq!(
-            response.headers().get("location").unwrap().to_str().unwrap(),
+            response
+                .headers()
+                .get("location")
+                .unwrap()
+                .to_str()
+                .unwrap(),
             "/auth/sign-in?error=invalid_request"
         );
     }
@@ -655,7 +697,12 @@ mod tests {
         let response = router.handle(request).await;
         assert_eq!(response.status(), http::StatusCode::SEE_OTHER);
         assert_eq!(
-            response.headers().get("location").unwrap().to_str().unwrap(),
+            response
+                .headers()
+                .get("location")
+                .unwrap()
+                .to_str()
+                .unwrap(),
             "/auth/sign-in?error=state_missing"
         );
     }
@@ -673,7 +720,12 @@ mod tests {
         let response = router.handle(request).await;
         assert_eq!(response.status(), http::StatusCode::SEE_OTHER);
         assert_eq!(
-            response.headers().get("location").unwrap().to_str().unwrap(),
+            response
+                .headers()
+                .get("location")
+                .unwrap()
+                .to_str()
+                .unwrap(),
             "/auth/sign-in?error=state_mismatch"
         );
     }
