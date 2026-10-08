@@ -61,6 +61,7 @@ sqlx = { version = "0.9", features = ["runtime-tokio", "tls-rustls-ring-webpki",
 # Web
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 topcoat = { version = "0.10", features = ["mail", "session", "router", "tailwind"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
 
 # Internal
 haven-domain = { path = "crates/haven-domain" }

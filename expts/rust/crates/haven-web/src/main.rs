@@ -38,8 +38,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     sqlx::migrate!("../../migrations").run(&pool).await?;
 
+    let google_oauth = app::auth::google::GoogleOAuthConfig::from_env()?;
+    if google_oauth.is_some() {
+        writeln!(std::io::stdout(), "Google OAuth: enabled").unwrap_or(());
+    } else {
+        writeln!(std::io::stdout(), "Google OAuth: disabled (credentials not set)").unwrap_or(());
+    }
+
+    let http_client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()?;
+
     let registry = Arc::new(PostgresRegistry::new(&pool));
-    let state = cx_helpers::AppState { registry };
+    let state = cx_helpers::AppState {
+        registry,
+        google_oauth,
+        http_client,
+    };
 
     let router = app::router()
         .cookies()
