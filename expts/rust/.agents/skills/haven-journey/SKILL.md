@@ -38,8 +38,8 @@ description: >-
 
 | Stage (roadmap) | Question | Offerer lane | Responder lane | Handoff | Status |
 |---|---|---|---|---|---|
-| 0.1.x | Can I offer something? | create account, sign in, create / edit / delete an offer | (none yet) | none | current |
-| 0.2.x | Can someone see it? | sees own offers | sees available offers, sees one offer | offer becomes visible to others | not reached |
+| 0.1.x | Can I offer something? | create account, sign in, create / see own / edit / delete an offer | (none yet) | none | current |
+| 0.2.x | Can someone see it? | | sees available offers, sees one offer | offer becomes visible to others | not reached |
 | ... one row per roadmap stage, using only the roadmap's words ... |
 
 Status values: `not reached`, `current`, `answered`. Add the load-test gate state per stage (met / not met / not run) next to Status, from `PERFORMANCE_CONTRACT.md`.

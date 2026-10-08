@@ -9,7 +9,7 @@ Status: draft. Only entries under **Decided** were confirmed by the owner. Every
 | Stage | Question | Offerer lane | Responder lane | Handoff | Status | Load target |
 |---|---|---|---|---|---|---|
 | 0.1.x | Can I offer something? | create account, sign in, create / see own / edit / delete an offer | none yet | none | current | not recorded here (see PERFORMANCE_CONTRACT.md) |
-| 0.2.x | Can someone see it? | see own offers | see available offers, see another person's offer | an offer becomes visible to others | not reached | |
+| 0.2.x | Can someone see it? | | see available offers, see another person's offer | an offer becomes visible to others | not reached | |
 | 0.3.x | Can someone act on it? | know about expressed interest | express willingness to take on an offer | commitment | not reached | |
 | 0.4.x | Can someone find it? | | find an offer by name, narrow by price | | not reached | |
 | 0.5.x | Can I come back to what I care about? | | save an offer, follow a person, return to both | | not reached | |
@@ -39,7 +39,7 @@ sequenceDiagram
 
 **A person can create an offer.**
 - Offerer is signed in and opens the create form.
-- Fields (from the domain code, branch `feat/offer-constraints`): title (3 to 100 characters), description (10 to 2000 characters), price in minor units (0 or more), currency from a fixed list (NGN, USD, EUR, GBP, CAD, AUD, KES, GHS; default NGN). All required.
+- Fields (from the domain code, branch `feat/offer-constraints`): title (3 to 100 characters), description (10 to 2000 characters), price in minor units (0 or more, required). Currency from a fixed list (NGN, USD, EUR, GBP, CAD, AUD, KES, GHS) is required only when price is greater than zero; for zero-price offers, it may be omitted or blank and defaults to NGN.
 - Person submits. Valid: the offer exists, owned by that person. Invalid: the form is shown again with the person's input kept and each problem shown next to its field.
 - Edge states: person leaves midway, submits twice (refresh or double click), session ends while filling the form, price field left empty, price entered with decimals or separators.
 
@@ -82,7 +82,6 @@ sequenceDiagram
 
 - What happens to an offer that someone has already committed to when its owner edits or deletes it. Belongs to 0.3.x. Current behaviour until then: not defined; no commitments exist in 0.1.x.
 - Whether other people can see an offer, and how. Belongs to 0.2.x. Current behaviour: no one but the owner can see or request an offer.
-- Roadmap mismatch: `ROADMAP.md` lists "A person can see their own offers" under 0.2.x, while this stage now includes it. The owner should update the roadmap or tell the agent which is right.
 
 ### Done when (from the roadmap)
 
