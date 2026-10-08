@@ -140,6 +140,209 @@ pub async fn google_sign_in(cx: &topcoat::context::Cx) -> topcoat::Result<()> {
     Err(see_other(auth_url).into())
 }
 
+/// Query parameters for GET /auth/google/callback.
+#[derive(serde::Deserialize, Default, Debug)]
+pub struct CallbackQuery {
+    pub code: Option<String>,
+    pub state: Option<String>,
+    pub error: Option<String>,
+}
+
+/// Token response returned by Google's OAuth 2.0 token endpoint.
+#[derive(serde::Deserialize, Debug, PartialEq, Eq)]
+pub struct GoogleTokenResponse {
+    pub access_token: String,
+    pub token_type: Option<String>,
+    pub expires_in: Option<u64>,
+    pub id_token: Option<String>,
+}
+
+/// Userinfo response returned by Google's userinfo endpoint.
+#[derive(serde::Deserialize, Debug, PartialEq, Eq)]
+pub struct GoogleUserInfo {
+    pub email: String,
+    pub email_verified: Option<bool>,
+}
+
+/// Exchanges an authorization code for Google OAuth tokens.
+pub async fn exchange_code_for_token(
+    client: &reqwest::Client,
+    config: &GoogleOAuthConfig,
+    code: &str,
+) -> Result<GoogleTokenResponse, String> {
+    let res = client
+        .post("https://oauth2.googleapis.com/token")
+        .form(&[
+            ("code", code),
+            ("client_id", config.client_id.as_str()),
+            ("client_secret", config.client_secret.as_str()),
+            ("redirect_uri", config.redirect_uri.as_str()),
+            ("grant_type", "authorization_code"),
+        ])
+        .send()
+        .await
+        .map_err(|e| format!("Token exchange request failed: {e}"))?;
+
+    if !res.status().is_success() {
+        let status = res.status();
+        let body = res.text().await.unwrap_or_default();
+        return Err(format!("Token exchange failed with HTTP {status}: {body}"));
+    }
+
+    res.json::<GoogleTokenResponse>()
+        .await
+        .map_err(|e| format!("Failed to parse token response: {e}"))
+}
+
+/// Fetches the user profile information from Google's userinfo endpoint.
+pub async fn fetch_user_info(
+    client: &reqwest::Client,
+    access_token: &str,
+) -> Result<GoogleUserInfo, String> {
+    let res = client
+        .get("https://www.googleapis.com/oauth2/v3/userinfo")
+        .bearer_auth(access_token)
+        .send()
+        .await
+        .map_err(|e| format!("Userinfo request failed: {e}"))?;
+
+    if !res.status().is_success() {
+        let status = res.status();
+        let body = res.text().await.unwrap_or_default();
+        return Err(format!("Userinfo request failed with HTTP {status}: {body}"));
+    }
+
+    res.json::<GoogleUserInfo>()
+        .await
+        .map_err(|e| format!("Failed to parse userinfo response: {e}"))
+}
+
+/// GET /auth/google/callback
+///
+/// Google OAuth 2.0 authorization callback:
+/// 1. Verifies the query parameters (`code` and `state`).
+/// 2. Validates CSRF `state` matches the `g_oauth_state` cookie and removes the cookie.
+/// 3. Exchanges authorization code for Google access token.
+/// 4. Retrieves Google user info and ensures email is verified.
+/// 5. Finds or creates the Account and User in PostgreSQL.
+/// 6. Issues a session cookie and redirects to `/offers/new`.
+#[topcoat::router::page("./callback")]
+pub async fn google_callback(cx: &topcoat::context::Cx) -> topcoat::Result<()> {
+    use topcoat::{
+        cookie::{Cookie, Cookies},
+        router::error::see_other,
+    };
+
+    if crate::cx_helpers::current_user(cx).await?.is_some() {
+        return Err(see_other("/offers").into());
+    }
+
+    let query = topcoat::router::parse_query_params::<CallbackQuery>(cx).unwrap_or_default();
+
+    if query.error.is_some() {
+        return Err(see_other("/auth/sign-in?error=google_cancelled").into());
+    }
+
+    let (Some(code), Some(incoming_state)) = (query.code, query.state) else {
+        return Err(see_other("/auth/sign-in?error=invalid_request").into());
+    };
+
+    // 1. Verify and clear CSRF state cookie
+    let cookie_jar = topcoat::cookie::cookies(cx);
+    let stored_state = cookie_jar
+        .get(OAUTH_STATE_COOKIE_NAME)
+        .map(|c| c.value().to_string());
+
+    // Always clear the state cookie immediately to prevent replay attacks
+    let mut removal = Cookie::new(OAUTH_STATE_COOKIE_NAME, "");
+    removal.set_path("/auth/google");
+    cookie_jar.remove(removal);
+
+    let Some(stored_state) = stored_state else {
+        return Err(see_other("/auth/sign-in?error=state_missing").into());
+    };
+
+    if stored_state != incoming_state {
+        return Err(see_other("/auth/sign-in?error=state_mismatch").into());
+    }
+
+    // 2. Load Google OAuth config and HTTP client
+    let Some(config) = crate::cx_helpers::google_oauth(cx) else {
+        return Err(see_other("/auth/sign-in?error=oauth_disabled").into());
+    };
+    let client = crate::cx_helpers::http_client(cx);
+
+    // 3. Exchange code for access token
+    let Ok(tokens) = exchange_code_for_token(client, config, &code).await else {
+        return Err(see_other("/auth/sign-in?error=token_exchange_failed").into());
+    };
+
+    // 4. Retrieve user info from Google
+    let Ok(user_info) = fetch_user_info(client, &tokens.access_token).await else {
+        return Err(see_other("/auth/sign-in?error=userinfo_failed").into());
+    };
+
+    // Security: Only accept verified email addresses from Google
+    if user_info.email_verified != Some(true) {
+        return Err(see_other("/auth/sign-in?error=email_unverified").into());
+    }
+
+    let Ok(email) = haven_domain::account::Email::parse(&user_info.email) else {
+        return Err(see_other("/auth/sign-in?error=invalid_email").into());
+    };
+
+    // 5. Account and User management
+    let registry = crate::cx_helpers::registry(cx);
+    let map_err = crate::cx_helpers::map_repo_err;
+
+    let account = if let Some(acc) = registry.accounts().find_by_email(&email).await.map_err(map_err)? {
+        if !acc.email_verified {
+            registry.accounts().mark_verified(acc.id).await.map_err(map_err)?;
+        }
+        acc
+    } else {
+        let acc = registry.accounts().create(&email).await.map_err(map_err)?;
+        registry.accounts().mark_verified(acc.id).await.map_err(map_err)?;
+        acc
+    };
+
+    // Ensure User record exists (created on first sign-in)
+    let user = registry
+        .users()
+        .find_by_account(account.id)
+        .await
+        .map_err(map_err)?;
+    if user.is_none() {
+        registry.users().create(account.id).await.map_err(map_err)?;
+    }
+
+    // 6. Issue session
+    let session = topcoat::session::start(cx).await?;
+    let hash_hex = crate::cx_helpers::token_hash_hex(&session.token_hash);
+    let hashed_token = haven_domain::session::HashedToken::from_hex(hash_hex);
+    let expires_at = chrono::DateTime::<chrono::Utc>::from(session.expires_at);
+
+    let ip = topcoat::router::request::client_ip(cx).map(|ip| ip.to_string());
+    let user_agent = topcoat::router::request::headers(cx)
+        .get("user-agent")
+        .and_then(|h| h.to_str().ok().map(std::string::ToString::to_string));
+
+    let ip_addr = ip.and_then(|s| s.parse::<std::net::IpAddr>().ok());
+    registry
+        .sessions()
+        .create(
+            account.id,
+            &hashed_token,
+            expires_at,
+            ip_addr,
+            user_agent.as_deref(),
+        )
+        .await
+        .map_err(map_err)?;
+
+    Err(see_other("/offers/new").into())
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used, clippy::panic, reason = "test assertions")]
 mod tests {
@@ -266,5 +469,54 @@ mod tests {
     #[test]
     fn cookie_constant_matches_expected_name() {
         assert_eq!(OAUTH_STATE_COOKIE_NAME, "g_oauth_state");
+    }
+
+    #[test]
+    fn deserializes_google_token_response() {
+        let json = r#"{
+            "access_token": "ya29.sample_access_token",
+            "token_type": "Bearer",
+            "expires_in": 3599,
+            "id_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.sample"
+        }"#;
+
+        let tokens: GoogleTokenResponse = serde_json::from_str(json).unwrap();
+        assert_eq!(tokens.access_token, "ya29.sample_access_token");
+        assert_eq!(tokens.token_type.as_deref(), Some("Bearer"));
+        assert_eq!(tokens.expires_in, Some(3599));
+        assert!(tokens.id_token.is_some());
+    }
+
+    #[test]
+    fn deserializes_google_user_info_with_verified_email() {
+        let json = r#"{
+            "email": "developer@example.com",
+            "email_verified": true
+        }"#;
+
+        let info: GoogleUserInfo = serde_json::from_str(json).unwrap();
+        assert_eq!(info.email, "developer@example.com");
+        assert_eq!(info.email_verified, Some(true));
+    }
+
+    #[test]
+    fn deserializes_google_user_info_with_unverified_email() {
+        let json = r#"{
+            "email": "unverified@example.com",
+            "email_verified": false
+        }"#;
+
+        let info: GoogleUserInfo = serde_json::from_str(json).unwrap();
+        assert_eq!(info.email, "unverified@example.com");
+        assert_eq!(info.email_verified, Some(false));
+    }
+
+    #[test]
+    fn deserializes_callback_query_parameters() {
+        let json = r#"{"code": "auth-code-123", "state": "random-state-456"}"#;
+        let query: CallbackQuery = serde_json::from_str(json).unwrap();
+        assert_eq!(query.code.as_deref(), Some("auth-code-123"));
+        assert_eq!(query.state.as_deref(), Some("random-state-456"));
+        assert!(query.error.is_none());
     }
 }
