@@ -34,7 +34,6 @@ use topcoat::{
 #[derive(Clone)]
 pub struct AppState {
     pub registry: std::sync::Arc<dyn haven_domain::ports::Registry>,
-    #[allow(dead_code, reason = "accessed by oauth handlers")]
     pub google_oauth: Option<crate::app::auth::google::GoogleOAuthConfig>,
     #[allow(dead_code, reason = "accessed by oauth handlers")]
     pub http_client: reqwest::Client,
@@ -44,7 +43,6 @@ pub fn registry(cx: &Cx) -> &dyn haven_domain::ports::Registry {
     &*app_context::<AppState>(cx).registry
 }
 
-#[allow(dead_code, reason = "accessed by oauth handlers")]
 pub fn google_oauth(cx: &Cx) -> Option<&crate::app::auth::google::GoogleOAuthConfig> {
     app_context::<AppState>(cx).google_oauth.as_ref()
 }
