@@ -16,6 +16,8 @@ sqlx = { workspace = true }
 http = "1.5"
 dotenvy = "0.15"
 url = "2.5.8"
+reqwest = { workspace = true }
+thiserror = { workspace = true }
 
 [lints]
 workspace=true
