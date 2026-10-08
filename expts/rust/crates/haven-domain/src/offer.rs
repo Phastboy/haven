@@ -200,6 +200,7 @@ impl UpdateOffer {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used, reason = "test assertions")]
 mod tests {
     use super::*;
 
@@ -348,6 +349,87 @@ mod tests {
         assert!(matches!(
             uo_invalid_desc.validate(),
             Err(DomainError::DescriptionTooShort)
+        ));
+
+        let uo_overlong_title = UpdateOffer {
+            title: Some("a".repeat(101)),
+            description: None,
+            price: None,
+            currency: None,
+        };
+        assert!(matches!(
+            uo_overlong_title.validate(),
+            Err(DomainError::TitleTooLong)
+        ));
+
+        let uo_overlong_desc = UpdateOffer {
+            title: None,
+            description: Some("x".repeat(2001)),
+            price: None,
+            currency: None,
+        };
+        assert!(matches!(
+            uo_overlong_desc.validate(),
+            Err(DomainError::DescriptionTooLong)
+        ));
+    }
+
+    #[test]
+    fn create_offer_rejects_overlong_inputs() {
+        let mut co = CreateOffer {
+            title: "a".repeat(101),
+            description: "A valid description for testing.".into(),
+            price: Price::ZERO,
+            currency: CurrencyCode::default_code(),
+        };
+        assert!(matches!(co.validate(), Err(DomainError::TitleTooLong)));
+
+        co.title = "Valid Title".into();
+        co.description = "x".repeat(2001);
+        assert!(matches!(
+            co.validate(),
+            Err(DomainError::DescriptionTooLong)
+        ));
+    }
+
+    #[test]
+    fn all_supported_currencies_parse_and_roundtrip() {
+        for &code in SUPPORTED_CURRENCIES {
+            let parsed = CurrencyCode::parse(code).expect("supported currency should parse");
+            assert_eq!(parsed.as_str(), code);
+
+            let lower = code.to_lowercase();
+            let parsed_lower =
+                CurrencyCode::parse(&lower).expect("lowercase currency should parse");
+            assert_eq!(parsed_lower.as_str(), code);
+        }
+    }
+
+    #[test]
+    fn unicode_multibyte_characters_counted_by_chars_not_bytes() {
+        // 100 emoji characters = 400 bytes, but exactly 100 characters
+        let title_100_emojis = "🎉".repeat(100);
+        assert_eq!(title_100_emojis.chars().count(), 100);
+        assert_eq!(title_100_emojis.len(), 400);
+        assert!(validate_title(&title_100_emojis).is_ok());
+
+        // 101 emoji characters = 101 characters -> Too long
+        let title_101_emojis = "🎉".repeat(101);
+        assert!(matches!(
+            validate_title(&title_101_emojis),
+            Err(DomainError::TitleTooLong)
+        ));
+
+        // 2000 emoji characters = 8000 bytes, but exactly 2000 characters
+        let desc_2000_emojis = "✨".repeat(2000);
+        assert_eq!(desc_2000_emojis.chars().count(), 2000);
+        assert!(validate_description(&desc_2000_emojis).is_ok());
+
+        // 2001 emoji characters -> Too long
+        let desc_2001_emojis = "✨".repeat(2001);
+        assert!(matches!(
+            validate_description(&desc_2001_emojis),
+            Err(DomainError::DescriptionTooLong)
         ));
     }
 }
