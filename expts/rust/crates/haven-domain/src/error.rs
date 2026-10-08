@@ -1,12 +1,18 @@
 use thiserror::Error;
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, PartialEq, Eq)]
 pub enum DomainError {
     #[error("invalid email: {0}")]
     InvalidEmail(String),
 
+    #[error("price is required")]
+    PriceRequired,
+
     #[error("invalid price: must be non-negative")]
     InvalidPrice,
+
+    #[error("currency is required when price is greater than zero")]
+    CurrencyRequired,
 
     #[error("invalid currency code: must be one of NGN, USD, EUR, GBP, CAD, AUD, KES, GHS")]
     InvalidCurrencyCode,

@@ -13,19 +13,19 @@ pub async fn edit_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View>
             <form method="post" action=(format!("/offers/{}/edit", offer.id))>
                 <label>
                     "Title:"
-                    <input type="text" name="title" value=(offer.title) minlength="3" maxlength="100" />
+                    <input type="text" name="title" value=(offer.title) required="required" minlength="3" maxlength="100" />
                 </label>
                 <label>
                     "Description:"
-                    <textarea name="description" minlength="10" maxlength="2000">(offer.description)</textarea>
+                    <textarea name="description" required="required" minlength="10" maxlength="2000">(offer.description)</textarea>
                 </label>
                 <label>
                     "Price (minor units):"
-                    <input type="number" name="price" value=(offer.price.as_i32().to_string()) min="0" placeholder="Leave blank for Free" />
+                    <input type="number" name="price" value=(offer.price.as_i32().to_string()) min="0" required="required" placeholder="0 for Free" />
                 </label>
                 <label>
                     "Currency:"
-                    <input type="text" name="currency" value=(offer.currency.as_str().to_string()) maxlength="3" />
+                    <input type="text" name="currency" value=(offer.currency.as_str().to_string()) placeholder="NGN (required if price > 0)" maxlength="3" />
                 </label>
                 <button type="submit">"Save"</button>
             </form>
