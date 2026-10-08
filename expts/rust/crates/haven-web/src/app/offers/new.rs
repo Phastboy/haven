@@ -11,19 +11,19 @@ pub async fn new_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> 
                 <input type="hidden" name="idempotency_key" value=(idempotency_key) />
                 <label>
                     "Title:"
-                    <input type="text" name="title" required="required" />
+                    <input type="text" name="title" required="required" minlength="3" maxlength="100" />
                 </label>
                 <label>
                     "Description:"
-                    <textarea name="description"></textarea>
+                    <textarea name="description" required="required" minlength="10" maxlength="2000"></textarea>
                 </label>
                 <label>
                     "Price (minor units):"
-                    <input type="number" name="price" />
+                    <input type="number" name="price" min="0" placeholder="Leave blank for Free" />
                 </label>
                 <label>
                     "Currency:"
-                    <input type="text" name="currency" />
+                    <input type="text" name="currency" placeholder="NGN" maxlength="3" />
                 </label>
                 <button type="submit">"Create"</button>
             </form>
