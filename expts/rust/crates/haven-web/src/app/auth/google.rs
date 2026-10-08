@@ -69,6 +69,20 @@ impl GoogleOAuthConfig {
         }
     }
 
+    /// Builds the Google OAuth 2.0 authorization consent URL with CSRF state.
+    pub fn authorization_url(&self, state: &str) -> Result<String, url::ParseError> {
+        let mut url = Url::parse("https://accounts.google.com/o/oauth2/v2/auth")?;
+        url.query_pairs_mut()
+            .append_pair("client_id", &self.client_id)
+            .append_pair("redirect_uri", &self.redirect_uri)
+            .append_pair("response_type", "code")
+            .append_pair("scope", "openid email profile")
+            .append_pair("state", state)
+            .append_pair("access_type", "online")
+            .append_pair("prompt", "select_account");
+        Ok(url.to_string())
+    }
+
     /// Loads Google OAuth configuration from environment variables.
     pub fn from_env() -> Result<Option<Self>, OAuthConfigError> {
         Self::parse(
@@ -78,6 +92,52 @@ impl GoogleOAuthConfig {
             std::env::var("PUBLIC_BASE_URL").ok(),
         )
     }
+}
+
+/// Cookie name used to persist the OAuth CSRF state across the consent redirect.
+pub const OAUTH_STATE_COOKIE_NAME: &str = "g_oauth_state";
+
+/// GET /auth/google
+///
+/// Initiates the Google OAuth 2.0 flow:
+/// 1. Redirects authenticated users directly to /offers.
+/// 2. If Google OAuth is unconfigured, falls back to /auth/sign-in.
+/// 3. Generates a cryptographically random CSRF state token stored in a short-lived cookie.
+/// 4. Redirects (303 See Other) to Google's consent screen.
+#[topcoat::router::page]
+pub async fn google_sign_in(cx: &topcoat::context::Cx) -> topcoat::Result<()> {
+    use topcoat::{
+        cookie::{Cookie, Cookies, SameSite, time::Duration},
+        router::error::see_other,
+    };
+
+    if crate::cx_helpers::current_user(cx).await?.is_some() {
+        return Err(see_other("/offers").into());
+    }
+
+    let Some(config) = crate::cx_helpers::google_oauth(cx) else {
+        return Err(see_other("/auth/sign-in").into());
+    };
+
+    let state = haven_domain::session::PlaintextToken::generate()
+        .map_err(|e| topcoat::Error::msg(e.to_string()))?;
+
+    let mut cookie = Cookie::new(OAUTH_STATE_COOKIE_NAME, state.as_str().to_string());
+    cookie.set_http_only(true);
+    cookie.set_same_site(SameSite::Lax);
+    cookie.set_path("/auth/google");
+    cookie.set_max_age(Duration::seconds(600));
+    if config.redirect_uri.starts_with("https://") {
+        cookie.set_secure(true);
+    }
+
+    topcoat::cookie::cookies(cx).add(cookie);
+
+    let auth_url = config
+        .authorization_url(state.as_str())
+        .map_err(|e| topcoat::Error::msg(e.to_string()))?;
+
+    Err(see_other(auth_url).into())
 }
 
 #[cfg(test)]
@@ -164,5 +224,47 @@ mod tests {
             None,
         );
         assert!(matches!(res, Err(OAuthConfigError::InvalidRedirectUri(_))));
+    }
+
+    #[test]
+    fn authorization_url_generates_valid_google_consent_url() {
+        let config = GoogleOAuthConfig {
+            client_id: "test-client-id.apps.googleusercontent.com".into(),
+            client_secret: "test-secret".into(),
+            redirect_uri: "http://localhost:3000/auth/google/callback".into(),
+        };
+
+        let raw_url = config.authorization_url("secure-csrf-token").unwrap();
+        let parsed = Url::parse(&raw_url).unwrap();
+
+        assert_eq!(parsed.scheme(), "https");
+        assert_eq!(parsed.host_str(), Some("accounts.google.com"));
+        assert_eq!(parsed.path(), "/o/oauth2/v2/auth");
+
+        let pairs: std::collections::HashMap<_, _> = parsed.query_pairs().into_owned().collect();
+        assert_eq!(
+            pairs.get("client_id").map(String::as_str),
+            Some("test-client-id.apps.googleusercontent.com")
+        );
+        assert_eq!(
+            pairs.get("redirect_uri").map(String::as_str),
+            Some("http://localhost:3000/auth/google/callback")
+        );
+        assert_eq!(pairs.get("response_type").map(String::as_str), Some("code"));
+        assert_eq!(
+            pairs.get("scope").map(String::as_str),
+            Some("openid email profile")
+        );
+        assert_eq!(
+            pairs.get("state").map(String::as_str),
+            Some("secure-csrf-token")
+        );
+        assert_eq!(pairs.get("access_type").map(String::as_str), Some("online"));
+        assert_eq!(pairs.get("prompt").map(String::as_str), Some("select_account"));
+    }
+
+    #[test]
+    fn cookie_constant_matches_expected_name() {
+        assert_eq!(OAUTH_STATE_COOKIE_NAME, "g_oauth_state");
     }
 }
