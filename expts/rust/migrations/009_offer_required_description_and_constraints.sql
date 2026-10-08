@@ -1,7 +1,27 @@
+-- Truncate overlong titles (max 100 characters)
+UPDATE offer
+SET title = left(trim(title), 100)
+WHERE char_length(trim(title)) > 100;
+
+-- Pad titles shorter than 3 characters
+UPDATE offer
+SET title = rpad(trim(title), 3, '.')
+WHERE char_length(trim(title)) < 3;
+
+-- Truncate overlong descriptions (max 2000 characters)
+UPDATE offer
+SET description = left(trim(description), 2000)
+WHERE char_length(trim(description)) > 2000;
+
 -- Backfill any existing NULL or too-short descriptions
 UPDATE offer
 SET description = 'No description provided for legacy offer.'
 WHERE description IS NULL OR char_length(trim(description)) < 10;
+
+-- Map unsupported currencies to default allowed currency
+UPDATE offer
+SET currency = 'NGN'
+WHERE currency IS NULL OR currency NOT IN ('NGN', 'USD', 'EUR', 'GBP', 'CAD', 'AUD', 'KES', 'GHS');
 
 -- Enforce NOT NULL on description
 ALTER TABLE offer ALTER COLUMN description SET NOT NULL;
