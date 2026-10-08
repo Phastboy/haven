@@ -10,6 +10,7 @@ A person should be able to put something they are offering on Haven and manage i
 
 * [x] A person can create an account and sign in.
 * [x] A person can create an offer.
+* [x] A person can see their own offers.
 * [x] A person can edit an offer.
 * [x] A person can delete an offer.
 
@@ -27,7 +28,6 @@ An offer should no longer exist only for the person who created it. Other people
 
 * [ ] A person can see available offers.
 * [ ] A person can see another person's offer.
-* [ ] A person can see their own offers.
 
 **The question:**
 
