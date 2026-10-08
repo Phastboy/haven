@@ -42,7 +42,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if google_oauth.is_some() {
         writeln!(std::io::stdout(), "Google OAuth: enabled").unwrap_or(());
     } else {
-        writeln!(std::io::stdout(), "Google OAuth: disabled (credentials not set)").unwrap_or(());
+        writeln!(
+            std::io::stdout(),
+            "Google OAuth: disabled (credentials not set)"
+        )
+        .unwrap_or(());
     }
 
     let http_client = reqwest::Client::builder()
