@@ -62,7 +62,7 @@ pub async fn create_offer(
 
     create_req
         .validate()
-        .map_err(|_| topcoat::router::error::bad_request("invalid offer data"))?;
+        .map_err(|e| topcoat::router::error::bad_request(e.to_string()))?;
 
     let offer = crate::cx_helpers::registry(cx)
         .offers()

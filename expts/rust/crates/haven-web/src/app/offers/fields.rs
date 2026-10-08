@@ -15,7 +15,7 @@ fn parse_price_str(raw: &str) -> Result<Price, TopcoatError> {
 
 /// Parses an optional string into a `CurrencyCode`.
 fn parse_currency_str(raw: &str) -> Result<CurrencyCode, TopcoatError> {
-    CurrencyCode::parse(raw).map_err(|_| bad_request("Invalid currency code").into())
+    CurrencyCode::parse(raw).map_err(|e| bad_request(e.to_string()).into())
 }
 
 /// Parses form fields for an offer creation, substituting defaults if omitted.
@@ -36,22 +36,54 @@ pub fn parse_for_create(
     Ok((p, c))
 }
 
+/// Parsed patch fields for updating an offer.
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct OfferPatch {
+    pub title: Option<String>,
+    pub description: Option<String>,
+    pub price: Option<Price>,
+    pub currency: Option<CurrencyCode>,
+}
+
 /// Parses form fields for an offer update. Missing or empty fields mean "leave unchanged" (None).
 pub fn parse_for_patch(
+    raw_title: Option<&str>,
+    raw_description: Option<&str>,
     raw_price: Option<&str>,
     raw_currency: Option<&str>,
-) -> Result<(Option<Price>, Option<CurrencyCode>), TopcoatError> {
-    let p = match raw_price.map(str::trim) {
+) -> Result<OfferPatch, TopcoatError> {
+    let title = match raw_title.map(str::trim) {
+        None | Some("") => None,
+        Some(s) => {
+            haven_domain::offer::validate_title(s).map_err(|e| bad_request(e.to_string()))?;
+            Some(s.to_string())
+        }
+    };
+
+    let description = match raw_description.map(str::trim) {
+        None | Some("") => None,
+        Some(s) => {
+            haven_domain::offer::validate_description(s).map_err(|e| bad_request(e.to_string()))?;
+            Some(s.to_string())
+        }
+    };
+
+    let price = match raw_price.map(str::trim) {
         None | Some("") => None,
         Some(s) => Some(parse_price_str(s)?),
     };
 
-    let c = match raw_currency.map(str::trim) {
+    let currency = match raw_currency.map(str::trim) {
         None | Some("") => None,
         Some(s) => Some(parse_currency_str(s)?),
     };
 
-    Ok((p, c))
+    Ok(OfferPatch {
+        title,
+        description,
+        price,
+        currency,
+    })
 }
 
 #[cfg(test)]
@@ -77,23 +109,41 @@ mod tests {
         assert!(parse_for_create(Some("abc"), None).is_err());
         assert!(parse_for_create(Some("-5"), None).is_err());
         assert!(parse_for_create(None, Some("usd1")).is_err());
+        assert!(parse_for_create(None, Some("ZZZ")).is_err());
     }
 
     #[test]
     fn patch_handles_none() {
-        let (p, c) = parse_for_patch(None, None).unwrap();
-        assert!(p.is_none());
-        assert!(c.is_none());
+        let patch = parse_for_patch(None, None, None, None).unwrap();
+        assert_eq!(patch, OfferPatch::default());
 
-        let (p, c) = parse_for_patch(Some(""), Some("  ")).unwrap();
-        assert!(p.is_none());
-        assert!(c.is_none());
+        let patch = parse_for_patch(Some(""), Some("  "), Some(""), Some("  ")).unwrap();
+        assert_eq!(patch, OfferPatch::default());
     }
 
     #[test]
     fn patch_parses_values() {
-        let (p, c) = parse_for_patch(Some("100"), Some("usd")).unwrap();
-        assert_eq!(p.unwrap().as_i32(), 100);
-        assert_eq!(c.unwrap().as_str(), "USD");
+        let patch = parse_for_patch(
+            Some("Valid Offer"),
+            Some("Detailed description here"),
+            Some("100"),
+            Some("usd"),
+        )
+        .unwrap();
+        assert_eq!(patch.title.as_deref(), Some("Valid Offer"));
+        assert_eq!(
+            patch.description.as_deref(),
+            Some("Detailed description here")
+        );
+        assert_eq!(patch.price.unwrap().as_i32(), 100);
+        assert_eq!(patch.currency.unwrap().as_str(), "USD");
+    }
+
+    #[test]
+    fn patch_rejects_invalid_values() {
+        assert!(parse_for_patch(Some("ab"), None, None, None).is_err());
+        assert!(parse_for_patch(None, Some("short"), None, None).is_err());
+        assert!(parse_for_patch(None, None, Some("abc"), None).is_err());
+        assert!(parse_for_patch(None, None, None, Some("ZZZ")).is_err());
     }
 }
