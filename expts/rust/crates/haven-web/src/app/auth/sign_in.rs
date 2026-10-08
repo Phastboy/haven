@@ -2,10 +2,23 @@ use topcoat::{Result as TopcoatResult, context::Cx, router::error::see_other};
 
 #[topcoat::router::page]
 pub async fn sign_in_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
-    let _ = cx;
+    if crate::cx_helpers::current_user(cx).await?.is_some() {
+        return Err(topcoat::router::error::redirect("/offers").into());
+    }
+
+    let google_enabled = crate::cx_helpers::google_oauth(cx).is_some();
+
     Ok(topcoat::view::view! {
         <div class="sign-in">
             <h1>"Sign In"</h1>
+            if google_enabled {
+                <div class="google-auth">
+                    <a href="/auth/google" class="button google-button">"Sign in with Google"</a>
+                </div>
+                <div class="divider">
+                    <span>"or"</span>
+                </div>
+            }
             <form method="post" action="/auth/sign-in">
                 <input type="email" name="email" required="true" placeholder="Enter your email" />
                 <button type="submit">"Send Magic Link"</button>
