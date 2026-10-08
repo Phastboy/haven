@@ -9,9 +9,9 @@
 A person should be able to put something they are offering on Haven and manage it.
 
 * [x] A person can create an account and sign in.
-* [ ] A person can create an offer.
-* [ ] A person can edit an offer.
-* [ ] A person can delete an offer.
+* [x] A person can create an offer.
+* [x] A person can edit an offer.
+* [x] A person can delete an offer.
 
 **The question:**
 
