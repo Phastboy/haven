@@ -24,11 +24,29 @@ impl GoogleOAuthConfig {
     ///
     /// Accepts optionals for credentials, redirect URI, and base URL to allow
     /// deterministic testing without mutating process environment variables.
+    #[cfg(test)]
     pub fn parse(
         client_id: Option<String>,
         client_secret: Option<String>,
         redirect_uri: Option<String>,
         public_base_url: Option<String>,
+    ) -> Result<Option<Self>, OAuthConfigError> {
+        Self::parse_with_endpoint(
+            client_id,
+            client_secret,
+            redirect_uri,
+            public_base_url,
+            None,
+        )
+    }
+
+    /// Pure parser for Google OAuth configuration supporting explicit callback endpoints.
+    pub fn parse_with_endpoint(
+        client_id: Option<String>,
+        client_secret: Option<String>,
+        redirect_uri: Option<String>,
+        public_base_url: Option<String>,
+        callback_endpoint: Option<String>,
     ) -> Result<Option<Self>, OAuthConfigError> {
         let client_id = client_id
             .map(|s| s.trim().to_string())
@@ -50,11 +68,27 @@ impl GoogleOAuthConfig {
                     .map(|s| s.trim().to_string())
                     .filter(|s| !s.is_empty())
                     .unwrap_or_else(|| {
-                        let base = public_base_url
+                        let raw_base = public_base_url
                             .map(|s| s.trim().to_string())
                             .filter(|s| !s.is_empty())
                             .unwrap_or_else(|| "http://localhost:3000".to_string());
-                        format!("{}/auth/google/callback", base.trim_end_matches('/'))
+                        let base = if raw_base.starts_with("http://")
+                            || raw_base.starts_with("https://")
+                        {
+                            raw_base
+                        } else {
+                            format!("http://{raw_base}")
+                        };
+                        let endpoint = callback_endpoint
+                            .map(|s| s.trim().to_string())
+                            .filter(|s| !s.is_empty())
+                            .unwrap_or_else(|| "/auth/google/callback".to_string());
+                        let endpoint = if endpoint.starts_with('/') {
+                            endpoint
+                        } else {
+                            format!("/{endpoint}")
+                        };
+                        format!("{}{}", base.trim_end_matches('/'), endpoint)
                     });
 
                 Url::parse(&redirect_uri)
@@ -85,11 +119,12 @@ impl GoogleOAuthConfig {
 
     /// Loads Google OAuth configuration from environment variables.
     pub fn from_env() -> Result<Option<Self>, OAuthConfigError> {
-        Self::parse(
+        Self::parse_with_endpoint(
             std::env::var("GOOGLE_CLIENT_ID").ok(),
             std::env::var("GOOGLE_CLIENT_SECRET").ok(),
             std::env::var("GOOGLE_REDIRECT_URI").ok(),
             std::env::var("PUBLIC_BASE_URL").ok(),
+            std::env::var("GOOGLE_CALLBACK_ENDPOINT").ok(),
         )
     }
 }
@@ -227,8 +262,7 @@ pub async fn fetch_user_info(
 /// 4. Retrieves Google user info and ensures email is verified.
 /// 5. Finds or creates the Account and User in PostgreSQL.
 /// 6. Issues a session cookie and redirects to `/offers/new`.
-#[topcoat::router::page("./callback")]
-pub async fn google_callback(cx: &topcoat::context::Cx) -> topcoat::Result<()> {
+async fn handle_google_callback(cx: &topcoat::context::Cx) -> topcoat::Result<()> {
     use topcoat::{
         cookie::{Cookie, Cookies},
         router::error::see_other,
@@ -355,6 +389,23 @@ pub async fn google_callback(cx: &topcoat::context::Cx) -> topcoat::Result<()> {
         .map_err(map_err)?;
 
     Err(see_other("/offers/new").into())
+}
+
+/// GET /auth/google/callback
+///
+/// Handles the Google OAuth 2.0 authorization callback.
+#[topcoat::router::page("./callback")]
+pub async fn google_callback(cx: &topcoat::context::Cx) -> topcoat::Result<()> {
+    handle_google_callback(cx).await
+}
+
+/// GET /auth/google/redirect
+///
+/// Alias route for /auth/google/callback to accommodate credentials configured
+/// with /auth/google/redirect as their authorized redirect URI.
+#[topcoat::router::page("./redirect")]
+pub async fn google_redirect(cx: &topcoat::context::Cx) -> topcoat::Result<()> {
+    handle_google_callback(cx).await
 }
 
 #[cfg(test)]
@@ -727,6 +778,46 @@ mod tests {
                 .to_str()
                 .unwrap(),
             "/auth/sign-in?error=state_mismatch"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_redirect_route_handles_request() {
+        let router = test_router(None);
+        let request = http::Request::builder()
+            .method("GET")
+            .uri("/auth/google/redirect")
+            .body(topcoat::router::Body::empty())
+            .unwrap();
+
+        let response = router.handle(request).await;
+        assert_eq!(response.status(), http::StatusCode::SEE_OTHER);
+        assert_eq!(
+            response
+                .headers()
+                .get("location")
+                .unwrap()
+                .to_str()
+                .unwrap(),
+            "/auth/sign-in?error=invalid_request"
+        );
+    }
+
+    #[test]
+    fn parse_with_custom_endpoint_and_schemeless_base_url() {
+        let config = GoogleOAuthConfig::parse_with_endpoint(
+            Some("client-id-123".into()),
+            Some("client-secret-456".into()),
+            None,
+            Some("192.168.0.50.nip.io:8080".into()),
+            Some("/auth/google/redirect".into()),
+        )
+        .unwrap()
+        .unwrap();
+
+        assert_eq!(
+            config.redirect_uri,
+            "http://192.168.0.50.nip.io:8080/auth/google/redirect"
         );
     }
 }
