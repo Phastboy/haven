@@ -344,7 +344,12 @@ pub async fn google_callback(cx: &topcoat::context::Cx) -> topcoat::Result<()> {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic, reason = "test assertions")]
+#[allow(
+    clippy::unwrap_used,
+    clippy::panic,
+    clippy::unimplemented,
+    reason = "test assertions and mocks"
+)]
 mod tests {
     use super::*;
 
@@ -518,5 +523,158 @@ mod tests {
         assert_eq!(query.code.as_deref(), Some("auth-code-123"));
         assert_eq!(query.state.as_deref(), Some("random-state-456"));
         assert!(query.error.is_none());
+    }
+
+    fn test_router(oauth_config: Option<GoogleOAuthConfig>) -> topcoat::router::Router {
+        use topcoat::{
+            cookie::RouterBuilderCookieExt,
+            router::RouterBuilderDiscoverExt,
+            session::RouterBuilderSessionExt,
+        };
+
+        struct DummyRegistry;
+        impl haven_domain::ports::Registry for DummyRegistry {
+            fn offers(&self) -> &(dyn haven_domain::ports::OfferRepository + 'static) { unimplemented!() }
+            fn accounts(&self) -> &(dyn haven_domain::ports::AccountRepository + 'static) { unimplemented!() }
+            fn users(&self) -> &(dyn haven_domain::ports::UserRepository + 'static) { unimplemented!() }
+            fn magic_links(&self) -> &(dyn haven_domain::ports::MagicLinkRepository + 'static) { unimplemented!() }
+            fn sessions(&self) -> &(dyn haven_domain::ports::SessionRepository + 'static) { unimplemented!() }
+        }
+
+        let state = crate::cx_helpers::AppState {
+            registry: std::sync::Arc::new(DummyRegistry),
+            google_oauth: oauth_config,
+            http_client: reqwest::Client::new(),
+        };
+
+        crate::app::router()
+            .cookies()
+            .sessions(
+                topcoat::session::SessionConfig::builder()
+                    .token_store(topcoat::session::cookie::CookieTokenStore::new().name("sid"))
+                    .build(),
+            )
+            .app_context(state)
+            .app_context(crate::cx_helpers::SignInLimiter::new())
+            .app_context(crate::cx_helpers::CreateOfferLimiter::new())
+            .discover()
+            .build()
+    }
+
+    #[tokio::test]
+    async fn test_google_redirect_when_oauth_disabled() {
+        let router = test_router(None);
+        let request = http::Request::builder()
+            .method("GET")
+            .uri("/auth/google")
+            .body(topcoat::router::Body::empty())
+            .unwrap();
+
+        let response = router.handle(request).await;
+        assert_eq!(response.status(), http::StatusCode::SEE_OTHER);
+        assert_eq!(
+            response.headers().get("location").unwrap().to_str().unwrap(),
+            "/auth/sign-in"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_google_redirect_when_oauth_enabled() {
+        let config = GoogleOAuthConfig {
+            client_id: "test-client-id.apps.googleusercontent.com".into(),
+            client_secret: "test-secret".into(),
+            redirect_uri: "http://localhost:3000/auth/google/callback".into(),
+        };
+        let router = test_router(Some(config));
+        let request = http::Request::builder()
+            .method("GET")
+            .uri("/auth/google")
+            .body(topcoat::router::Body::empty())
+            .unwrap();
+
+        let response = router.handle(request).await;
+        assert_eq!(response.status(), http::StatusCode::SEE_OTHER);
+
+        let location = response.headers().get("location").unwrap().to_str().unwrap();
+        assert!(location.starts_with("https://accounts.google.com/o/oauth2/v2/auth?"));
+        assert!(location.contains("client_id=test-client-id.apps.googleusercontent.com"));
+        assert!(location.contains("redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fgoogle%2Fcallback"));
+        assert!(location.contains("state="));
+
+        // Ensure CSRF state cookie is set
+        let set_cookie = response.headers().get("set-cookie").unwrap().to_str().unwrap();
+        assert!(set_cookie.contains("g_oauth_state="));
+        assert!(set_cookie.contains("Path=/auth/google"));
+        assert!(set_cookie.contains("HttpOnly"));
+        assert!(set_cookie.contains("SameSite=Lax"));
+    }
+
+    #[tokio::test]
+    async fn test_callback_redirects_when_user_cancels() {
+        let router = test_router(None);
+        let request = http::Request::builder()
+            .method("GET")
+            .uri("/auth/google/callback?error=access_denied")
+            .body(topcoat::router::Body::empty())
+            .unwrap();
+
+        let response = router.handle(request).await;
+        assert_eq!(response.status(), http::StatusCode::SEE_OTHER);
+        assert_eq!(
+            response.headers().get("location").unwrap().to_str().unwrap(),
+            "/auth/sign-in?error=google_cancelled"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_callback_redirects_when_params_missing() {
+        let router = test_router(None);
+        let request = http::Request::builder()
+            .method("GET")
+            .uri("/auth/google/callback")
+            .body(topcoat::router::Body::empty())
+            .unwrap();
+
+        let response = router.handle(request).await;
+        assert_eq!(response.status(), http::StatusCode::SEE_OTHER);
+        assert_eq!(
+            response.headers().get("location").unwrap().to_str().unwrap(),
+            "/auth/sign-in?error=invalid_request"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_callback_rejects_missing_state_cookie() {
+        let router = test_router(None);
+        let request = http::Request::builder()
+            .method("GET")
+            .uri("/auth/google/callback?code=sample-code&state=sample-state")
+            .body(topcoat::router::Body::empty())
+            .unwrap();
+
+        let response = router.handle(request).await;
+        assert_eq!(response.status(), http::StatusCode::SEE_OTHER);
+        assert_eq!(
+            response.headers().get("location").unwrap().to_str().unwrap(),
+            "/auth/sign-in?error=state_missing"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_callback_rejects_state_mismatch() {
+        let router = test_router(None);
+        let request = http::Request::builder()
+            .method("GET")
+            .uri("/auth/google/callback?code=sample-code&state=incoming-state")
+            .header("cookie", "g_oauth_state=different-cookie-state")
+            .body(topcoat::router::Body::empty())
+            .unwrap();
+
+        let response = router.handle(request).await;
+        assert_eq!(response.status(), http::StatusCode::SEE_OTHER);
+        assert_eq!(
+            response.headers().get("location").unwrap().to_str().unwrap(),
+            "/auth/sign-in?error=state_mismatch"
+        );
     }
 }
