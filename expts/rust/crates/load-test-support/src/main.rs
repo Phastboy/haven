@@ -136,9 +136,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 for j in 0..num_offers {
                     let create_req = haven_domain::offer::CreateOffer {
                         title: format!("Test Offer {j} from User {i}"),
-                        description: Some(
-                            "This is a seeded offer to fill the database.".to_string(),
-                        ),
+                        description: "This is a seeded offer to fill the database.".to_string(),
                         price: haven_domain::offer::Price::new(1000 + j).unwrap(),
                         currency: haven_domain::offer::CurrencyCode::parse("NGN").unwrap(),
                     };

@@ -14,7 +14,7 @@ impl PostgresOfferRepository {
         id: Uuid,
         user_id: Uuid,
         title: String,
-        description: Option<String>,
+        description: String,
         price: i32,
         currency: &str,
         created_at: chrono::DateTime<chrono::Utc>,
@@ -180,18 +180,24 @@ impl OfferRepository for PostgresOfferRepository {
     ) -> Result<Offer, RepoError> {
         let o_id = offer_id.as_uuid();
         let u_id = user_id.as_uuid();
+        let title_val = update_offer.title.as_deref();
+        let desc_val = update_offer.description.as_deref();
         let price_val = update_offer.price.map(|p| p.as_i32());
         let currency_val = update_offer.currency.as_ref().map(CurrencyCode::as_str);
 
         let row = sqlx::query!(
             r#"
             UPDATE offer
-            SET title = $1, description = $2, price = COALESCE($3, price), currency = COALESCE($4, currency), updated_at = NOW()
+            SET title = COALESCE($1, title),
+                description = COALESCE($2, description),
+                price = COALESCE($3, price),
+                currency = COALESCE($4, currency),
+                updated_at = NOW()
             WHERE id = $5 AND user_id = $6
             RETURNING id, user_id, title, description, price, currency, created_at, updated_at
             "#,
-            update_offer.title,
-            update_offer.description,
+            title_val,
+            desc_val,
             price_val,
             currency_val,
             o_id,
@@ -269,29 +275,26 @@ mod tests {
 
         // 1. Create a dummy account and user
         let account_id = Uuid::new_v4();
-        sqlx::query!(
-            "INSERT INTO account (id, email) VALUES ($1, $2)",
-            account_id,
-            format!("{}@example.com", account_id)
-        )
-        .execute(&pool)
-        .await
-        .unwrap();
+        let email = format!("{account_id}@example.com");
+        sqlx::query("INSERT INTO account (id, email) VALUES ($1, $2)")
+            .bind(account_id)
+            .bind(&email)
+            .execute(&pool)
+            .await
+            .unwrap();
 
         let user_id = UserId(Uuid::new_v4());
-        sqlx::query!(
-            "INSERT INTO \"user\" (id, account_id) VALUES ($1, $2)",
-            user_id.as_uuid(),
-            account_id
-        )
-        .execute(&pool)
-        .await
-        .unwrap();
+        sqlx::query("INSERT INTO \"user\" (id, account_id) VALUES ($1, $2)")
+            .bind(user_id.as_uuid())
+            .bind(account_id)
+            .execute(&pool)
+            .await
+            .unwrap();
 
         // 2. Create an offer
         let co = CreateOffer {
             title: "Original Title".to_string(),
-            description: None,
+            description: "Original Description".to_string(),
             price: Price::new(100).unwrap(),
             currency: CurrencyCode::parse("USD").unwrap(),
         };
@@ -302,38 +305,44 @@ mod tests {
 
         assert_eq!(offer.price.as_i32(), 100);
         assert_eq!(offer.currency.as_str(), "USD");
+        assert_eq!(offer.description, "Original Description");
 
-        // 3. Update title, leave price and currency unchanged (None)
+        // 3. Update title, leave description, price and currency unchanged (None)
         let uo1 = UpdateOffer {
-            title: "New Title".to_string(),
+            title: Some("New Title".to_string()),
             description: None,
             price: None,
             currency: None,
         };
         let offer1 = repo.update(offer.id, user_id, &uo1).await.unwrap();
         assert_eq!(offer1.title, "New Title");
+        assert_eq!(offer1.description, "Original Description"); // Unchanged
         assert_eq!(offer1.price.as_i32(), 100); // Unchanged
         assert_eq!(offer1.currency.as_str(), "USD"); // Unchanged
 
         // 4. Update price only
         let uo2 = UpdateOffer {
-            title: "New Title".to_string(),
+            title: None,
             description: None,
             price: Some(Price::new(200).unwrap()),
             currency: None,
         };
         let offer2 = repo.update(offer.id, user_id, &uo2).await.unwrap();
+        assert_eq!(offer2.title, "New Title"); // Unchanged
+        assert_eq!(offer2.description, "Original Description"); // Unchanged
         assert_eq!(offer2.price.as_i32(), 200);
         assert_eq!(offer2.currency.as_str(), "USD"); // Unchanged
 
-        // 5. Update currency only
+        // 5. Update currency and description
         let uo3 = UpdateOffer {
-            title: "New Title".to_string(),
-            description: None,
+            title: None,
+            description: Some("Updated Description".to_string()),
             price: None,
             currency: Some(CurrencyCode::parse("NGN").unwrap()),
         };
         let offer3 = repo.update(offer.id, user_id, &uo3).await.unwrap();
+        assert_eq!(offer3.title, "New Title"); // Unchanged
+        assert_eq!(offer3.description, "Updated Description");
         assert_eq!(offer3.price.as_i32(), 200); // Unchanged
         assert_eq!(offer3.currency.as_str(), "NGN");
     }

@@ -13,7 +13,7 @@ pub async fn view_offer(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
     Ok(view! {
         <div class="view-offer">
             <h1>(offer.title)</h1>
-            <p>(offer.description.unwrap_or_default())</p>
+            <p>(offer.description)</p>
             <div class="meta">
                 "Price: "
                 (if offer.price.as_i32() == 0 {

@@ -152,7 +152,7 @@ pub struct Offer {
     pub id: OfferId,
     pub user_id: UserId,
     pub title: String,
-    pub description: Option<String>,
+    pub description: String,
     pub price: Price,
     pub currency: CurrencyCode,
     pub created_at: DateTime<Utc>,
@@ -165,7 +165,7 @@ impl Offer {}
 #[derive(Debug, Clone)]
 pub struct CreateOffer {
     pub title: String,
-    pub description: Option<String>,
+    pub description: String,
     pub price: Price,
     pub currency: CurrencyCode,
 }
@@ -173,9 +173,7 @@ pub struct CreateOffer {
 impl CreateOffer {
     pub fn validate(&self) -> Result<(), DomainError> {
         validate_title(&self.title)?;
-        if let Some(ref desc) = self.description {
-            validate_description(desc)?;
-        }
+        validate_description(&self.description)?;
         Ok(())
     }
 }
@@ -183,7 +181,7 @@ impl CreateOffer {
 /// Data needed to update an existing offer.
 #[derive(Debug, Clone)]
 pub struct UpdateOffer {
-    pub title: String,
+    pub title: Option<String>,
     pub description: Option<String>,
     pub price: Option<Price>,
     pub currency: Option<CurrencyCode>,
@@ -191,7 +189,9 @@ pub struct UpdateOffer {
 
 impl UpdateOffer {
     pub fn validate(&self) -> Result<(), DomainError> {
-        validate_title(&self.title)?;
+        if let Some(ref title) = self.title {
+            validate_title(title)?;
+        }
         if let Some(ref desc) = self.description {
             validate_description(desc)?;
         }
@@ -298,7 +298,7 @@ mod tests {
     fn create_offer_validates_title_and_description() {
         let mut co = CreateOffer {
             title: "Valid Title".into(),
-            description: None,
+            description: "Valid description here".into(),
             price: Price::ZERO,
             currency: CurrencyCode::default_code(),
         };
@@ -308,13 +308,46 @@ mod tests {
         assert!(matches!(co.validate(), Err(DomainError::BlankTitle)));
 
         co.title = "Valid Title".into();
-        co.description = Some("short".into());
+        co.description = "short".into();
         assert!(matches!(
             co.validate(),
             Err(DomainError::DescriptionTooShort)
         ));
 
-        co.description = Some("This is a valid offer description.".into());
+        co.description = "This is a valid offer description.".into();
         assert!(co.validate().is_ok());
+    }
+
+    #[test]
+    fn update_offer_validates_partial_updates() {
+        let uo = UpdateOffer {
+            title: None,
+            description: None,
+            price: None,
+            currency: None,
+        };
+        assert!(uo.validate().is_ok());
+
+        let uo_invalid_title = UpdateOffer {
+            title: Some("ab".into()),
+            description: None,
+            price: None,
+            currency: None,
+        };
+        assert!(matches!(
+            uo_invalid_title.validate(),
+            Err(DomainError::TitleTooShort)
+        ));
+
+        let uo_invalid_desc = UpdateOffer {
+            title: None,
+            description: Some("short".into()),
+            price: None,
+            currency: None,
+        };
+        assert!(matches!(
+            uo_invalid_desc.validate(),
+            Err(DomainError::DescriptionTooShort)
+        ));
     }
 }

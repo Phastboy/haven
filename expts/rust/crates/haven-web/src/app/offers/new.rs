@@ -55,7 +55,7 @@ pub async fn create_offer(
 
     let create_req = haven_domain::offer::CreateOffer {
         title: form.0.title,
-        description: form.0.description.filter(|s| !s.is_empty()),
+        description: form.0.description.unwrap_or_default(),
         price,
         currency,
     };
