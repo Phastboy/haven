@@ -54,7 +54,7 @@ impl AdaptiveCookieTokenStore {
     ///
     /// Precedence:
     /// 1. `COOKIE_SECURE` ("true"/"1" -> true, "false"/"0" -> false).
-    /// 2. `X-Forwarded-Proto: https` -> true.
+    /// 2. `TRUST_FORWARDED_PROTO=true` AND `X-Forwarded-Proto: https` -> true.
     /// 3. URI scheme `https` -> true.
     /// 4. `PUBLIC_BASE_URL` starting with `https://` -> true.
     /// 5. `GOOGLE_REDIRECT_URI` starting with `https://` -> true.
@@ -62,6 +62,7 @@ impl AdaptiveCookieTokenStore {
     #[must_use]
     pub fn is_secure(
         cookie_secure_env: Option<&str>,
+        trust_forwarded_proto_env: Option<&str>,
         forwarded_proto_header: Option<&str>,
         uri_scheme: Option<&str>,
         public_base_url_env: Option<&str>,
@@ -77,7 +78,14 @@ impl AdaptiveCookieTokenStore {
             }
         }
 
-        if forwarded_proto_header.is_some_and(|proto| proto.eq_ignore_ascii_case("https")) {
+        let trust_proxy = trust_forwarded_proto_env.is_some_and(|v| {
+            let t = v.trim();
+            t.eq_ignore_ascii_case("true") || t == "1"
+        });
+
+        if trust_proxy
+            && forwarded_proto_header.is_some_and(|proto| proto.eq_ignore_ascii_case("https"))
+        {
             return true;
         }
 
@@ -100,6 +108,7 @@ impl AdaptiveCookieTokenStore {
     #[must_use]
     pub fn is_secure_transport(&self, cx: &Cx) -> bool {
         let cookie_secure = std::env::var("COOKIE_SECURE").ok();
+        let trust_forwarded = std::env::var("TRUST_FORWARDED_PROTO").ok();
         let parts = try_request_context::<http::request::Parts>(cx);
         let proto = parts
             .and_then(|p| p.headers.get("x-forwarded-proto"))
@@ -110,6 +119,7 @@ impl AdaptiveCookieTokenStore {
 
         Self::is_secure(
             cookie_secure.as_deref(),
+            trust_forwarded.as_deref(),
             proto,
             uri_scheme,
             public_base_url.as_deref(),
@@ -140,7 +150,13 @@ impl TokenStore for AdaptiveCookieTokenStore {
                 return Ok(Some(token));
             }
 
-            // 2. Check for plain cookie (non-TLS / dev)
+            // 2. On secure transport, reject plain/insecure cookie fallback to
+            // prevent cookie tossing / session fixation from insecure origins or subdomains.
+            if self.is_secure_transport(cx) {
+                return Ok(None);
+            }
+
+            // 3. Check for plain cookie (non-TLS / dev)
             if let Some(token) = jar
                 .get(&self.name)
                 .and_then(|cookie| Token::decode(cookie.value_trimmed()).ok())
@@ -228,10 +244,11 @@ mod tests {
     }
 
     #[test]
-    fn is_secure_evaluates_precedence_correctly() {
+    fn is_secure_evaluates_env_and_headers() {
         // 1. Explicit COOKIE_SECURE override
         assert!(AdaptiveCookieTokenStore::is_secure(
             Some("true"),
+            None,
             None,
             None,
             None,
@@ -242,10 +259,12 @@ mod tests {
             None,
             None,
             None,
+            None,
             None
         ));
         assert!(!AdaptiveCookieTokenStore::is_secure(
             Some("false"),
+            Some("true"),
             Some("https"),
             Some("https"),
             Some("https://foo.com"),
@@ -253,15 +272,17 @@ mod tests {
         ));
         assert!(!AdaptiveCookieTokenStore::is_secure(
             Some("0"),
+            Some("true"),
             Some("https"),
             Some("https"),
             Some("https://foo.com"),
             Some("https://bar.com")
         ));
 
-        // 2. X-Forwarded-Proto header
+        // 2. X-Forwarded-Proto header (only when TRUST_FORWARDED_PROTO=true)
         assert!(AdaptiveCookieTokenStore::is_secure(
             None,
+            Some("true"),
             Some("https"),
             None,
             None,
@@ -269,14 +290,36 @@ mod tests {
         ));
         assert!(AdaptiveCookieTokenStore::is_secure(
             None,
+            Some("1"),
             Some("HTTPS"),
             None,
             None,
             None
         ));
+        // Untrusted proxy headers must NOT be honored
+        assert!(!AdaptiveCookieTokenStore::is_secure(
+            None,
+            None,
+            Some("https"),
+            None,
+            None,
+            None
+        ));
+        assert!(!AdaptiveCookieTokenStore::is_secure(
+            None,
+            Some("false"),
+            Some("https"),
+            None,
+            None,
+            None
+        ));
+    }
 
-        // 3. URI scheme
+    #[test]
+    fn is_secure_evaluates_urls_and_fallback() {
+        // 1. URI scheme
         assert!(AdaptiveCookieTokenStore::is_secure(
+            None,
             None,
             None,
             Some("https"),
@@ -284,8 +327,9 @@ mod tests {
             None
         ));
 
-        // 4. PUBLIC_BASE_URL
+        // 2. PUBLIC_BASE_URL
         assert!(AdaptiveCookieTokenStore::is_secure(
+            None,
             None,
             None,
             None,
@@ -296,6 +340,7 @@ mod tests {
             None,
             None,
             None,
+            None,
             Some("http://192.168.0.50.nip.io:8080"),
             None
         ));
@@ -303,12 +348,14 @@ mod tests {
             None,
             None,
             None,
+            None,
             Some("192.168.0.50.nip.io:8080"),
             None
         ));
 
-        // 5. GOOGLE_REDIRECT_URI
+        // 3. GOOGLE_REDIRECT_URI
         assert!(AdaptiveCookieTokenStore::is_secure(
+            None,
             None,
             None,
             None,
@@ -316,9 +363,9 @@ mod tests {
             Some("https://haven.example.com/auth/google/callback")
         ));
 
-        // 6. Default fallback
+        // 4. Default fallback
         assert!(!AdaptiveCookieTokenStore::is_secure(
-            None, None, None, None, None
+            None, None, None, None, None, None
         ));
     }
 
@@ -369,7 +416,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn writes_secure_cookie_when_forwarded_proto_https() {
+    async fn writes_secure_cookie_when_https() {
         let store = AdaptiveCookieTokenStore::new();
         let config = topcoat::session::SessionConfig::builder()
             .token_store(store)
@@ -389,8 +436,7 @@ mod tests {
 
         let req = Request::builder()
             .method("GET")
-            .uri("http://example.com/login-secure")
-            .header("x-forwarded-proto", "https")
+            .uri("https://example.com/login-secure")
             .body(Body::empty())
             .unwrap();
 
@@ -418,7 +464,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn reads_both_prefixed_and_unprefixed_cookies() {
+    async fn reads_cookies_respecting_transport_security() {
         let store = AdaptiveCookieTokenStore::new();
         let config = topcoat::session::SessionConfig::builder()
             .token_store(store)
@@ -442,42 +488,68 @@ mod tests {
         let token = Token::random();
         let encoded_token = token.encode();
 
-        // 1. Plain sid cookie (HTTP LAN)
-        let plain_outcome = router
+        // 1. Plain HTTP allows fallback to plain sid
+        let http_plain_response = router
             .handle(
                 Request::builder()
                     .method("GET")
-                    .uri("/check-token")
+                    .uri("http://192.168.0.50.nip.io:8080/check-token")
                     .header("cookie", format!("sid={encoded_token}"))
                     .body(Body::empty())
                     .unwrap(),
             )
             .await;
-        assert_eq!(plain_outcome.status(), StatusCode::OK);
+        assert_eq!(http_plain_response.status(), StatusCode::OK);
 
-        // 2. Prefixed __Host-sid cookie (HTTPS / k6 load tests)
-        let host_outcome = router
+        // 2. Plain HTTP also accepts __Host-sid
+        let http_host_response = router
             .handle(
                 Request::builder()
                     .method("GET")
-                    .uri("/check-token")
+                    .uri("http://192.168.0.50.nip.io:8080/check-token")
                     .header("cookie", format!("__Host-sid={encoded_token}"))
                     .body(Body::empty())
                     .unwrap(),
             )
             .await;
-        assert_eq!(host_outcome.status(), StatusCode::OK);
+        assert_eq!(http_host_response.status(), StatusCode::OK);
 
-        // 3. Request without cookie is rejected with 401
-        let empty_outcome = router
+        // 3. Secure HTTPS accepts __Host-sid
+        let secure_host_response = router
             .handle(
                 Request::builder()
                     .method("GET")
-                    .uri("/check-token")
+                    .uri("https://example.com/check-token")
+                    .header("cookie", format!("__Host-sid={encoded_token}"))
                     .body(Body::empty())
                     .unwrap(),
             )
             .await;
-        assert_eq!(empty_outcome.status(), StatusCode::UNAUTHORIZED);
+        assert_eq!(secure_host_response.status(), StatusCode::OK);
+
+        // 4. Secure HTTPS rejects plain sid fallback (anti-cookie-tossing)
+        let secure_plain_response = router
+            .handle(
+                Request::builder()
+                    .method("GET")
+                    .uri("https://example.com/check-token")
+                    .header("cookie", format!("sid={encoded_token}"))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await;
+        assert_eq!(secure_plain_response.status(), StatusCode::UNAUTHORIZED);
+
+        // 5. Request without cookie is rejected with 401
+        let empty_response = router
+            .handle(
+                Request::builder()
+                    .method("GET")
+                    .uri("http://192.168.0.50.nip.io:8080/check-token")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await;
+        assert_eq!(empty_response.status(), StatusCode::UNAUTHORIZED);
     }
 }
