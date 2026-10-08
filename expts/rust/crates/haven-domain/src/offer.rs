@@ -123,6 +123,18 @@ pub fn validate_description(description: &str) -> Result<(), DomainError> {
     Ok(())
 }
 
+/// Validates that an offer price and currency combination is valid.
+/// When price is greater than zero, currency must be explicitly provided.
+pub fn validate_price_and_currency(
+    price: Price,
+    currency: Option<&CurrencyCode>,
+) -> Result<(), DomainError> {
+    if price.as_i32() > 0 && currency.is_none() {
+        return Err(DomainError::CurrencyRequired);
+    }
+    Ok(())
+}
+
 /// A 3-character ISO 4217 currency code whitelisted for Haven.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CurrencyCode(String);
@@ -174,6 +186,7 @@ impl CreateOffer {
     pub fn validate(&self) -> Result<(), DomainError> {
         validate_title(&self.title)?;
         validate_description(&self.description)?;
+        validate_price_and_currency(self.price, Some(&self.currency))?;
         Ok(())
     }
 }
@@ -431,5 +444,20 @@ mod tests {
             validate_description(&desc_2001_emojis),
             Err(DomainError::DescriptionTooLong)
         ));
+    }
+
+    #[test]
+    fn price_and_currency_validation() {
+        let zero = Price::ZERO;
+        let positive = Price::new(500).unwrap();
+        let usd = CurrencyCode::parse("USD").unwrap();
+
+        assert!(validate_price_and_currency(zero, None).is_ok());
+        assert!(validate_price_and_currency(zero, Some(&usd)).is_ok());
+        assert_eq!(
+            validate_price_and_currency(positive, None),
+            Err(DomainError::CurrencyRequired)
+        );
+        assert!(validate_price_and_currency(positive, Some(&usd)).is_ok());
     }
 }

@@ -19,11 +19,11 @@ pub async fn new_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> 
                 </label>
                 <label>
                     "Price (minor units):"
-                    <input type="number" name="price" min="0" placeholder="Leave blank for Free" />
+                    <input type="number" name="price" min="0" required="required" placeholder="0 for Free" />
                 </label>
                 <label>
                     "Currency:"
-                    <input type="text" name="currency" placeholder="NGN" maxlength="3" />
+                    <input type="text" name="currency" placeholder="NGN (required if price > 0)" maxlength="3" />
                 </label>
                 <button type="submit">"Create"</button>
             </form>
