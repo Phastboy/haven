@@ -35,7 +35,7 @@ pub async fn edit_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View>
 
 #[derive(serde::Deserialize)]
 pub struct EditOfferForm {
-    pub title: String,
+    pub title: Option<String>,
     pub description: Option<String>,
     pub price: Option<String>,
     pub currency: Option<String>,
@@ -52,19 +52,23 @@ pub async fn update_offer(
     // Authorization check
     let _offer = crate::cx_helpers::owned_offer(cx, offer_id).await?;
 
-    let (price, currency) =
-        super::super::fields::parse_for_patch(form.0.price.as_deref(), form.0.currency.as_deref())?;
+    let patch = super::super::fields::parse_for_patch(
+        form.0.title.as_deref(),
+        form.0.description.as_deref(),
+        form.0.price.as_deref(),
+        form.0.currency.as_deref(),
+    )?;
 
     let update_req = haven_domain::offer::UpdateOffer {
-        title: Some(form.0.title).filter(|s| !s.is_empty()),
-        description: form.0.description.filter(|s| !s.is_empty()),
-        price,
-        currency,
+        title: patch.title,
+        description: patch.description,
+        price: patch.price,
+        currency: patch.currency,
     };
 
     update_req
         .validate()
-        .map_err(|_| bad_request("invalid offer data"))?;
+        .map_err(|e| bad_request(e.to_string()))?;
 
     let user = crate::cx_helpers::require_auth(cx).await?;
     crate::cx_helpers::registry(cx)
