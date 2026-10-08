@@ -28,3 +28,16 @@ When planning and sequencing commits, arrange them strictly in ascending order o
 - **Linear History**: Rebase feature branches cleanly onto `main`.
 - **Atomic & Buildable**: Every intermediate commit must compile cleanly and pass tests on its own.
 - **Conventional Commits**: Use descriptive types (`feat`, `fix`, `docs`, `test`, `perf`, `refactor`) with a concise summary.
+
+## Mandatory Pre-Commit & Pre-Push Verification Checklist
+
+Before pushing any commit or branch to remote, every intermediate commit and final branch state MUST pass the full workspace verification suite:
+
+1. **Formatting**: `cargo fmt --all --check` (must be 100% compliant with rustfmt)
+2. **Lints**: `cargo clippy --workspace --all-targets --all-features --locked -- -D warnings`
+3. **Build**: `cargo build --workspace --locked`
+4. **Tests**: `cargo test --workspace --locked`
+5. **Doctests**: `cargo test --doc --workspace --locked`
+6. **Documentation**: `RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --document-private-items`
+7. **Security & Supply Chain**: `cargo deny check`
+
