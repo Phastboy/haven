@@ -30,7 +30,7 @@ pub async fn view_offer(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
             <div class="owner-actions">
                 <a href=(format!("/offers/manage/{}/edit", offer.id)) class="btn btn-primary">"Edit"</a>
                 <a href=(format!("/offers/{}", offer.slug)) class="btn btn-secondary">"View Public Page"</a>
-                <form method="post" action=(format!("/offers/manage/{}/delete", offer.id)) style="display:inline;">
+                <form method="post" action=(format!("/offers/manage/{}/delete", offer.id)) class="inline-form">
                     <button type="submit" class="btn btn-danger">"Delete"</button>
                 </form>
             </div>

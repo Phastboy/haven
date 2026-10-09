@@ -202,6 +202,10 @@ a {
   max-width: 32rem;
 }
 
+.inline-form {
+  display: inline;
+}
+
 .field {
   display: flex;
   flex-direction: column;
