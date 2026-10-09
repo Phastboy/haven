@@ -27,6 +27,8 @@ jobs:
   build-and-verify:
     name: Build, Scan & Smoke Test
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
     defaults:
       run:
         working-directory: expts/rust
@@ -137,7 +139,7 @@ jobs:
           KOYEB_TOKEN: ${{ secrets.KOYEB_TOKEN }}
           KOYEB_APP: ${{ vars.KOYEB_APP || 'haven' }}
           KOYEB_SERVICE: ${{ vars.KOYEB_SERVICE || 'web' }}
-          IMAGE_TAG: ghcr.io/${{ github.repository_owner }}/haven-rust:${{ github.ref_name }}
+          IMAGE_TAG: ghcr.io/${{ github.repository_owner }}/haven-rust:${{ needs.build-and-verify.outputs.version }}
         run: |
           if [ -z "$KOYEB_TOKEN" ]; then
             echo "Notice: KOYEB_TOKEN secret is not configured; skipping automatic deployment."

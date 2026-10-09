@@ -68,7 +68,7 @@
   - *Typical*: Full title, price, currency, complete description, timestamp. No owner management buttons.
   - *Not found (404)*: Clean message ("Offer not found") with link back to available offers.
 
-### 3. Owner Management (`/offers` or `/offers/mine`, `/offers/{id}`)
+### 3. Owner Management (`/offers/manage`, `/offers/manage/{id}`)
 - **Purpose**: Offerer manages their existing offers (edit, delete).
 - **States**:
   - *List*: Owner's own offers with edit/delete links.
@@ -85,8 +85,8 @@
 
 - **2026-10-08: Keyset pagination on `(created_at, id)`**:
   - *Why*: Offset pagination skips or duplicates rows as new offers are created concurrently. Keyset paging guarantees stable, constant-time indexed seeks.
-- **2026-10-08: Public views use `slug`; `/offers/{id}` reserved for owner**:
-  - *Why*: Slugs are SEO-friendly and public. Visiting by slug never questions ownership, even for the owner. `/offers/{id}` enforces authenticated ownership for editing and deletion.
+- **2026-10-08: Public views use `slug`; `/offers/manage/{id}` reserved for owner**:
+  - *Why*: Slugs are SEO-friendly and public. Visiting by slug never questions ownership, even for the owner. `/offers/manage/{id}` enforces authenticated ownership for editing and deletion.
 - **2026-10-08: Automated query-count test**:
   - *Why*: Enforces that rendering a list of offers runs in $O(1)$ queries, guarding against future N+1 regressions as relations are introduced.
 - **2026-10-08: Central stylesheet (`/style.css`) with strict CSP compliance**:

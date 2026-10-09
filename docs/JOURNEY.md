@@ -9,7 +9,7 @@ Status: draft. Only entries under **Decided** were confirmed by the owner. Every
 | Stage | Question | Offerer lane | Responder lane | Handoff | Status | Load target |
 |---|---|---|---|---|---|---|
 | 0.1.x | Can I offer something? | create account, sign in, create / see own / edit / delete an offer | none yet | none | completed | met historical baseline (see PERFORMANCE_CONTRACT.md) |
-| 0.2.x | Can someone see it? | offer becomes public on create (generates slug); manage own via `/offers/{id}` | see available offers (public feed), see another person's offer (`/offers/{slug}`) | an offer becomes visible to others | current | ≥ 1,200 iters/s host direct (p95 ≤ 200ms, p99 ≤ 500ms) |
+| 0.2.x | Can someone see it? | offer becomes public on create (generates slug); manage own via `/offers/manage/{id}` | see available offers (public feed), see another person's offer (`/offers/{slug}`) | an offer becomes visible to others | current | ≥ 1,200 iters/s host direct (p95 ≤ 200ms, p99 ≤ 500ms) |
 | 0.3.x | Can someone act on it? | know about expressed interest | express willingness to take on an offer | commitment | not reached | |
 | 0.4.x | Can someone find it? | | find an offer by name, narrow by price | | not reached | |
 | 0.5.x | Can I come back to what I care about? | | save an offer, follow a person, return to both | | not reached | |
@@ -26,7 +26,7 @@ sequenceDiagram
   participant R as Responder
   O->>H: create account, sign in
   O->>H: create an offer (generates slug)
-  O->>H: manage own offer (/offers/{id})
+  O->>H: manage own offer (/offers/manage/{id})
   Note over R,H: Responder lane begins at 0.2.x (Handoff)
   R->>H: see available offers (public feed, keyset cursor)
   R->>H: see another person's offer (/offers/{slug})
@@ -55,7 +55,7 @@ sequenceDiagram
 - Zero authentication required: public and SEO-friendly.
 - Does NOT question ownership: even if visited by the creator, the public view is rendered without edit/delete controls.
 - Displays full title, price, currency, complete description, and creation metadata.
-- Owner controls (edit, delete) reside exclusively at `/offers/{id}` where ownership is verified.
+- Owner controls (edit, delete) reside exclusively at `/offers/manage/{id}` where ownership is verified.
 - States:
   - Typical: clean, text-led presentation of the offer.
   - Not found: unknown slug yields an informative 404 page with a link back to available offers.
@@ -77,7 +77,7 @@ sequenceDiagram
 - Offerer sees a list of their own offers. In 0.2.x, this view is hardened with keyset pagination and styled using semantic tokens.
 
 **A person can edit an offer.**
-- Offerer opens `/offers/{id}/edit` and modifies any subset of fields. Patch semantics preserve unchanged values.
+- Offerer opens `/offers/manage/{id}/edit` and modifies any subset of fields. Patch semantics preserve unchanged values.
 
 **A person can delete an offer.**
 - Offerer deletes their own offer after confirmation.
@@ -85,7 +85,7 @@ sequenceDiagram
 ### Decided
 
 - 2026-10-08: Public view of an offer is accessed via unique URL `slug` (e.g. `/offers/{slug}`) without authentication or ownership checks (SEO-friendly).
-- 2026-10-08: `/offers/{id}` (by UUID) is reserved for authenticated owner management and enforces ownership.
+- 2026-10-08: `/offers/manage/{id}` (by UUID) is reserved for authenticated owner management and enforces ownership.
 - 2026-10-08: Public and owner offer listings use keyset cursor pagination on `(created_at, id)` with a capped page size to eliminate skip/repeat anomalies.
 - 2026-10-08: A query-count test enforces that listing offers executes in $O(1)$ queries to prevent N+1 regressions.
 - 2026-10-08: Load-testing gate for 0.2.x is ≥ 1,200 iterations/sec executed directly on the host machine.
