@@ -45,12 +45,12 @@ export default function () {
     } else if (rand < 0.85) {
         if (session.offer_ids && session.offer_ids.length > 0) {
             const offerId = session.offer_ids[Math.floor(Math.random() * session.offer_ids.length)];
-            http.get(`${BASE_URL}/offers/${offerId}`, { headers, tags: { name: 'GET /offers/id' } });
+            http.get(`${BASE_URL}/offers/manage/${offerId}`, { headers, tags: { name: 'GET /offers/id' } });
         }
     } else if (rand < 0.97) {
         http.get(`${BASE_URL}/`, { tags: { name: 'GET /' } });
     } else {
-        let res = http.get(`${BASE_URL}/offers/new`, { headers, tags: { name: 'GET /offers/new' } });
+        let res = http.get(`${BASE_URL}/offers/manage/new`, { headers, tags: { name: 'GET /offers/new' } });
         const idempKey = extractIdempotencyKey(res.body);
         check(idempKey, { 'extracted idempotency key': (k) => !!k });
         if (!idempKey) return;
@@ -62,7 +62,7 @@ export default function () {
             idempotency_key: idempKey
         };
 
-        res = http.post(`${BASE_URL}/offers/new`, createPayload, {
+        res = http.post(`${BASE_URL}/offers/manage/new`, createPayload, {
             headers: Object.assign({}, headers, { 'Content-Type': 'application/x-www-form-urlencoded' }),
             redirects: 0,
             tags: { name: 'POST /offers/new' }

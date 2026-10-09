@@ -1,9 +1,11 @@
 use crate::account::{Account, AccountId, Email};
 use crate::magic_link::MagicLink;
-use crate::offer::{CreateOffer, Offer, OfferId, UpdateOffer, UserId};
+use crate::offer::{
+    CreateOffer, Offer, OfferCursor, OfferId, OfferPage, OfferSlug, UpdateOffer, UserId,
+};
 use crate::session::{HashedToken, Session, SessionId};
 use crate::user::User;
-use async_trait::async_trait;
+pub use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use std::net::IpAddr;
 use thiserror::Error;
@@ -35,6 +37,14 @@ pub trait OfferRepository: Send + Sync {
     ) -> Result<Option<Offer>, RepoError>;
 
     async fn find_by_user(&self, user_id: UserId) -> Result<Vec<Offer>, RepoError>;
+
+    async fn find_by_slug(&self, slug: &OfferSlug) -> Result<Option<Offer>, RepoError>;
+
+    async fn list_public(
+        &self,
+        cursor: Option<&OfferCursor>,
+        limit: usize,
+    ) -> Result<OfferPage, RepoError>;
 
     async fn create(
         &self,

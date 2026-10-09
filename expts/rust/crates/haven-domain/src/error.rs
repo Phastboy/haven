@@ -37,4 +37,10 @@ pub enum DomainError {
 
     #[error("token generation failed")]
     TokenGenerationFailed,
+
+    #[error("invalid offer slug: {0}")]
+    InvalidSlug(String),
+
+    #[error("invalid pagination cursor")]
+    InvalidCursor,
 }

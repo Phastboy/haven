@@ -42,6 +42,51 @@ impl OfferRepository for FakeOfferRepository {
             .cloned())
     }
 
+    async fn find_by_slug(
+        &self,
+        slug: &crate::offer::OfferSlug,
+    ) -> Result<Option<Offer>, RepoError> {
+        let lock = self.offers.lock().unwrap();
+        Ok(lock.iter().find(|o| o.slug == *slug).cloned())
+    }
+
+    async fn list_public(
+        &self,
+        cursor: Option<&crate::offer::OfferCursor>,
+        limit: usize,
+    ) -> Result<crate::offer::OfferPage, RepoError> {
+        let lock = self.offers.lock().unwrap();
+        let mut sorted = lock.clone();
+        sorted.sort_by(|a, b| {
+            b.created_at
+                .cmp(&a.created_at)
+                .then_with(|| b.id.as_uuid().cmp(&a.id.as_uuid()))
+        });
+
+        let capped_limit = limit.clamp(1, 50);
+
+        let filtered: Vec<Offer> = if let Some(c) = cursor {
+            sorted
+                .into_iter()
+                .filter(|o| (o.created_at, o.id.as_uuid()) < (c.created_at, c.id.as_uuid()))
+                .collect()
+        } else {
+            sorted
+        };
+
+        let has_more = filtered.len() > capped_limit;
+        let items: Vec<Offer> = filtered.into_iter().take(capped_limit).collect();
+        let next_cursor = if has_more {
+            items
+                .last()
+                .map(|item| crate::offer::OfferCursor::new(item.created_at, item.id).encode())
+        } else {
+            None
+        };
+
+        Ok(crate::offer::OfferPage { items, next_cursor })
+    }
+
     async fn create(
         &self,
         user_id: UserId,
@@ -54,9 +99,15 @@ impl OfferRepository for FakeOfferRepository {
             return Ok(offer.clone());
         }
 
+        let offer_id = OfferId(uuid::Uuid::new_v4());
+        let suffix = &offer_id.as_uuid().to_string()[..8];
+        let slug = crate::offer::OfferSlug::from_title_and_suffix(&req.title, suffix)
+            .map_err(|e| RepoError::Corrupt(e.to_string()))?;
+
         let offer = Offer {
-            id: OfferId(uuid::Uuid::new_v4()),
+            id: offer_id,
             user_id,
+            slug,
             title: req.title.clone(),
             description: req.description.clone(),
             price: req.price,

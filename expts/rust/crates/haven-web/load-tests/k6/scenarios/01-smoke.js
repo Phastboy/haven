@@ -17,7 +17,7 @@ export default function () {
     const headers = getHeaders(session.session_token);
 
     // 1. Visit new offer page
-    let res = http.get(`${BASE_URL}/offers/new`, { headers });
+    let res = http.get(`${BASE_URL}/offers/manage/new`, { headers });
     check(res, {
         'GET /offers/new is 200': (r) => r.status === 200,
         'has idempotency key': (r) => extractIdempotencyKey(r.body) !== null,
@@ -35,7 +35,7 @@ export default function () {
         idempotency_key: idempKey
     };
 
-    res = http.post(`${BASE_URL}/offers/new`, payload, {
+    res = http.post(`${BASE_URL}/offers/manage/new`, payload, {
         headers: Object.assign({}, headers, {
             'Content-Type': 'application/x-www-form-urlencoded'
         }),

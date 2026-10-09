@@ -15,6 +15,11 @@ pub fn router() -> topcoat::router::RouterBuilder {
     topcoat::router::module_router!()
 }
 
+#[topcoat::router::route(GET "/robots.txt")]
+pub async fn robots_txt() -> TopcoatResult<&'static str> {
+    Ok("User-agent: *\nDisallow: /offers/manage/\n")
+}
+
 #[topcoat::router::layer]
 pub async fn csp_layer(cx: &Cx, body: Body, next: Next<'_>) -> TopcoatResult<Response> {
     let headers = topcoat::router::response::response_headers(cx);

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n                SELECT id, user_id, title, description, price, currency, created_at, updated_at\n                FROM offer\n                WHERE user_id = $1 AND idempotency_key = $2\n                ",
+  "query": "\n                SELECT id, user_id, slug, title, description, price, currency, created_at, updated_at\n                FROM offer\n                ORDER BY created_at DESC, id DESC\n                LIMIT $1\n                ",
   "describe": {
     "columns": [
       {
@@ -27,6 +27,17 @@
       },
       {
         "ordinal": 2,
+        "name": "slug",
+        "type_info": "Varchar",
+        "origin": {
+          "Table": {
+            "table": "offer",
+            "name": "slug"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
         "name": "title",
         "type_info": "Varchar",
         "origin": {
@@ -37,7 +48,7 @@
         }
       },
       {
-        "ordinal": 3,
+        "ordinal": 4,
         "name": "description",
         "type_info": "Text",
         "origin": {
@@ -48,7 +59,7 @@
         }
       },
       {
-        "ordinal": 4,
+        "ordinal": 5,
         "name": "price",
         "type_info": "Int4",
         "origin": {
@@ -59,7 +70,7 @@
         }
       },
       {
-        "ordinal": 5,
+        "ordinal": 6,
         "name": "currency",
         "type_info": "Bpchar",
         "origin": {
@@ -70,7 +81,7 @@
         }
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "created_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -81,7 +92,7 @@
         }
       },
       {
-        "ordinal": 7,
+        "ordinal": 8,
         "name": "updated_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -94,8 +105,7 @@
     ],
     "parameters": {
       "Left": [
-        "Uuid",
-        "Uuid"
+        "Int8"
       ]
     },
     "nullable": [
@@ -106,8 +116,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "f6cd5fbd63020259223eab84b976f354649ba03189208080b221bc7127303d11"
+  "hash": "0af691bc344a526e14f6f35d4f6c01585cacb510f886fb22abb9095f03c5c48d"
 }

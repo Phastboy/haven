@@ -158,11 +158,166 @@ impl CurrencyCode {
     }
 }
 
+/// Minimum character count for an offer slug.
+pub const MIN_SLUG_CHARS: usize = 3;
+
+/// Maximum character count for an offer slug.
+pub const MAX_SLUG_CHARS: usize = 120;
+
+/// Slugs reserved by the routing structure that cannot identify an offer.
+pub const RESERVED_SLUGS: &[&str] = &["manage", "new"];
+
+/// A URL-safe unique slug for public offer lookup.
+/// Conforms to lowercase alphanumeric segments separated by hyphens (e.g. `vintage-chair-a1b2c3d4`).
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct OfferSlug(String);
+
+impl OfferSlug {
+    pub fn parse(s: &str) -> Result<Self, DomainError> {
+        let trimmed = s.trim();
+        let len = trimmed.len();
+        if !(MIN_SLUG_CHARS..=MAX_SLUG_CHARS).contains(&len) {
+            return Err(DomainError::InvalidSlug(s.to_string()));
+        }
+
+        if RESERVED_SLUGS.contains(&trimmed) {
+            return Err(DomainError::InvalidSlug(s.to_string()));
+        }
+
+        let mut prev_hyphen = false;
+        for (i, c) in trimmed.chars().enumerate() {
+            if c.is_ascii_lowercase() || c.is_ascii_digit() {
+                prev_hyphen = false;
+            } else if c == '-' {
+                if i == 0 || prev_hyphen {
+                    return Err(DomainError::InvalidSlug(s.to_string()));
+                }
+                prev_hyphen = true;
+            } else {
+                return Err(DomainError::InvalidSlug(s.to_string()));
+            }
+        }
+
+        if prev_hyphen {
+            return Err(DomainError::InvalidSlug(s.to_string()));
+        }
+
+        Ok(Self(trimmed.to_string()))
+    }
+
+    /// Derives a clean URL-safe slug from a title and a unique suffix (e.g. offer id prefix).
+    pub fn from_title_and_suffix(title: &str, suffix: &str) -> Result<Self, DomainError> {
+        let mut base = String::new();
+        let mut last_was_hyphen = false;
+        for c in title.trim().chars() {
+            if c.is_ascii_alphanumeric() {
+                base.push(c.to_ascii_lowercase());
+                last_was_hyphen = false;
+            } else if !last_was_hyphen && !base.is_empty() {
+                base.push('-');
+                last_was_hyphen = true;
+            }
+        }
+        let mut base_clean = base.trim_end_matches('-').to_string();
+        if base_clean.is_empty() {
+            base_clean = "offer".to_string();
+        }
+        if base_clean.len() > 80 {
+            let mut truncated = String::new();
+            for c in base_clean.chars().take(80) {
+                truncated.push(c);
+            }
+            base_clean = truncated.trim_end_matches('-').to_string();
+            if base_clean.is_empty() {
+                base_clean = "offer".to_string();
+            }
+        }
+
+        let mut suffix_clean = String::new();
+        for c in suffix
+            .to_ascii_lowercase()
+            .chars()
+            .filter(char::is_ascii_alphanumeric)
+            .take(8)
+        {
+            suffix_clean.push(c);
+        }
+        let suffix_val = if suffix_clean.is_empty() {
+            "00000000"
+        } else {
+            &suffix_clean
+        };
+
+        let combined = format!("{base_clean}-{suffix_val}");
+        Self::parse(&combined)
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl std::fmt::Display for OfferSlug {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+/// Keyset cursor for deterministic, constant-time feed pagination on `(created_at, id)`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OfferCursor {
+    pub created_at: DateTime<Utc>,
+    pub id: OfferId,
+}
+
+impl OfferCursor {
+    pub fn new(created_at: DateTime<Utc>, id: OfferId) -> Self {
+        Self { created_at, id }
+    }
+
+    pub fn encode(&self) -> String {
+        let raw = format!(
+            "{}_{}",
+            self.created_at.timestamp_micros(),
+            self.id.as_uuid()
+        );
+        hex::encode(raw.as_bytes())
+    }
+
+    pub fn decode(encoded: &str) -> Result<Self, DomainError> {
+        let bytes = hex::decode(encoded).map_err(|_| DomainError::InvalidCursor)?;
+        let raw = String::from_utf8(bytes).map_err(|_| DomainError::InvalidCursor)?;
+        let mut parts = raw.split('_');
+        let micros_str = parts.next().ok_or(DomainError::InvalidCursor)?;
+        let uuid_str = parts.next().ok_or(DomainError::InvalidCursor)?;
+        if parts.next().is_some() {
+            return Err(DomainError::InvalidCursor);
+        }
+        let micros: i64 = micros_str.parse().map_err(|_| DomainError::InvalidCursor)?;
+        let uuid = Uuid::parse_str(uuid_str).map_err(|_| DomainError::InvalidCursor)?;
+        let created_at =
+            DateTime::from_timestamp_micros(micros).ok_or(DomainError::InvalidCursor)?;
+
+        Ok(Self {
+            created_at,
+            id: OfferId(uuid),
+        })
+    }
+}
+
+/// A page of offers returned from a keyset query.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OfferPage {
+    pub items: Vec<Offer>,
+    pub next_cursor: Option<String>,
+}
+
 /// Core offer entity.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Offer {
     pub id: OfferId,
     pub user_id: UserId,
+    pub slug: OfferSlug,
     pub title: String,
     pub description: String,
     pub price: Price,
@@ -459,5 +614,100 @@ mod tests {
             Err(DomainError::CurrencyRequired)
         );
         assert!(validate_price_and_currency(positive, Some(&usd)).is_ok());
+    }
+
+    #[test]
+    fn offer_slug_validates_format() {
+        assert!(OfferSlug::parse("vintage-chair-a1b2c3d4").is_ok());
+        assert!(OfferSlug::parse("abc").is_ok());
+        assert!(OfferSlug::parse("123").is_ok());
+        assert!(OfferSlug::parse("a-b-c").is_ok());
+
+        // Too short (< 3)
+        assert!(matches!(
+            OfferSlug::parse("ab"),
+            Err(DomainError::InvalidSlug(_))
+        ));
+        // Leading hyphen
+        assert!(matches!(
+            OfferSlug::parse("-abc"),
+            Err(DomainError::InvalidSlug(_))
+        ));
+        // Trailing hyphen
+        assert!(matches!(
+            OfferSlug::parse("abc-"),
+            Err(DomainError::InvalidSlug(_))
+        ));
+        // Consecutive hyphens
+        assert!(matches!(
+            OfferSlug::parse("a--b"),
+            Err(DomainError::InvalidSlug(_))
+        ));
+        // Uppercase or special characters
+        assert!(matches!(
+            OfferSlug::parse("Vintage-chair"),
+            Err(DomainError::InvalidSlug(_))
+        ));
+        assert!(matches!(
+            OfferSlug::parse("vintage_chair"),
+            Err(DomainError::InvalidSlug(_))
+        ));
+        assert!(matches!(
+            OfferSlug::parse("vintage chair"),
+            Err(DomainError::InvalidSlug(_))
+        ));
+
+        // Reserved slugs
+        assert!(matches!(
+            OfferSlug::parse("manage"),
+            Err(DomainError::InvalidSlug(_))
+        ));
+        assert!(matches!(
+            OfferSlug::parse("new"),
+            Err(DomainError::InvalidSlug(_))
+        ));
+    }
+
+    #[test]
+    fn offer_slug_from_title_and_suffix() {
+        let slug =
+            OfferSlug::from_title_and_suffix("Vintage Leather Jacket!", "a1b2c3d4ef").unwrap();
+        assert_eq!(slug.as_str(), "vintage-leather-jacket-a1b2c3d4");
+
+        // Non-ascii fallback
+        let fallback = OfferSlug::from_title_and_suffix("🎉✨🚀", "12345678").unwrap();
+        assert_eq!(fallback.as_str(), "offer-12345678");
+
+        // Truncation when title is very long
+        let long_title = "a".repeat(120);
+        let long_slug = OfferSlug::from_title_and_suffix(&long_title, "abcdef12").unwrap();
+        assert!(long_slug.as_str().len() <= 90);
+        assert!(long_slug.as_str().ends_with("-abcdef12"));
+    }
+
+    #[test]
+    fn offer_cursor_encode_decode_roundtrip() {
+        let now = Utc::now();
+        let offer_id = OfferId::new();
+        let cursor = OfferCursor::new(now, offer_id);
+
+        let encoded = cursor.encode();
+        let decoded = OfferCursor::decode(&encoded).expect("cursor should decode");
+
+        assert_eq!(decoded.id, offer_id);
+        assert_eq!(
+            decoded.created_at.timestamp_micros(),
+            now.timestamp_micros()
+        );
+
+        // Invalid cursor string
+        assert!(matches!(
+            OfferCursor::decode("not-hex"),
+            Err(DomainError::InvalidCursor)
+        ));
+        assert!(matches!(
+            OfferCursor::decode("1234"),
+            Err(DomainError::InvalidCursor)
+        ));
     }
 }
