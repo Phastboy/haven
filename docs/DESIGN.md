@@ -91,3 +91,6 @@
   - *Why*: Enforces that rendering a list of offers runs in $O(1)$ queries, guarding against future N+1 regressions as relations are introduced.
 - **2026-10-08: Central stylesheet (`/style.css`) with strict CSP compliance**:
   - *Why*: Eliminates inline styles and `<style>` blocks to maintain Haven's strict CSP header.
+- **2026-10-09: Modular component alignment for landing, auth, and offer views**:
+  - *Why*: Migrated legacy unstyled `/`, `/auth/sign-in`, `/auth/sent`, `/auth/verify`, and offer forms to shared modular components (`button`, `button_link`, `text_field`, `textarea_field`, `form_error`). Replaced generic template copy with purpose-driven language, added visible form labels for accessibility, and achieved 100% class alignment in `style.css`.
+

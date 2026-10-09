@@ -1,3 +1,5 @@
+use crate::app::components::button::{ButtonVariant, button, button_link};
+use crate::app::components::field::{text_field, textarea_field};
 use topcoat::router::error::bad_request;
 use topcoat::{Result as TopcoatResult, context::Cx, router::error::see_other, view::view};
 
@@ -14,26 +16,49 @@ pub async fn edit_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View>
                 <p class="text-muted">"Update your offer's details."</p>
             </div>
             <form method="post" action=(format!("/offers/manage/{}/edit", offer.id)) class="form-stack">
-                <div class="field-group">
-                    <label for="title" class="field-label">"Title"</label>
-                    <input id="title" type="text" name="title" value=(offer.title) required="required" minlength="3" maxlength="100" class="field-input" />
-                </div>
-                <div class="field-group">
-                    <label for="description" class="field-label">"Description"</label>
-                    <textarea id="description" name="description" required="required" minlength="10" maxlength="2000" rows="5" class="field-textarea">(offer.description)</textarea>
-                </div>
-                <div class="field-group">
-                    <label for="price" class="field-label">"Price (minor units)"</label>
-                    <input id="price" type="number" name="price" value=(offer.price.as_i32().to_string()) min="0" required="required" placeholder="0 for Free" class="field-input" />
-                    <span class="field-help">"Enter 0 for a free offer."</span>
-                </div>
-                <div class="field-group">
-                    <label for="currency" class="field-label">"Currency"</label>
-                    <input id="currency" type="text" name="currency" value=(offer.currency.as_str().to_string()) placeholder="NGN (required if price > 0)" maxlength="3" class="field-input" />
-                </div>
+                text_field(
+                    label: "Title",
+                    name: "title",
+                    value: Some(offer.title),
+                    required: true,
+                    minlength: Some(3),
+                    maxlength: Some(100),
+                )
+                textarea_field(
+                    label: "Description",
+                    name: "description",
+                    value: Some(offer.description),
+                    required: true,
+                    minlength: Some(10),
+                    maxlength: Some(2000),
+                )
+                text_field(
+                    label: "Price (minor units)",
+                    name: "price",
+                    field_type: "number",
+                    value: Some(offer.price.as_i32().to_string()),
+                    required: true,
+                    min: Some(0),
+                    placeholder: Some("0 for Free".to_string()),
+                    help: Some("Enter 0 for a free offer.".to_string()),
+                )
+                text_field(
+                    label: "Currency",
+                    name: "currency",
+                    value: Some(offer.currency.as_str().to_string()),
+                    placeholder: Some("NGN (required if price > 0)".to_string()),
+                    maxlength: Some(3),
+                )
                 <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">"Save Changes"</button>
-                    <a href=(format!("/offers/manage/{}", offer.id)) class="btn btn-secondary">"Cancel"</a>
+                    button(
+                        text: "Save Changes",
+                        variant: ButtonVariant::Primary,
+                    )
+                    button_link(
+                        href: format!("/offers/manage/{}", offer.id),
+                        text: "Cancel",
+                        variant: ButtonVariant::Secondary,
+                    )
                 </div>
             </form>
         </div>

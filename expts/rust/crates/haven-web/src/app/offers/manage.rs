@@ -1,6 +1,7 @@
 pub mod id;
 pub mod new;
 
+use crate::app::components::button::{ButtonVariant, button_link};
 use crate::app::components::empty_state::empty_state;
 use crate::app::components::offer_card::offer_card;
 use topcoat::{
@@ -26,7 +27,11 @@ pub async fn manage_list(cx: &Cx) -> TopcoatResult<impl View> {
                     <h1>"Your Offers"</h1>
                     <p class="text-muted">"Manage the offers you have listed on Haven."</p>
                 </div>
-                <a href="/offers/manage/new" class="btn btn-primary">"New Offer"</a>
+                button_link(
+                    href: "/offers/manage/new",
+                    text: "New Offer",
+                    variant: ButtonVariant::Primary,
+                )
             </div>
             if offers.is_empty() {
                 empty_state(

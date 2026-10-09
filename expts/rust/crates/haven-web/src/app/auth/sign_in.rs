@@ -1,4 +1,12 @@
-use topcoat::{Result as TopcoatResult, context::Cx, router::error::see_other};
+use crate::app::components::button::{ButtonVariant, button, button_link};
+use crate::app::components::field::text_field;
+use crate::app::components::form_error::form_error;
+use topcoat::{Result as TopcoatResult, context::Cx, router::error::see_other, view::view};
+
+#[derive(serde::Deserialize, Default)]
+pub struct SignInQuery {
+    pub error: Option<String>,
+}
 
 #[topcoat::router::page]
 pub async fn sign_in_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
@@ -6,22 +14,52 @@ pub async fn sign_in_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
         return Err(topcoat::router::error::redirect("/offers").into());
     }
 
+    let query = topcoat::router::parse_query_params::<SignInQuery>(cx).ok();
+    let error_message = query.and_then(|q| q.error).map(|err| match err.as_str() {
+        "google_cancelled" => "Google sign-in was cancelled.".to_string(),
+        "state_mismatch" | "state_missing" => {
+            "Authentication session expired. Please try again.".to_string()
+        }
+        "oauth_disabled" => "Google sign-in is currently unavailable.".to_string(),
+        "token_exchange_failed" | "userinfo_failed" => {
+            "Unable to verify Google account. Please try again or use email sign-in.".to_string()
+        }
+        "email_unverified" => "Your Google email address is unverified.".to_string(),
+        _ => "An error occurred while signing in. Please try again.".to_string(),
+    });
+
     let google_enabled = crate::cx_helpers::google_oauth(cx).is_some();
 
-    Ok(topcoat::view::view! {
-        <div class="sign-in">
+    Ok(view! {
+        <div class="auth-card">
             <h1>"Sign In"</h1>
+            if let Some(msg) = error_message {
+                form_error(message: msg)
+            }
             if google_enabled {
                 <div class="google-auth">
-                    <a href="/auth/google" class="button google-button">"Sign in with Google"</a>
+                    button_link(
+                        href: "/auth/google",
+                        text: "Sign in with Google",
+                        variant: ButtonVariant::Secondary,
+                    )
                 </div>
-                <div class="divider">
+                <div class="auth-divider">
                     <span>"or"</span>
                 </div>
             }
-            <form method="post" action="/auth/sign-in">
-                <input type="email" name="email" required="true" placeholder="Enter your email" />
-                <button type="submit">"Send Magic Link"</button>
+            <form method="post" action="/auth/sign-in" class="form-stack">
+                text_field(
+                    label: "Email",
+                    name: "email",
+                    field_type: "email",
+                    required: true,
+                    placeholder: Some("name@example.com".to_string()),
+                )
+                button(
+                    text: "Send Magic Link",
+                    variant: ButtonVariant::Primary,
+                )
             </form>
         </div>
     })

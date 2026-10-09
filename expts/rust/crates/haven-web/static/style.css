@@ -418,11 +418,19 @@ a {
 }
 
 /* Divider & Auth specifics */
+.auth-card {
+  max-width: 28rem;
+  margin: var(--space-4) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
 .auth-divider {
   display: flex;
   align-items: center;
   text-align: center;
-  margin: var(--space-4) 0;
+  margin: var(--space-3) 0;
   color: var(--color-text-muted);
   font-size: var(--text-sm);
 }
@@ -437,3 +445,102 @@ a {
 .auth-divider span {
   padding: 0 var(--space-3);
 }
+
+.google-auth {
+  display: flex;
+  flex-direction: column;
+}
+
+.google-auth .btn {
+  width: 100%;
+}
+
+/* Page Headers & Navigation Utilities */
+.page-header {
+  margin-bottom: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.page-header-row {
+  margin-bottom: var(--space-5);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.text-muted {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: var(--space-2);
+  text-decoration: none;
+  font-size: var(--text-sm);
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+/* Form & Owner Action Bars */
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.owner-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+/* Landing / Public Index */
+.landing {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+  max-width: var(--max-measure);
+  padding: var(--space-6) 0;
+}
+
+.landing-title {
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.landing-lead {
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
+  max-width: 55ch;
+  line-height: var(--leading-normal);
+}
+
+.landing-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+/* Page Containers */
+.offers-feed,
+.offers-manage,
+.new-offer,
+.edit-offer {
+  display: flex;
+  flex-direction: column;
+}
+
+
