@@ -228,16 +228,62 @@ async fn test_public_slug_route_caching_and_headers() {
     assert!(!body.contains("Edit"));
     assert!(!body.contains("Delete"));
 
-    // 2. 304 Not Modified when If-None-Match matches ETag
+    // 2. 304 Not Modified when If-None-Match matches ETag (including weak, wildcard, and comma-separated)
+    assert!(
+        etag.contains(env!("CARGO_PKG_VERSION")),
+        "ETag must include the application build/version token"
+    );
+
     let req_304 = Request::builder()
         .method("GET")
         .uri(&slug_url)
         .header("if-none-match", &etag)
         .body(Body::empty())
         .unwrap();
-
     let res_304 = router.handle(req_304).await;
     assert_eq!(res_304.status(), http::StatusCode::NOT_MODIFIED);
+
+    // Wildcard match
+    let req_wildcard = Request::builder()
+        .method("GET")
+        .uri(&slug_url)
+        .header("if-none-match", "*")
+        .body(Body::empty())
+        .unwrap();
+    let res_wildcard = router.handle(req_wildcard).await;
+    assert_eq!(res_wildcard.status(), http::StatusCode::NOT_MODIFIED);
+
+    // Weak match
+    let weak_etag = format!("W/{etag}");
+    let req_weak = Request::builder()
+        .method("GET")
+        .uri(&slug_url)
+        .header("if-none-match", &weak_etag)
+        .body(Body::empty())
+        .unwrap();
+    let res_weak = router.handle(req_weak).await;
+    assert_eq!(res_weak.status(), http::StatusCode::NOT_MODIFIED);
+
+    // Comma-separated list with weak match and trimming
+    let list_inm = format!("\"random-tag\", {weak_etag}");
+    let req_list = Request::builder()
+        .method("GET")
+        .uri(&slug_url)
+        .header("if-none-match", &list_inm)
+        .body(Body::empty())
+        .unwrap();
+    let res_list = router.handle(req_list).await;
+    assert_eq!(res_list.status(), http::StatusCode::NOT_MODIFIED);
+
+    // Non-matching tag returns 200
+    let req_mismatch = Request::builder()
+        .method("GET")
+        .uri(&slug_url)
+        .header("if-none-match", "\"unrelated-tag\"")
+        .body(Body::empty())
+        .unwrap();
+    let res_mismatch = router.handle(req_mismatch).await;
+    assert_eq!(res_mismatch.status(), http::StatusCode::OK);
 
     // 3. 404 for unknown slug
     let req_404 = Request::builder()
@@ -286,6 +332,21 @@ async fn test_offers_new_redirects_to_manage_new() {
         .and_then(|v| v.to_str().ok())
         .unwrap_or("");
     assert_eq!(loc, "/offers/manage/new");
+
+    let post_req = Request::builder()
+        .method("POST")
+        .uri("/offers/new")
+        .body(Body::empty())
+        .unwrap();
+
+    let post_res = router.handle(post_req).await;
+    assert_eq!(post_res.status(), http::StatusCode::PERMANENT_REDIRECT);
+    let post_loc = post_res
+        .headers()
+        .get("location")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+    assert_eq!(post_loc, "/offers/manage/new");
 }
 
 #[tokio::test]
