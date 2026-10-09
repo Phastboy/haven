@@ -6,6 +6,27 @@ use topcoat::{
 
 topcoat::router::module_param!(slug);
 
+const BUILD_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+fn weak_etag_match(header_tag: &str, current_etag: &str) -> bool {
+    let current_opaque = current_etag.strip_prefix("W/").unwrap_or(current_etag);
+    let header_opaque = header_tag.strip_prefix("W/").unwrap_or(header_tag);
+    current_opaque == header_opaque
+}
+
+fn matches_if_none_match(inm_header: &str, current_etag: &str) -> bool {
+    for raw_tag in inm_header.split(',') {
+        let tag = raw_tag.trim();
+        if tag.is_empty() {
+            continue;
+        }
+        if tag == "*" || weak_etag_match(tag, current_etag) {
+            return true;
+        }
+    }
+    false
+}
+
 #[topcoat::router::page]
 pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
     let slug_raw: &str = topcoat::router::path_param::<Slug>(cx);
@@ -21,9 +42,10 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
 
     // Shared caching policy with ETag
     let etag = format!(
-        "\"{:x}-{:x}\"",
+        "\"{:x}-{:x}-v{}\"",
         offer.id.as_uuid().as_u128(),
-        offer.updated_at.timestamp_micros()
+        offer.updated_at.timestamp_micros(),
+        BUILD_VERSION
     );
 
     let headers = topcoat::router::response::response_headers(cx);
@@ -38,12 +60,13 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
         );
     }
 
-    let not_modified =
-        if let Some(inm) = topcoat::router::request::headers(cx).get(http::header::IF_NONE_MATCH) {
-            inm.as_bytes() == etag.as_bytes() || inm.as_bytes() == format!("W/{etag}").as_bytes()
-        } else {
-            false
-        };
+    let not_modified = topcoat::router::request::headers(cx)
+        .get_all(http::header::IF_NONE_MATCH)
+        .iter()
+        .any(|val| {
+            val.to_str()
+                .is_ok_and(|header_str| matches_if_none_match(header_str, &etag))
+        });
 
     let price_text = if offer.price.as_i32() == 0 {
         "Free".to_string()
@@ -70,4 +93,37 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
             </div>
         }
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_weak_etag_match() {
+        assert!(weak_etag_match("\"tag\"", "\"tag\""));
+        assert!(weak_etag_match("W/\"tag\"", "\"tag\""));
+        assert!(weak_etag_match("\"tag\"", "W/\"tag\""));
+        assert!(weak_etag_match("W/\"tag\"", "W/\"tag\""));
+        assert!(!weak_etag_match("\"other\"", "\"tag\""));
+    }
+
+    #[test]
+    fn test_matches_if_none_match() {
+        let current = "\"123-456-v0.1.0\"";
+        assert!(matches_if_none_match("*", current));
+        assert!(matches_if_none_match("\"123-456-v0.1.0\"", current));
+        assert!(matches_if_none_match("W/\"123-456-v0.1.0\"", current));
+        assert!(matches_if_none_match(
+            "\"other\", W/\"123-456-v0.1.0\"",
+            current
+        ));
+        assert!(matches_if_none_match(
+            " \"other\" ,  \"123-456-v0.1.0\" ",
+            current
+        ));
+        assert!(!matches_if_none_match("\"other\", \"second\"", current));
+        assert!(!matches_if_none_match("", current));
+        assert!(!matches_if_none_match(" , ", current));
+    }
 }
