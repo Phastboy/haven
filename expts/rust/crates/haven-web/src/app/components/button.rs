@@ -28,10 +28,15 @@ pub async fn button(
     #[into] text: String,
     #[default] variant: ButtonVariant,
     #[default("submit")] button_type: &'static str,
+    #[default] disabled: bool,
 ) -> TopcoatResult<impl View> {
     let class = variant.class_name();
     Ok(view! {
-        <button type=(button_type) class=(class)>
+        <button
+            type=(button_type)
+            class=(class)
+            disabled=(disabled.then_some("disabled"))
+        >
             (text)
         </button>
     })
@@ -93,6 +98,16 @@ mod tests {
         };
         let html_danger = danger.single().await.unwrap().render(__cx);
         assert!(html_danger.contains("class=\"btn btn-danger\""));
+
+        let disabled_btn = view! {
+            button(
+                text: "Disabled",
+                variant: ButtonVariant::Secondary,
+                disabled: true,
+            )
+        };
+        let html_disabled = disabled_btn.single().await.unwrap().render(__cx);
+        assert!(html_disabled.contains("disabled=\"disabled\""));
 
         let link = view! {
             button_link(

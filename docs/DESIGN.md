@@ -93,4 +93,6 @@
   - *Why*: Eliminates inline styles and `<style>` blocks to maintain Haven's strict CSP header.
 - **2026-10-09: Modular component alignment for landing, auth, and offer views**:
   - *Why*: Migrated legacy unstyled `/`, `/auth/sign-in`, `/auth/sent`, `/auth/verify`, and offer forms to shared modular components (`button`, `button_link`, `text_field`, `textarea_field`, `form_error`). Replaced generic template copy with purpose-driven language, added visible form labels for accessibility, and achieved 100% class alignment in `style.css`.
+- **2026-10-09: Transparent disabled state for unconfigured email delivery**:
+  - *Why*: Without active email delivery infrastructure in production, allowing users to submit an email magic link would cause them to wait for emails that never arrive, eroding user trust. Until mail infrastructure is configured, email input and magic link buttons are disabled with an explicit affordance directing users to Google OAuth. Controlled via `EMAIL_DELIVERY_ENABLED` for seamless activation later.
 

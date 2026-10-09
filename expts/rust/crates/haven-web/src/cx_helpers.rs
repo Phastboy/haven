@@ -59,6 +59,17 @@ pub fn map_repo_err(e: haven_domain::ports::RepoError) -> RouterError {
     }
 }
 
+/// Returns whether email delivery infrastructure is active.
+///
+/// While email transport infrastructure is unconfigured, this returns `false`
+/// so that users are never misled into expecting a magic link email that cannot arrive.
+/// When mail delivery infrastructure is ready, setting `EMAIL_DELIVERY_ENABLED=true`
+/// immediately activates full email authentication.
+pub fn is_email_delivery_enabled() -> bool {
+    std::env::var("EMAIL_DELIVERY_ENABLED")
+        .is_ok_and(|v| v.eq_ignore_ascii_case("true") || v == "1")
+}
+
 // ---------------------------------------------------------------------------
 // Authentication
 // ---------------------------------------------------------------------------

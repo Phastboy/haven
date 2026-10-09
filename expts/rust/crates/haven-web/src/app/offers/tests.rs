@@ -477,7 +477,7 @@ async fn test_landing_page_renders_with_components() {
 async fn test_auth_pages_render_with_components_and_classes() {
     let (router, _) = setup_test_app();
 
-    // 1. /auth/sign-in
+    // 1. /auth/sign-in (defaults to email delivery disabled)
     let req_sign_in = Request::builder()
         .method("GET")
         .uri("/auth/sign-in")
@@ -491,8 +491,10 @@ async fn test_auth_pages_render_with_components_and_classes() {
     assert!(body_sign_in.contains("class=\"field-label\""));
     assert!(body_sign_in.contains("for=\"email\""));
     assert!(body_sign_in.contains("type=\"email\""));
-    assert!(body_sign_in.contains("class=\"btn btn-primary\""));
-    assert!(body_sign_in.contains("Send Magic Link"));
+    assert!(body_sign_in.contains("disabled=\"disabled\""));
+    assert!(body_sign_in.contains("class=\"auth-notice\""));
+    assert!(body_sign_in.contains("Email sign-in is temporarily unavailable"));
+    assert!(body_sign_in.contains("Send Magic Link (Unavailable)"));
 
     // 2. /auth/sign-in with error query
     let req_sign_in_err = Request::builder()
@@ -508,7 +510,26 @@ async fn test_auth_pages_render_with_components_and_classes() {
     assert!(body_sign_in_err.contains("role=\"alert\""));
     assert!(body_sign_in_err.contains("Google sign-in was cancelled."));
 
-    // 3. /auth/sent
+    // 3. POST /auth/sign-in rejects submission when delivery is disabled
+    let req_post_sign_in = Request::builder()
+        .method("POST")
+        .uri("/auth/sign-in")
+        .header("content-type", "application/x-www-form-urlencoded")
+        .body(Body::from("email=someone%40example.com"))
+        .unwrap();
+    let res_post = router.handle(req_post_sign_in).await;
+    assert_eq!(res_post.status(), http::StatusCode::SEE_OTHER);
+    assert_eq!(
+        res_post
+            .headers()
+            .get("location")
+            .unwrap()
+            .to_str()
+            .unwrap(),
+        "/auth/sign-in?error=email_delivery_unavailable"
+    );
+
+    // 4. /auth/sent
     let req_sent = Request::builder()
         .method("GET")
         .uri("/auth/sent")
@@ -519,11 +540,11 @@ async fn test_auth_pages_render_with_components_and_classes() {
     assert_eq!(res_sent.status(), http::StatusCode::OK);
     let body_sent = body_to_string(res_sent.into_body()).await;
     assert!(body_sent.contains("class=\"auth-card\""));
-    assert!(body_sent.contains("Check your email"));
+    assert!(body_sent.contains("Email delivery unavailable"));
     assert!(body_sent.contains("href=\"/auth/sign-in\""));
     assert!(body_sent.contains("class=\"btn btn-secondary\""));
 
-    // 4. /auth/verify
+    // 5. /auth/verify
     let req_verify = Request::builder()
         .method("GET")
         .uri("/auth/verify?token=sample_token")

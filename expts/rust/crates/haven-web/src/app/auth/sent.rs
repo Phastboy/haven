@@ -4,10 +4,18 @@ use topcoat::{Result as TopcoatResult, context::Cx, view::view};
 #[topcoat::router::page]
 pub async fn sent_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
     let _ = cx;
+    let email_delivery_enabled = crate::cx_helpers::is_email_delivery_enabled();
     Ok(view! {
         <div class="auth-card">
-            <h1>"Check your email"</h1>
-            <p class="text-muted">"If an account exists for that email, we've sent a magic link."</p>
+            if email_delivery_enabled {
+                <h1>"Check your email"</h1>
+                <p class="text-muted">"If an account exists for that email, we've sent a magic link."</p>
+            } else {
+                <h1>"Email delivery unavailable"</h1>
+                <p class="text-muted">
+                    "Email delivery infrastructure is currently unconfigured. Please return to sign in with Google."
+                </p>
+            }
             <div class="form-actions">
                 button_link(
                     href: "/auth/sign-in",
