@@ -36,6 +36,8 @@ pub async fn csp_layer(cx: &Cx, body: Body, next: Next<'_>) -> TopcoatResult<Res
     next.run(cx, body).await
 }
 
+use crate::app::components::button::{ButtonVariant, button_link};
+
 #[topcoat::router::layout]
 pub async fn root_layout(
     slot: topcoat::router::Slot<'_>,
@@ -52,6 +54,10 @@ pub async fn root_layout(
                 <header class="site-header">
                     <nav class="nav-container">
                         <a href="/" class="site-logo">"Haven"</a>
+                        <ul class="nav-links">
+                            <li><a href="/offers">"Offers"</a></li>
+                            <li><a href="/auth/sign-in">"Sign In"</a></li>
+                        </ul>
                     </nav>
                 </header>
                 <main class="main-container">
@@ -70,8 +76,22 @@ pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
 
     Ok(view! {
         <div class="landing">
-            <h1>"Welcome to Haven"</h1>
-            <a href="/auth/sign-in">"Sign In"</a>
+            <h1 class="landing-title">"Exchange offers directly"</h1>
+            <p class="landing-lead">
+                "Put something you are offering on Haven, or browse what others have made available."
+            </p>
+            <div class="landing-actions">
+                button_link(
+                    href: "/offers",
+                    text: "Browse Offers",
+                    variant: ButtonVariant::Primary,
+                )
+                button_link(
+                    href: "/auth/sign-in",
+                    text: "Sign In",
+                    variant: ButtonVariant::Secondary,
+                )
+            </div>
         </div>
     })
 }

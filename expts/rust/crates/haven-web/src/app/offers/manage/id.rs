@@ -1,6 +1,7 @@
 pub mod delete;
 pub mod edit;
 
+use crate::app::components::button::{ButtonVariant, button, button_link};
 use topcoat::{Result as TopcoatResult, context::Cx, view::view};
 
 topcoat::router::module_param!(id: uuid::Uuid, error = not_found);
@@ -17,21 +18,34 @@ pub async fn view_offer(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
     };
 
     Ok(view! {
-        <div class="view-offer">
+        <div class="offer-detail">
             <meta name="robots" content="noindex" />
             <div class="page-header">
                 <a href="/offers/manage" class="text-muted back-link">"← Back to your offers"</a>
-                <h1 class="offer-title">(offer.title)</h1>
-                <div class="offer-price-badge">(price_text)</div>
+                <div class="offer-detail-header">
+                    <h1 class="offer-detail-title">(offer.title)</h1>
+                    <div class="offer-detail-price">(price_text)</div>
+                </div>
             </div>
-            <div class="offer-body">
-                <p class="offer-description-full">(offer.description)</p>
+            <div class="offer-detail-body">
+                <p>(offer.description)</p>
             </div>
             <div class="owner-actions">
-                <a href=(format!("/offers/manage/{}/edit", offer.id)) class="btn btn-primary">"Edit"</a>
-                <a href=(format!("/offers/{}", offer.slug)) class="btn btn-secondary">"View Public Page"</a>
+                button_link(
+                    href: format!("/offers/manage/{}/edit", offer.id),
+                    text: "Edit",
+                    variant: ButtonVariant::Primary,
+                )
+                button_link(
+                    href: format!("/offers/{}", offer.slug),
+                    text: "View Public Page",
+                    variant: ButtonVariant::Secondary,
+                )
                 <form method="post" action=(format!("/offers/manage/{}/delete", offer.id)) class="inline-form">
-                    <button type="submit" class="btn btn-danger">"Delete"</button>
+                    button(
+                        text: "Delete",
+                        variant: ButtonVariant::Danger,
+                    )
                 </form>
             </div>
         </div>

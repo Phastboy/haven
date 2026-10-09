@@ -1,4 +1,5 @@
-use topcoat::{Result as TopcoatResult, context::Cx, router::error::see_other};
+use crate::app::components::button::{ButtonVariant, button};
+use topcoat::{Result as TopcoatResult, context::Cx, router::error::see_other, view::view};
 
 #[derive(serde::Deserialize)]
 pub struct VerifyQuery {
@@ -9,13 +10,17 @@ pub struct VerifyQuery {
 pub async fn verify_prompt(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
     let query = topcoat::router::parse_query_params::<VerifyQuery>(cx)?;
     let token = query.token;
-    Ok(topcoat::view::view! {
+    Ok(view! {
         ( (topcoat::router::header::REFERRER_POLICY, topcoat::router::HeaderValue::from_static("no-referrer")) )
-        <div class="verify">
+        <div class="auth-card">
             <h1>"Sign In Verification"</h1>
-            <form method="post" action="/auth/verify">
+            <p class="text-muted">"Confirm your sign-in to complete authentication."</p>
+            <form method="post" action="/auth/verify" class="form-stack">
                 <input type="hidden" name="token" value=(token) />
-                <button type="submit">"Click here to sign in"</button>
+                button(
+                    text: "Confirm and Sign In",
+                    variant: ButtonVariant::Primary,
+                )
             </form>
         </div>
     })

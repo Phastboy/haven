@@ -80,15 +80,17 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
         if not_modified {
             (http::StatusCode::NOT_MODIFIED)
         } else {
-            <div class="offer-public-page">
+            <div class="offer-detail">
                 <link rel="canonical" href=(canonical_url) />
                 <div class="page-header">
                     <a href="/offers" class="text-muted back-link">"← Back to all offers"</a>
-                    <h1 class="offer-title">(offer.title)</h1>
-                    <div class="offer-price-badge">(price_text)</div>
+                    <div class="offer-detail-header">
+                        <h1 class="offer-detail-title">(offer.title)</h1>
+                        <div class="offer-detail-price">(price_text)</div>
+                    </div>
                 </div>
-                <div class="offer-body">
-                    <p class="offer-description-full">(offer.description)</p>
+                <div class="offer-detail-body">
+                    <p>(offer.description)</p>
                 </div>
             </div>
         }

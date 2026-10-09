@@ -449,3 +449,92 @@ async fn test_owner_routes_enforce_ownership_and_identical_404() {
     let list_body = body_to_string(res_list.into_body()).await;
     assert!(list_body.contains("User 1 Painting"));
 }
+
+#[tokio::test]
+async fn test_landing_page_renders_with_components() {
+    let (router, _) = setup_test_app();
+
+    let req = Request::builder()
+        .method("GET")
+        .uri("/")
+        .body(Body::empty())
+        .unwrap();
+
+    let res = router.handle(req).await;
+    assert_eq!(res.status(), http::StatusCode::OK);
+    let body = body_to_string(res.into_body()).await;
+
+    assert!(body.contains("Exchange offers directly"));
+    assert!(body.contains("href=\"/offers\""));
+    assert!(body.contains("class=\"btn btn-primary\""));
+    assert!(body.contains("Browse Offers"));
+    assert!(body.contains("href=\"/auth/sign-in\""));
+    assert!(body.contains("class=\"btn btn-secondary\""));
+    assert!(body.contains("Sign In"));
+}
+
+#[tokio::test]
+async fn test_auth_pages_render_with_components_and_classes() {
+    let (router, _) = setup_test_app();
+
+    // 1. /auth/sign-in
+    let req_sign_in = Request::builder()
+        .method("GET")
+        .uri("/auth/sign-in")
+        .body(Body::empty())
+        .unwrap();
+
+    let res_sign_in = router.handle(req_sign_in).await;
+    assert_eq!(res_sign_in.status(), http::StatusCode::OK);
+    let body_sign_in = body_to_string(res_sign_in.into_body()).await;
+    assert!(body_sign_in.contains("class=\"auth-card\""));
+    assert!(body_sign_in.contains("class=\"field-label\""));
+    assert!(body_sign_in.contains("for=\"email\""));
+    assert!(body_sign_in.contains("type=\"email\""));
+    assert!(body_sign_in.contains("class=\"btn btn-primary\""));
+    assert!(body_sign_in.contains("Send Magic Link"));
+
+    // 2. /auth/sign-in with error query
+    let req_sign_in_err = Request::builder()
+        .method("GET")
+        .uri("/auth/sign-in?error=google_cancelled")
+        .body(Body::empty())
+        .unwrap();
+
+    let res_sign_in_err = router.handle(req_sign_in_err).await;
+    assert_eq!(res_sign_in_err.status(), http::StatusCode::OK);
+    let body_sign_in_err = body_to_string(res_sign_in_err.into_body()).await;
+    assert!(body_sign_in_err.contains("class=\"form-error-summary\""));
+    assert!(body_sign_in_err.contains("role=\"alert\""));
+    assert!(body_sign_in_err.contains("Google sign-in was cancelled."));
+
+    // 3. /auth/sent
+    let req_sent = Request::builder()
+        .method("GET")
+        .uri("/auth/sent")
+        .body(Body::empty())
+        .unwrap();
+
+    let res_sent = router.handle(req_sent).await;
+    assert_eq!(res_sent.status(), http::StatusCode::OK);
+    let body_sent = body_to_string(res_sent.into_body()).await;
+    assert!(body_sent.contains("class=\"auth-card\""));
+    assert!(body_sent.contains("Check your email"));
+    assert!(body_sent.contains("href=\"/auth/sign-in\""));
+    assert!(body_sent.contains("class=\"btn btn-secondary\""));
+
+    // 4. /auth/verify
+    let req_verify = Request::builder()
+        .method("GET")
+        .uri("/auth/verify?token=sample_token")
+        .body(Body::empty())
+        .unwrap();
+
+    let res_verify = router.handle(req_verify).await;
+    assert_eq!(res_verify.status(), http::StatusCode::OK);
+    let body_verify = body_to_string(res_verify.into_body()).await;
+    assert!(body_verify.contains("class=\"auth-card\""));
+    assert!(body_verify.contains("Sign In Verification"));
+    assert!(body_verify.contains("class=\"btn btn-primary\""));
+    assert!(body_verify.contains("Confirm and Sign In"));
+}
