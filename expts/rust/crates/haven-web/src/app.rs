@@ -56,7 +56,6 @@ pub async fn root_layout(
                         <a href="/" class="site-logo">"Haven"</a>
                         <ul class="nav-links">
                             <li><a href="/offers">"Offers"</a></li>
-                            <li><a href="/auth/sign-in">"Sign In"</a></li>
                         </ul>
                     </nav>
                 </header>
