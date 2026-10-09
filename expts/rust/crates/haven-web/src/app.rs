@@ -6,8 +6,10 @@ use topcoat::{
 };
 
 pub mod auth;
+pub mod components;
 pub mod health;
 pub mod offers;
+pub mod style;
 
 pub fn router() -> topcoat::router::RouterBuilder {
     topcoat::router::module_router!()
@@ -37,13 +39,17 @@ pub async fn root_layout(
         <html lang="en">
             <head>
                 <meta charset="utf-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
                 <title>"Haven"</title>
+                <link rel="stylesheet" href="/style.css" />
             </head>
             <body>
-                <header>
-                    <a href="/">"Haven"</a>
+                <header class="site-header">
+                    <nav class="nav-container">
+                        <a href="/" class="site-logo">"Haven"</a>
+                    </nav>
                 </header>
-                <main>
+                <main class="main-container">
                     (slot)
                 </main>
             </body>
