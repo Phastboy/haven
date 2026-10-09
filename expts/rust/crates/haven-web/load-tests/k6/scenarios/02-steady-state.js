@@ -114,7 +114,7 @@ export default function () {
     if (session.offer_ids && session.offer_ids.length > 0) {
       const offerId = session.offer_ids[Math.floor(Math.random() * session.offer_ids.length)];
 
-      const res = http.get(`${BASE_URL}/offers/${offerId}`, {
+      const res = http.get(`${BASE_URL}/offers/manage/${offerId}`, {
         headers,
         redirects: 0,
         tags: { name: "GET /offers/id" },
@@ -137,17 +137,17 @@ export default function () {
   } else {
     // 3%: write journey (9 requests)
     //
-    // 1. GET  /offers/new
-    // 2. POST /offers/new
-    // 3. GET  /offers/{id}
-    // 4. GET  /offers/{id}/edit
-    // 5. POST /offers/{id}/edit
-    // 6. GET  /offers/{id}
-    // 7. POST /offers/{id}/delete
-    // 8. GET  /offers/{id}       -> 404
+    // 1. GET  /offers/manage/new
+    // 2. POST /offers/manage/new
+    // 3. GET  /offers/manage/{id}
+    // 4. GET  /offers/manage/{id}/edit
+    // 5. POST /offers/manage/{id}/edit
+    // 6. GET  /offers/manage/{id}
+    // 7. POST /offers/manage/{id}/delete
+    // 8. GET  /offers/manage/{id}       -> 404
     // 9. GET  /offers
 
-    let res = http.get(`${BASE_URL}/offers/new`, {
+    let res = http.get(`${BASE_URL}/offers/manage/new`, {
       headers,
       tags: { name: "GET /offers/new" },
     });
@@ -172,7 +172,7 @@ export default function () {
       idempotency_key: idempKey,
     };
 
-    res = http.post(`${BASE_URL}/offers/new`, createPayload, {
+    res = http.post(`${BASE_URL}/offers/manage/new`, createPayload, {
       headers: Object.assign({}, headers, {
         "Content-Type": "application/x-www-form-urlencoded",
       }),

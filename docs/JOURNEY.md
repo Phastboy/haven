@@ -95,12 +95,16 @@ sequenceDiagram
 - 2026-10-08: In 0.1.x a person can list all of their own offers and create, edit, and delete them.
 - 2026-10-08: In 0.1.x a person cannot list another person's offers or request a particular one. Requesting another person's offer behaves like requesting one that does not exist.
 - 2026-10-08: On update, old values are preserved; only the person's edits are written.
+- 2026-10-09: Route separation: public offers live at `/offers/{slug}` with shared caching (ETag), canonical URL tags, no session read, and no maker profile details.
+- 2026-10-09: Owner management routes are prefixed under `/offers/manage` (`/offers/manage`, `/offers/manage/new`, `/offers/manage/{id}`, `/offers/manage/{id}/edit`, delete).
+- 2026-10-09: Owner routes enforce auth via shared helper `require_owner_auth`, setting `Cache-Control: private, no-store` and `noindex`. `robots.txt` disallows `/offers/manage/`.
+- 2026-10-09: Probing IDs is prevented by returning identical 404 responses for nonexistent offers and offers owned by others.
+- 2026-10-09: Slugs always end in their id suffix and reserve words `manage` and `new`.
 
 ### Open questions
 
 **Blocking** (the stage's "Done when" or the next screen depends on these):
-- Route separation: should public slug route be `/offers/{slug}` (with unified router handling resolving UUID to owner management and string slug to public view) or explicit `/offers/{slug}` alongside `/offers/manage/{id}`?
-- Slug collision handling: how are slugs generated for identical titles (e.g., base slug + 6-character random alphanumeric suffix)?
+- None. Routing, ownership isolation, and slug collision structures are resolved.
 
 **Non-blocking:**
 - Default page size: default 20 items, max 50 items per page?

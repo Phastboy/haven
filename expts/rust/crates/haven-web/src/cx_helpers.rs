@@ -128,6 +128,22 @@ pub async fn require_auth(cx: &Cx) -> TopcoatResult<User> {
     Ok(current_user(cx).await?.ok_or_redirect("/auth/sign-in")?)
 }
 
+/// Authenticates the user for owner-only management routes and applies private headers:
+/// `Cache-Control: private, no-store` and `X-Robots-Tag: noindex`.
+/// If unauthenticated, redirects to `/auth/sign-in`.
+pub async fn require_owner_auth(cx: &Cx) -> TopcoatResult<User> {
+    let headers = topcoat::router::response::response_headers(cx);
+    headers.append(
+        topcoat::router::header::HeaderName::from_static("cache-control"),
+        topcoat::router::header::HeaderValue::from_static("private, no-store"),
+    );
+    headers.append(
+        topcoat::router::header::HeaderName::from_static("x-robots-tag"),
+        topcoat::router::header::HeaderValue::from_static("noindex"),
+    );
+    require_auth(cx).await
+}
+
 // ---------------------------------------------------------------------------
 // Ownership
 // ---------------------------------------------------------------------------
@@ -136,7 +152,7 @@ pub async fn require_auth(cx: &Cx) -> TopcoatResult<User> {
 /// not-yours are deliberately indistinguishable (404), so IDs cannot be
 /// probed. The rule lives in the query, so there is nothing to forget.
 pub async fn owned_offer(cx: &Cx, id: OfferId) -> TopcoatResult<Offer> {
-    let user = require_auth(cx).await?;
+    let user = require_owner_auth(cx).await?;
 
     let offer = registry(cx)
         .offers()

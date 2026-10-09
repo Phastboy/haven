@@ -29,7 +29,7 @@ export default function () {
         fail("User B has no seeded offers to test authorization against.");
     }
     const offerIdB = userB.offer_ids[0];
-    const locationB = `/offers/${offerIdB}`;
+    const locationB = `/offers/manage/${offerIdB}`;
 
     // 1. User A attempts to access User B's offer
     let res = http.get(`${BASE_URL}${locationB}`, { headers: headersA });
@@ -70,15 +70,15 @@ export default function () {
     res = http.post(`${BASE_URL}${locationB}/delete`, {}, { redirects: 0 });
     check(res, { 'Unauth delete POST redirects': (r) => r.status === 303 });
 
-    res = http.get(`${BASE_URL}/offers/new`, { redirects: 0 });
+    res = http.get(`${BASE_URL}/offers/manage/new`, { redirects: 0 });
     check(res, { 'Unauth GET new redirects': (r) => r.status === 303 });
 
     // 4. Assert replayed idempotency_key creates one offer, not two
-    res = http.get(`${BASE_URL}/offers/new`, { headers: headersA });
+    res = http.get(`${BASE_URL}/offers/manage/new`, { headers: headersA });
     const idempKey = extractIdempotencyKey(res.body);
     
     check(idempKey, { 'extracted idempotency key': (k) => !!k });
-    if (!idempKey) fail("Missing idempotency key in /offers/new response");
+    if (!idempKey) fail("Missing idempotency key in /offers/manage/new response");
 
     const createPayload = {
         title: `Idempotency Test`,
@@ -94,8 +94,8 @@ export default function () {
 
     // Fire two requests with same key concurrently
     const responses = http.batch([
-        ['POST', `${BASE_URL}/offers/new`, createPayload, postArgs],
-        ['POST', `${BASE_URL}/offers/new`, createPayload, postArgs]
+        ['POST', `${BASE_URL}/offers/manage/new`, createPayload, postArgs],
+        ['POST', `${BASE_URL}/offers/manage/new`, createPayload, postArgs]
     ]);
 
     const statuses = responses.map(r => r.status);

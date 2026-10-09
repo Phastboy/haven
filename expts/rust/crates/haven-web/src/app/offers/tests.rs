@@ -1,0 +1,390 @@
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::similar_names,
+    clippy::indexing_slicing,
+    clippy::unimplemented,
+    clippy::panic,
+    reason = "test assertions and mocks"
+)]
+
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+
+use chrono::Utc;
+use haven_domain::account::*;
+use haven_domain::fakes::FakeOfferRepository;
+use haven_domain::offer::*;
+use haven_domain::ports::*;
+use haven_domain::session::*;
+use haven_domain::user::*;
+use http::Request;
+use topcoat::cookie::RouterBuilderCookieExt;
+use topcoat::router::{Body, RouterBuilderDiscoverExt, to_bytes};
+use topcoat::session::{RouterBuilderSessionExt, SessionConfig, Token};
+use uuid::Uuid;
+
+#[derive(Default, Clone)]
+pub struct TestUserRepository {
+    pub users_by_token: Arc<Mutex<HashMap<String, User>>>,
+}
+
+#[async_trait]
+impl UserRepository for TestUserRepository {
+    async fn find_by_account(&self, _account_id: AccountId) -> Result<Option<User>, RepoError> {
+        unimplemented!()
+    }
+    async fn create(&self, _account_id: AccountId) -> Result<User, RepoError> {
+        unimplemented!()
+    }
+    async fn find_by_session(&self, token_hash: &HashedToken) -> Result<Option<User>, RepoError> {
+        let lock = self.users_by_token.lock().unwrap();
+        Ok(lock.get(token_hash.as_str()).cloned())
+    }
+}
+
+pub struct TestRegistry {
+    pub offers_repo: FakeOfferRepository,
+    pub users_repo: TestUserRepository,
+}
+
+impl Registry for TestRegistry {
+    fn offers(&self) -> &(dyn OfferRepository + 'static) {
+        &self.offers_repo
+    }
+    fn accounts(&self) -> &(dyn AccountRepository + 'static) {
+        unimplemented!()
+    }
+    fn users(&self) -> &(dyn UserRepository + 'static) {
+        &self.users_repo
+    }
+    fn magic_links(&self) -> &(dyn MagicLinkRepository + 'static) {
+        unimplemented!()
+    }
+    fn sessions(&self) -> &(dyn SessionRepository + 'static) {
+        unimplemented!()
+    }
+}
+
+fn setup_test_app() -> (topcoat::router::Router, TestRegistry) {
+    let registry = TestRegistry {
+        offers_repo: FakeOfferRepository::default(),
+        users_repo: TestUserRepository::default(),
+    };
+
+    let state = crate::cx_helpers::AppState {
+        registry: Arc::new(TestRegistry {
+            offers_repo: registry.offers_repo.clone(),
+            users_repo: registry.users_repo.clone(),
+        }),
+        google_oauth: None,
+        http_client: reqwest::Client::new(),
+    };
+
+    let router = crate::app::router()
+        .cookies()
+        .sessions(
+            SessionConfig::builder()
+                .token_store(crate::token_store::AdaptiveCookieTokenStore::new().name("sid"))
+                .build(),
+        )
+        .app_context(state)
+        .app_context(crate::cx_helpers::SignInLimiter::new())
+        .app_context(crate::cx_helpers::CreateOfferLimiter::new())
+        .discover()
+        .build();
+
+    (router, registry)
+}
+
+fn create_auth_session(users_repo: &TestUserRepository, user: User) -> String {
+    let token = Token::random();
+    let encoded = token.encode();
+    let hash_hex = crate::cx_helpers::token_hash_hex(&token.hash());
+    users_repo
+        .users_by_token
+        .lock()
+        .unwrap()
+        .insert(hash_hex, user);
+    encoded
+}
+
+async fn body_to_string(body: Body) -> String {
+    let bytes = to_bytes(body, usize::MAX).await.unwrap();
+    String::from_utf8(bytes.to_vec()).unwrap()
+}
+
+#[tokio::test]
+async fn test_unauthenticated_requests_refused_for_every_manage_route() {
+    let (router, _) = setup_test_app();
+
+    let dummy_id = Uuid::new_v4();
+    let manage_routes = [
+        ("GET", "/offers/manage".to_string()),
+        ("GET", "/offers/manage/new".to_string()),
+        ("POST", "/offers/manage/new".to_string()),
+        ("GET", format!("/offers/manage/{dummy_id}")),
+        ("GET", format!("/offers/manage/{dummy_id}/edit")),
+        ("POST", format!("/offers/manage/{dummy_id}/edit")),
+        ("POST", format!("/offers/manage/{dummy_id}/delete")),
+    ];
+
+    for (method, uri) in &manage_routes {
+        let req = Request::builder()
+            .method(*method)
+            .uri(uri)
+            .body(Body::empty())
+            .unwrap();
+
+        let response = router.handle(req).await;
+
+        // Every owner route must refuse unauthenticated requests
+        assert!(
+            response.status().is_redirection()
+                || response.status() == http::StatusCode::UNAUTHORIZED,
+            "Route {method} {uri} did not refuse unauthenticated request! Got status: {}",
+            response.status()
+        );
+
+        if response.status().is_redirection() {
+            let location = response
+                .headers()
+                .get("location")
+                .and_then(|v| v.to_str().ok())
+                .unwrap_or("");
+            assert_eq!(
+                location, "/auth/sign-in",
+                "Route {method} {uri} redirected to {location} instead of /auth/sign-in"
+            );
+        }
+
+        // Cache-Control must be private, no-store
+        let cache_control = response
+            .headers()
+            .get("cache-control")
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("");
+        assert!(
+            cache_control.contains("private") && cache_control.contains("no-store"),
+            "Route {method} {uri} missing private, no-store cache header! Got: {cache_control}"
+        );
+    }
+}
+
+#[tokio::test]
+async fn test_public_slug_route_caching_and_headers() {
+    let (router, registry) = setup_test_app();
+
+    // Create an offer in the repo
+    let user_id = UserId::new();
+    let create_offer = CreateOffer {
+        title: "Vintage Oak Table".to_string(),
+        description: "A beautifully restored vintage oak dining table.".to_string(),
+        price: Price::new(250).unwrap(),
+        currency: CurrencyCode::parse("USD").unwrap(),
+    };
+    let offer = registry
+        .offers_repo
+        .create(user_id, IdempotencyKey(Uuid::new_v4()), &create_offer)
+        .await
+        .unwrap();
+
+    let slug_url = format!("/offers/{}", offer.slug);
+
+    // 1. Public request without any session
+    let req = Request::builder()
+        .method("GET")
+        .uri(&slug_url)
+        .body(Body::empty())
+        .unwrap();
+
+    let res = router.handle(req).await;
+    assert_eq!(res.status(), http::StatusCode::OK);
+
+    // Verify cache headers
+    let cc = res
+        .headers()
+        .get("cache-control")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+    assert!(
+        cc.contains("public"),
+        "Public page must have public cache policy"
+    );
+
+    let etag = res
+        .headers()
+        .get("etag")
+        .and_then(|v| v.to_str().ok())
+        .expect("Public page must supply ETag")
+        .to_string();
+
+    let body = body_to_string(res.into_body()).await;
+    assert!(body.contains("Vintage Oak Table"));
+    assert!(body.contains("250 USD"));
+    assert!(body.contains("A beautifully restored vintage oak dining table."));
+    assert!(body.contains(&format!("href=\"/offers/{}\"", offer.slug)));
+    assert!(!body.contains("action=\"/offers/manage"));
+    assert!(!body.contains("Edit"));
+    assert!(!body.contains("Delete"));
+
+    // 2. 304 Not Modified when If-None-Match matches ETag
+    let req_304 = Request::builder()
+        .method("GET")
+        .uri(&slug_url)
+        .header("if-none-match", &etag)
+        .body(Body::empty())
+        .unwrap();
+
+    let res_304 = router.handle(req_304).await;
+    assert_eq!(res_304.status(), http::StatusCode::NOT_MODIFIED);
+
+    // 3. 404 for unknown slug
+    let req_404 = Request::builder()
+        .method("GET")
+        .uri("/offers/nonexistent-item-12345678")
+        .body(Body::empty())
+        .unwrap();
+
+    let res_404 = router.handle(req_404).await;
+    assert_eq!(res_404.status(), http::StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn test_robots_txt_disallows_manage() {
+    let (router, _) = setup_test_app();
+
+    let req = Request::builder()
+        .method("GET")
+        .uri("/robots.txt")
+        .body(Body::empty())
+        .unwrap();
+
+    let res = router.handle(req).await;
+    assert_eq!(res.status(), http::StatusCode::OK);
+
+    let body = body_to_string(res.into_body()).await;
+    assert!(body.contains("User-agent: *"));
+    assert!(body.contains("Disallow: /offers/manage/"));
+}
+
+#[tokio::test]
+async fn test_offers_new_redirects_to_manage_new() {
+    let (router, _) = setup_test_app();
+
+    let req = Request::builder()
+        .method("GET")
+        .uri("/offers/new")
+        .body(Body::empty())
+        .unwrap();
+
+    let res = router.handle(req).await;
+    assert_eq!(res.status(), http::StatusCode::SEE_OTHER);
+    let loc = res
+        .headers()
+        .get("location")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+    assert_eq!(loc, "/offers/manage/new");
+}
+
+#[tokio::test]
+async fn test_owner_routes_enforce_ownership_and_identical_404() {
+    let (router, registry) = setup_test_app();
+
+    let user1 = User {
+        id: UserId::new(),
+        account_id: AccountId::new(),
+        created_at: Utc::now(),
+        updated_at: Utc::now(),
+    };
+    let user2 = User {
+        id: UserId::new(),
+        account_id: AccountId::new(),
+        created_at: Utc::now(),
+        updated_at: Utc::now(),
+    };
+
+    let session1_token = create_auth_session(&registry.users_repo, user1.clone());
+    let session2_token = create_auth_session(&registry.users_repo, user2.clone());
+
+    // Create offer owned by user1
+    let create_offer = CreateOffer {
+        title: "User 1 Painting".to_string(),
+        description: "Original acrylic on canvas by user 1.".to_string(),
+        price: Price::ZERO,
+        currency: CurrencyCode::default_code(),
+    };
+    let offer = registry
+        .offers_repo
+        .create(user1.id, IdempotencyKey(Uuid::new_v4()), &create_offer)
+        .await
+        .unwrap();
+
+    // 1. User 1 accesses their own offer via ID route
+    let req_owner = Request::builder()
+        .method("GET")
+        .uri(format!("/offers/manage/{}", offer.id))
+        .header("cookie", format!("sid={session1_token}"))
+        .body(Body::empty())
+        .unwrap();
+
+    let res_owner = router.handle(req_owner).await;
+    assert_eq!(res_owner.status(), http::StatusCode::OK);
+
+    let cc = res_owner
+        .headers()
+        .get("cache-control")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+    assert!(cc.contains("private") && cc.contains("no-store"));
+
+    let robots = res_owner
+        .headers()
+        .get("x-robots-tag")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+    assert!(robots.contains("noindex"));
+
+    let body = body_to_string(res_owner.into_body()).await;
+    assert!(body.contains("User 1 Painting"));
+    assert!(body.contains(&format!("href=\"/offers/manage/{}/edit\"", offer.id)));
+    assert!(body.contains(&format!("action=\"/offers/manage/{}/delete\"", offer.id)));
+    assert!(body.contains(&format!("href=\"/offers/{}\"", offer.slug)));
+
+    // 2. User 2 accesses User 1's offer via ID route (must return 404, identical to nonexistent)
+    let req_not_owner = Request::builder()
+        .method("GET")
+        .uri(format!("/offers/manage/{}", offer.id))
+        .header("cookie", format!("sid={session2_token}"))
+        .body(Body::empty())
+        .unwrap();
+
+    let res_not_owner = router.handle(req_not_owner).await;
+    assert_eq!(res_not_owner.status(), http::StatusCode::NOT_FOUND);
+
+    // 3. User 2 accesses nonexistent UUID (must return 404)
+    let non_existent_id = Uuid::new_v4();
+    let req_nonexistent = Request::builder()
+        .method("GET")
+        .uri(format!("/offers/manage/{non_existent_id}"))
+        .header("cookie", format!("sid={session2_token}"))
+        .body(Body::empty())
+        .unwrap();
+
+    let res_nonexistent = router.handle(req_nonexistent).await;
+    assert_eq!(res_nonexistent.status(), http::StatusCode::NOT_FOUND);
+
+    // User 1's offers list only shows their offers
+    let req_list = Request::builder()
+        .method("GET")
+        .uri("/offers/manage")
+        .header("cookie", format!("sid={session1_token}"))
+        .body(Body::empty())
+        .unwrap();
+
+    let res_list = router.handle(req_list).await;
+    assert_eq!(res_list.status(), http::StatusCode::OK);
+    let list_body = body_to_string(res_list.into_body()).await;
+    assert!(list_body.contains("User 1 Painting"));
+}
