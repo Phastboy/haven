@@ -21,6 +21,9 @@ pub async fn sign_in_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
             "Authentication session expired. Please try again.".to_string()
         }
         "oauth_disabled" => "Google sign-in is currently unavailable.".to_string(),
+        "email_delivery_unavailable" => {
+            "Email sign-in is temporarily unavailable while mail delivery is being configured. Please sign in with Google.".to_string()
+        }
         "token_exchange_failed" | "userinfo_failed" => {
             "Unable to verify Google account. Please try again or use email sign-in.".to_string()
         }
@@ -29,6 +32,7 @@ pub async fn sign_in_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
     });
 
     let google_enabled = crate::cx_helpers::google_oauth(cx).is_some();
+    let email_delivery_enabled = crate::cx_helpers::is_email_delivery_enabled();
 
     Ok(view! {
         <div class="auth-card">
@@ -41,26 +45,52 @@ pub async fn sign_in_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
                     button_link(
                         href: "/auth/google",
                         text: "Sign in with Google",
-                        variant: ButtonVariant::Secondary,
+                        variant: if email_delivery_enabled {
+                            ButtonVariant::Secondary
+                        } else {
+                            ButtonVariant::Primary
+                        },
                     )
                 </div>
                 <div class="auth-divider">
                     <span>"or"</span>
                 </div>
             }
-            <form method="post" action="/auth/sign-in" class="form-stack">
-                text_field(
-                    label: "Email",
-                    name: "email",
-                    field_type: "email",
-                    required: true,
-                    placeholder: Some("name@example.com".to_string()),
-                )
-                button(
-                    text: "Send Magic Link",
-                    variant: ButtonVariant::Primary,
-                )
-            </form>
+            if !email_delivery_enabled {
+                <div class="auth-notice" role="status">
+                    "Email sign-in is temporarily unavailable while mail delivery infrastructure is being configured. Please sign in with Google above."
+                </div>
+                <form method="post" action="/auth/sign-in" class="form-stack">
+                    text_field(
+                        label: "Email",
+                        name: "email",
+                        field_type: "email",
+                        required: false,
+                        disabled: true,
+                        placeholder: Some("name@example.com".to_string()),
+                        help: Some("Direct email sign-in will be enabled soon.".to_string()),
+                    )
+                    button(
+                        text: "Send Magic Link (Unavailable)",
+                        variant: ButtonVariant::Secondary,
+                        disabled: true,
+                    )
+                </form>
+            } else {
+                <form method="post" action="/auth/sign-in" class="form-stack">
+                    text_field(
+                        label: "Email",
+                        name: "email",
+                        field_type: "email",
+                        required: true,
+                        placeholder: Some("name@example.com".to_string()),
+                    )
+                    button(
+                        text: "Send Magic Link",
+                        variant: ButtonVariant::Primary,
+                    )
+                </form>
+            }
         </div>
     })
 }
@@ -75,6 +105,10 @@ pub async fn submit_sign_in(
     cx: &Cx,
     form: topcoat::router::content::Form<SignInForm>,
 ) -> TopcoatResult<()> {
+    if !crate::cx_helpers::is_email_delivery_enabled() {
+        return Err(see_other("/auth/sign-in?error=email_delivery_unavailable").into());
+    }
+
     let ip = crate::cx_helpers::client_ip_key(cx);
     let limiter = crate::cx_helpers::sign_in_limiter(cx);
 

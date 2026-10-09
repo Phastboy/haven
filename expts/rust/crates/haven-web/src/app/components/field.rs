@@ -14,6 +14,7 @@ pub async fn text_field(
     #[default] help: Option<String>,
     #[default] error: Option<String>,
     #[default] required: bool,
+    #[default] disabled: bool,
     #[default] minlength: Option<usize>,
     #[default] maxlength: Option<usize>,
     #[default] min: Option<i32>,
@@ -31,6 +32,7 @@ pub async fn text_field(
                 value=(value.unwrap_or_default())
                 placeholder=(placeholder.unwrap_or_default())
                 required=(required.then_some("required"))
+                disabled=(disabled.then_some("disabled"))
                 minlength=(minlength.map(|m| m.to_string()))
                 maxlength=(maxlength.map(|m| m.to_string()))
                 min=(min.map(|m| m.to_string()))
@@ -134,5 +136,23 @@ mod tests {
         assert!(html.contains("A nice lamp"));
         assert!(html.contains("class=\"field-help\""));
         assert!(html.contains("Describe condition and pickup location"));
+    }
+
+    #[tokio::test]
+    #[allow(clippy::unwrap_used, reason = "test assertions")]
+    async fn text_field_renders_disabled_attribute() {
+        let cx = Cx::default();
+        let __cx = &cx;
+        let field = view! {
+            text_field(
+                label: "Email",
+                name: "email",
+                field_type: "email",
+                disabled: true,
+            )
+        };
+
+        let html = field.single().await.unwrap().render(__cx);
+        assert!(html.contains("disabled=\"disabled\""));
     }
 }
