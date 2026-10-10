@@ -9,12 +9,13 @@ Status: draft. Only entries under **Decided** were confirmed by the owner. Every
 | Stage | Question | Offerer lane | Responder lane | Handoff | Status | Load target |
 |---|---|---|---|---|---|---|
 | 0.1.x | Can I offer something? | create account, sign in, create / see own / edit / delete an offer | none yet | none | completed | met historical baseline (see PERFORMANCE_CONTRACT.md) |
-| 0.2.x | Can someone see it? | offer becomes public on create (generates slug); manage own via `/offers/manage/{id}` | see available offers (public feed), see another person's offer (`/offers/{slug}`) | an offer becomes visible to others | current | ≥ 1,200 iters/s host direct (p95 ≤ 200ms, p99 ≤ 500ms) |
-| 0.3.x | Can someone act on it? | know about expressed interest | express willingness to take on an offer | commitment | not reached | |
-| 0.4.x | Can someone find it? | | find an offer by name, narrow by price | | not reached | |
-| 0.5.x | Can I come back to what I care about? | | save an offer, follow a person, return to both | | not reached | |
-| 0.6.x | Can I narrow it down? | | narrow by category, tags, saved, committed | | not reached | |
-| 0.7.x to 0.9.x | TBD | | | | not reached | |
+| 0.2.x | Can someone see it? | offer becomes public on create (generates slug); manage own via `/offers/manage/{id}` | see available offers (public feed), see another person's offer (`/offers/{slug}`) | an offer becomes visible to others | completed | met ≥ 1,200 iters/s host direct |
+| 0.3.x | Can I know who is behind an offer? | has profile, edits profile, profile displays made offers | sees who made an offer, visits public profile, sees maker's offers | knowing who is behind an offer | current | to be verified |
+| 0.4.x | Can someone act on it? | know about expressed interest | express willingness to take on an offer | commitment | not reached | |
+| 0.5.x | Can someone find it? | | find an offer by name, narrow by price | | not reached | |
+| 0.6.x | Can I come back to what I care about? | | save an offer, follow a person, return to both | | not reached | |
+| 0.7.x | Can I narrow it down? | | narrow by category, tags, saved, committed | | not reached | |
+| 0.8.x to 0.9.x | TBD | | | | not reached | |
 | 1.0.x | Can two people close an offer? | | | agreement, closing | not reached | |
 | 1.x | TBD | | | | not reached | |
 | 2.0.x | Can Haven handle a complete trade? | | | payment, fulfillment, completion | not reached | |
@@ -26,13 +27,67 @@ sequenceDiagram
   participant R as Responder
   O->>H: create account, sign in
   O->>H: create an offer (generates slug)
-  O->>H: manage own offer (/offers/manage/{id})
-  Note over R,H: Responder lane begins at 0.2.x (Handoff)
-  R->>H: see available offers (public feed, keyset cursor)
-  R->>H: see another person's offer (/offers/{slug})
+  O->>H: edit profile (display name, bio)
+  R->>H: see available offers (public feed)
+  R->>H: see another person's offer (/offers/{slug}) with maker link
+  Note over R,H: 0.3.x handoff: knowing who is behind an offer
+  R->>H: visit maker's public profile (/profiles/{id_or_handle})
+  H-->>R: show maker profile & all their offers
 ```
 
-## Stage 0.2.x: Can someone see it?  (current)
+## Stage 0.3.x: Can I know who is behind an offer? (current)
+
+### Untangled items
+
+**A person can have a profile that represents them.**
+- Every platform participant (User) has a profile representation.
+- Profile fields: display name (required for public identity, e.g. 2–50 chars), bio/about (optional, e.g. up to 500 chars), and public profile handle or slug.
+- Profile state on first sign-in: either initialized with a default derived from email prefix, or an empty profile state prompting the person to set their display name.
+- Identity is text-led, restrained, and clean (no noisy gamification or arbitrary badges per `haven-ui-design`).
+
+**A person can edit their profile.**
+- An authenticated person navigates to their profile management view (e.g. `/profile/edit` or `/settings/profile`).
+- Only the owner can edit their own profile (IDOR protection; CSRF protected).
+- Can update display name, bio, and handle/slug. Input validation enforces character bounds and sanitization.
+
+**A person can see who made an offer.**
+- On `/offers/{slug}` (and offer feed cards), the offer displays the maker's display name and link to their public profile.
+- Unauthenticated guests and signed-in responders can see the maker without needing special permissions.
+- If the maker has not set a custom bio, their display name is still clearly presented.
+
+**A person can visit another person's public profile.**
+- Anyone can request the public profile via a clean URL (e.g. `/profiles/{handle_or_id}` or `/p/{handle}`).
+- Zero authentication required: public, cacheable, and SEO-friendly.
+- Displays the person's display name, bio/about, and account creation/member-since metadata.
+
+**A person's profile shows the offers they have made.**
+- On the public profile page, a dedicated section lists all available offers created by that person.
+- Uses keyset cursor pagination on `(created_at, id)` scoped to `user_id` to prevent pagination drift.
+- Each offer card displays title, price/free, currency, and links to `/offers/{slug}`.
+- If the person has no available offers, an honest empty state is shown ("No offers available right now").
+
+### Decided
+- 2026-10-10: Profile representation includes `display_name` (2–50 chars), optional `bio` (up to 500 chars), and a unique URL-safe `handle` (3–30 lowercase alphanumeric + hyphens).
+- 2026-10-10: Public profiles are routed at `/profiles/{handle}` (e.g. `/profiles/alex`).
+- 2026-10-10: On first sign-in, `display_name` and `handle` are automatically initialized from the email prefix (falling back with a unique suffix if taken), and can be edited anytime by the owner.
+- 2026-10-10: Maker attribution with a link to their public profile appears on both the single offer view (`/offers/{slug}`) and each card in the main public feed (`/offers`).
+- 2026-10-10: Profile management is located at `/profile` (view/edit), restricted to authenticated owners.
+
+### Open questions
+- **Blocking:**
+  - None. All key product decisions for 0.3.x are confirmed.
+- **Non-blocking:**
+  - Initials avatar styling vs pure text display name.
+  - Reserved handles list (e.g., `manage`, `new`, `edit`, `admin`, `api`, `auth`, `offers`, `profiles`).
+
+### Deferred dependencies
+- Following a person. Belongs to 0.6.x. Current behaviour: no follow button or follower count.
+- Direct communication with the maker. Belongs to 0.4.x. Current behaviour: view maker's offers only.
+
+### Done when (from the roadmap)
+A person looking at an offer can find out who made it, and from there see everything else that person offers, and the system meets its load-testing target.
+
+## Stage 0.2.x: Can someone see it? (completed)
 
 ### Untangled items
 
