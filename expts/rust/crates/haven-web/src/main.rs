@@ -63,6 +63,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let router = app::router()
+        .origin_policy(app::origin::build_origin_policy())
         .cookies()
         .sessions(
             SessionConfig::builder()

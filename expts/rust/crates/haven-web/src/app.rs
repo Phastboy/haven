@@ -9,6 +9,7 @@ pub mod auth;
 pub mod components;
 pub mod health;
 pub mod offers;
+pub mod origin;
 pub mod state;
 pub mod style;
 
@@ -44,9 +45,7 @@ pub async fn root_layout(
     cx: &Cx,
     slot: topcoat::router::Slot<'_>,
 ) -> TopcoatResult<impl topcoat::view::View> {
-    let user = crate::app::auth::guard::current_user(cx)
-        .await
-        .unwrap_or(None);
+    let user = crate::app::auth::guard::current_user(cx).await?;
 
     Ok(view! {
         <html lang="en">
