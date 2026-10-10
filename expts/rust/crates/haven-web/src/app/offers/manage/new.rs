@@ -2,22 +2,43 @@ use crate::app::components::button::{ButtonVariant, button, button_link};
 use crate::app::components::field::{text_field, textarea_field};
 use topcoat::{Result as TopcoatResult, context::Cx, router::error::see_other, view::view};
 
-#[topcoat::router::page]
-pub async fn new_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
-    let _ = crate::app::auth::guard::require_owner_auth(cx).await?;
-    let idempotency_key = uuid::Uuid::new_v4().to_string();
-    Ok(view! {
+#[derive(Default)]
+struct NewOfferFormFields {
+    title: Option<String>,
+    description: Option<String>,
+    price: Option<String>,
+    currency: Option<String>,
+}
+
+fn render_new_offer_form(
+    cx: &Cx,
+    idempotency_key: String,
+    fields: NewOfferFormFields,
+    error_banner: Option<String>,
+    status_code: Option<http::StatusCode>,
+) -> impl topcoat::view::View {
+    let __cx = cx;
+    view! {
         <div class="new-offer">
             <meta name="robots" content="noindex" />
+            if let Some(status) = status_code {
+                (status)
+            }
             <div class="page-header">
                 <h1>"New Offer"</h1>
                 <p class="text-muted">"Create a new offer to list on Haven."</p>
             </div>
+            if let Some(err) = error_banner {
+                <div class="form-error-banner" role="alert">
+                    <p>(err)</p>
+                </div>
+            }
             <form method="post" action="/offers/manage/new" class="form-stack">
                 <input type="hidden" name="idempotency_key" value=(idempotency_key) />
                 text_field(
                     label: "Title",
                     name: "title",
+                    value: fields.title,
                     required: true,
                     minlength: Some(3),
                     maxlength: Some(100),
@@ -25,6 +46,7 @@ pub async fn new_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> 
                 textarea_field(
                     label: "Description",
                     name: "description",
+                    value: fields.description,
                     required: true,
                     minlength: Some(10),
                     maxlength: Some(2000),
@@ -33,6 +55,7 @@ pub async fn new_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> 
                     label: "Price (minor units)",
                     name: "price",
                     field_type: "number",
+                    value: fields.price,
                     required: true,
                     min: Some(0),
                     placeholder: Some("0 for Free".to_string()),
@@ -41,6 +64,7 @@ pub async fn new_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> 
                 text_field(
                     label: "Currency",
                     name: "currency",
+                    value: fields.currency,
                     placeholder: Some("NGN (required if price > 0)".to_string()),
                     maxlength: Some(3),
                 )
@@ -57,7 +81,20 @@ pub async fn new_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> 
                 </div>
             </form>
         </div>
-    })
+    }
+}
+
+#[topcoat::router::page]
+pub async fn new_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
+    let _ = crate::app::auth::guard::require_owner_auth(cx).await?;
+    let idempotency_key = uuid::Uuid::new_v4().to_string();
+    Ok(render_new_offer_form(
+        cx,
+        idempotency_key,
+        NewOfferFormFields::default(),
+        None,
+        None,
+    ))
 }
 
 #[derive(serde::Deserialize)]
@@ -73,37 +110,69 @@ pub struct NewOfferForm {
 pub async fn create_offer(
     cx: &Cx,
     form: Option<topcoat::router::content::Form<NewOfferForm>>,
-) -> TopcoatResult<()> {
+) -> TopcoatResult<impl topcoat::view::View> {
     let user = crate::app::auth::guard::require_owner_auth(cx).await?;
 
     let Some(form) = form else {
-        return Err(topcoat::router::error::bad_request("Missing form body").into());
+        return Ok(render_new_offer_form(
+            cx,
+            uuid::Uuid::new_v4().to_string(),
+            NewOfferFormFields::default(),
+            Some("Missing form submission.".to_string()),
+            Some(http::StatusCode::UNPROCESSABLE_ENTITY),
+        ));
+    };
+
+    let f = form.0;
+    let raw_key = f.idempotency_key.to_string();
+    let fields = NewOfferFormFields {
+        title: Some(f.title),
+        description: f.description,
+        price: f.price,
+        currency: f.currency,
     };
 
     let limiter = crate::rate_limit::create_offer_limiter(cx);
     crate::rate_limit::enforce(limiter, &user.id.to_string())?;
 
-    let (price, currency) = super::super::fields::parse_for_create(
-        form.0.price.as_deref(),
-        form.0.currency.as_deref(),
-    )?;
+    let (price, currency) = match super::super::fields::parse_for_create(
+        fields.price.as_deref(),
+        fields.currency.as_deref(),
+    ) {
+        Ok(parsed) => parsed,
+        Err(e) => {
+            return Ok(render_new_offer_form(
+                cx,
+                raw_key,
+                fields,
+                Some(e.to_string()),
+                Some(http::StatusCode::UNPROCESSABLE_ENTITY),
+            ));
+        }
+    };
 
     let create_req = haven_domain::offer::CreateOffer {
-        title: form.0.title,
-        description: form.0.description.unwrap_or_default(),
+        title: fields.title.clone().unwrap_or_default(),
+        description: fields.description.clone().unwrap_or_default(),
         price,
         currency,
     };
 
-    create_req
-        .validate()
-        .map_err(|e| topcoat::router::error::bad_request(e.to_string()))?;
+    if let Err(e) = create_req.validate() {
+        return Ok(render_new_offer_form(
+            cx,
+            raw_key,
+            fields,
+            Some(e.to_string()),
+            Some(http::StatusCode::UNPROCESSABLE_ENTITY),
+        ));
+    }
 
     let offer = crate::app::state::registry(cx)
         .offers()
         .create(
             user.id,
-            haven_domain::ports::IdempotencyKey(form.0.idempotency_key),
+            haven_domain::ports::IdempotencyKey::new(f.idempotency_key),
             &create_req,
         )
         .await

@@ -26,8 +26,8 @@ pub(super) fn map_row(
     let s = OfferSlug::parse(&slug).map_err(|_| RepoError::Corrupt("Invalid slug".into()))?;
 
     Ok(Offer {
-        id: OfferId(id),
-        user_id: UserId(user_id),
+        id: OfferId::from_uuid(id),
+        user_id: UserId::from_uuid(user_id),
         slug: s,
         title,
         description,

@@ -94,12 +94,12 @@ impl OfferRepository for FakeOfferRepository {
         req: &CreateOffer,
     ) -> Result<Offer, RepoError> {
         let mut idemp = self.idemp.lock().unwrap();
-        let key = (user_id, idempotency_key.0);
+        let key = (user_id, idempotency_key.as_uuid());
         if let Some(offer) = idemp.get(&key) {
             return Ok(offer.clone());
         }
 
-        let offer_id = OfferId(uuid::Uuid::new_v4());
+        let offer_id = OfferId::generate();
         let suffix = &offer_id.as_uuid().to_string()[..8];
         let slug = crate::offer::OfferSlug::from_title_and_suffix(&req.title, suffix)
             .map_err(|e| RepoError::Corrupt(e.to_string()))?;
@@ -111,7 +111,7 @@ impl OfferRepository for FakeOfferRepository {
             title: req.title.clone(),
             description: req.description.clone(),
             price: req.price,
-            currency: req.currency.clone(),
+            currency: req.currency,
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
@@ -129,7 +129,10 @@ impl OfferRepository for FakeOfferRepository {
     ) -> Result<Offer, RepoError> {
         let mut lock = self.offers.lock().unwrap();
         let Some(offer) = lock.iter_mut().find(|o| o.id == id && o.user_id == user_id) else {
-            return Err(RepoError::NotFound);
+            return Err(RepoError::NotFound {
+                entity: "offer",
+                id: id.to_string(),
+            });
         };
         if let Some(ref t) = req.title {
             offer.title.clone_from(t);
@@ -140,8 +143,8 @@ impl OfferRepository for FakeOfferRepository {
         if let Some(p) = req.price {
             offer.price = p;
         }
-        if let Some(ref c) = req.currency {
-            offer.currency = c.clone();
+        if let Some(c) = req.currency {
+            offer.currency = c;
         }
         offer.updated_at = Utc::now();
         Ok(offer.clone())
@@ -152,7 +155,10 @@ impl OfferRepository for FakeOfferRepository {
         let pos = lock
             .iter()
             .position(|o| o.id == id && o.user_id == user_id)
-            .ok_or(RepoError::NotFound)?;
+            .ok_or_else(|| RepoError::NotFound {
+                entity: "offer",
+                id: id.to_string(),
+            })?;
         lock.remove(pos);
         Ok(())
     }
@@ -207,8 +213,8 @@ mod tests {
     #[tokio::test]
     async fn test_fake_offer_repository_idempotency_concurrent() {
         let repo = FakeOfferRepository::default();
-        let user_id = UserId(uuid::Uuid::new_v4());
-        let idempotency_key = IdempotencyKey(uuid::Uuid::new_v4());
+        let user_id = UserId::generate();
+        let idempotency_key = IdempotencyKey::new(uuid::Uuid::new_v4());
         let req = CreateOffer {
             title: "Test Offer".to_string(),
             description: "A concurrent test offer description.".to_string(),

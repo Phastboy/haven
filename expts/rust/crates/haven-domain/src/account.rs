@@ -2,26 +2,34 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::DomainError;
+use crate::error::AccountError;
 
 /// Newtype wrapping a UUID that identifies an Account.
 /// Cannot be confused with `OfferId`, `SessionId`, or `UserId` at compile time.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct AccountId(pub Uuid);
+pub struct AccountId(Uuid);
 
 impl AccountId {
-    pub fn new() -> Self {
+    /// Generates a new random `AccountId`.
+    #[must_use]
+    pub fn generate() -> Self {
         Self(Uuid::new_v4())
     }
 
+    #[must_use]
+    pub fn from_uuid(uuid: Uuid) -> Self {
+        Self(uuid)
+    }
+
+    #[must_use]
     pub fn as_uuid(&self) -> Uuid {
         self.0
     }
 }
 
-impl Default for AccountId {
-    fn default() -> Self {
-        Self::new()
+impl From<Uuid> for AccountId {
+    fn from(uuid: Uuid) -> Self {
+        Self(uuid)
     }
 }
 
@@ -34,31 +42,46 @@ impl std::fmt::Display for AccountId {
 /// A validated email address.
 /// Constructed via `Email::parse()` — after construction, guaranteed non-empty and contains '@'.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(try_from = "String", into = "String")]
 pub struct Email(String);
+
+impl TryFrom<String> for Email {
+    type Error = AccountError;
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        Self::parse(&s)
+    }
+}
+
+impl From<Email> for String {
+    fn from(email: Email) -> Self {
+        email.0
+    }
+}
 
 impl Email {
     /// Parse and validate a raw email string.
     /// Normalises to lowercase + trims whitespace.
-    pub fn parse(raw: &str) -> Result<Self, DomainError> {
+    pub fn parse(raw: &str) -> Result<Self, AccountError> {
         let normalised = raw.trim().to_lowercase();
         if normalised.is_empty() {
-            return Err(DomainError::InvalidEmail("email must not be empty".into()));
+            return Err(AccountError::InvalidEmail("email must not be empty".into()));
         }
         if !normalised.contains('@') {
-            return Err(DomainError::InvalidEmail("email must contain '@'".into()));
+            return Err(AccountError::InvalidEmail("email must contain '@'".into()));
         }
         // Split on '@'; local part and domain must both be non-empty.
         let mut parts = normalised.splitn(2, '@');
         let local = parts.next().unwrap_or("");
         let domain = parts.next().unwrap_or("");
         if local.is_empty() || domain.is_empty() {
-            return Err(DomainError::InvalidEmail(
+            return Err(AccountError::InvalidEmail(
                 "email local-part and domain must not be empty".into(),
             ));
         }
         Ok(Self(normalised))
     }
 
+    #[must_use]
     pub fn as_str(&self) -> &str {
         &self.0
     }
@@ -115,8 +138,16 @@ mod tests {
 
     #[test]
     fn account_id_is_unique() {
-        let a = AccountId::new();
-        let b = AccountId::new();
+        let a = AccountId::generate();
+        let b = AccountId::generate();
         assert_ne!(a, b);
+    }
+
+    #[test]
+    fn email_serde_validates_on_deserialization() {
+        assert!(serde_json::from_str::<Email>("\"notanemail\"").is_err());
+        assert!(serde_json::from_str::<Email>("\"\"").is_err());
+        let valid: Email = serde_json::from_str("\"user@example.com\"").unwrap();
+        assert_eq!(valid.as_str(), "user@example.com");
     }
 }

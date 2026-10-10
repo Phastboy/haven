@@ -1,7 +1,7 @@
 pub mod delete;
 pub mod edit;
 
-use crate::app::components::button::{ButtonVariant, button, button_link};
+use crate::app::components::button::{ButtonVariant, button_link};
 use topcoat::{Result as TopcoatResult, context::Cx, view::view};
 
 topcoat::router::module_param!(id: uuid::Uuid, error = not_found);
@@ -10,7 +10,8 @@ topcoat::router::module_param!(id: uuid::Uuid, error = not_found);
 pub async fn view_offer(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
     let id_uuid = *topcoat::router::path_param::<Id>(cx)?;
     let offer =
-        crate::app::auth::guard::owned_offer(cx, haven_domain::offer::OfferId(id_uuid)).await?;
+        crate::app::auth::guard::owned_offer(cx, haven_domain::offer::OfferId::from_uuid(id_uuid))
+            .await?;
 
     let price_text = if offer.price.as_i32() == 0 {
         "Free".to_string()
@@ -42,12 +43,11 @@ pub async fn view_offer(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
                     text: "View Public Page",
                     variant: ButtonVariant::Secondary,
                 )
-                <form method="post" action=(format!("/offers/manage/{}/delete", offer.id)) class="inline-form">
-                    button(
-                        text: "Delete",
-                        variant: ButtonVariant::Danger,
-                    )
-                </form>
+                button_link(
+                    href: format!("/offers/manage/{}/delete", offer.id),
+                    text: "Delete",
+                    variant: ButtonVariant::Danger,
+                )
             </div>
         </div>
     })

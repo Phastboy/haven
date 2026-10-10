@@ -20,9 +20,14 @@ use haven_domain::offer::{
 use haven_domain::ports::{IdempotencyKey, OfferRepository, RepoError};
 
 /// PostgreSQL-backed repository for offers.
-pub struct PostgresOfferRepository {
-    /// PostgreSQL connection pool.
-    pub pool: DbPool,
+pub(crate) struct PostgresOfferRepository {
+    pool: DbPool,
+}
+
+impl PostgresOfferRepository {
+    pub(crate) fn new(pool: DbPool) -> Self {
+        Self { pool }
+    }
 }
 
 #[async_trait]

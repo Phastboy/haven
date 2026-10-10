@@ -4,11 +4,15 @@ use haven_domain::account::{Account, AccountId, Email};
 use haven_domain::ports::{AccountRepository, RepoError};
 use uuid::Uuid;
 
-pub struct PostgresAccountRepository {
-    pub pool: DbPool,
+pub(crate) struct PostgresAccountRepository {
+    pool: DbPool,
 }
 
 impl PostgresAccountRepository {
+    pub(crate) fn new(pool: DbPool) -> Self {
+        Self { pool }
+    }
+
     fn map_row(
         id: Uuid,
         email: &str,
@@ -19,7 +23,7 @@ impl PostgresAccountRepository {
         let e =
             Email::parse(email).map_err(|_| RepoError::Corrupt("Invalid email in DB".into()))?;
         Ok(Account {
-            id: AccountId(id),
+            id: AccountId::from_uuid(id),
             email: e,
             email_verified,
             created_at,
@@ -87,7 +91,10 @@ impl AccountRepository for PostgresAccountRepository {
         .rows_affected();
 
         if rows_affected == 0 {
-            Err(RepoError::NotFound)
+            Err(RepoError::NotFound {
+                entity: "account",
+                id: account_id.to_string(),
+            })
         } else {
             Ok(())
         }

@@ -23,11 +23,11 @@ pub struct PostgresRegistry {
 impl PostgresRegistry {
     pub fn new(pool: &DbPool) -> Self {
         Self {
-            offers: Box::new(offers::PostgresOfferRepository { pool: pool.clone() }),
-            accounts: Box::new(accounts::PostgresAccountRepository { pool: pool.clone() }),
-            users: Box::new(users::PostgresUserRepository { pool: pool.clone() }),
-            magic_links: Box::new(magic_links::PostgresMagicLinkRepository { pool: pool.clone() }),
-            sessions: Box::new(sessions::PostgresSessionRepository { pool: pool.clone() }),
+            offers: Box::new(offers::PostgresOfferRepository::new(pool.clone())),
+            accounts: Box::new(accounts::PostgresAccountRepository::new(pool.clone())),
+            users: Box::new(users::PostgresUserRepository::new(pool.clone())),
+            magic_links: Box::new(magic_links::PostgresMagicLinkRepository::new(pool.clone())),
+            sessions: Box::new(sessions::PostgresSessionRepository::new(pool.clone())),
         }
     }
 }
@@ -51,13 +51,23 @@ impl Registry for PostgresRegistry {
 }
 
 /// Map a `sqlx::Error` to a `RepoError`
+#[allow(
+    clippy::wildcard_enum_match_arm,
+    reason = "fallback for third-party non-exhaustive sqlx::Error"
+)]
 pub(crate) fn map_sqlx_err(e: sqlx::Error) -> haven_domain::ports::RepoError {
     use haven_domain::ports::RepoError;
     match e {
-        sqlx::Error::RowNotFound => RepoError::NotFound,
+        sqlx::Error::RowNotFound => RepoError::NotFound {
+            entity: "record",
+            id: String::new(),
+        },
         sqlx::Error::Database(db_err) => {
             if db_err.is_unique_violation() {
-                RepoError::Conflict
+                RepoError::Conflict {
+                    entity: "record",
+                    key: db_err.message().to_string(),
+                }
             } else {
                 RepoError::Unavailable(db_err.message().to_string())
             }

@@ -9,13 +9,19 @@ use crate::account::AccountId;
 /// Newtype wrapping a UUID that identifies a User (platform participant).
 /// Cannot be confused with `AccountId`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct UserId(pub Uuid);
+pub struct UserId(Uuid);
 
 impl UserId {
     /// Generates a new random `UserId`.
     #[must_use]
-    pub fn new() -> Self {
+    pub fn generate() -> Self {
         Self(Uuid::new_v4())
+    }
+
+    /// Constructs a `UserId` from an existing UUID.
+    #[must_use]
+    pub fn from_uuid(uuid: Uuid) -> Self {
+        Self(uuid)
     }
 
     /// Returns the underlying raw UUID value.
@@ -25,9 +31,9 @@ impl UserId {
     }
 }
 
-impl Default for UserId {
-    fn default() -> Self {
-        Self::new()
+impl From<Uuid> for UserId {
+    fn from(uuid: Uuid) -> Self {
+        Self(uuid)
     }
 }
 

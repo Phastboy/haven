@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use super::{Offer, OfferId};
-use crate::DomainError;
+use crate::error::CursorError;
 
 /// Keyset cursor for deterministic, constant-time feed pagination on `(created_at, id)`.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -38,24 +38,24 @@ impl OfferCursor {
     ///
     /// # Errors
     ///
-    /// Returns [`DomainError::InvalidCursor`] if the string cannot be decoded or parsed.
-    pub fn decode(encoded: &str) -> Result<Self, DomainError> {
-        let bytes = hex::decode(encoded).map_err(|_| DomainError::InvalidCursor)?;
-        let raw = String::from_utf8(bytes).map_err(|_| DomainError::InvalidCursor)?;
+    /// Returns [`CursorError::InvalidCursor`] if the string cannot be decoded or parsed.
+    pub fn decode(encoded: &str) -> Result<Self, CursorError> {
+        let bytes = hex::decode(encoded).map_err(|_| CursorError::InvalidCursor)?;
+        let raw = String::from_utf8(bytes).map_err(|_| CursorError::InvalidCursor)?;
         let mut parts = raw.split('_');
-        let micros_str = parts.next().ok_or(DomainError::InvalidCursor)?;
-        let uuid_str = parts.next().ok_or(DomainError::InvalidCursor)?;
+        let micros_str = parts.next().ok_or(CursorError::InvalidCursor)?;
+        let uuid_str = parts.next().ok_or(CursorError::InvalidCursor)?;
         if parts.next().is_some() {
-            return Err(DomainError::InvalidCursor);
+            return Err(CursorError::InvalidCursor);
         }
-        let micros: i64 = micros_str.parse().map_err(|_| DomainError::InvalidCursor)?;
-        let uuid = Uuid::parse_str(uuid_str).map_err(|_| DomainError::InvalidCursor)?;
+        let micros: i64 = micros_str.parse().map_err(|_| CursorError::InvalidCursor)?;
+        let uuid = Uuid::parse_str(uuid_str).map_err(|_| CursorError::InvalidCursor)?;
         let created_at =
-            DateTime::from_timestamp_micros(micros).ok_or(DomainError::InvalidCursor)?;
+            DateTime::from_timestamp_micros(micros).ok_or(CursorError::InvalidCursor)?;
 
         Ok(Self {
             created_at,
-            id: OfferId(uuid),
+            id: OfferId::from_uuid(uuid),
         })
     }
 }

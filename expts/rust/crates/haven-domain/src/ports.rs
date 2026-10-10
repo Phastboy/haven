@@ -13,15 +13,47 @@ use uuid::Uuid;
 
 /// A strongly typed newtype for idempotency keys.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct IdempotencyKey(pub Uuid);
+pub struct IdempotencyKey(Uuid);
+
+impl IdempotencyKey {
+    /// Constructs a new idempotency key from a UUID.
+    #[must_use]
+    pub fn new(uuid: Uuid) -> Self {
+        Self(uuid)
+    }
+
+    /// Constructs an idempotency key from an existing UUID.
+    #[must_use]
+    pub fn from_uuid(uuid: Uuid) -> Self {
+        Self(uuid)
+    }
+
+    /// Returns the underlying raw UUID value.
+    #[must_use]
+    pub fn as_uuid(&self) -> Uuid {
+        self.0
+    }
+}
+
+impl From<Uuid> for IdempotencyKey {
+    fn from(uuid: Uuid) -> Self {
+        Self(uuid)
+    }
+}
+
+impl std::fmt::Display for IdempotencyKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
 
 /// Infrastructure failures and database mapping errors.
 #[derive(Debug, Error)]
 pub enum RepoError {
-    #[error("Resource not found or unauthorized")]
-    NotFound,
-    #[error("Conflict with existing resource")]
-    Conflict,
+    #[error("{entity} not found: {id}")]
+    NotFound { entity: &'static str, id: String },
+    #[error("{entity} conflict on key: {key}")]
+    Conflict { entity: &'static str, key: String },
     #[error("Data corruption: {0}")]
     Corrupt(String),
     #[error("Database unavailable: {0}")]

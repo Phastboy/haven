@@ -41,8 +41,13 @@ use crate::app::components::button::{ButtonVariant, button_link};
 
 #[topcoat::router::layout]
 pub async fn root_layout(
+    cx: &Cx,
     slot: topcoat::router::Slot<'_>,
 ) -> TopcoatResult<impl topcoat::view::View> {
+    let user = crate::app::auth::guard::current_user(cx)
+        .await
+        .unwrap_or(None);
+
     Ok(view! {
         <html lang="en">
             <head>
@@ -57,6 +62,16 @@ pub async fn root_layout(
                         <a href="/" class="site-logo">"Haven"</a>
                         <ul class="nav-links">
                             <li><a href="/offers">"Offers"</a></li>
+                            if user.is_some() {
+                                <li><a href="/offers/manage">"Your Offers"</a></li>
+                                <li>
+                                    <form action="/auth/sign-out" method="post" class="nav-sign-out-form">
+                                        <button type="submit" class="btn btn-ghost">"Sign Out"</button>
+                                    </form>
+                                </li>
+                            } else {
+                                <li><a href="/auth/sign-in">"Sign In"</a></li>
+                            }
                         </ul>
                     </nav>
                 </header>

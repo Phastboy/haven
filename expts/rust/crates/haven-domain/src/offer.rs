@@ -23,18 +23,24 @@ pub use validation::{
     validate_description, validate_price_and_currency, validate_title,
 };
 
-use crate::DomainError;
+use crate::error::OfferValidationError;
 pub use crate::user::UserId;
 
 /// Newtype wrapping a UUID that identifies an Offer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct OfferId(pub Uuid);
+pub struct OfferId(Uuid);
 
 impl OfferId {
     /// Generates a new random `OfferId`.
     #[must_use]
-    pub fn new() -> Self {
+    pub fn generate() -> Self {
         Self(Uuid::new_v4())
+    }
+
+    /// Constructs an `OfferId` from an existing UUID.
+    #[must_use]
+    pub fn from_uuid(uuid: Uuid) -> Self {
+        Self(uuid)
     }
 
     /// Returns the underlying raw UUID value.
@@ -44,9 +50,9 @@ impl OfferId {
     }
 }
 
-impl Default for OfferId {
-    fn default() -> Self {
-        Self::new()
+impl From<Uuid> for OfferId {
+    fn from(uuid: Uuid) -> Self {
+        Self(uuid)
     }
 }
 
@@ -97,8 +103,8 @@ impl CreateOffer {
     ///
     /// # Errors
     ///
-    /// Returns [`DomainError`] if title, description, or price/currency are invalid.
-    pub fn validate(&self) -> Result<(), DomainError> {
+    /// Returns [`OfferValidationError`] if title, description, or price/currency are invalid.
+    pub fn validate(&self) -> Result<(), OfferValidationError> {
         validate_title(&self.title)?;
         validate_description(&self.description)?;
         validate_price_and_currency(self.price, Some(&self.currency))?;
@@ -124,8 +130,8 @@ impl UpdateOffer {
     ///
     /// # Errors
     ///
-    /// Returns [`DomainError`] if provided title or description violate length constraints.
-    pub fn validate(&self) -> Result<(), DomainError> {
+    /// Returns [`OfferValidationError`] if provided title or description violate length constraints.
+    pub fn validate(&self) -> Result<(), OfferValidationError> {
         if let Some(ref title) = self.title {
             validate_title(title)?;
         }

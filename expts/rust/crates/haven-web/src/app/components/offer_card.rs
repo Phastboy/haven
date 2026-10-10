@@ -28,9 +28,7 @@ pub async fn offer_card(
                         <a href=(edit_url) class="btn btn-secondary">"Edit"</a>
                     }
                     if let Some(del_url) = delete_action {
-                        <form method="post" action=(del_url)>
-                            <button type="submit" class="btn btn-danger">"Delete"</button>
-                        </form>
+                        <a href=(del_url) class="btn btn-danger">"Delete"</a>
                     }
                 </div>
             }
@@ -68,6 +66,6 @@ mod tests {
         assert!(html.contains("50 USD"));
         assert!(html.contains("A well-preserved leather jacket"));
         assert!(html.contains("href=\"/offers/uuid/edit\""));
-        assert!(html.contains("action=\"/offers/uuid/delete\""));
+        assert!(html.contains("href=\"/offers/uuid/delete\""));
     }
 }
