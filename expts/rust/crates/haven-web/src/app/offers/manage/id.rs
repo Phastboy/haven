@@ -9,7 +9,8 @@ topcoat::router::module_param!(id: uuid::Uuid, error = not_found);
 #[topcoat::router::page]
 pub async fn view_offer(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
     let id_uuid = *topcoat::router::path_param::<Id>(cx)?;
-    let offer = crate::cx_helpers::owned_offer(cx, haven_domain::offer::OfferId(id_uuid)).await?;
+    let offer =
+        crate::app::auth::guard::owned_offer(cx, haven_domain::offer::OfferId(id_uuid)).await?;
 
     let price_text = if offer.price.as_i32() == 0 {
         "Free".to_string()

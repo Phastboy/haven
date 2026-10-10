@@ -6,7 +6,8 @@ use topcoat::{Result as TopcoatResult, context::Cx, router::error::see_other, vi
 #[topcoat::router::page]
 pub async fn edit_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
     let id_uuid = *topcoat::router::path_param::<super::Id>(cx)?;
-    let offer = crate::cx_helpers::owned_offer(cx, haven_domain::offer::OfferId(id_uuid)).await?;
+    let offer =
+        crate::app::auth::guard::owned_offer(cx, haven_domain::offer::OfferId(id_uuid)).await?;
 
     Ok(view! {
         <div class="edit-offer">
@@ -82,7 +83,7 @@ pub async fn update_offer(
     let offer_id = haven_domain::offer::OfferId(id_uuid);
 
     // Ownership and auth check
-    let user = crate::cx_helpers::require_owner_auth(cx).await?;
+    let user = crate::app::auth::guard::require_owner_auth(cx).await?;
 
     let Some(form) = form else {
         return Err(bad_request("Missing form body").into());
@@ -106,11 +107,11 @@ pub async fn update_offer(
         .validate()
         .map_err(|e| bad_request(e.to_string()))?;
 
-    crate::cx_helpers::registry(cx)
+    crate::app::state::registry(cx)
         .offers()
         .update(offer_id, user.id, &domain_update)
         .await
-        .map_err(crate::cx_helpers::map_repo_err)?;
+        .map_err(crate::app::state::map_repo_err)?;
 
     Err(see_other(format!("/offers/manage/{offer_id}")).into())
 }

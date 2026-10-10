@@ -188,7 +188,7 @@ fn test_router(oauth_config: Option<GoogleOAuthConfig>) -> topcoat::router::Rout
         }
     }
 
-    let state = crate::cx_helpers::AppState {
+    let state = crate::app::state::AppState {
         registry: std::sync::Arc::new(DummyRegistry),
         google_oauth: oauth_config,
         http_client: reqwest::Client::new(),
@@ -202,8 +202,8 @@ fn test_router(oauth_config: Option<GoogleOAuthConfig>) -> topcoat::router::Rout
                 .build(),
         )
         .app_context(state)
-        .app_context(crate::cx_helpers::SignInLimiter::new())
-        .app_context(crate::cx_helpers::CreateOfferLimiter::new())
+        .app_context(crate::rate_limit::SignInLimiter::new())
+        .app_context(crate::rate_limit::CreateOfferLimiter::new())
         .discover()
         .build()
 }

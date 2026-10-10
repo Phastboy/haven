@@ -10,7 +10,7 @@ pub struct SignInQuery {
 
 #[topcoat::router::page]
 pub async fn sign_in_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
-    if crate::cx_helpers::current_user(cx).await?.is_some() {
+    if crate::app::auth::guard::current_user(cx).await?.is_some() {
         return Err(topcoat::router::error::redirect("/offers").into());
     }
 
@@ -31,8 +31,8 @@ pub async fn sign_in_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
         _ => "An error occurred while signing in. Please try again.".to_string(),
     });
 
-    let google_enabled = crate::cx_helpers::google_oauth(cx).is_some();
-    let email_delivery_enabled = crate::cx_helpers::is_email_delivery_enabled();
+    let google_enabled = crate::app::state::google_oauth(cx).is_some();
+    let email_delivery_enabled = crate::app::state::is_email_delivery_enabled();
 
     Ok(view! {
         <div class="auth-card">
@@ -105,12 +105,12 @@ pub async fn submit_sign_in(
     cx: &Cx,
     form: topcoat::router::content::Form<SignInForm>,
 ) -> TopcoatResult<()> {
-    if !crate::cx_helpers::is_email_delivery_enabled() {
+    if !crate::app::state::is_email_delivery_enabled() {
         return Err(see_other("/auth/sign-in?error=email_delivery_unavailable").into());
     }
 
-    let ip = crate::cx_helpers::client_ip_key(cx);
-    let limiter = crate::cx_helpers::sign_in_limiter(cx);
+    let ip = crate::rate_limit::client_ip_key(cx);
+    let limiter = crate::rate_limit::sign_in_limiter(cx);
 
     if limiter.try_acquire(&ip).is_err() {
         return Err(see_other("/auth/sent").into());
@@ -124,8 +124,8 @@ pub async fn submit_sign_in(
         return Err(see_other("/auth/sent").into());
     }
 
-    let registry = crate::cx_helpers::registry(cx);
-    let map_err = crate::cx_helpers::map_repo_err;
+    let registry = crate::app::state::registry(cx);
+    let map_err = crate::app::state::map_repo_err;
 
     // Find or create account
     let _ = match registry

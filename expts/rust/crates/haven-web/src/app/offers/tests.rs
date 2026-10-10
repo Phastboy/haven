@@ -72,7 +72,7 @@ fn setup_test_app() -> (topcoat::router::Router, TestRegistry) {
         users_repo: TestUserRepository::default(),
     };
 
-    let state = crate::cx_helpers::AppState {
+    let state = crate::app::state::AppState {
         registry: Arc::new(TestRegistry {
             offers_repo: registry.offers_repo.clone(),
             users_repo: registry.users_repo.clone(),
@@ -89,8 +89,8 @@ fn setup_test_app() -> (topcoat::router::Router, TestRegistry) {
                 .build(),
         )
         .app_context(state)
-        .app_context(crate::cx_helpers::SignInLimiter::new())
-        .app_context(crate::cx_helpers::CreateOfferLimiter::new())
+        .app_context(crate::rate_limit::SignInLimiter::new())
+        .app_context(crate::rate_limit::CreateOfferLimiter::new())
         .discover()
         .build();
 
@@ -100,7 +100,7 @@ fn setup_test_app() -> (topcoat::router::Router, TestRegistry) {
 fn create_auth_session(users_repo: &TestUserRepository, user: User) -> String {
     let token = Token::random();
     let encoded = token.encode();
-    let hash_hex = crate::cx_helpers::token_hash_hex(&token.hash());
+    let hash_hex = crate::app::auth::guard::token_hash_hex(&token.hash());
     users_repo
         .users_by_token
         .lock()

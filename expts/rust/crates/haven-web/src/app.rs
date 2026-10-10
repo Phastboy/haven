@@ -9,6 +9,7 @@ pub mod auth;
 pub mod components;
 pub mod health;
 pub mod offers;
+pub mod state;
 pub mod style;
 
 pub fn router() -> topcoat::router::RouterBuilder {
@@ -69,7 +70,7 @@ pub async fn root_layout(
 
 #[topcoat::router::page]
 pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
-    if let Some(_user) = crate::cx_helpers::current_user(cx).await? {
+    if let Some(_user) = crate::app::auth::guard::current_user(cx).await? {
         return Err(topcoat::router::error::redirect("/offers").into());
     }
 

@@ -4,7 +4,7 @@ use topcoat::{Result as TopcoatResult, context::Cx, router::error::see_other, vi
 
 #[topcoat::router::page]
 pub async fn new_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
-    let _ = crate::cx_helpers::require_owner_auth(cx).await?;
+    let _ = crate::app::auth::guard::require_owner_auth(cx).await?;
     let idempotency_key = uuid::Uuid::new_v4().to_string();
     Ok(view! {
         <div class="new-offer">
@@ -74,14 +74,14 @@ pub async fn create_offer(
     cx: &Cx,
     form: Option<topcoat::router::content::Form<NewOfferForm>>,
 ) -> TopcoatResult<()> {
-    let user = crate::cx_helpers::require_owner_auth(cx).await?;
+    let user = crate::app::auth::guard::require_owner_auth(cx).await?;
 
     let Some(form) = form else {
         return Err(topcoat::router::error::bad_request("Missing form body").into());
     };
 
-    let limiter = crate::cx_helpers::create_offer_limiter(cx);
-    crate::cx_helpers::enforce(limiter, &user.id.to_string())?;
+    let limiter = crate::rate_limit::create_offer_limiter(cx);
+    crate::rate_limit::enforce(limiter, &user.id.to_string())?;
 
     let (price, currency) = super::super::fields::parse_for_create(
         form.0.price.as_deref(),
@@ -99,7 +99,7 @@ pub async fn create_offer(
         .validate()
         .map_err(|e| topcoat::router::error::bad_request(e.to_string()))?;
 
-    let offer = crate::cx_helpers::registry(cx)
+    let offer = crate::app::state::registry(cx)
         .offers()
         .create(
             user.id,
@@ -107,7 +107,7 @@ pub async fn create_offer(
             &create_req,
         )
         .await
-        .map_err(crate::cx_helpers::map_repo_err)?;
+        .map_err(crate::app::state::map_repo_err)?;
 
     Err(see_other(format!("/offers/manage/{}", offer.id)).into())
 }
