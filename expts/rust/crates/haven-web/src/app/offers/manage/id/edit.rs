@@ -86,6 +86,7 @@ fn render_edit_offer_form(cx: &Cx, view_data: EditOfferFormView) -> impl topcoat
     }
 }
 
+/// Renders the edit offer form for an existing offer owned by the current user.
 #[topcoat::router::page]
 pub async fn edit_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
     let id_uuid = *topcoat::router::path_param::<super::Id>(cx)?;
@@ -109,6 +110,7 @@ pub async fn edit_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View>
     ))
 }
 
+/// Form payload for submitting updates to an existing offer.
 #[derive(serde::Deserialize)]
 pub struct EditOfferForm {
     pub title: Option<String>,
@@ -117,6 +119,7 @@ pub struct EditOfferForm {
     pub currency: Option<String>,
 }
 
+/// Processes an offer edit submission, verifying ownership prior to form validation.
 #[topcoat::router::page(POST)]
 pub async fn update_offer(
     cx: &Cx,
@@ -126,6 +129,7 @@ pub async fn update_offer(
     let offer_id = haven_domain::offer::OfferId::from_uuid(id_uuid);
 
     // Ownership and auth check
+    crate::app::auth::guard::owned_offer(cx, offer_id).await?;
     let user = crate::app::auth::guard::require_owner_auth(cx).await?;
 
     let Some(form) = form else {

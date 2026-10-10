@@ -82,6 +82,7 @@ fn setup_test_app() -> (topcoat::router::Router, TestRegistry) {
     };
 
     let router = crate::app::router()
+        .origin_policy(crate::app::origin::build_origin_policy())
         .cookies()
         .sessions(
             SessionConfig::builder()
@@ -582,4 +583,90 @@ async fn test_auth_pages_render_with_components_and_classes() {
     assert!(body_verify.contains("Sign In Verification"));
     assert!(body_verify.contains("class=\"btn btn-primary\""));
     assert!(body_verify.contains("Confirm and Sign In"));
+}
+
+#[tokio::test]
+async fn test_origin_policy_allows_trusted_origin_and_rejects_untrusted() {
+    let (router, registry) = setup_test_app();
+
+    let user = User {
+        id: UserId::generate(),
+        account_id: AccountId::generate(),
+        created_at: Utc::now(),
+        updated_at: Utc::now(),
+    };
+    let session_token = create_auth_session(&registry.users_repo, user);
+
+    // 1. Untrusted origin on state-changing POST must receive 403 Forbidden
+    let req_untrusted = Request::builder()
+        .method("POST")
+        .uri("/offers/manage/new")
+        .header("cookie", format!("sid={session_token}"))
+        .header("origin", "https://evil.example.com")
+        .header("sec-fetch-site", "cross-site")
+        .body(Body::empty())
+        .unwrap();
+
+    let res_untrusted = router.handle(req_untrusted).await;
+    assert_eq!(res_untrusted.status(), http::StatusCode::FORBIDDEN);
+
+    // 2. Trusted origin on state-changing POST passes OriginLayer (not 403)
+    let req_trusted = Request::builder()
+        .method("POST")
+        .uri("/offers/manage/new")
+        .header("cookie", format!("sid={session_token}"))
+        .header("origin", "http://localhost:3000")
+        .header("sec-fetch-site", "same-origin")
+        .body(Body::empty())
+        .unwrap();
+
+    let res_trusted = router.handle(req_trusted).await;
+    assert_ne!(res_trusted.status(), http::StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn test_update_offer_ownership_checked_before_invalid_form() {
+    let (router, registry) = setup_test_app();
+
+    let user1 = User {
+        id: UserId::generate(),
+        account_id: AccountId::generate(),
+        created_at: Utc::now(),
+        updated_at: Utc::now(),
+    };
+    let user2 = User {
+        id: UserId::generate(),
+        account_id: AccountId::generate(),
+        created_at: Utc::now(),
+        updated_at: Utc::now(),
+    };
+
+    let _session1_token = create_auth_session(&registry.users_repo, user1.clone());
+    let session2_token = create_auth_session(&registry.users_repo, user2);
+
+    let create_offer = CreateOffer {
+        title: "User 1 Item".to_string(),
+        description: "User 1 item description.".to_string(),
+        price: Price::ZERO,
+        currency: CurrencyCode::default_code(),
+    };
+    let offer = registry
+        .offers_repo
+        .create(user1.id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
+        .await
+        .unwrap();
+
+    // User 2 sends empty/missing form to User 1's offer edit route.
+    // Must return 404 Not Found (ownership check first), NOT 422 Unprocessable Entity!
+    let req_unauthorized = Request::builder()
+        .method("POST")
+        .uri(format!("/offers/manage/{}/edit", offer.id))
+        .header("cookie", format!("sid={session2_token}"))
+        .header("origin", "http://localhost:3000")
+        .header("sec-fetch-site", "same-origin")
+        .body(Body::empty())
+        .unwrap();
+
+    let res_unauthorized = router.handle(req_unauthorized).await;
+    assert_eq!(res_unauthorized.status(), http::StatusCode::NOT_FOUND);
 }
