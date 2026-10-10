@@ -1,4 +1,5 @@
 use super::*;
+use url::Url;
 
 #[test]
 fn parse_returns_none_when_both_credentials_are_absent() {
