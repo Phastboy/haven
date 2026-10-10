@@ -370,4 +370,11 @@ fn currency_code_serde_validates_on_deserialization() {
     assert!(serde_json::from_str::<CurrencyCode>(r#""INVALID""#).is_err());
     let ngn: CurrencyCode = serde_json::from_str(r#""NGN""#).unwrap();
     assert_eq!(ngn, CurrencyCode::Ngn);
+    let usd_lower: CurrencyCode = serde_json::from_str(r#""usd""#).unwrap();
+    assert_eq!(usd_lower, CurrencyCode::Usd);
+    let eur_trimmed: CurrencyCode = serde_json::from_str(r#"" eur ""#).unwrap();
+    assert_eq!(eur_trimmed, CurrencyCode::Eur);
+
+    let serialized = serde_json::to_string(&CurrencyCode::Usd).unwrap();
+    assert_eq!(serialized, r#""USD""#);
 }
