@@ -23,11 +23,11 @@ pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
         .and_then(|q| q.after.as_deref())
         .and_then(|raw| haven_domain::offer::OfferCursor::decode(raw).ok());
 
-    let repo = crate::cx_helpers::registry(cx).offers();
+    let repo = crate::app::state::registry(cx).offers();
     let page = repo
         .list_public(after_cursor.as_ref(), 20)
         .await
-        .map_err(crate::cx_helpers::map_repo_err)?;
+        .map_err(crate::app::state::map_repo_err)?;
 
     let next_href = page.next_cursor.map(|c| format!("/offers?after={c}"));
 

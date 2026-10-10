@@ -1,7 +1,7 @@
 #![allow(unreachable_pub, reason = "binary crate")]
 
 mod app;
-mod cx_helpers;
+pub mod rate_limit;
 pub mod token_store;
 
 use haven_db::PostgresRegistry;
@@ -56,7 +56,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build()?;
 
     let registry = Arc::new(PostgresRegistry::new(&pool));
-    let state = cx_helpers::AppState {
+    let state = app::state::AppState {
         registry,
         google_oauth,
         http_client,
@@ -70,8 +70,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .build(),
         )
         .app_context(state)
-        .app_context(cx_helpers::SignInLimiter::new())
-        .app_context(cx_helpers::CreateOfferLimiter::new())
+        .app_context(rate_limit::SignInLimiter::new())
+        .app_context(rate_limit::CreateOfferLimiter::new())
         .mail(
             topcoat::mail::MailConfig::builder()
                 .transport(FileTransport::new("target/mail"))

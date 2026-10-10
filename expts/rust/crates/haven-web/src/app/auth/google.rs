@@ -146,11 +146,11 @@ pub async fn google_sign_in(cx: &topcoat::context::Cx) -> topcoat::Result<()> {
         router::error::see_other,
     };
 
-    if crate::cx_helpers::current_user(cx).await?.is_some() {
+    if crate::app::auth::guard::current_user(cx).await?.is_some() {
         return Err(see_other("/offers").into());
     }
 
-    let Some(config) = crate::cx_helpers::google_oauth(cx) else {
+    let Some(config) = crate::app::state::google_oauth(cx) else {
         return Err(see_other("/auth/sign-in").into());
     };
 
@@ -268,7 +268,7 @@ async fn handle_google_callback(cx: &topcoat::context::Cx) -> topcoat::Result<()
         router::error::see_other,
     };
 
-    if crate::cx_helpers::current_user(cx).await?.is_some() {
+    if crate::app::auth::guard::current_user(cx).await?.is_some() {
         return Err(see_other("/offers").into());
     }
 
@@ -302,10 +302,10 @@ async fn handle_google_callback(cx: &topcoat::context::Cx) -> topcoat::Result<()
     }
 
     // 2. Load Google OAuth config and HTTP client
-    let Some(config) = crate::cx_helpers::google_oauth(cx) else {
+    let Some(config) = crate::app::state::google_oauth(cx) else {
         return Err(see_other("/auth/sign-in?error=oauth_disabled").into());
     };
-    let client = crate::cx_helpers::http_client(cx);
+    let client = crate::app::state::http_client(cx);
 
     // 3. Exchange code for access token
     let Ok(tokens) = exchange_code_for_token(client, config, &code).await else {
@@ -327,8 +327,8 @@ async fn handle_google_callback(cx: &topcoat::context::Cx) -> topcoat::Result<()
     };
 
     // 5. Account and User management
-    let registry = crate::cx_helpers::registry(cx);
-    let map_err = crate::cx_helpers::map_repo_err;
+    let registry = crate::app::state::registry(cx);
+    let map_err = crate::app::state::map_repo_err;
 
     let account = if let Some(acc) = registry
         .accounts()
@@ -366,7 +366,7 @@ async fn handle_google_callback(cx: &topcoat::context::Cx) -> topcoat::Result<()
 
     // 6. Issue session
     let session = topcoat::session::start(cx).await?;
-    let hash_hex = crate::cx_helpers::token_hash_hex(&session.token_hash);
+    let hash_hex = crate::app::auth::guard::token_hash_hex(&session.token_hash);
     let hashed_token = haven_domain::session::HashedToken::from_hex(hash_hex);
     let expires_at = chrono::DateTime::<chrono::Utc>::from(session.expires_at);
 

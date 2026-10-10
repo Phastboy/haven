@@ -4,7 +4,7 @@ use topcoat::{Result as TopcoatResult, context::Cx, view::view};
 #[topcoat::router::page]
 pub async fn sent_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
     let _ = cx;
-    let email_delivery_enabled = crate::cx_helpers::is_email_delivery_enabled();
+    let email_delivery_enabled = crate::app::state::is_email_delivery_enabled();
     Ok(view! {
         <div class="auth-card">
             if email_delivery_enabled {

@@ -38,8 +38,8 @@ pub async fn verify_submit(
 ) -> TopcoatResult<()> {
     let raw_token = form.0.token;
     let hashed = haven_domain::session::hash_token(&raw_token);
-    let registry = crate::cx_helpers::registry(cx);
-    let map_err = crate::cx_helpers::map_repo_err;
+    let registry = crate::app::state::registry(cx);
+    let map_err = crate::app::state::map_repo_err;
 
     let magic_link = registry
         .magic_links()
@@ -56,7 +56,7 @@ pub async fn verify_submit(
         .ok_or_else(topcoat::router::error::not_found)?;
 
     let session = topcoat::session::start(cx).await?;
-    let hash_hex = crate::cx_helpers::token_hash_hex(&session.token_hash);
+    let hash_hex = crate::app::auth::guard::token_hash_hex(&session.token_hash);
     let hashed_token = haven_domain::session::HashedToken::from_hex(hash_hex);
     let expires_at = chrono::DateTime::<chrono::Utc>::from(session.expires_at);
 

@@ -33,11 +33,11 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
     let offer_slug = haven_domain::offer::OfferSlug::parse(slug_raw)
         .map_err(|_| topcoat::router::error::not_found())?;
 
-    let repo = crate::cx_helpers::registry(cx).offers();
+    let repo = crate::app::state::registry(cx).offers();
     let offer = repo
         .find_by_slug(&offer_slug)
         .await
-        .map_err(crate::cx_helpers::map_repo_err)?
+        .map_err(crate::app::state::map_repo_err)?
         .ok_or_else(topcoat::router::error::not_found)?;
 
     // Shared caching policy with ETag

@@ -12,12 +12,12 @@ use topcoat::{
 
 #[topcoat::router::page]
 pub async fn manage_list(cx: &Cx) -> TopcoatResult<impl View> {
-    let user = crate::cx_helpers::require_owner_auth(cx).await?;
-    let offers = crate::cx_helpers::registry(cx)
+    let user = crate::app::auth::guard::require_owner_auth(cx).await?;
+    let offers = crate::app::state::registry(cx)
         .offers()
         .find_by_user(user.id)
         .await
-        .map_err(crate::cx_helpers::map_repo_err)?;
+        .map_err(crate::app::state::map_repo_err)?;
 
     Ok(view! {
         <div class="offers-manage">
