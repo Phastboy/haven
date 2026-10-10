@@ -82,8 +82,10 @@ fn setup_test_app() -> (topcoat::router::Router, TestRegistry) {
         email_delivery_enabled: Some(false),
     };
 
+    let origins = crate::app::origin::compute_trusted_origins("3000", None, None);
+    let origin_policy = topcoat::router::OriginPolicy::new().trust_origins(origins);
     let router = crate::app::router()
-        .origin_policy(crate::app::origin::build_origin_policy())
+        .origin_policy(origin_policy)
         .cookies()
         .sessions(
             SessionConfig::builder()

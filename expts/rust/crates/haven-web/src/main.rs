@@ -62,6 +62,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         writeln!(std::io::stdout(), "Email delivery: disabled (unconfigured in production)").unwrap_or(());
     }
 
+    let is_prod = |var: &str| {
+        std::env::var(var).is_ok_and(|v| {
+            let t = v.trim();
+            t.eq_ignore_ascii_case("production") || t.eq_ignore_ascii_case("prod")
+        })
+    };
+    let in_production = is_prod("APP_ENV") || is_prod("ENVIRONMENT") || is_prod("ENV");
+    let strict_origin = std::env::var("STRICT_ORIGIN_POLICY")
+        .is_ok_and(|v| v.eq_ignore_ascii_case("true") || v == "1");
+
+    if in_production || strict_origin {
+        writeln!(std::io::stdout(), "Origin policy: strict (enforcing trusted origins)").unwrap_or(());
+    } else {
+        writeln!(std::io::stdout(), "Origin policy: dev mode (relaxed for local network testing)").unwrap_or(());
+    }
+
     let registry = Arc::new(PostgresRegistry::new(&pool));
     let state = app::state::AppState {
         registry,
