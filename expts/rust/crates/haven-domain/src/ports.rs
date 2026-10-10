@@ -61,6 +61,10 @@ pub enum RepoError {
 }
 
 #[async_trait]
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Repository port trait methods take &self alongside up to 3 domain arguments"
+)]
 pub trait OfferRepository: Send + Sync {
     async fn find_owned(
         &self,
@@ -110,6 +114,10 @@ pub trait UserRepository: Send + Sync {
 }
 
 #[async_trait]
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Repository port trait methods take &self alongside up to 3 domain arguments"
+)]
 pub trait MagicLinkRepository: Send + Sync {
     async fn consume(&self, token_hash: &HashedToken) -> Result<Option<MagicLink>, RepoError>;
 
@@ -122,6 +130,10 @@ pub trait MagicLinkRepository: Send + Sync {
 }
 
 #[async_trait]
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Session creation takes &self, account, token hash, expiration, IP, and user-agent metadata"
+)]
 pub trait SessionRepository: Send + Sync {
     async fn find_by_token_hash(
         &self,
