@@ -1,4 +1,5 @@
 use super::*;
+use crate::error::{CursorError, OfferValidationError};
 
 #[test]
 fn price_must_be_non_negative() {
@@ -34,14 +35,17 @@ fn currency_code_rejects_unsupported_or_garbage_codes() {
 
 #[test]
 fn validate_title_enforces_character_bounds() {
-    assert!(matches!(validate_title(""), Err(DomainError::BlankTitle)));
+    assert!(matches!(
+        validate_title(""),
+        Err(OfferValidationError::BlankTitle)
+    ));
     assert!(matches!(
         validate_title("   "),
-        Err(DomainError::BlankTitle)
+        Err(OfferValidationError::BlankTitle)
     ));
     assert!(matches!(
         validate_title("ab"),
-        Err(DomainError::TitleTooShort)
+        Err(OfferValidationError::TitleTooShort)
     ));
     assert!(validate_title("abc").is_ok());
 
@@ -51,7 +55,7 @@ fn validate_title_enforces_character_bounds() {
     let over_100_chars = "a".repeat(101);
     assert!(matches!(
         validate_title(&over_100_chars),
-        Err(DomainError::TitleTooLong)
+        Err(OfferValidationError::TitleTooLong)
     ));
 
     // Multi-byte Unicode: 3 emojis = 3 characters (12 bytes), should be valid
@@ -64,15 +68,15 @@ fn validate_title_enforces_character_bounds() {
 fn validate_description_enforces_character_bounds() {
     assert!(matches!(
         validate_description(""),
-        Err(DomainError::BlankDescription)
+        Err(OfferValidationError::BlankDescription)
     ));
     assert!(matches!(
         validate_description("   "),
-        Err(DomainError::BlankDescription)
+        Err(OfferValidationError::BlankDescription)
     ));
     assert!(matches!(
         validate_description("123456789"),
-        Err(DomainError::DescriptionTooShort)
+        Err(OfferValidationError::DescriptionTooShort)
     ));
     assert!(validate_description("1234567890").is_ok());
 
@@ -82,7 +86,7 @@ fn validate_description_enforces_character_bounds() {
     let over_2000_chars = "x".repeat(2001);
     assert!(matches!(
         validate_description(&over_2000_chars),
-        Err(DomainError::DescriptionTooLong)
+        Err(OfferValidationError::DescriptionTooLong)
     ));
 
     // Multi-byte Unicode
@@ -102,13 +106,16 @@ fn create_offer_validates_title_and_description() {
     assert!(co.validate().is_ok());
 
     co.title = "  ".into();
-    assert!(matches!(co.validate(), Err(DomainError::BlankTitle)));
+    assert!(matches!(
+        co.validate(),
+        Err(OfferValidationError::BlankTitle)
+    ));
 
     co.title = "Valid Title".into();
     co.description = "short".into();
     assert!(matches!(
         co.validate(),
-        Err(DomainError::DescriptionTooShort)
+        Err(OfferValidationError::DescriptionTooShort)
     ));
 
     co.description = "This is a valid offer description.".into();
@@ -133,7 +140,7 @@ fn update_offer_validates_partial_updates() {
     };
     assert!(matches!(
         uo_invalid_title.validate(),
-        Err(DomainError::TitleTooShort)
+        Err(OfferValidationError::TitleTooShort)
     ));
 
     let uo_invalid_desc = UpdateOffer {
@@ -144,7 +151,7 @@ fn update_offer_validates_partial_updates() {
     };
     assert!(matches!(
         uo_invalid_desc.validate(),
-        Err(DomainError::DescriptionTooShort)
+        Err(OfferValidationError::DescriptionTooShort)
     ));
 
     let uo_overlong_title = UpdateOffer {
@@ -155,7 +162,7 @@ fn update_offer_validates_partial_updates() {
     };
     assert!(matches!(
         uo_overlong_title.validate(),
-        Err(DomainError::TitleTooLong)
+        Err(OfferValidationError::TitleTooLong)
     ));
 
     let uo_overlong_desc = UpdateOffer {
@@ -166,7 +173,7 @@ fn update_offer_validates_partial_updates() {
     };
     assert!(matches!(
         uo_overlong_desc.validate(),
-        Err(DomainError::DescriptionTooLong)
+        Err(OfferValidationError::DescriptionTooLong)
     ));
 }
 
@@ -178,13 +185,16 @@ fn create_offer_rejects_overlong_inputs() {
         price: Price::ZERO,
         currency: CurrencyCode::default_code(),
     };
-    assert!(matches!(co.validate(), Err(DomainError::TitleTooLong)));
+    assert!(matches!(
+        co.validate(),
+        Err(OfferValidationError::TitleTooLong)
+    ));
 
     co.title = "Valid Title".into();
     co.description = "x".repeat(2001);
     assert!(matches!(
         co.validate(),
-        Err(DomainError::DescriptionTooLong)
+        Err(OfferValidationError::DescriptionTooLong)
     ));
 }
 
@@ -212,7 +222,7 @@ fn unicode_multibyte_characters_counted_by_chars_not_bytes() {
     let title_101_emojis = "🎉".repeat(101);
     assert!(matches!(
         validate_title(&title_101_emojis),
-        Err(DomainError::TitleTooLong)
+        Err(OfferValidationError::TitleTooLong)
     ));
 
     // 2000 emoji characters = 8000 bytes, but exactly 2000 characters
@@ -224,7 +234,7 @@ fn unicode_multibyte_characters_counted_by_chars_not_bytes() {
     let desc_2001_emojis = "✨".repeat(2001);
     assert!(matches!(
         validate_description(&desc_2001_emojis),
-        Err(DomainError::DescriptionTooLong)
+        Err(OfferValidationError::DescriptionTooLong)
     ));
 }
 
@@ -238,7 +248,7 @@ fn price_and_currency_validation() {
     assert!(validate_price_and_currency(zero, Some(&usd)).is_ok());
     assert_eq!(
         validate_price_and_currency(positive, None),
-        Err(DomainError::CurrencyRequired)
+        Err(OfferValidationError::CurrencyRequired)
     );
     assert!(validate_price_and_currency(positive, Some(&usd)).is_ok());
 }
@@ -253,45 +263,45 @@ fn offer_slug_validates_format() {
     // Too short (< 3)
     assert!(matches!(
         OfferSlug::parse("ab"),
-        Err(DomainError::InvalidSlug(_))
+        Err(OfferValidationError::InvalidSlug(_))
     ));
     // Leading hyphen
     assert!(matches!(
         OfferSlug::parse("-abc"),
-        Err(DomainError::InvalidSlug(_))
+        Err(OfferValidationError::InvalidSlug(_))
     ));
     // Trailing hyphen
     assert!(matches!(
         OfferSlug::parse("abc-"),
-        Err(DomainError::InvalidSlug(_))
+        Err(OfferValidationError::InvalidSlug(_))
     ));
     // Consecutive hyphens
     assert!(matches!(
         OfferSlug::parse("a--b"),
-        Err(DomainError::InvalidSlug(_))
+        Err(OfferValidationError::InvalidSlug(_))
     ));
     // Uppercase or special characters
     assert!(matches!(
         OfferSlug::parse("Vintage-chair"),
-        Err(DomainError::InvalidSlug(_))
+        Err(OfferValidationError::InvalidSlug(_))
     ));
     assert!(matches!(
         OfferSlug::parse("vintage_chair"),
-        Err(DomainError::InvalidSlug(_))
+        Err(OfferValidationError::InvalidSlug(_))
     ));
     assert!(matches!(
         OfferSlug::parse("vintage chair"),
-        Err(DomainError::InvalidSlug(_))
+        Err(OfferValidationError::InvalidSlug(_))
     ));
 
     // Reserved slugs
     assert!(matches!(
         OfferSlug::parse("manage"),
-        Err(DomainError::InvalidSlug(_))
+        Err(OfferValidationError::InvalidSlug(_))
     ));
     assert!(matches!(
         OfferSlug::parse("new"),
-        Err(DomainError::InvalidSlug(_))
+        Err(OfferValidationError::InvalidSlug(_))
     ));
 }
 
@@ -314,7 +324,7 @@ fn offer_slug_from_title_and_suffix() {
 #[test]
 fn offer_cursor_encode_decode_roundtrip() {
     let now = Utc::now();
-    let offer_id = OfferId::new();
+    let offer_id = OfferId::generate();
     let cursor = OfferCursor::new(now, offer_id);
 
     let encoded = cursor.encode();
@@ -329,10 +339,35 @@ fn offer_cursor_encode_decode_roundtrip() {
     // Invalid cursor string
     assert!(matches!(
         OfferCursor::decode("not-hex"),
-        Err(DomainError::InvalidCursor)
+        Err(CursorError::InvalidCursor)
     ));
     assert!(matches!(
         OfferCursor::decode("1234"),
-        Err(DomainError::InvalidCursor)
+        Err(CursorError::InvalidCursor)
     ));
+}
+
+#[test]
+fn price_serde_validates_on_deserialization() {
+    assert!(serde_json::from_str::<Price>("-1").is_err());
+    let zero: Price = serde_json::from_str("0").unwrap();
+    assert_eq!(zero.as_i32(), 0);
+    let positive: Price = serde_json::from_str("500").unwrap();
+    assert_eq!(positive.as_i32(), 500);
+}
+
+#[test]
+fn offer_slug_serde_validates_on_deserialization() {
+    assert!(serde_json::from_str::<OfferSlug>(r#""ab""#).is_err());
+    assert!(serde_json::from_str::<OfferSlug>(r#""manage""#).is_err());
+    assert!(serde_json::from_str::<OfferSlug>(r#""invalid_slug""#).is_err());
+    let valid: OfferSlug = serde_json::from_str(r#""valid-slug-123""#).unwrap();
+    assert_eq!(valid.as_str(), "valid-slug-123");
+}
+
+#[test]
+fn currency_code_serde_validates_on_deserialization() {
+    assert!(serde_json::from_str::<CurrencyCode>(r#""INVALID""#).is_err());
+    let ngn: CurrencyCode = serde_json::from_str(r#""NGN""#).unwrap();
+    assert_eq!(ngn, CurrencyCode::Ngn);
 }

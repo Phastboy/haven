@@ -119,7 +119,7 @@ pub(super) async fn create(
     let u_id = user_id.as_uuid();
     let price_val = create_offer.price.as_i32();
     let currency_val = create_offer.currency.as_str();
-    let k = key.0;
+    let k = key.as_uuid();
 
     let offer_id = Uuid::new_v4();
     let mut suffix = String::new();
@@ -237,7 +237,10 @@ pub(super) async fn update(
             r.created_at,
             r.updated_at,
         ),
-        None => Err(RepoError::NotFound),
+        None => Err(RepoError::NotFound {
+            entity: "offer",
+            id: offer_id.to_string(),
+        }),
     }
 }
 
@@ -262,7 +265,10 @@ pub(super) async fn delete(
     .rows_affected();
 
     if rows_affected == 0 {
-        Err(RepoError::NotFound)
+        Err(RepoError::NotFound {
+            entity: "offer",
+            id: offer_id.to_string(),
+        })
     } else {
         Ok(())
     }

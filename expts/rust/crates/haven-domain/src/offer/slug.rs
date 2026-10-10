@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::DomainError;
+use crate::error::OfferValidationError;
 
 /// Minimum character count for an offer slug.
 pub const MIN_SLUG_CHARS: usize = 3;
@@ -16,24 +16,39 @@ pub const RESERVED_SLUGS: &[&str] = &["manage", "new"];
 /// A URL-safe unique slug for public offer lookup.
 /// Conforms to lowercase alphanumeric segments separated by hyphens (e.g. `vintage-chair-a1b2c3d4`).
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(try_from = "String", into = "String")]
 pub struct OfferSlug(String);
+
+impl TryFrom<String> for OfferSlug {
+    type Error = OfferValidationError;
+
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        Self::parse(&s)
+    }
+}
+
+impl From<OfferSlug> for String {
+    fn from(s: OfferSlug) -> Self {
+        s.0
+    }
+}
 
 impl OfferSlug {
     /// Validates and parses a raw slug string.
     ///
     /// # Errors
     ///
-    /// Returns [`DomainError::InvalidSlug`] if the string violates length bounds,
+    /// Returns [`OfferValidationError::InvalidSlug`] if the string violates length bounds,
     /// format constraints, or matches a reserved route name.
-    pub fn parse(s: &str) -> Result<Self, DomainError> {
+    pub fn parse(s: &str) -> Result<Self, OfferValidationError> {
         let trimmed = s.trim();
         let len = trimmed.len();
         if !(MIN_SLUG_CHARS..=MAX_SLUG_CHARS).contains(&len) {
-            return Err(DomainError::InvalidSlug(s.to_string()));
+            return Err(OfferValidationError::InvalidSlug(s.to_string()));
         }
 
         if RESERVED_SLUGS.contains(&trimmed) {
-            return Err(DomainError::InvalidSlug(s.to_string()));
+            return Err(OfferValidationError::InvalidSlug(s.to_string()));
         }
 
         let mut prev_hyphen = false;
@@ -42,16 +57,16 @@ impl OfferSlug {
                 prev_hyphen = false;
             } else if c == '-' {
                 if i == 0 || prev_hyphen {
-                    return Err(DomainError::InvalidSlug(s.to_string()));
+                    return Err(OfferValidationError::InvalidSlug(s.to_string()));
                 }
                 prev_hyphen = true;
             } else {
-                return Err(DomainError::InvalidSlug(s.to_string()));
+                return Err(OfferValidationError::InvalidSlug(s.to_string()));
             }
         }
 
         if prev_hyphen {
-            return Err(DomainError::InvalidSlug(s.to_string()));
+            return Err(OfferValidationError::InvalidSlug(s.to_string()));
         }
 
         Ok(Self(trimmed.to_string()))
@@ -61,8 +76,8 @@ impl OfferSlug {
     ///
     /// # Errors
     ///
-    /// Returns [`DomainError::InvalidSlug`] if the derived slug violates slug format.
-    pub fn from_title_and_suffix(title: &str, suffix: &str) -> Result<Self, DomainError> {
+    /// Returns [`OfferValidationError::InvalidSlug`] if the derived slug violates slug format.
+    pub fn from_title_and_suffix(title: &str, suffix: &str) -> Result<Self, OfferValidationError> {
         let mut base = String::new();
         let mut last_was_hyphen = false;
         for c in title.trim().chars() {

@@ -4,23 +4,35 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
-use crate::DomainError;
 use crate::account::AccountId;
+use crate::error::SessionError;
 
 /// Newtype for a session's UUID primary key.
 /// Cannot be confused with `AccountId` or `OfferId`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct SessionId(pub Uuid);
+pub struct SessionId(Uuid);
 
 impl SessionId {
-    pub fn new() -> Self {
+    /// Generates a new random `SessionId`.
+    #[must_use]
+    pub fn generate() -> Self {
         Self(Uuid::new_v4())
+    }
+
+    #[must_use]
+    pub fn from_uuid(uuid: Uuid) -> Self {
+        Self(uuid)
+    }
+
+    #[must_use]
+    pub fn as_uuid(&self) -> Uuid {
+        self.0
     }
 }
 
-impl Default for SessionId {
-    fn default() -> Self {
-        Self::new()
+impl From<Uuid> for SessionId {
+    fn from(uuid: Uuid) -> Self {
+        Self(uuid)
     }
 }
 
@@ -44,11 +56,11 @@ impl std::fmt::Debug for PlaintextToken {
 
 impl PlaintextToken {
     /// Generate a cryptographically random 32-byte token, base64url-encoded (no padding).
-    pub fn generate() -> Result<Self, DomainError> {
+    pub fn generate() -> Result<Self, SessionError> {
         let mut bytes = [0u8; 32];
         rand::rng()
             .try_fill_bytes(&mut bytes)
-            .map_err(|_| DomainError::TokenGenerationFailed)?;
+            .map_err(|_| SessionError::TokenGenerationFailed)?;
         Ok(Self(base64url_encode(&bytes)))
     }
 
@@ -117,9 +129,10 @@ pub struct Session {
 }
 
 impl Session {
-    /// Is this session still valid (not expired)?
-    pub fn is_valid(&self) -> bool {
-        Utc::now() < self.expires_at
+    /// Is this session still valid (not expired) at the given time?
+    #[must_use]
+    pub fn is_valid_at(&self, now: DateTime<Utc>) -> bool {
+        now < self.expires_at
     }
 }
 
@@ -204,5 +217,22 @@ mod tests {
         let h1 = pt.to_hashed();
         let h2 = hash_token(pt.as_str());
         assert_eq!(h1.as_str(), h2.as_str());
+    }
+
+    #[test]
+    fn session_is_valid_at_evaluates_against_injected_time() {
+        let now = Utc::now();
+        let session = Session {
+            id: SessionId::generate(),
+            account_id: AccountId::generate(),
+            token_hash: HashedToken::from_hex("abc".into()),
+            expires_at: now + chrono::Duration::minutes(15),
+            created_at: now,
+            ip_address: None,
+            user_agent: None,
+        };
+        assert!(session.is_valid_at(now));
+        assert!(session.is_valid_at(now + chrono::Duration::minutes(10)));
+        assert!(!session.is_valid_at(now + chrono::Duration::minutes(16)));
     }
 }

@@ -7,11 +7,15 @@ use haven_domain::session::HashedToken;
 use haven_domain::user::User;
 use uuid::Uuid;
 
-pub struct PostgresUserRepository {
-    pub pool: DbPool,
+pub(crate) struct PostgresUserRepository {
+    pool: DbPool,
 }
 
 impl PostgresUserRepository {
+    pub(crate) fn new(pool: DbPool) -> Self {
+        Self { pool }
+    }
+
     fn map_row(
         id: Uuid,
         account_id: Uuid,
@@ -19,8 +23,8 @@ impl PostgresUserRepository {
         updated_at: chrono::DateTime<chrono::Utc>,
     ) -> User {
         User {
-            id: UserId(id),
-            account_id: AccountId(account_id),
+            id: UserId::from_uuid(id),
+            account_id: AccountId::from_uuid(account_id),
             created_at,
             updated_at,
         }

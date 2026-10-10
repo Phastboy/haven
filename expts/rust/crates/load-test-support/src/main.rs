@@ -115,7 +115,7 @@ async fn seed_user(registry: &dyn Registry, i: usize) -> SessionOutput {
             .offers()
             .create(
                 user.id,
-                haven_domain::ports::IdempotencyKey(uuid::Uuid::new_v4()),
+                haven_domain::ports::IdempotencyKey::new(uuid::Uuid::new_v4()),
                 &create_req,
             )
             .await

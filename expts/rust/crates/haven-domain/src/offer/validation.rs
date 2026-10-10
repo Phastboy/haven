@@ -1,7 +1,7 @@
 //! Input validation rules and bounds for offer fields.
 
 use super::{CurrencyCode, Price};
-use crate::DomainError;
+use crate::error::OfferValidationError;
 
 /// Minimum character count for an offer title.
 pub const MIN_TITLE_CHARS: usize = 3;
@@ -19,20 +19,20 @@ pub const MAX_DESCRIPTION_CHARS: usize = 2000;
 ///
 /// # Errors
 ///
-/// Returns [`DomainError::BlankTitle`] if the title is whitespace-only,
-/// [`DomainError::TitleTooShort`] if shorter than [`MIN_TITLE_CHARS`], or
-/// [`DomainError::TitleTooLong`] if longer than [`MAX_TITLE_CHARS`].
-pub fn validate_title(title: &str) -> Result<(), DomainError> {
+/// Returns [`OfferValidationError::BlankTitle`] if the title is whitespace-only,
+/// [`OfferValidationError::TitleTooShort`] if shorter than [`MIN_TITLE_CHARS`], or
+/// [`OfferValidationError::TitleTooLong`] if longer than [`MAX_TITLE_CHARS`].
+pub fn validate_title(title: &str) -> Result<(), OfferValidationError> {
     let trimmed = title.trim();
     if trimmed.is_empty() {
-        return Err(DomainError::BlankTitle);
+        return Err(OfferValidationError::BlankTitle);
     }
     let count = trimmed.chars().count();
     if count < MIN_TITLE_CHARS {
-        return Err(DomainError::TitleTooShort);
+        return Err(OfferValidationError::TitleTooShort);
     }
     if count > MAX_TITLE_CHARS {
-        return Err(DomainError::TitleTooLong);
+        return Err(OfferValidationError::TitleTooLong);
     }
     Ok(())
 }
@@ -41,20 +41,20 @@ pub fn validate_title(title: &str) -> Result<(), DomainError> {
 ///
 /// # Errors
 ///
-/// Returns [`DomainError::BlankDescription`] if whitespace-only,
-/// [`DomainError::DescriptionTooShort`] if shorter than [`MIN_DESCRIPTION_CHARS`], or
-/// [`DomainError::DescriptionTooLong`] if longer than [`MAX_DESCRIPTION_CHARS`].
-pub fn validate_description(description: &str) -> Result<(), DomainError> {
+/// Returns [`OfferValidationError::BlankDescription`] if whitespace-only,
+/// [`OfferValidationError::DescriptionTooShort`] if shorter than [`MIN_DESCRIPTION_CHARS`], or
+/// [`OfferValidationError::DescriptionTooLong`] if longer than [`MAX_DESCRIPTION_CHARS`].
+pub fn validate_description(description: &str) -> Result<(), OfferValidationError> {
     let trimmed = description.trim();
     if trimmed.is_empty() {
-        return Err(DomainError::BlankDescription);
+        return Err(OfferValidationError::BlankDescription);
     }
     let count = trimmed.chars().count();
     if count < MIN_DESCRIPTION_CHARS {
-        return Err(DomainError::DescriptionTooShort);
+        return Err(OfferValidationError::DescriptionTooShort);
     }
     if count > MAX_DESCRIPTION_CHARS {
-        return Err(DomainError::DescriptionTooLong);
+        return Err(OfferValidationError::DescriptionTooLong);
     }
     Ok(())
 }
@@ -64,13 +64,13 @@ pub fn validate_description(description: &str) -> Result<(), DomainError> {
 ///
 /// # Errors
 ///
-/// Returns [`DomainError::CurrencyRequired`] if price is positive and currency is missing.
+/// Returns [`OfferValidationError::CurrencyRequired`] if price is positive and currency is missing.
 pub fn validate_price_and_currency(
     price: Price,
     currency: Option<&CurrencyCode>,
-) -> Result<(), DomainError> {
+) -> Result<(), OfferValidationError> {
     if price.as_i32() > 0 && currency.is_none() {
-        return Err(DomainError::CurrencyRequired);
+        return Err(OfferValidationError::CurrencyRequired);
     }
     Ok(())
 }

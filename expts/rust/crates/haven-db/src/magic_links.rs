@@ -2,16 +2,20 @@ use crate::DbPool;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use haven_domain::account::Email;
-use haven_domain::magic_link::MagicLink;
+use haven_domain::magic_link::{MagicLink, MagicLinkId};
 use haven_domain::ports::{MagicLinkRepository, RepoError};
 use haven_domain::session::HashedToken;
 use uuid::Uuid;
 
-pub struct PostgresMagicLinkRepository {
-    pub pool: DbPool,
+pub(crate) struct PostgresMagicLinkRepository {
+    pool: DbPool,
 }
 
 impl PostgresMagicLinkRepository {
+    pub(crate) fn new(pool: DbPool) -> Self {
+        Self { pool }
+    }
+
     fn map_row(
         id: Uuid,
         email: &str,
@@ -22,7 +26,7 @@ impl PostgresMagicLinkRepository {
     ) -> Result<MagicLink, RepoError> {
         let e = Email::parse(email).map_err(|_| RepoError::Corrupt("Invalid email".into()))?;
         Ok(MagicLink {
-            id,
+            id: MagicLinkId::from_uuid(id),
             email: e,
             token_hash: HashedToken::from_hex(token_hash),
             expires_at,

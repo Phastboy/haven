@@ -176,7 +176,7 @@ async fn test_public_slug_route_caching_and_headers() {
     let (router, registry) = setup_test_app();
 
     // Create an offer in the repo
-    let user_id = UserId::new();
+    let user_id = UserId::generate();
     let create_offer = CreateOffer {
         title: "Vintage Oak Table".to_string(),
         description: "A beautifully restored vintage oak dining table.".to_string(),
@@ -185,7 +185,7 @@ async fn test_public_slug_route_caching_and_headers() {
     };
     let offer = registry
         .offers_repo
-        .create(user_id, IdempotencyKey(Uuid::new_v4()), &create_offer)
+        .create(user_id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
         .await
         .unwrap();
 
@@ -354,14 +354,14 @@ async fn test_owner_routes_enforce_ownership_and_identical_404() {
     let (router, registry) = setup_test_app();
 
     let user1 = User {
-        id: UserId::new(),
-        account_id: AccountId::new(),
+        id: UserId::generate(),
+        account_id: AccountId::generate(),
         created_at: Utc::now(),
         updated_at: Utc::now(),
     };
     let user2 = User {
-        id: UserId::new(),
-        account_id: AccountId::new(),
+        id: UserId::generate(),
+        account_id: AccountId::generate(),
         created_at: Utc::now(),
         updated_at: Utc::now(),
     };
@@ -378,7 +378,7 @@ async fn test_owner_routes_enforce_ownership_and_identical_404() {
     };
     let offer = registry
         .offers_repo
-        .create(user1.id, IdempotencyKey(Uuid::new_v4()), &create_offer)
+        .create(user1.id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
         .await
         .unwrap();
 
@@ -410,8 +410,22 @@ async fn test_owner_routes_enforce_ownership_and_identical_404() {
     let body = body_to_string(res_owner.into_body()).await;
     assert!(body.contains("User 1 Painting"));
     assert!(body.contains(&format!("href=\"/offers/manage/{}/edit\"", offer.id)));
-    assert!(body.contains(&format!("action=\"/offers/manage/{}/delete\"", offer.id)));
+    assert!(body.contains(&format!("href=\"/offers/manage/{}/delete\"", offer.id)));
     assert!(body.contains(&format!("href=\"/offers/{}\"", offer.slug)));
+
+    // 1b. User 1 accesses the delete confirmation page
+    let req_confirm = Request::builder()
+        .method("GET")
+        .uri(format!("/offers/manage/{}/delete", offer.id))
+        .header("cookie", format!("sid={session1_token}"))
+        .body(Body::empty())
+        .unwrap();
+    let res_confirm = router.handle(req_confirm).await;
+    assert_eq!(res_confirm.status(), http::StatusCode::OK);
+    let confirm_body = body_to_string(res_confirm.into_body()).await;
+    assert!(confirm_body.contains("Delete Offer"));
+    assert!(confirm_body.contains("Confirm Delete"));
+    assert!(confirm_body.contains(&format!("action=\"/offers/manage/{}/delete\"", offer.id)));
 
     // 2. User 2 accesses User 1's offer via ID route (must return 404, identical to nonexistent)
     let req_not_owner = Request::builder()
@@ -423,6 +437,16 @@ async fn test_owner_routes_enforce_ownership_and_identical_404() {
 
     let res_not_owner = router.handle(req_not_owner).await;
     assert_eq!(res_not_owner.status(), http::StatusCode::NOT_FOUND);
+
+    // 2b. User 2 accesses User 1's delete confirmation page (must return 404)
+    let req_not_owner_confirm = Request::builder()
+        .method("GET")
+        .uri(format!("/offers/manage/{}/delete", offer.id))
+        .header("cookie", format!("sid={session2_token}"))
+        .body(Body::empty())
+        .unwrap();
+    let res_not_owner_confirm = router.handle(req_not_owner_confirm).await;
+    assert_eq!(res_not_owner_confirm.status(), http::StatusCode::NOT_FOUND);
 
     // 3. User 2 accesses nonexistent UUID (must return 404)
     let non_existent_id = Uuid::new_v4();

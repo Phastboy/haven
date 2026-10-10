@@ -7,11 +7,15 @@ use haven_domain::session::{HashedToken, Session, SessionId};
 use std::net::IpAddr;
 use uuid::Uuid;
 
-pub struct PostgresSessionRepository {
-    pub pool: DbPool,
+pub(crate) struct PostgresSessionRepository {
+    pool: DbPool,
 }
 
 impl PostgresSessionRepository {
+    pub(crate) fn new(pool: DbPool) -> Self {
+        Self { pool }
+    }
+
     fn map_row(
         id: Uuid,
         account_id: Uuid,
@@ -22,8 +26,8 @@ impl PostgresSessionRepository {
         user_agent: Option<String>,
     ) -> Session {
         Session {
-            id: SessionId(id),
-            account_id: AccountId(account_id),
+            id: SessionId::from_uuid(id),
+            account_id: AccountId::from_uuid(account_id),
             token_hash: HashedToken::from_hex(token_hash),
             expires_at,
             created_at,
@@ -105,7 +109,7 @@ impl SessionRepository for PostgresSessionRepository {
     }
 
     async fn delete(&self, session_id: SessionId) -> Result<(), RepoError> {
-        let id_uuid = session_id.0;
+        let id_uuid = session_id.as_uuid();
         let rows_affected = sqlx::query!(
             r#"
             DELETE FROM session
@@ -119,7 +123,10 @@ impl SessionRepository for PostgresSessionRepository {
         .rows_affected();
 
         if rows_affected == 0 {
-            Err(RepoError::NotFound)
+            Err(RepoError::NotFound {
+                entity: "session",
+                id: session_id.to_string(),
+            })
         } else {
             Ok(())
         }

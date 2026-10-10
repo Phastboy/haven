@@ -16,7 +16,7 @@ async fn test_update_patch_semantics() {
 
     sqlx::migrate!("../../migrations").run(&pool).await.unwrap();
 
-    let repo = PostgresOfferRepository { pool: pool.clone() };
+    let repo = PostgresOfferRepository::new(pool.clone());
 
     // 1. Create a dummy account and user
     let account_id = Uuid::new_v4();
@@ -28,7 +28,7 @@ async fn test_update_patch_semantics() {
         .await
         .unwrap();
 
-    let user_id = UserId(Uuid::new_v4());
+    let user_id = UserId::from_uuid(Uuid::new_v4());
     sqlx::query("INSERT INTO \"user\" (id, account_id) VALUES ($1, $2)")
         .bind(user_id.as_uuid())
         .bind(account_id)
@@ -44,7 +44,7 @@ async fn test_update_patch_semantics() {
         currency: CurrencyCode::parse("USD").unwrap(),
     };
     let offer = repo
-        .create(user_id, IdempotencyKey(Uuid::new_v4()), &co)
+        .create(user_id, IdempotencyKey::new(Uuid::new_v4()), &co)
         .await
         .unwrap();
 
@@ -106,7 +106,7 @@ async fn test_update_patch_semantics() {
             price: Price::new(10_i32.saturating_mul(i)).unwrap(),
             currency: CurrencyCode::parse("USD").unwrap(),
         };
-        repo.create(user_id, IdempotencyKey(Uuid::new_v4()), &req)
+        repo.create(user_id, IdempotencyKey::new(Uuid::new_v4()), &req)
             .await
             .unwrap();
     }

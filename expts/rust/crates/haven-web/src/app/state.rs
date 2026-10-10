@@ -27,8 +27,10 @@ pub fn http_client(cx: &Cx) -> &reqwest::Client {
 
 pub fn map_repo_err(e: RepoError) -> RouterError {
     match e {
-        RepoError::NotFound => topcoat::router::error::not_found().into(),
-        RepoError::Conflict => topcoat::router::error::bad_request("Conflict").into(),
+        RepoError::NotFound { .. } => topcoat::router::error::not_found().into(),
+        RepoError::Conflict { entity, key } => {
+            topcoat::router::error::bad_request(format!("Conflict on {entity}: {key}")).into()
+        }
         RepoError::Corrupt(msg) | RepoError::Unavailable(msg) => topcoat::Error::msg(msg),
     }
 }

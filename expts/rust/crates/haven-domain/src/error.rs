@@ -1,10 +1,15 @@
 use thiserror::Error;
 
-#[derive(Debug, Error, PartialEq, Eq)]
-pub enum DomainError {
+/// Account-specific domain errors.
+#[derive(Debug, Error, PartialEq, Eq, Clone)]
+pub enum AccountError {
     #[error("invalid email: {0}")]
     InvalidEmail(String),
+}
 
+/// Offer-specific validation and format errors.
+#[derive(Debug, Error, PartialEq, Eq, Clone)]
+pub enum OfferValidationError {
     #[error("price is required")]
     PriceRequired,
 
@@ -35,12 +40,36 @@ pub enum DomainError {
     #[error("description must not exceed 2000 characters")]
     DescriptionTooLong,
 
-    #[error("token generation failed")]
-    TokenGenerationFailed,
-
     #[error("invalid offer slug: {0}")]
     InvalidSlug(String),
+}
 
+/// Session credential errors.
+#[derive(Debug, Error, PartialEq, Eq, Clone)]
+pub enum SessionError {
+    #[error("token generation failed")]
+    TokenGenerationFailed,
+}
+
+/// Pagination cursor parsing errors.
+#[derive(Debug, Error, PartialEq, Eq, Clone)]
+pub enum CursorError {
     #[error("invalid pagination cursor")]
     InvalidCursor,
+}
+
+/// Unified domain error type composed from concern-specific error enums.
+#[derive(Debug, Error, PartialEq, Eq, Clone)]
+pub enum DomainError {
+    #[error(transparent)]
+    Account(#[from] AccountError),
+
+    #[error(transparent)]
+    Offer(#[from] OfferValidationError),
+
+    #[error(transparent)]
+    Session(#[from] SessionError),
+
+    #[error(transparent)]
+    Cursor(#[from] CursorError),
 }
