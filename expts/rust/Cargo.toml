@@ -17,7 +17,7 @@ panic = "abort"
 strip = true
 
 [workspace.lints.rust]
-unsafe_code = "deny"
+unsafe_code = "forbid"
 unreachable_pub = "deny"
 unused_lifetimes = "deny"
 trivial_casts = "deny"
@@ -44,6 +44,7 @@ as_conversions = "deny"
 let_underscore_must_use = "deny"
 allow_attributes_without_reason = "deny"
 undocumented_unsafe_blocks = "deny"
+wildcard_enum_match_arm = "deny"
 
 [workspace.dependencies]
 # Domain
