@@ -32,7 +32,7 @@ pub async fn sign_in_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
     });
 
     let google_enabled = crate::app::state::google_oauth(cx).is_some();
-    let email_delivery_enabled = crate::app::state::is_email_delivery_enabled();
+    let email_delivery_enabled = crate::app::state::email_delivery_enabled(cx);
 
     Ok(view! {
         <div class="auth-card">
@@ -105,7 +105,7 @@ pub async fn submit_sign_in(
     cx: &Cx,
     form: topcoat::router::content::Form<SignInForm>,
 ) -> TopcoatResult<()> {
-    if !crate::app::state::is_email_delivery_enabled() {
+    if !crate::app::state::email_delivery_enabled(cx) {
         return Err(see_other("/auth/sign-in?error=email_delivery_unavailable").into());
     }
 
@@ -153,6 +153,9 @@ pub async fn submit_sign_in(
 
     let mut public_base_url =
         std::env::var("PUBLIC_BASE_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
+    if !public_base_url.starts_with("http://") && !public_base_url.starts_with("https://") {
+        public_base_url = format!("http://{public_base_url}");
+    }
     if let Ok(mut parsed_url) = url::Url::parse(&public_base_url) {
         let host = parsed_url.host_str().unwrap_or("");
         if parsed_url.scheme() == "http"

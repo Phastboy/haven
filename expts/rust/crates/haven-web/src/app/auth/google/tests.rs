@@ -203,6 +203,7 @@ fn test_router(oauth_config: Option<GoogleOAuthConfig>) -> topcoat::router::Rout
         registry: std::sync::Arc::new(DummyRegistry),
         google_oauth: oauth_config,
         http_client: reqwest::Client::new(),
+        email_delivery_enabled: None,
     };
 
     crate::app::router()
