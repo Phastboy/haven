@@ -24,71 +24,66 @@ fn custom_cookie_name() {
 fn is_secure_evaluates_env_and_headers() {
     // 1. Explicit COOKIE_SECURE override
     assert!(AdaptiveCookieTokenStore::is_secure(
-        Some("true"),
-        None,
-        None,
-        None,
-        None,
-        None
+        TransportSecurityInputs {
+            cookie_secure_env: Some("true"),
+            ..Default::default()
+        }
     ));
     assert!(AdaptiveCookieTokenStore::is_secure(
-        Some("1"),
-        None,
-        None,
-        None,
-        None,
-        None
+        TransportSecurityInputs {
+            cookie_secure_env: Some("1"),
+            ..Default::default()
+        }
     ));
     assert!(!AdaptiveCookieTokenStore::is_secure(
-        Some("false"),
-        Some("true"),
-        Some("https"),
-        Some("https"),
-        Some("https://foo.com"),
-        Some("https://bar.com")
+        TransportSecurityInputs {
+            cookie_secure_env: Some("false"),
+            trust_forwarded_proto_env: Some("true"),
+            forwarded_proto_header: Some("https"),
+            uri_scheme: Some("https"),
+            public_base_url_env: Some("https://foo.com"),
+            google_redirect_uri_env: Some("https://bar.com"),
+        }
     ));
     assert!(!AdaptiveCookieTokenStore::is_secure(
-        Some("0"),
-        Some("true"),
-        Some("https"),
-        Some("https"),
-        Some("https://foo.com"),
-        Some("https://bar.com")
+        TransportSecurityInputs {
+            cookie_secure_env: Some("0"),
+            trust_forwarded_proto_env: Some("true"),
+            forwarded_proto_header: Some("https"),
+            uri_scheme: Some("https"),
+            public_base_url_env: Some("https://foo.com"),
+            google_redirect_uri_env: Some("https://bar.com"),
+        }
     ));
 
     // 2. X-Forwarded-Proto header (only when TRUST_FORWARDED_PROTO=true)
     assert!(AdaptiveCookieTokenStore::is_secure(
-        None,
-        Some("true"),
-        Some("https"),
-        None,
-        None,
-        None
+        TransportSecurityInputs {
+            trust_forwarded_proto_env: Some("true"),
+            forwarded_proto_header: Some("https"),
+            ..Default::default()
+        }
     ));
     assert!(AdaptiveCookieTokenStore::is_secure(
-        None,
-        Some("1"),
-        Some("HTTPS"),
-        None,
-        None,
-        None
+        TransportSecurityInputs {
+            trust_forwarded_proto_env: Some("1"),
+            forwarded_proto_header: Some("HTTPS"),
+            ..Default::default()
+        }
     ));
     // Untrusted proxy headers must NOT be honored
     assert!(!AdaptiveCookieTokenStore::is_secure(
-        None,
-        None,
-        Some("https"),
-        None,
-        None,
-        None
+        TransportSecurityInputs {
+            forwarded_proto_header: Some("https"),
+            ..Default::default()
+        }
     ));
     assert!(!AdaptiveCookieTokenStore::is_secure(
-        None,
-        Some("false"),
-        Some("https"),
-        None,
-        None,
-        None
+        TransportSecurityInputs {
+            trust_forwarded_proto_env: Some("false"),
+            forwarded_proto_header: Some("https"),
+            ..Default::default()
+        }
     ));
 }
 
@@ -96,53 +91,43 @@ fn is_secure_evaluates_env_and_headers() {
 fn is_secure_evaluates_urls_and_fallback() {
     // 1. URI scheme
     assert!(AdaptiveCookieTokenStore::is_secure(
-        None,
-        None,
-        None,
-        Some("https"),
-        None,
-        None
+        TransportSecurityInputs {
+            uri_scheme: Some("https"),
+            ..Default::default()
+        }
     ));
 
     // 2. PUBLIC_BASE_URL
     assert!(AdaptiveCookieTokenStore::is_secure(
-        None,
-        None,
-        None,
-        None,
-        Some("https://haven.example.com"),
-        None
+        TransportSecurityInputs {
+            public_base_url_env: Some("https://haven.example.com"),
+            ..Default::default()
+        }
     ));
     assert!(!AdaptiveCookieTokenStore::is_secure(
-        None,
-        None,
-        None,
-        None,
-        Some("http://192.168.0.50.nip.io:8080"),
-        None
+        TransportSecurityInputs {
+            public_base_url_env: Some("http://192.168.0.50.nip.io:8080"),
+            ..Default::default()
+        }
     ));
     assert!(!AdaptiveCookieTokenStore::is_secure(
-        None,
-        None,
-        None,
-        None,
-        Some("192.168.0.50.nip.io:8080"),
-        None
+        TransportSecurityInputs {
+            public_base_url_env: Some("192.168.0.50.nip.io:8080"),
+            ..Default::default()
+        }
     ));
 
     // 3. GOOGLE_REDIRECT_URI
     assert!(AdaptiveCookieTokenStore::is_secure(
-        None,
-        None,
-        None,
-        None,
-        None,
-        Some("https://haven.example.com/auth/google/callback")
+        TransportSecurityInputs {
+            google_redirect_uri_env: Some("https://haven.example.com/auth/google/callback"),
+            ..Default::default()
+        }
     ));
 
     // 4. Default fallback
     assert!(!AdaptiveCookieTokenStore::is_secure(
-        None, None, None, None, None, None
+        TransportSecurityInputs::default()
     ));
 }
 

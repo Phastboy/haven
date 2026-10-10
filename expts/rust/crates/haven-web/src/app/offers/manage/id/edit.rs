@@ -10,25 +10,28 @@ struct EditOfferFormFields {
     currency: Option<String>,
 }
 
-fn render_edit_offer_form(
-    cx: &Cx,
+struct EditOfferFormView {
     offer_id: haven_domain::offer::OfferId,
     fields: EditOfferFormFields,
     error_banner: Option<String>,
     status_code: Option<http::StatusCode>,
-) -> impl topcoat::view::View {
+}
+
+fn render_edit_offer_form(cx: &Cx, view_data: EditOfferFormView) -> impl topcoat::view::View {
     let __cx = cx;
+    let offer_id = view_data.offer_id;
+    let fields = view_data.fields;
     view! {
         <div class="edit-offer">
             <meta name="robots" content="noindex" />
-            if let Some(status) = status_code {
+            if let Some(status) = view_data.status_code {
                 (status)
             }
             <div class="page-header">
                 <h1>"Edit Offer"</h1>
                 <p class="text-muted">"Update your offer's details."</p>
             </div>
-            if let Some(err) = error_banner {
+            if let Some(err) = view_data.error_banner {
                 <div class="form-error-banner" role="alert">
                     <p>(err)</p>
                 </div>
@@ -92,15 +95,17 @@ pub async fn edit_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View>
 
     Ok(render_edit_offer_form(
         cx,
-        offer.id,
-        EditOfferFormFields {
-            title: Some(offer.title),
-            description: Some(offer.description),
-            price: Some(offer.price.as_i32().to_string()),
-            currency: Some(offer.currency.as_str().to_string()),
+        EditOfferFormView {
+            offer_id: offer.id,
+            fields: EditOfferFormFields {
+                title: Some(offer.title),
+                description: Some(offer.description),
+                price: Some(offer.price.as_i32().to_string()),
+                currency: Some(offer.currency.as_str().to_string()),
+            },
+            error_banner: None,
+            status_code: None,
         },
-        None,
-        None,
     ))
 }
 
@@ -126,10 +131,12 @@ pub async fn update_offer(
     let Some(form) = form else {
         return Ok(render_edit_offer_form(
             cx,
-            offer_id,
-            EditOfferFormFields::default(),
-            Some("Missing form submission.".to_string()),
-            Some(http::StatusCode::UNPROCESSABLE_ENTITY),
+            EditOfferFormView {
+                offer_id,
+                fields: EditOfferFormFields::default(),
+                error_banner: Some("Missing form submission.".to_string()),
+                status_code: Some(http::StatusCode::UNPROCESSABLE_ENTITY),
+            },
         ));
     };
 
@@ -142,19 +149,23 @@ pub async fn update_offer(
     };
 
     let patch = match super::super::super::fields::parse_for_patch(
-        fields.title.as_deref(),
-        fields.description.as_deref(),
-        fields.price.as_deref(),
-        fields.currency.as_deref(),
+        super::super::super::fields::RawOfferPatch {
+            title: fields.title.as_deref(),
+            description: fields.description.as_deref(),
+            price: fields.price.as_deref(),
+            currency: fields.currency.as_deref(),
+        },
     ) {
         Ok(p) => p,
         Err(e) => {
             return Ok(render_edit_offer_form(
                 cx,
-                offer_id,
-                fields,
-                Some(e.to_string()),
-                Some(http::StatusCode::UNPROCESSABLE_ENTITY),
+                EditOfferFormView {
+                    offer_id,
+                    fields,
+                    error_banner: Some(e.to_string()),
+                    status_code: Some(http::StatusCode::UNPROCESSABLE_ENTITY),
+                },
             ));
         }
     };
@@ -169,10 +180,12 @@ pub async fn update_offer(
     if let Err(e) = domain_update.validate() {
         return Ok(render_edit_offer_form(
             cx,
-            offer_id,
-            fields,
-            Some(e.to_string()),
-            Some(http::StatusCode::UNPROCESSABLE_ENTITY),
+            EditOfferFormView {
+                offer_id,
+                fields,
+                error_banner: Some(e.to_string()),
+                status_code: Some(http::StatusCode::UNPROCESSABLE_ENTITY),
+            },
         ));
     }
 

@@ -30,6 +30,17 @@ pub struct AdaptiveCookieTokenStore {
     name: Cow<'static, str>,
 }
 
+/// Context inputs for evaluating transport security.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct TransportSecurityInputs<'a> {
+    pub cookie_secure_env: Option<&'a str>,
+    pub trust_forwarded_proto_env: Option<&'a str>,
+    pub forwarded_proto_header: Option<&'a str>,
+    pub uri_scheme: Option<&'a str>,
+    pub public_base_url_env: Option<&'a str>,
+    pub google_redirect_uri_env: Option<&'a str>,
+}
+
 impl AdaptiveCookieTokenStore {
     /// Creates a store using the default cookie name (`"sid"`).
     #[must_use]
@@ -60,15 +71,8 @@ impl AdaptiveCookieTokenStore {
     /// 5. `GOOGLE_REDIRECT_URI` starting with `https://` -> true.
     /// 6. Default -> false.
     #[must_use]
-    pub fn is_secure(
-        cookie_secure_env: Option<&str>,
-        trust_forwarded_proto_env: Option<&str>,
-        forwarded_proto_header: Option<&str>,
-        uri_scheme: Option<&str>,
-        public_base_url_env: Option<&str>,
-        google_redirect_uri_env: Option<&str>,
-    ) -> bool {
-        if let Some(val) = cookie_secure_env {
+    pub fn is_secure(inputs: TransportSecurityInputs<'_>) -> bool {
+        if let Some(val) = inputs.cookie_secure_env {
             let trimmed = val.trim();
             if trimmed.eq_ignore_ascii_case("true") || trimmed == "1" {
                 return true;
@@ -78,26 +82,34 @@ impl AdaptiveCookieTokenStore {
             }
         }
 
-        let trust_proxy = trust_forwarded_proto_env.is_some_and(|v| {
+        let trust_proxy = inputs.trust_forwarded_proto_env.is_some_and(|v| {
             let t = v.trim();
             t.eq_ignore_ascii_case("true") || t == "1"
         });
 
         if trust_proxy
-            && forwarded_proto_header.is_some_and(|proto| proto.eq_ignore_ascii_case("https"))
+            && inputs
+                .forwarded_proto_header
+                .is_some_and(|proto| proto.eq_ignore_ascii_case("https"))
         {
             return true;
         }
 
-        if uri_scheme == Some("https") {
+        if inputs.uri_scheme == Some("https") {
             return true;
         }
 
-        if public_base_url_env.is_some_and(|base| base.trim().starts_with("https://")) {
+        if inputs
+            .public_base_url_env
+            .is_some_and(|base| base.trim().starts_with("https://"))
+        {
             return true;
         }
 
-        if google_redirect_uri_env.is_some_and(|redirect| redirect.trim().starts_with("https://")) {
+        if inputs
+            .google_redirect_uri_env
+            .is_some_and(|redirect| redirect.trim().starts_with("https://"))
+        {
             return true;
         }
 
@@ -117,14 +129,14 @@ impl AdaptiveCookieTokenStore {
         let public_base_url = std::env::var("PUBLIC_BASE_URL").ok();
         let google_redirect_uri = std::env::var("GOOGLE_REDIRECT_URI").ok();
 
-        Self::is_secure(
-            cookie_secure.as_deref(),
-            trust_forwarded.as_deref(),
-            proto,
+        Self::is_secure(TransportSecurityInputs {
+            cookie_secure_env: cookie_secure.as_deref(),
+            trust_forwarded_proto_env: trust_forwarded.as_deref(),
+            forwarded_proto_header: proto,
             uri_scheme,
-            public_base_url.as_deref(),
-            google_redirect_uri.as_deref(),
-        )
+            public_base_url_env: public_base_url.as_deref(),
+            google_redirect_uri_env: google_redirect_uri.as_deref(),
+        })
     }
 }
 

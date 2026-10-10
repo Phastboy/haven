@@ -24,49 +24,38 @@ pub enum OAuthConfigError {
     InvalidRedirectUri(String),
 }
 
+/// Raw environment variables or inputs for Google OAuth configuration.
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct RawGoogleOAuthConfig {
+    /// Google OAuth client ID.
+    pub client_id: Option<String>,
+    /// Google OAuth client secret.
+    pub client_secret: Option<String>,
+    /// Explicit authorized OAuth redirect URI.
+    pub redirect_uri: Option<String>,
+    /// Public base URL used to construct redirect URI if not explicitly provided.
+    pub public_base_url: Option<String>,
+    /// Optional custom callback endpoint path (defaults to `/auth/google/callback`).
+    pub callback_endpoint: Option<String>,
+}
+
 impl GoogleOAuthConfig {
     /// Pure parser for Google OAuth configuration.
     ///
-    /// Accepts optionals for credentials, redirect URI, and base URL to allow
+    /// Accepts optionals for credentials, redirect URI, base URL, and callback endpoint to allow
     /// deterministic testing without mutating process environment variables.
     ///
     /// # Errors
     ///
     /// Returns [`OAuthConfigError::Incomplete`] if only one credential is provided,
-    /// or [`OAuthConfigError::InvalidRedirectUri`] if the redirect URI is malformed.
-    #[cfg(test)]
-    pub fn parse(
-        client_id: Option<String>,
-        client_secret: Option<String>,
-        redirect_uri: Option<String>,
-        public_base_url: Option<String>,
-    ) -> Result<Option<Self>, OAuthConfigError> {
-        Self::parse_with_endpoint(
-            client_id,
-            client_secret,
-            redirect_uri,
-            public_base_url,
-            None,
-        )
-    }
-
-    /// Pure parser for Google OAuth configuration supporting explicit callback endpoints.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`OAuthConfigError::Incomplete`] if only one credential is provided,
     /// or [`OAuthConfigError::InvalidRedirectUri`] if the constructed redirect URI is malformed.
-    pub fn parse_with_endpoint(
-        client_id: Option<String>,
-        client_secret: Option<String>,
-        redirect_uri: Option<String>,
-        public_base_url: Option<String>,
-        callback_endpoint: Option<String>,
-    ) -> Result<Option<Self>, OAuthConfigError> {
-        let client_id = client_id
+    pub fn parse(raw: RawGoogleOAuthConfig) -> Result<Option<Self>, OAuthConfigError> {
+        let client_id = raw
+            .client_id
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty());
-        let client_secret = client_secret
+        let client_secret = raw
+            .client_secret
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty());
 
@@ -79,11 +68,13 @@ impl GoogleOAuthConfig {
                 "GOOGLE_CLIENT_SECRET is set but GOOGLE_CLIENT_ID is missing".into(),
             )),
             (Some(client_id), Some(client_secret)) => {
-                let redirect_uri = redirect_uri
+                let redirect_uri = raw
+                    .redirect_uri
                     .map(|s| s.trim().to_string())
                     .filter(|s| !s.is_empty())
                     .unwrap_or_else(|| {
-                        let raw_base = public_base_url
+                        let raw_base = raw
+                            .public_base_url
                             .map(|s| s.trim().to_string())
                             .filter(|s| !s.is_empty())
                             .unwrap_or_else(|| "http://localhost:3000".to_string());
@@ -94,7 +85,8 @@ impl GoogleOAuthConfig {
                         } else {
                             format!("http://{raw_base}")
                         };
-                        let endpoint = callback_endpoint
+                        let endpoint = raw
+                            .callback_endpoint
                             .map(|s| s.trim().to_string())
                             .filter(|s| !s.is_empty())
                             .unwrap_or_else(|| "/auth/google/callback".to_string());
@@ -142,12 +134,12 @@ impl GoogleOAuthConfig {
     ///
     /// Returns [`OAuthConfigError`] if configuration environment variables are invalid.
     pub fn from_env() -> Result<Option<Self>, OAuthConfigError> {
-        Self::parse_with_endpoint(
-            std::env::var("GOOGLE_CLIENT_ID").ok(),
-            std::env::var("GOOGLE_CLIENT_SECRET").ok(),
-            std::env::var("GOOGLE_REDIRECT_URI").ok(),
-            std::env::var("PUBLIC_BASE_URL").ok(),
-            std::env::var("GOOGLE_CALLBACK_ENDPOINT").ok(),
-        )
+        Self::parse(RawGoogleOAuthConfig {
+            client_id: std::env::var("GOOGLE_CLIENT_ID").ok(),
+            client_secret: std::env::var("GOOGLE_CLIENT_SECRET").ok(),
+            redirect_uri: std::env::var("GOOGLE_REDIRECT_URI").ok(),
+            public_base_url: std::env::var("PUBLIC_BASE_URL").ok(),
+            callback_endpoint: std::env::var("GOOGLE_CALLBACK_ENDPOINT").ok(),
+        })
     }
 }

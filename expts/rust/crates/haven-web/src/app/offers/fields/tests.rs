@@ -47,28 +47,64 @@ fn create_rejects_invalid() {
 
 #[test]
 fn patch_handles_none() {
-    let patch = parse_for_patch(None, None, None, None).unwrap();
+    let patch = parse_for_patch(RawOfferPatch::default()).unwrap();
     assert_eq!(patch, OfferPatch::default());
 }
 
 #[test]
 fn patch_rejects_blank_required_fields() {
-    assert!(parse_for_patch(Some(""), None, None, None).is_err());
-    assert!(parse_for_patch(Some("  "), None, None, None).is_err());
-    assert!(parse_for_patch(None, Some(""), None, None).is_err());
-    assert!(parse_for_patch(None, Some("  "), None, None).is_err());
-    assert!(parse_for_patch(None, None, Some(""), None).is_err());
-    assert!(parse_for_patch(None, None, Some("  "), None).is_err());
+    assert!(
+        parse_for_patch(RawOfferPatch {
+            title: Some(""),
+            ..Default::default()
+        })
+        .is_err()
+    );
+    assert!(
+        parse_for_patch(RawOfferPatch {
+            title: Some("  "),
+            ..Default::default()
+        })
+        .is_err()
+    );
+    assert!(
+        parse_for_patch(RawOfferPatch {
+            description: Some(""),
+            ..Default::default()
+        })
+        .is_err()
+    );
+    assert!(
+        parse_for_patch(RawOfferPatch {
+            description: Some("  "),
+            ..Default::default()
+        })
+        .is_err()
+    );
+    assert!(
+        parse_for_patch(RawOfferPatch {
+            price: Some(""),
+            ..Default::default()
+        })
+        .is_err()
+    );
+    assert!(
+        parse_for_patch(RawOfferPatch {
+            price: Some("  "),
+            ..Default::default()
+        })
+        .is_err()
+    );
 }
 
 #[test]
 fn patch_parses_values() {
-    let patch = parse_for_patch(
-        Some("Valid Offer"),
-        Some("Detailed description here"),
-        Some("100"),
-        Some("usd"),
-    )
+    let patch = parse_for_patch(RawOfferPatch {
+        title: Some("Valid Offer"),
+        description: Some("Detailed description here"),
+        price: Some("100"),
+        currency: Some("usd"),
+    })
     .unwrap();
     assert_eq!(patch.title.as_deref(), Some("Valid Offer"));
     assert_eq!(
@@ -81,9 +117,40 @@ fn patch_parses_values() {
 
 #[test]
 fn patch_rejects_invalid_values() {
-    assert!(parse_for_patch(Some("ab"), None, None, None).is_err());
-    assert!(parse_for_patch(None, Some("short"), None, None).is_err());
-    assert!(parse_for_patch(None, None, Some("abc"), None).is_err());
-    assert!(parse_for_patch(None, None, None, Some("ZZZ")).is_err());
-    assert!(parse_for_patch(None, None, Some("100"), Some("")).is_err());
+    assert!(
+        parse_for_patch(RawOfferPatch {
+            title: Some("ab"),
+            ..Default::default()
+        })
+        .is_err()
+    );
+    assert!(
+        parse_for_patch(RawOfferPatch {
+            description: Some("short"),
+            ..Default::default()
+        })
+        .is_err()
+    );
+    assert!(
+        parse_for_patch(RawOfferPatch {
+            price: Some("abc"),
+            ..Default::default()
+        })
+        .is_err()
+    );
+    assert!(
+        parse_for_patch(RawOfferPatch {
+            currency: Some("ZZZ"),
+            ..Default::default()
+        })
+        .is_err()
+    );
+    assert!(
+        parse_for_patch(RawOfferPatch {
+            price: Some("100"),
+            currency: Some(""),
+            ..Default::default()
+        })
+        .is_err()
+    );
 }
