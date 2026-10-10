@@ -10,25 +10,28 @@ struct NewOfferFormFields {
     currency: Option<String>,
 }
 
-fn render_new_offer_form(
-    cx: &Cx,
+struct NewOfferFormView {
     idempotency_key: String,
     fields: NewOfferFormFields,
     error_banner: Option<String>,
     status_code: Option<http::StatusCode>,
-) -> impl topcoat::view::View {
+}
+
+fn render_new_offer_form(cx: &Cx, view_data: NewOfferFormView) -> impl topcoat::view::View {
     let __cx = cx;
+    let idempotency_key = view_data.idempotency_key;
+    let fields = view_data.fields;
     view! {
         <div class="new-offer">
             <meta name="robots" content="noindex" />
-            if let Some(status) = status_code {
+            if let Some(status) = view_data.status_code {
                 (status)
             }
             <div class="page-header">
                 <h1>"New Offer"</h1>
                 <p class="text-muted">"Create a new offer to list on Haven."</p>
             </div>
-            if let Some(err) = error_banner {
+            if let Some(err) = view_data.error_banner {
                 <div class="form-error-banner" role="alert">
                     <p>(err)</p>
                 </div>
@@ -90,10 +93,12 @@ pub async fn new_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> 
     let idempotency_key = uuid::Uuid::new_v4().to_string();
     Ok(render_new_offer_form(
         cx,
-        idempotency_key,
-        NewOfferFormFields::default(),
-        None,
-        None,
+        NewOfferFormView {
+            idempotency_key,
+            fields: NewOfferFormFields::default(),
+            error_banner: None,
+            status_code: None,
+        },
     ))
 }
 
@@ -116,10 +121,12 @@ pub async fn create_offer(
     let Some(form) = form else {
         return Ok(render_new_offer_form(
             cx,
-            uuid::Uuid::new_v4().to_string(),
-            NewOfferFormFields::default(),
-            Some("Missing form submission.".to_string()),
-            Some(http::StatusCode::UNPROCESSABLE_ENTITY),
+            NewOfferFormView {
+                idempotency_key: uuid::Uuid::new_v4().to_string(),
+                fields: NewOfferFormFields::default(),
+                error_banner: Some("Missing form submission.".to_string()),
+                status_code: Some(http::StatusCode::UNPROCESSABLE_ENTITY),
+            },
         ));
     };
 
@@ -143,10 +150,12 @@ pub async fn create_offer(
         Err(e) => {
             return Ok(render_new_offer_form(
                 cx,
-                raw_key,
-                fields,
-                Some(e.to_string()),
-                Some(http::StatusCode::UNPROCESSABLE_ENTITY),
+                NewOfferFormView {
+                    idempotency_key: raw_key,
+                    fields,
+                    error_banner: Some(e.to_string()),
+                    status_code: Some(http::StatusCode::UNPROCESSABLE_ENTITY),
+                },
             ));
         }
     };
@@ -161,10 +170,12 @@ pub async fn create_offer(
     if let Err(e) = create_req.validate() {
         return Ok(render_new_offer_form(
             cx,
-            raw_key,
-            fields,
-            Some(e.to_string()),
-            Some(http::StatusCode::UNPROCESSABLE_ENTITY),
+            NewOfferFormView {
+                idempotency_key: raw_key,
+                fields,
+                error_banner: Some(e.to_string()),
+                status_code: Some(http::StatusCode::UNPROCESSABLE_ENTITY),
+            },
         ));
     }
 

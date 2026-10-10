@@ -15,7 +15,7 @@ mod tests;
 
 pub use config::GoogleOAuthConfig;
 #[cfg(test)]
-pub use config::OAuthConfigError;
+pub use config::{OAuthConfigError, RawGoogleOAuthConfig};
 
 #[cfg(test)]
 pub use client::{GoogleTokenResponse, GoogleUserInfo};

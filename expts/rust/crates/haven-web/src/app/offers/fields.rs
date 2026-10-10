@@ -57,16 +57,20 @@ pub struct OfferPatch {
     pub currency: Option<CurrencyCode>,
 }
 
+/// Raw unparsed form fields submitted for updating an offer.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct RawOfferPatch<'a> {
+    pub title: Option<&'a str>,
+    pub description: Option<&'a str>,
+    pub price: Option<&'a str>,
+    pub currency: Option<&'a str>,
+}
+
 /// Parses form fields for an offer update. Missing fields (None) mean "leave unchanged",
 /// while empty strings for required fields return validation errors.
 /// Currency is required when price is explicitly set greater than zero.
-pub fn parse_for_patch(
-    raw_title: Option<&str>,
-    raw_description: Option<&str>,
-    raw_price: Option<&str>,
-    raw_currency: Option<&str>,
-) -> Result<OfferPatch, TopcoatError> {
-    let title = match raw_title.map(str::trim) {
+pub fn parse_for_patch(raw: RawOfferPatch<'_>) -> Result<OfferPatch, TopcoatError> {
+    let title = match raw.title.map(str::trim) {
         None => None,
         Some("") => return Err(bad_request("Title must not be blank").into()),
         Some(s) => {
@@ -75,7 +79,7 @@ pub fn parse_for_patch(
         }
     };
 
-    let description = match raw_description.map(str::trim) {
+    let description = match raw.description.map(str::trim) {
         None => None,
         Some("") => return Err(bad_request("Description must not be blank").into()),
         Some(s) => {
@@ -84,18 +88,18 @@ pub fn parse_for_patch(
         }
     };
 
-    let price = match raw_price.map(str::trim) {
+    let price = match raw.price.map(str::trim) {
         None => None,
         Some("") => return Err(bad_request("Price is required").into()),
         Some(s) => Some(parse_price_str(s)?),
     };
 
-    let currency = match raw_currency.map(str::trim) {
+    let currency = match raw.currency.map(str::trim) {
         None | Some("") => None,
         Some(s) => Some(parse_currency_str(s)?),
     };
 
-    if price.is_some_and(|p| p.as_i32() > 0) && matches!(raw_currency.map(str::trim), Some("")) {
+    if price.is_some_and(|p| p.as_i32() > 0) && matches!(raw.currency.map(str::trim), Some("")) {
         return Err(bad_request("Currency is required when price is greater than zero").into());
     }
 

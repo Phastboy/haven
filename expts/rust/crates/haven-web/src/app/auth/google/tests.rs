@@ -3,37 +3,47 @@ use url::Url;
 
 #[test]
 fn parse_returns_none_when_both_credentials_are_absent() {
-    let config = GoogleOAuthConfig::parse(None, None, None, None).unwrap_or(None);
+    let config = GoogleOAuthConfig::parse(RawGoogleOAuthConfig::default()).unwrap_or(None);
     assert_eq!(config, None);
 }
 
 #[test]
 fn parse_returns_none_when_credentials_are_empty_strings() {
-    let config = GoogleOAuthConfig::parse(Some("  ".into()), Some(String::new()), None, None)
-        .unwrap_or(None);
+    let config = GoogleOAuthConfig::parse(RawGoogleOAuthConfig {
+        client_id: Some("  ".into()),
+        client_secret: Some(String::new()),
+        ..Default::default()
+    })
+    .unwrap_or(None);
     assert_eq!(config, None);
 }
 
 #[test]
 fn parse_rejects_missing_secret() {
-    let res = GoogleOAuthConfig::parse(Some("my-client-id".into()), None, None, None);
+    let res = GoogleOAuthConfig::parse(RawGoogleOAuthConfig {
+        client_id: Some("my-client-id".into()),
+        ..Default::default()
+    });
     assert!(matches!(res, Err(OAuthConfigError::Incomplete(_))));
 }
 
 #[test]
 fn parse_rejects_missing_client_id() {
-    let res = GoogleOAuthConfig::parse(None, Some("my-client-secret".into()), None, None);
+    let res = GoogleOAuthConfig::parse(RawGoogleOAuthConfig {
+        client_secret: Some("my-client-secret".into()),
+        ..Default::default()
+    });
     assert!(matches!(res, Err(OAuthConfigError::Incomplete(_))));
 }
 
 #[test]
 fn parse_succeeds_with_explicit_redirect_uri() {
-    let config = GoogleOAuthConfig::parse(
-        Some("client-id-123".into()),
-        Some("client-secret-456".into()),
-        Some("https://example.com/custom/callback".into()),
-        None,
-    )
+    let config = GoogleOAuthConfig::parse(RawGoogleOAuthConfig {
+        client_id: Some("client-id-123".into()),
+        client_secret: Some("client-secret-456".into()),
+        redirect_uri: Some("https://example.com/custom/callback".into()),
+        ..Default::default()
+    })
     .unwrap_or(None)
     .unwrap_or_else(|| panic!("expected Some(config)"));
 
@@ -44,12 +54,12 @@ fn parse_succeeds_with_explicit_redirect_uri() {
 
 #[test]
 fn parse_defaults_redirect_uri_from_public_base_url() {
-    let config = GoogleOAuthConfig::parse(
-        Some("client-id-123".into()),
-        Some("client-secret-456".into()),
-        None,
-        Some("https://haven.app/".into()),
-    )
+    let config = GoogleOAuthConfig::parse(RawGoogleOAuthConfig {
+        client_id: Some("client-id-123".into()),
+        client_secret: Some("client-secret-456".into()),
+        public_base_url: Some("https://haven.app/".into()),
+        ..Default::default()
+    })
     .unwrap_or(None)
     .unwrap_or_else(|| panic!("expected Some(config)"));
 
@@ -61,12 +71,12 @@ fn parse_defaults_redirect_uri_from_public_base_url() {
 
 #[test]
 fn parse_rejects_invalid_redirect_uri() {
-    let res = GoogleOAuthConfig::parse(
-        Some("client-id-123".into()),
-        Some("client-secret-456".into()),
-        Some("not-a-valid-url".into()),
-        None,
-    );
+    let res = GoogleOAuthConfig::parse(RawGoogleOAuthConfig {
+        client_id: Some("client-id-123".into()),
+        client_secret: Some("client-secret-456".into()),
+        redirect_uri: Some("not-a-valid-url".into()),
+        ..Default::default()
+    });
     assert!(matches!(res, Err(OAuthConfigError::InvalidRedirectUri(_))));
 }
 
@@ -387,13 +397,13 @@ async fn test_redirect_route_handles_request() {
 
 #[test]
 fn parse_with_custom_endpoint_and_schemeless_base_url() {
-    let config = GoogleOAuthConfig::parse_with_endpoint(
-        Some("client-id-123".into()),
-        Some("client-secret-456".into()),
-        None,
-        Some("192.168.0.50.nip.io:8080".into()),
-        Some("/auth/google/redirect".into()),
-    )
+    let config = GoogleOAuthConfig::parse(RawGoogleOAuthConfig {
+        client_id: Some("client-id-123".into()),
+        client_secret: Some("client-secret-456".into()),
+        redirect_uri: None,
+        public_base_url: Some("192.168.0.50.nip.io:8080".into()),
+        callback_endpoint: Some("/auth/google/redirect".into()),
+    })
     .unwrap()
     .unwrap();
 
