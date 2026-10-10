@@ -15,11 +15,16 @@ pub fn compute_trusted_origins(
     origins.push(format!("http://localhost:{port}"));
     origins.push(format!("http://127.0.0.1:{port}"));
     origins.push(format!("http://[::1]:{port}"));
+    origins.push(format!("https://localhost:{port}"));
+    origins.push(format!("https://127.0.0.1:{port}"));
+    origins.push(format!("https://[::1]:{port}"));
 
     // Standard local development origins on default port 3000
     if port != "3000" {
         origins.push("http://localhost:3000".to_string());
         origins.push("http://127.0.0.1:3000".to_string());
+        origins.push("https://localhost:3000".to_string());
+        origins.push("https://127.0.0.1:3000".to_string());
     }
 
     if let Some(base_url) = public_base_url {
@@ -40,8 +45,10 @@ pub fn compute_trusted_origins(
                     .trim_start_matches("https://");
                 if !ip_clean.is_empty() {
                     origins.push(format!("http://{ip_clean}:{port}"));
+                    origins.push(format!("https://{ip_clean}:{port}"));
                     if let Some((_, nip_port)) = trimmed.rsplit_once(':') {
                         origins.push(format!("http://{ip_clean}:{nip_port}"));
+                        origins.push(format!("https://{ip_clean}:{nip_port}"));
                     }
                 }
             }
@@ -63,11 +70,35 @@ pub fn compute_trusted_origins(
 }
 
 /// Constructs the application [`OriginPolicy`] configured with trusted origins.
+///
+/// In production environments (`APP_ENV=production`, `ENVIRONMENT=production`, or `ENV=production`),
+/// strict origin verification is enforced against trusted origins derived from `PORT`, `PUBLIC_BASE_URL`,
+/// and `TRUSTED_ORIGINS`.
+///
+/// In local development (when not running in production, or when `TOPCOAT_DEV_URL` is set),
+/// origin verification is disabled using [`OriginPolicy::dangerous_disable()`] so that developers
+/// and paired testing devices on the local network (accessing `0.0.0.0:8080` via LAN IP or Wi-Fi)
+/// are not blocked by browser Fetch-Metadata (`Sec-Fetch-Site: cross-site`) or cross-IP origin restrictions.
+/// Setting `STRICT_ORIGIN_POLICY=true` allows forcing strict verification in local testing if desired.
 #[must_use]
 pub fn build_origin_policy() -> OriginPolicy {
     let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
     let public_base_url = std::env::var("PUBLIC_BASE_URL").ok();
     let trusted_origins_env = std::env::var("TRUSTED_ORIGINS").ok();
+    let enforce_strict = std::env::var("STRICT_ORIGIN_POLICY")
+        .is_ok_and(|v| v.eq_ignore_ascii_case("true") || v == "1");
+
+    let is_prod = |var: &str| {
+        std::env::var(var).is_ok_and(|v| {
+            let t = v.trim();
+            t.eq_ignore_ascii_case("production") || t.eq_ignore_ascii_case("prod")
+        })
+    };
+    let in_production = is_prod("APP_ENV") || is_prod("ENVIRONMENT") || is_prod("ENV");
+
+    if !in_production && !enforce_strict {
+        return OriginPolicy::dangerous_disable();
+    }
 
     let origins = compute_trusted_origins(
         &port,
