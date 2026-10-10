@@ -21,6 +21,15 @@ struct State {
     last_sweep: Instant,
 }
 
+/// Errors that can occur when configuring a rate limiter.
+#[derive(Debug, thiserror::Error, PartialEq, Eq)]
+pub enum RateLimiterError {
+    #[error("rate limiter capacity must be greater than zero")]
+    ZeroCapacity,
+    #[error("rate limiter refill rate must be positive and finite")]
+    InvalidRefillRate,
+}
+
 #[derive(Debug)]
 pub struct RateLimiter {
     capacity: f64,
@@ -29,21 +38,35 @@ pub struct RateLimiter {
 }
 
 impl RateLimiter {
-    /// Creates a new rate limiter.
-    ///
-    /// `capacity` is the burst size; `refill_per_sec` is the sustained rate.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `capacity == 0` or `refill_per_sec <= 0.0`.
-    pub fn new(capacity: u32, refill_per_sec: f64) -> Self {
-        assert!(
-            capacity > 0 && refill_per_sec > 0.0,
-            "limiter needs a positive burst and refill rate"
-        );
-        Self {
+    /// Attempts to create a new rate limiter, returning an error if parameters are invalid.
+    pub fn try_new(capacity: u32, refill_per_sec: f64) -> Result<Self, RateLimiterError> {
+        if capacity == 0 {
+            return Err(RateLimiterError::ZeroCapacity);
+        }
+        if !refill_per_sec.is_finite() || refill_per_sec <= 0.0 {
+            return Err(RateLimiterError::InvalidRefillRate);
+        }
+        Ok(Self {
             capacity: f64::from(capacity),
             refill_per_sec,
+            state: Mutex::new(State {
+                buckets: HashMap::new(),
+                last_sweep: Instant::now(),
+            }),
+        })
+    }
+
+    /// Creates a new rate limiter. Clamps non-positive values gracefully without panicking.
+    pub fn new(capacity: u32, refill_per_sec: f64) -> Self {
+        let valid_capacity = capacity.max(1);
+        let valid_refill = if refill_per_sec.is_finite() && refill_per_sec > 0.0 {
+            refill_per_sec
+        } else {
+            1.0
+        };
+        Self {
+            capacity: f64::from(valid_capacity),
+            refill_per_sec: valid_refill,
             state: Mutex::new(State {
                 buckets: HashMap::new(),
                 last_sweep: Instant::now(),
@@ -165,5 +188,32 @@ mod tests {
         assert!(limiter.try_acquire("user-1").is_err());
         // Different key is unaffected
         assert!(limiter.try_acquire("user-2").is_ok());
+    }
+
+    #[test]
+    fn rate_limiter_try_new_validates_inputs() {
+        assert!(matches!(
+            RateLimiter::try_new(0, 1.0),
+            Err(RateLimiterError::ZeroCapacity)
+        ));
+        assert!(matches!(
+            RateLimiter::try_new(5, 0.0),
+            Err(RateLimiterError::InvalidRefillRate)
+        ));
+        assert!(matches!(
+            RateLimiter::try_new(5, -1.0),
+            Err(RateLimiterError::InvalidRefillRate)
+        ));
+        assert!(matches!(
+            RateLimiter::try_new(5, f64::NAN),
+            Err(RateLimiterError::InvalidRefillRate)
+        ));
+        assert!(RateLimiter::try_new(5, 1.0).is_ok());
+    }
+
+    #[test]
+    fn rate_limiter_new_does_not_panic_on_invalid_inputs() {
+        let limiter = RateLimiter::new(0, -5.0);
+        assert!(limiter.try_acquire("key").is_ok());
     }
 }
