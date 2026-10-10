@@ -151,22 +151,9 @@ pub async fn submit_sign_in(
         .await
         .map_err(map_err)?;
 
-    let mut public_base_url =
+    let raw_base_url =
         std::env::var("PUBLIC_BASE_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
-    if !public_base_url.starts_with("http://") && !public_base_url.starts_with("https://") {
-        public_base_url = format!("http://{public_base_url}");
-    }
-    if let Ok(mut parsed_url) = url::Url::parse(&public_base_url) {
-        let host = parsed_url.host_str().unwrap_or("");
-        if parsed_url.scheme() == "http"
-            && host != "localhost"
-            && host != "127.0.0.1"
-            && host != "[::1]"
-        {
-            parsed_url.set_scheme("https").ok();
-            public_base_url = parsed_url.to_string().trim_end_matches('/').to_string();
-        }
-    }
+    let public_base_url = resolve_public_base_url(&raw_base_url);
 
     let mail = topcoat::mail::mail! {
         from: "noreply@haven.localhost",
@@ -178,4 +165,78 @@ pub async fn submit_sign_in(
     topcoat::mail::send(cx, mail).await?;
 
     Err(see_other("/auth/sent").into())
+}
+
+/// Resolves and normalizes the public base URL used for sign-in links.
+///
+/// Parses the configured URL to preserve valid schemes (case-insensitively, e.g. `HTTPS://`),
+/// prepending `http://` only when the input lacks an HTTP or HTTPS scheme.
+/// Non-loopback `http` hosts are upgraded to `https`.
+/// Trailing slashes are stripped to avoid duplicate slashes when appending route paths.
+#[must_use]
+pub fn resolve_public_base_url(raw: &str) -> String {
+    let trimmed = raw.trim();
+    let mut parsed_url = match url::Url::parse(trimmed) {
+        Ok(parsed) if parsed.scheme() == "http" || parsed.scheme() == "https" => parsed,
+        _ => match url::Url::parse(&format!("http://{trimmed}")) {
+            Ok(parsed) => parsed,
+            Err(_) => return "http://localhost:8080".to_string(),
+        },
+    };
+
+    let host = parsed_url.host_str().unwrap_or("");
+    if parsed_url.scheme() == "http"
+        && host != "localhost"
+        && host != "127.0.0.1"
+        && host != "[::1]"
+    {
+        parsed_url.set_scheme("https").ok();
+    }
+
+    parsed_url.to_string().trim_end_matches('/').to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_resolve_public_base_url_preserves_uppercase_and_valid_schemes() {
+        assert_eq!(
+            resolve_public_base_url("HTTPS://example.com"),
+            "https://example.com"
+        );
+        assert_eq!(
+            resolve_public_base_url("HTTP://localhost:8080"),
+            "http://localhost:8080"
+        );
+        assert_eq!(
+            resolve_public_base_url("https://example.com/"),
+            "https://example.com"
+        );
+    }
+
+    #[test]
+    fn test_resolve_public_base_url_prepends_scheme_when_missing() {
+        assert_eq!(
+            resolve_public_base_url("localhost:8080"),
+            "http://localhost:8080"
+        );
+        assert_eq!(
+            resolve_public_base_url("127.0.0.1:8080"),
+            "http://127.0.0.1:8080"
+        );
+        assert_eq!(resolve_public_base_url("[::1]:8080"), "http://[::1]:8080");
+        // Non-loopback schemeless host is prepended and upgraded to https
+        assert_eq!(
+            resolve_public_base_url("example.com"),
+            "https://example.com"
+        );
+    }
+
+    #[test]
+    fn test_resolve_public_base_url_fallback_for_empty() {
+        assert_eq!(resolve_public_base_url(""), "http://localhost:8080");
+        assert_eq!(resolve_public_base_url("   "), "http://localhost:8080");
+    }
 }

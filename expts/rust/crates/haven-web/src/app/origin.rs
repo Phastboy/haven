@@ -69,36 +69,77 @@ pub fn compute_trusted_origins(
     origins
 }
 
+/// Inputs used to determine whether origin verification should be disabled in development mode.
+#[derive(Debug, Default, Clone, Copy)]
+pub struct OriginPolicyInputs<'a> {
+    pub app_env: Option<&'a str>,
+    pub environment: Option<&'a str>,
+    pub env: Option<&'a str>,
+    pub topcoat_dev_url: Option<&'a str>,
+    pub strict_origin_policy: Option<&'a str>,
+}
+
+/// Determines whether origin verification should be disabled in development mode.
+///
+/// Origin verification is disabled ONLY when an environment marker explicitly identifies
+/// development (`APP_ENV`, `ENVIRONMENT`, or `ENV` set to `"development"` or `"dev"`,
+/// or when `TOPCOAT_DEV_URL` is set and non-empty), provided `STRICT_ORIGIN_POLICY` is not set.
+/// Unset, empty, unrecognized, or production environments default to production-safe behavior (`false`).
+#[must_use]
+pub fn should_disable_origin_verification(inputs: OriginPolicyInputs<'_>) -> bool {
+    let enforce_strict = inputs
+        .strict_origin_policy
+        .is_some_and(|v| v.trim().eq_ignore_ascii_case("true") || v.trim() == "1");
+
+    if enforce_strict {
+        return false;
+    }
+
+    let is_dev = |val: Option<&str>| {
+        val.is_some_and(|v| {
+            let t = v.trim();
+            t.eq_ignore_ascii_case("development") || t.eq_ignore_ascii_case("dev")
+        })
+    };
+
+    let has_topcoat_dev = inputs.topcoat_dev_url.is_some_and(|v| !v.trim().is_empty());
+
+    is_dev(inputs.app_env) || is_dev(inputs.environment) || is_dev(inputs.env) || has_topcoat_dev
+}
+
 /// Constructs the application [`OriginPolicy`] configured with trusted origins.
 ///
-/// In production environments (`APP_ENV=production`, `ENVIRONMENT=production`, or `ENV=production`),
-/// strict origin verification is enforced against trusted origins derived from `PORT`, `PUBLIC_BASE_URL`,
-/// and `TRUSTED_ORIGINS`.
-///
-/// In local development (when not running in production, or when `TOPCOAT_DEV_URL` is set),
-/// origin verification is disabled using [`OriginPolicy::dangerous_disable()`] so that developers
-/// and paired testing devices on the local network (accessing `0.0.0.0:8080` via LAN IP or Wi-Fi)
-/// are not blocked by browser Fetch-Metadata (`Sec-Fetch-Site: cross-site`) or cross-IP origin restrictions.
+/// In local development (when explicitly identified by `APP_ENV`, `ENVIRONMENT`, or `ENV` set
+/// to `"development"` or `"dev"`, or when `TOPCOAT_DEV_URL` is set), origin verification is
+/// disabled using [`OriginPolicy::dangerous_disable()`] so that developers and paired testing devices
+/// on the local network (accessing `0.0.0.0:8080` via LAN IP or Wi-Fi) are not blocked by browser
+/// Fetch-Metadata (`Sec-Fetch-Site: cross-site`) or cross-IP origin restrictions.
 /// Setting `STRICT_ORIGIN_POLICY=true` allows forcing strict verification in local testing if desired.
+///
+/// In production environments, or whenever environment markers are unset or unrecognized,
+/// strict origin verification is enforced against trusted origins derived from `PORT`,
+/// `PUBLIC_BASE_URL`, and `TRUSTED_ORIGINS`.
 #[must_use]
 pub fn build_origin_policy() -> OriginPolicy {
+    let app_env = std::env::var("APP_ENV").ok();
+    let environment = std::env::var("ENVIRONMENT").ok();
+    let env = std::env::var("ENV").ok();
+    let topcoat_dev_url = std::env::var("TOPCOAT_DEV_URL").ok();
+    let strict_origin_policy = std::env::var("STRICT_ORIGIN_POLICY").ok();
+
+    if should_disable_origin_verification(OriginPolicyInputs {
+        app_env: app_env.as_deref(),
+        environment: environment.as_deref(),
+        env: env.as_deref(),
+        topcoat_dev_url: topcoat_dev_url.as_deref(),
+        strict_origin_policy: strict_origin_policy.as_deref(),
+    }) {
+        return OriginPolicy::dangerous_disable();
+    }
+
     let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
     let public_base_url = std::env::var("PUBLIC_BASE_URL").ok();
     let trusted_origins_env = std::env::var("TRUSTED_ORIGINS").ok();
-    let enforce_strict = std::env::var("STRICT_ORIGIN_POLICY")
-        .is_ok_and(|v| v.eq_ignore_ascii_case("true") || v == "1");
-
-    let is_prod = |var: &str| {
-        std::env::var(var).is_ok_and(|v| {
-            let t = v.trim();
-            t.eq_ignore_ascii_case("production") || t.eq_ignore_ascii_case("prod")
-        })
-    };
-    let in_production = is_prod("APP_ENV") || is_prod("ENVIRONMENT") || is_prod("ENV");
-
-    if !in_production && !enforce_strict {
-        return OriginPolicy::dangerous_disable();
-    }
 
     let origins = compute_trusted_origins(
         &port,
@@ -135,5 +176,61 @@ mod tests {
         assert!(origins.contains(&"http://192.168.0.50:8080".to_string()));
         assert!(origins.contains(&"http://custom.dev:3000".to_string()));
         assert!(origins.contains(&"https://app.example.com".to_string()));
+    }
+
+    #[test]
+    fn test_should_disable_origin_verification_behavior() {
+        // Defaults to false (production safe) when unset or empty
+        assert!(!should_disable_origin_verification(
+            OriginPolicyInputs::default()
+        ));
+        assert!(!should_disable_origin_verification(OriginPolicyInputs {
+            app_env: Some(""),
+            ..Default::default()
+        }));
+
+        // Production or unrecognized environments remain production safe (false)
+        assert!(!should_disable_origin_verification(OriginPolicyInputs {
+            app_env: Some("production"),
+            ..Default::default()
+        }));
+        assert!(!should_disable_origin_verification(OriginPolicyInputs {
+            app_env: Some("staging"),
+            ..Default::default()
+        }));
+        assert!(!should_disable_origin_verification(OriginPolicyInputs {
+            environment: Some("prod"),
+            ..Default::default()
+        }));
+
+        // Explicit development markers disable verification (true)
+        assert!(should_disable_origin_verification(OriginPolicyInputs {
+            app_env: Some("development"),
+            ..Default::default()
+        }));
+        assert!(should_disable_origin_verification(OriginPolicyInputs {
+            environment: Some("dev"),
+            ..Default::default()
+        }));
+        assert!(should_disable_origin_verification(OriginPolicyInputs {
+            env: Some("DEV"),
+            ..Default::default()
+        }));
+        assert!(should_disable_origin_verification(OriginPolicyInputs {
+            topcoat_dev_url: Some("http://localhost:8080"),
+            ..Default::default()
+        }));
+
+        // Strict origin override keeps verification enabled even in development
+        assert!(!should_disable_origin_verification(OriginPolicyInputs {
+            app_env: Some("development"),
+            strict_origin_policy: Some("true"),
+            ..Default::default()
+        }));
+        assert!(!should_disable_origin_verification(OriginPolicyInputs {
+            environment: Some("dev"),
+            strict_origin_policy: Some("1"),
+            ..Default::default()
+        }));
     }
 }
