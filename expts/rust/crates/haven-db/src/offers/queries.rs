@@ -110,6 +110,10 @@ pub(super) async fn find_by_slug(
     .transpose()
 }
 
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Internal database query execution helper"
+)]
 pub(super) async fn create(
     pool: &DbPool,
     user_id: UserId,
@@ -190,6 +194,10 @@ pub(super) async fn create(
     }
 }
 
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Internal database query execution helper"
+)]
 pub(super) async fn update(
     pool: &DbPool,
     offer_id: OfferId,
