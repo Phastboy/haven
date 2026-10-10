@@ -1,10 +1,11 @@
 use crate::account::{Account, AccountId, Email};
 use crate::magic_link::MagicLink;
 use crate::offer::{
-    CreateOffer, Offer, OfferCursor, OfferId, OfferPage, OfferSlug, UpdateOffer, UserId,
+    CreateOffer, Offer, OfferCursor, OfferId, OfferPage, OfferSlug, PublicOfferPage, UpdateOffer,
+    UserId,
 };
 use crate::session::{HashedToken, Session, SessionId};
-use crate::user::User;
+use crate::user::{ProfileHandle, User, UserProfileUpdate};
 pub use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use std::net::IpAddr;
@@ -80,6 +81,13 @@ pub trait OfferRepository: Send + Sync {
         &self,
         cursor: Option<&OfferCursor>,
         limit: usize,
+    ) -> Result<PublicOfferPage, RepoError>;
+
+    async fn list_by_user(
+        &self,
+        user_id: UserId,
+        cursor: Option<&OfferCursor>,
+        limit: usize,
     ) -> Result<OfferPage, RepoError>;
 
     async fn create(
@@ -109,7 +117,18 @@ pub trait AccountRepository: Send + Sync {
 #[async_trait]
 pub trait UserRepository: Send + Sync {
     async fn find_by_account(&self, account_id: AccountId) -> Result<Option<User>, RepoError>;
-    async fn create(&self, account_id: AccountId) -> Result<User, RepoError>;
+    async fn find_by_id(&self, user_id: UserId) -> Result<Option<User>, RepoError>;
+    async fn find_by_handle(&self, handle: &ProfileHandle) -> Result<Option<User>, RepoError>;
+    async fn create(
+        &self,
+        account_id: AccountId,
+        profile: &UserProfileUpdate,
+    ) -> Result<User, RepoError>;
+    async fn update_profile(
+        &self,
+        user_id: UserId,
+        profile: &UserProfileUpdate,
+    ) -> Result<User, RepoError>;
     async fn find_by_session(&self, token_hash: &HashedToken) -> Result<Option<User>, RepoError>;
 }
 

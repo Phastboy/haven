@@ -63,6 +63,21 @@ Status key: **decided** (owner confirmed), **default** (assistant's choice becau
 - **Why:** allowing users to submit an email magic link without active delivery causes them to wait indefinitely for emails that never arrive, eroding trust.
 - **Replaces:** silently accepting email input when email delivery is not operational.
 
+### 12. Minimal header navigation (decided, 2026-10-10)
+- **What:** top-level header navigation contains only primary high-level navigation destinations: "Offers" and "Sign In" (guests) or "Offers" and "Profile" (authenticated users). Inline forms and sub-actions ("Sign Out", "Your Offers") are moved into the profile dashboard.
+- **Why:** avoids cluttering the top bar with competing actions and cognitive noise. Respects UX hierarchy where session termination and owner management live under the account context.
+- **Replaces:** header carrying "Offers", "Your Offers", "Profile", and an inline "Sign Out" button side by side.
+
+### 13. Separation of profile dashboard and profile edit (decided, 2026-10-10)
+- **What:** `/profile` serves as a clean viewing dashboard (identity summary, public link, owner offers management, and sign-out form). Editing profile information is separated into a dedicated route at `/profile/edit` with explicit form submission and return redirects.
+- **Why:** simultaneously viewing and editing on the same screen creates administrative visual clutter and ambiguous form state. Dedicated routes provide calm hierarchy and clear intent.
+- **Replaces:** combined view-and-edit form occupying the profile root.
+
+### 14. Maker identity attribution slot (decided, 2026-10-10)
+- **What:** offer cards in the public feed and the public offer detail page display a clean maker attribution slot ("by <maker_name>") linking directly to `/profiles/{handle}`.
+- **Why:** Haven is not an anonymous price-competing listing site; it is a place where people are known by what they offer. Responders can evaluate maker identity and view everything else they offer.
+- **Replaces:** offers without visible author attribution.
+
 ## References: borrowed and rejected
 
 | Reference | Borrowed | Rejected | Why |
@@ -141,6 +156,31 @@ For each screen, add: purpose (stage and lane), content used (from the schema), 
   - *Error:* Verification failure (expired/invalid token) shows clear explanation and single button to request a new link.
   - *Forbidden or not found:* Clean redirect to sign-in.
   - *Failure midway:* OAuth callback failure returns to sign-in with clear error notice.
+
+### 5. Public Maker Profile (`/profiles/{handle}`)
+- **Stage & Lane:** Stage 0.3.x, Responder lane (evaluating maker identity and catalog).
+- **Purpose:** Anyone (guest, crawler, or signed-in user) can view a maker's identity, bio, and all available offers they have created.
+- **Content used:** `User.display_name`, `User.handle`, `User.bio`, and list of `Offer` items created by the user.
+- **Hierarchy:** Primary emphasis is the maker's identity (`display_name`, `@handle`, bio). Secondary section is their offers feed (`Offers by <display_name>`). Quiet elements: back link to all offers.
+- **State matrix:**
+  - *Typical:* Maker header with display name, @handle, and bio (if provided), followed by a list of their available offers.
+  - *Empty (no offers):* "No offers available right now." calm empty state message.
+  - *No bio:* Bio paragraph collapses neatly without leaving awkward empty gaps.
+  - *Long text:* Display name wraps cleanly; long bio renders in comfortable reading measure (45–75 chars).
+  - *Not found (404):* Returns 404 with clean not-found message when handle does not exist.
+  - *Forbidden:* N/A (public route; no auth required).
+
+### 6. Owner Profile Dashboard (`/profile`) & Profile Edit (`/profile/edit`)
+- **Stage & Lane:** Stage 0.3.x, Offerer lane (identity & account management).
+- **Purpose:** Authenticated user views their identity overview, jumps to their public profile, manages their created offers, navigates to profile editing, or signs out.
+- **Content used:** `User.display_name`, `User.handle`, `User.bio`, `User.email`, and user's own `Offer` list.
+- **Hierarchy:** On dashboard: Primary action is "Edit Profile" (`/profile/edit`). Secondary action is "Create an Offer" under Your Offers. At bottom: quiet "Sign Out" form under Account section. On edit form: Primary action is "Save Profile" submit button; secondary is "Cancel" link back to `/profile`.
+- **State matrix:**
+  - *Typical:* Profile identity card with "Edit Profile" CTA and public profile link, followed by "Your Offers" section with edit/delete actions, and sign-out form at bottom.
+  - *Edit form typical:* Form pre-filled with current display name, handle, and bio.
+  - *Edit validation error:* Errors displayed inline above each field (e.g. handle taken, invalid chars, display name too short) and in error banner.
+  - *Updated banner:* Success notice rendered when arriving back via `/profile?updated=1`.
+  - *Unauthenticated:* Automatically redirects to `/auth/sign-in`.
 
 ## Open questions
 

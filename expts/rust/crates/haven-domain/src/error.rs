@@ -58,6 +58,34 @@ pub enum CursorError {
     InvalidCursor,
 }
 
+/// Profile validation and format errors.
+#[derive(Debug, Error, PartialEq, Eq, Clone)]
+pub enum ProfileError {
+    #[error("display name must not be blank")]
+    BlankDisplayName,
+
+    #[error("display name must be at least 2 characters")]
+    DisplayNameTooShort,
+
+    #[error("display name must not exceed 50 characters")]
+    DisplayNameTooLong,
+
+    #[error("handle must be at least 3 characters")]
+    HandleTooShort,
+
+    #[error("handle must not exceed 30 characters")]
+    HandleTooLong,
+
+    #[error("handle may only contain lowercase letters, numbers, and hyphens")]
+    InvalidHandleFormat,
+
+    #[error("handle '{0}' is reserved")]
+    ReservedHandle(String),
+
+    #[error("bio must not exceed 500 characters")]
+    BioTooLong,
+}
+
 /// Unified domain error type composed from concern-specific error enums.
 #[derive(Debug, Error, PartialEq, Eq, Clone)]
 pub enum DomainError {
@@ -72,4 +100,7 @@ pub enum DomainError {
 
     #[error(transparent)]
     Cursor(#[from] CursorError),
+
+    #[error(transparent)]
+    Profile(#[from] ProfileError),
 }

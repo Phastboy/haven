@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            INSERT INTO \"user\" (account_id)\n            VALUES ($1)\n            RETURNING id, account_id, created_at, updated_at\n            ",
+  "query": "\n            SELECT id, account_id, handle, display_name, bio, created_at, updated_at\n            FROM \"user\"\n            WHERE account_id = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -27,6 +27,39 @@
       },
       {
         "ordinal": 2,
+        "name": "handle",
+        "type_info": "Varchar",
+        "origin": {
+          "Table": {
+            "table": "\"user\"",
+            "name": "handle"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "display_name",
+        "type_info": "Varchar",
+        "origin": {
+          "Table": {
+            "table": "\"user\"",
+            "name": "display_name"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "bio",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "\"user\"",
+            "name": "bio"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
         "name": "created_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -37,7 +70,7 @@
         }
       },
       {
-        "ordinal": 3,
+        "ordinal": 6,
         "name": "updated_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -57,8 +90,11 @@
       false,
       false,
       false,
+      false,
+      true,
+      false,
       false
     ]
   },
-  "hash": "7f5b94199dc9d55eb9d40a73408b9f4e7e622273c02388416cb52c1e86fd2a31"
+  "hash": "3b667c361aca36feab0cf0ea8b7659e030094fa3832c2064ef1184278cf17850"
 }

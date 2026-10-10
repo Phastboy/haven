@@ -85,7 +85,16 @@ pub async fn verify_submit(
         .await
         .map_err(map_err)?;
     if user.is_none() {
-        registry.users().create(account.id).await.map_err(map_err)?;
+        let suffix = &uuid::Uuid::new_v4().simple().to_string()[..4];
+        let initial_profile = haven_domain::user::UserProfileUpdate::from_email_initial(
+            account.email.as_str(),
+            suffix,
+        );
+        registry
+            .users()
+            .create(account.id, &initial_profile)
+            .await
+            .map_err(map_err)?;
     }
 
     Err(see_other("/offers/new").into())

@@ -10,6 +10,8 @@ pub mod components;
 pub mod health;
 pub mod offers;
 pub mod origin;
+pub mod profile;
+pub mod profiles;
 pub mod state;
 pub mod style;
 
@@ -62,12 +64,7 @@ pub async fn root_layout(
                         <ul class="nav-links">
                             <li><a href="/offers">"Offers"</a></li>
                             if user.is_some() {
-                                <li><a href="/offers/manage">"Your Offers"</a></li>
-                                <li>
-                                    <form action="/auth/sign-out" method="post" class="nav-sign-out-form">
-                                        <button type="submit" class="btn btn-ghost">"Sign Out"</button>
-                                    </form>
-                                </li>
+                                <li><a href="/profile">"Profile"</a></li>
                             } else {
                                 <li><a href="/auth/sign-in">"Sign In"</a></li>
                             }

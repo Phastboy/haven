@@ -66,6 +66,10 @@ pub async fn google_sign_in(cx: &topcoat::context::Cx) -> topcoat::Result<()> {
 /// 4. Retrieves Google user info and ensures email is verified.
 /// 5. Finds or creates the Account and User in PostgreSQL.
 /// 6. Issues a session cookie and redirects to `/offers/new`.
+#[allow(
+    clippy::too_many_lines,
+    reason = "OAuth callback flow with session establishment"
+)]
 async fn handle_google_callback(cx: &topcoat::context::Cx) -> topcoat::Result<()> {
     use topcoat::{
         cookie::{Cookie, Cookies},
@@ -165,7 +169,16 @@ async fn handle_google_callback(cx: &topcoat::context::Cx) -> topcoat::Result<()
         .await
         .map_err(map_err)?;
     if user.is_none() {
-        registry.users().create(account.id).await.map_err(map_err)?;
+        let suffix = &uuid::Uuid::new_v4().simple().to_string()[..4];
+        let initial_profile = haven_domain::user::UserProfileUpdate::from_email_initial(
+            account.email.as_str(),
+            suffix,
+        );
+        registry
+            .users()
+            .create(account.id, &initial_profile)
+            .await
+            .map_err(map_err)?;
     }
 
     // 6. Issue session

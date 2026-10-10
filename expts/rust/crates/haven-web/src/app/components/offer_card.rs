@@ -5,11 +5,17 @@ use topcoat::{
 
 /// Slot-based offer card component adhering to Haven's fixed alignment rules.
 #[component]
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Component props macro generates multi-argument constructor"
+)]
 pub async fn offer_card(
     #[into] title: String,
     #[into] href: String,
     #[into] price_text: String,
     #[into] description: String,
+    #[default] maker_name: Option<String>,
+    #[default] maker_href: Option<String>,
     #[default] edit_href: Option<String>,
     #[default] delete_action: Option<String>,
 ) -> TopcoatResult<impl View> {
@@ -21,6 +27,12 @@ pub async fn offer_card(
                 </h3>
                 <span class="offer-price">(price_text)</span>
             </div>
+            if let (Some(name), Some(url)) = (maker_name, maker_href) {
+                <div class="offer-maker">
+                    <span class="text-muted">"by "</span>
+                    <a href=(url) class="maker-link">(name)</a>
+                </div>
+            }
             <p class="offer-description">(description)</p>
             if edit_href.is_some() || delete_action.is_some() {
                 <div class="offer-actions">
@@ -55,6 +67,8 @@ mod tests {
                 href: "/offers/vintage-leather-jacket-abc",
                 price_text: "50 USD",
                 description: "A well-preserved leather jacket in great condition.",
+                maker_name: Some("Alex Maker".to_string()),
+                maker_href: Some("/profiles/alex".to_string()),
                 edit_href: Some("/offers/uuid/edit".to_string()),
                 delete_action: Some("/offers/uuid/delete".to_string()),
             )
@@ -65,6 +79,8 @@ mod tests {
         assert!(html.contains("href=\"/offers/vintage-leather-jacket-abc\""));
         assert!(html.contains("50 USD"));
         assert!(html.contains("A well-preserved leather jacket"));
+        assert!(html.contains("Alex Maker"));
+        assert!(html.contains("href=\"/profiles/alex\""));
         assert!(html.contains("href=\"/offers/uuid/edit\""));
         assert!(html.contains("href=\"/offers/uuid/delete\""));
     }

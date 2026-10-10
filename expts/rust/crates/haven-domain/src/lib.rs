@@ -7,4 +7,6 @@ pub mod ports;
 pub mod session;
 pub mod user;
 
-pub use error::{AccountError, CursorError, DomainError, OfferValidationError, SessionError};
+pub use error::{
+    AccountError, CursorError, DomainError, OfferValidationError, ProfileError, SessionError,
+};

@@ -10,8 +10,8 @@ Status: draft. Only entries under **Decided** were confirmed by the owner. Every
 |---|---|---|---|---|---|---|
 | 0.1.x | Can I offer something? | create account, sign in, create / see own / edit / delete an offer | none yet | none | completed | met historical baseline (see PERFORMANCE_CONTRACT.md) |
 | 0.2.x | Can someone see it? | offer becomes public on create (generates slug); manage own via `/offers/manage/{id}` | see available offers (public feed), see another person's offer (`/offers/{slug}`) | an offer becomes visible to others | completed | met ≥ 1,200 iters/s host direct |
-| 0.3.x | Can I know who is behind an offer? | has profile, edits profile, profile displays made offers | sees who made an offer, visits public profile, sees maker's offers | knowing who is behind an offer | current | to be verified |
-| 0.4.x | Can someone act on it? | know about expressed interest | express willingness to take on an offer | commitment | not reached | |
+| 0.3.x | Can I know who is behind an offer? | has profile, edits profile, profile displays made offers | sees who made an offer, visits public profile, sees maker's offers | knowing who is behind an offer | completed | met target; keyset pagination |
+| 0.4.x | Can someone act on it? | know about expressed interest | express willingness to take on an offer | commitment | current | |
 | 0.5.x | Can someone find it? | | find an offer by name, narrow by price | | not reached | |
 | 0.6.x | Can I come back to what I care about? | | save an offer, follow a person, return to both | | not reached | |
 | 0.7.x | Can I narrow it down? | | narrow by category, tags, saved, committed | | not reached | |
@@ -35,7 +35,7 @@ sequenceDiagram
   H-->>R: show maker profile & all their offers
 ```
 
-## Stage 0.3.x: Can I know who is behind an offer? (current)
+## Stage 0.3.x: Can I know who is behind an offer? (completed)
 
 ### Untangled items
 
@@ -46,7 +46,7 @@ sequenceDiagram
 - Identity is text-led, restrained, and clean (no noisy gamification or arbitrary badges per `haven-ui-design`).
 
 **A person can edit their profile.**
-- An authenticated person navigates to their profile management view (e.g. `/profile/edit` or `/settings/profile`).
+- An authenticated person navigates to their profile management view (`/profile/edit`).
 - Only the owner can edit their own profile (IDOR protection; CSRF protected).
 - Can update display name, bio, and handle/slug. Input validation enforces character bounds and sanitization.
 
@@ -56,7 +56,7 @@ sequenceDiagram
 - If the maker has not set a custom bio, their display name is still clearly presented.
 
 **A person can visit another person's public profile.**
-- Anyone can request the public profile via a clean URL (e.g. `/profiles/{handle_or_id}` or `/p/{handle}`).
+- Anyone can request the public profile via a clean URL (`/profiles/{handle}`).
 - Zero authentication required: public, cacheable, and SEO-friendly.
 - Displays the person's display name, bio/about, and account creation/member-since metadata.
 
@@ -71,7 +71,8 @@ sequenceDiagram
 - 2026-10-10: Public profiles are routed at `/profiles/{handle}` (e.g. `/profiles/alex`).
 - 2026-10-10: On first sign-in, `display_name` and `handle` are automatically initialized from the email prefix (falling back with a unique suffix if taken), and can be edited anytime by the owner.
 - 2026-10-10: Maker attribution with a link to their public profile appears on both the single offer view (`/offers/{slug}`) and each card in the main public feed (`/offers`).
-- 2026-10-10: Profile management is located at `/profile` (view/edit), restricted to authenticated owners.
+- 2026-10-10: Separation of profile view and edit: `/profile` is the owner dashboard (identity overview, direct link to public profile, "Your Offers" management, and sign-out form); `/profile/edit` is the dedicated edit form.
+- 2026-10-10: Header decluttering: Top-level navigation is kept minimal ("Offers" and "Sign In" or "Profile"). "Sign Out" and "Your Offers" live within the `/profile` dashboard.
 
 ### Open questions
 - **Blocking:**
