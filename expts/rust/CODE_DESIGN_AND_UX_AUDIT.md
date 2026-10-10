@@ -347,54 +347,78 @@
 ## 4. Execution Plan: Milestones & Checklists
 
 ### Milestone 1: Workspace Safety & Compiler Guardrails
-- [ ] Upgrade `unsafe_code = "deny"` to `unsafe_code = "forbid"` in `[workspace.lints.rust]`.
-- [ ] Add `wildcard_enum_match_arm = "deny"` in `[workspace.lints.clippy]`.
-- [ ] Verify `cargo clippy --workspace --all-targets` passes without warnings.
+- [x] Upgrade `unsafe_code = "deny"` to `unsafe_code = "forbid"` in `[workspace.lints.rust]`.
+- [x] Add `wildcard_enum_match_arm = "deny"` in `[workspace.lints.clippy]`.
+- [x] Verify `cargo clippy --workspace --all-targets` passes without warnings.
 
 ### Milestone 2: Domain Layer Hardening (`haven-domain`)
-- [ ] **Clock Injection:**
-  - [ ] Refactor `Session::is_valid` to `Session::is_valid_at(&self, now: DateTime<Utc>) -> bool`.
-  - [ ] Refactor `MagicLink::is_valid` to `MagicLink::is_valid_at(&self, now: DateTime<Utc>) -> bool`.
-- [ ] **Encapsulation & Type Safety:**
-  - [ ] Make inner fields private for `OfferId`, `UserId`, `AccountId`, `SessionId`, and `IdempotencyKey`.
-  - [ ] Introduce `MagicLinkId(Uuid)`.
-  - [ ] Remove `impl Default` for entity IDs (`OfferId`, `UserId`, `AccountId`, `SessionId`).
-- [ ] **Serde Protection:**
-  - [ ] Add `#[serde(try_from = "...")]` to `Price`, `OfferSlug`, `Email`, and `CurrencyCode`.
-- [ ] **Currency Code Enum:**
-  - [ ] Convert `CurrencyCode` to a closed unit enum (`Ngn`, `Usd`, `Eur`, `Gbp`, `Cad`, `Aud`, `Kes`, `Ghs`).
-- [ ] **Error Architecture:**
-  - [ ] Split monolithic `DomainError` into per-concern error types (`AccountError`, `OfferValidationError`, `SessionError`, `CursorError`).
-  - [ ] Add structured entity and key context to `RepoError::NotFound` and `RepoError::Conflict`.
-- [ ] Run `cargo test -p haven-domain`.
+- [x] **Clock Injection:**
+  - [x] Refactor `Session::is_valid` to `Session::is_valid_at(&self, now: DateTime<Utc>) -> bool`.
+  - [x] Refactor `MagicLink::is_valid` to `MagicLink::is_valid_at(&self, now: DateTime<Utc>) -> bool`.
+- [x] **Encapsulation & Type Safety:**
+  - [x] Make inner fields private for `OfferId`, `UserId`, `AccountId`, `SessionId`, and `IdempotencyKey`.
+  - [x] Introduce `MagicLinkId(Uuid)`.
+  - [x] Remove `impl Default` for entity IDs (`OfferId`, `UserId`, `AccountId`, `SessionId`).
+- [x] **Serde Protection:**
+  - [x] Add `#[serde(try_from = "...")]` to `Price`, `OfferSlug`, `Email`, and `CurrencyCode`.
+- [x] **Currency Code Enum:**
+  - [x] Convert `CurrencyCode` to a closed unit enum (`Ngn`, `Usd`, `Eur`, `Gbp`, `Cad`, `Aud`, `Kes`, `Ghs`).
+- [x] **Error Architecture:**
+  - [x] Split monolithic `DomainError` into per-concern error types (`AccountError`, `OfferValidationError`, `SessionError`, `CursorError`).
+  - [x] Add structured entity and key context to `RepoError::NotFound` and `RepoError::Conflict`.
+- [x] Run `cargo test -p haven-domain`.
 
 ### Milestone 3: Persistence Boundaries & Visibility (`haven-db`)
-- [ ] Enforce visibility ladder: reduce `PostgresAccountRepository`, `PostgresOfferRepository`, `PostgresUserRepository`, `PostgresMagicLinkRepository`, `PostgresSessionRepository` to `pub(crate)`.
-- [ ] Make `pool: DbPool` fields private across repository structs.
-- [ ] Adapt SQL query mappings to domain changes (private IDs, `CurrencyCode` enum, decomposed errors).
-- [ ] Run `cargo test -p haven-db`.
+- [x] Enforce visibility ladder: reduce `PostgresAccountRepository`, `PostgresOfferRepository`, `PostgresUserRepository`, `PostgresMagicLinkRepository`, `PostgresSessionRepository` to `pub(crate)`.
+- [x] Make `pool: DbPool` fields private across repository structs.
+- [x] Adapt SQL query mappings to domain changes (private IDs, `CurrencyCode` enum, decomposed errors).
+- [x] Run `cargo test -p haven-db`.
 
 ### Milestone 4: Critical User Flows & Interactive Feedback (`haven-web`)
-- [ ] **Navigation & Session State:**
-  - [ ] Update `root_layout` to inspect auth state: render "Offers", "Your Offers", and POST "Sign Out" for signed-in users; "Offers" and "Sign In" for guests.
-- [ ] **Destructive Deletion Confirmation:**
-  - [ ] Create `GET /offers/manage/{id}/delete` confirmation view naming the offer title.
-  - [ ] Wire "Delete" buttons in `offer_card` and `manage/id` to the confirmation view.
-- [ ] **Form Error Handling & Input Preservation:**
-  - [ ] Update `create_offer` and `update_offer` to re-render form on validation failure with HTTP 422.
-  - [ ] Populate `form_error` and inline field `error` props while preserving submitted inputs.
-- [ ] **Rate Limiter:**
-  - [ ] Refactor `RateLimiter::new` to eliminate panic-inducing `assert!`. Provide `RateLimiter::try_new` returning `Result<Self, RateLimiterError>`.
+- [x] **Navigation & Session State:**
+  - [x] Update `root_layout` to inspect auth state: render "Offers", "Your Offers", and POST "Sign Out" for signed-in users; "Offers" and "Sign In" for guests.
+- [x] **Destructive Deletion Confirmation:**
+  - [x] Create `GET /offers/manage/{id}/delete` confirmation view naming the offer title.
+  - [x] Wire "Delete" buttons in `offer_card` and `manage/id` to the confirmation view.
+- [x] **Form Error Handling & Input Preservation:**
+  - [x] Update `create_offer` and `update_offer` to re-render form on validation failure with HTTP 422.
+  - [x] Populate `form_error` and inline field `error` props while preserving submitted inputs.
+- [x] **Rate Limiter:**
+  - [x] Refactor `RateLimiter::new` to eliminate panic-inducing `assert!`. Provide `RateLimiter::try_new` returning `Result<Self, RateLimiterError>`.
 
 ### Milestone 5: Visual Styling, Accessibility & Design Tokens
-- [ ] Convert `--color-danger`, `--color-danger-surface`, `--color-danger-border`, and `--color-focus` in `static/style.css` to pure greyscale tokens.
-- [ ] Add `.btn:active` and link active states in `static/style.css` for immediate tactile feedback.
-- [ ] Add `aria-invalid` and `aria-describedby` error associations in `crates/haven-web/src/app/components/field.rs`.
+- [x] Convert `--color-danger`, `--color-danger-surface`, `--color-danger-border`, and `--color-focus` in `static/style.css` to pure greyscale tokens.
+- [x] Add `.btn:active` and link active states in `static/style.css` for immediate tactile feedback.
+- [x] Add `aria-invalid` and `aria-describedby` error associations in `crates/haven-web/src/app/components/field.rs`.
 
 ### Milestone 6: Full Verification & Audit Closeout
-- [ ] Run `cargo test --workspace` (all 88 tests passing: 29 in haven-domain, 1 in haven-db, 58 in haven-web).
-- [ ] Run `cargo clippy --workspace --all-targets -- -D warnings` (clean, 0 warnings).
-- [ ] Run `cargo fmt --check` (clean formatting).
-- [ ] Run `cargo doc --workspace --no-deps` (clean documentation builds).
-- [ ] Update `CODE_DESIGN_AND_UX_AUDIT.md` to reflect 100% resolution.
+- [x] Run `cargo test --workspace` (all 88 tests passing: 29 in haven-domain, 1 in haven-db, 58 in haven-web).
+- [x] Run `cargo clippy --workspace --all-targets -- -D warnings` (clean, 0 warnings).
+- [x] Run `cargo fmt --check` (clean formatting).
+- [x] Run `cargo doc --workspace --no-deps` (clean documentation builds).
+- [x] Update `CODE_DESIGN_AND_UX_AUDIT.md` to reflect 100% resolution.
+
+---
+
+## 5. Audit Closeout Summary
+
+All 12 reported violations across Rust Code Design Principles and Haven UX Design have been 100% remediated on branch `refactor/code-design-and-ux-remediation`:
+
+1. **Compiler & Safety Guardrails**: `unsafe_code = "forbid"` and `wildcard_enum_match_arm = "deny"` enforced at workspace level in `Cargo.toml`.
+2. **Domain Isolation & Integrity**: Injected time (`is_valid_at(now)`), encapsulated IDs with private fields and explicit `from_uuid`/`as_uuid()` constructors, Serde `#[serde(try_from = "...")]` input bypass prevention, 1-byte unit enum `CurrencyCode`, and granular domain errors (`AccountError`, `OfferValidationError`, `SessionError`, `CursorError`, `RepoError::{NotFound, Conflict}`).
+3. **Repository Boundaries**: Submodule repositories encapsulated as `pub(crate)` with private `pool` fields and crate-level constructor methods `new(pool)`.
+4. **Interactive UX & Safe Flows**:
+   - Dynamic navigation bar in `root_layout` reflecting auth state with prominent "Sign Out" POST action.
+   - Dedicated `GET /offers/manage/{id}/delete` confirmation step protecting destructive offer removals.
+   - Non-destructive form validation in `manage/new` and `manage/id/edit` returning HTTP 422 with input preservation and inline error banners.
+   - Non-panicking rate limiter constructor with `try_new` fallible initialization.
+5. **Monochrome Design System & Accessibility**:
+   - Pure greyscale tokens (`--color-danger`, `--color-danger-surface`, `--color-danger-border`, `--color-focus`) per `docs/DESIGN.md`.
+   - Tactile `:active` button pressed states.
+   - Complete accessible input association via `aria-invalid="true"`, `aria-describedby`, and linked element IDs.
+6. **Full Test & Lint Verification**:
+   - `cargo test --workspace`: 88/88 passed.
+   - `cargo clippy --workspace --all-targets -- -D warnings`: passed cleanly.
+   - `cargo fmt --check`: passed cleanly.
+   - `cargo doc --workspace --no-deps`: passed cleanly.
 
