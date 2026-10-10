@@ -140,11 +140,9 @@ impl Session {
     clippy::indexing_slicing,
     clippy::as_conversions,
     clippy::arithmetic_side_effects,
-    clippy::unwrap_used,
-    reason = "Self-contained base64url encoder"
+    reason = "Self-contained base64url encoder table lookup"
 )]
 fn base64url_encode(bytes: &[u8]) -> String {
-    use std::fmt::Write;
     // Simple base64url without padding using the standard alphabet mapping.
     const CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
     let mut out = String::with_capacity((bytes.len() * 4).div_ceil(3));
@@ -153,37 +151,22 @@ fn base64url_encode(bytes: &[u8]) -> String {
         let b0 = bytes[i] as usize;
         let b1 = bytes[i + 1] as usize;
         let b2 = bytes[i + 2] as usize;
-        write!(
-            out,
-            "{}{}{}{}",
-            CHARS[b0 >> 2] as char,
-            CHARS[((b0 & 3) << 4) | (b1 >> 4)] as char,
-            CHARS[((b1 & 0xf) << 2) | (b2 >> 6)] as char,
-            CHARS[b2 & 0x3f] as char,
-        )
-        .unwrap();
+        out.push(CHARS[b0 >> 2] as char);
+        out.push(CHARS[((b0 & 3) << 4) | (b1 >> 4)] as char);
+        out.push(CHARS[((b1 & 0xf) << 2) | (b2 >> 6)] as char);
+        out.push(CHARS[b2 & 0x3f] as char);
         i += 3;
     }
     if i + 1 == bytes.len() {
         let b0 = bytes[i] as usize;
-        write!(
-            out,
-            "{}{}",
-            CHARS[b0 >> 2] as char,
-            CHARS[(b0 & 3) << 4] as char,
-        )
-        .unwrap();
+        out.push(CHARS[b0 >> 2] as char);
+        out.push(CHARS[(b0 & 3) << 4] as char);
     } else if i + 2 == bytes.len() {
         let b0 = bytes[i] as usize;
         let b1 = bytes[i + 1] as usize;
-        write!(
-            out,
-            "{}{}{}",
-            CHARS[b0 >> 2] as char,
-            CHARS[((b0 & 3) << 4) | (b1 >> 4)] as char,
-            CHARS[(b1 & 0xf) << 2] as char,
-        )
-        .unwrap();
+        out.push(CHARS[b0 >> 2] as char);
+        out.push(CHARS[((b0 & 3) << 4) | (b1 >> 4)] as char);
+        out.push(CHARS[(b1 & 0xf) << 2] as char);
     }
     out
 }
