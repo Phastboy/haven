@@ -79,6 +79,7 @@ fn setup_test_app() -> (topcoat::router::Router, TestRegistry) {
         }),
         google_oauth: None,
         http_client: reqwest::Client::new(),
+        email_delivery_enabled: Some(false),
     };
 
     let router = crate::app::router()

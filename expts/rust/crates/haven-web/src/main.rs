@@ -55,11 +55,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .timeout(std::time::Duration::from_secs(10))
         .build()?;
 
+    let email_delivery = app::state::is_email_delivery_enabled();
+    if email_delivery {
+        writeln!(std::io::stdout(), "Email delivery: enabled (file transport: target/mail)").unwrap_or(());
+    } else {
+        writeln!(std::io::stdout(), "Email delivery: disabled (unconfigured in production)").unwrap_or(());
+    }
+
     let registry = Arc::new(PostgresRegistry::new(&pool));
     let state = app::state::AppState {
         registry,
         google_oauth,
         http_client,
+        email_delivery_enabled: None,
     };
 
     let router = app::router()
