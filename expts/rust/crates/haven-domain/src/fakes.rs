@@ -54,9 +54,63 @@ impl OfferRepository for FakeOfferRepository {
         &self,
         cursor: Option<&crate::offer::OfferCursor>,
         limit: usize,
-    ) -> Result<crate::offer::OfferPage, RepoError> {
+    ) -> Result<crate::offer::PublicOfferPage, RepoError> {
         let lock = self.offers.lock().unwrap();
         let mut sorted = lock.clone();
+        sorted.sort_by(|a, b| {
+            b.created_at
+                .cmp(&a.created_at)
+                .then_with(|| b.id.as_uuid().cmp(&a.id.as_uuid()))
+        });
+
+        let capped_limit = limit.clamp(1, 50);
+
+        let filtered: Vec<Offer> = if let Some(c) = cursor {
+            sorted
+                .into_iter()
+                .filter(|o| (o.created_at, o.id.as_uuid()) < (c.created_at, c.id.as_uuid()))
+                .collect()
+        } else {
+            sorted
+        };
+
+        let has_more = filtered.len() > capped_limit;
+        let items: Vec<Offer> = filtered.into_iter().take(capped_limit).collect();
+        let next_cursor = if has_more {
+            items
+                .last()
+                .map(|item| crate::offer::OfferCursor::new(item.created_at, item.id).encode())
+        } else {
+            None
+        };
+
+        let public_items: Vec<crate::offer::PublicOffer> = items
+            .into_iter()
+            .map(|offer| crate::offer::PublicOffer {
+                offer,
+                maker_display_name: crate::user::DisplayName::parse("Test Maker").unwrap(),
+                maker_handle: crate::user::ProfileHandle::parse("test-maker").unwrap(),
+            })
+            .collect();
+
+        Ok(crate::offer::PublicOfferPage {
+            items: public_items,
+            next_cursor,
+        })
+    }
+
+    async fn list_by_user(
+        &self,
+        user_id: UserId,
+        cursor: Option<&crate::offer::OfferCursor>,
+        limit: usize,
+    ) -> Result<crate::offer::OfferPage, RepoError> {
+        let lock = self.offers.lock().unwrap();
+        let mut sorted: Vec<Offer> = lock
+            .iter()
+            .filter(|o| o.user_id == user_id)
+            .cloned()
+            .collect();
         sorted.sort_by(|a, b| {
             b.created_at
                 .cmp(&a.created_at)

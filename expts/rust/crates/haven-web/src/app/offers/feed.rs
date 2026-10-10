@@ -43,16 +43,18 @@ pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
                 )
             } else {
                 <ul class="offer-list" role="list">
-                    for offer in page.items {
+                    for item in page.items {
                         offer_card(
-                            title: offer.title.clone(),
-                            href: format!("/offers/{}", offer.slug),
-                            price_text: if offer.price.as_i32() == 0 {
+                            title: item.offer.title.clone(),
+                            href: format!("/offers/{}", item.offer.slug),
+                            price_text: if item.offer.price.as_i32() == 0 {
                                 "Free".to_string()
                             } else {
-                                format!("{} {}", offer.price.as_i32(), offer.currency.as_str())
+                                format!("{} {}", item.offer.price.as_i32(), item.offer.currency.as_str())
                             },
-                            description: offer.description.clone(),
+                            description: item.offer.description.clone(),
+                            maker_name: Some(item.maker_display_name.as_str().to_string()),
+                            maker_href: Some(format!("/profiles/{}", item.maker_handle.as_str())),
                         )
                     }
                 </ul>

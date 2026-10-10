@@ -33,12 +33,19 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
     let offer_slug = haven_domain::offer::OfferSlug::parse(slug_raw)
         .map_err(|_| topcoat::router::error::not_found())?;
 
-    let repo = crate::app::state::registry(cx).offers();
-    let offer = repo
+    let registry = crate::app::state::registry(cx);
+    let offer = registry
+        .offers()
         .find_by_slug(&offer_slug)
         .await
         .map_err(crate::app::state::map_repo_err)?
         .ok_or_else(topcoat::router::error::not_found)?;
+
+    let maker = registry
+        .users()
+        .find_by_id(offer.user_id)
+        .await
+        .map_err(crate::app::state::map_repo_err)?;
 
     // Shared caching policy with ETag
     let etag = format!(
@@ -88,6 +95,12 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
                         <h1 class="offer-detail-title">(offer.title)</h1>
                         <div class="offer-detail-price">(price_text)</div>
                     </div>
+                    if let Some(user) = maker {
+                        <div class="offer-detail-maker">
+                            <span class="text-muted">"Offered by "</span>
+                            <a href=(format!("/profiles/{}", user.handle.as_str())) class="maker-link">(user.display_name.as_str())</a>
+                        </div>
+                    }
                 </div>
                 <div class="offer-detail-body">
                     <p>(offer.description)</p>

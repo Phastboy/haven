@@ -5,6 +5,7 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 #[tokio::test]
+#[allow(clippy::too_many_lines, reason = "Comprehensive patch semantics test")]
 async fn test_update_patch_semantics() {
     let db_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgres://user:password@127.0.0.1:5433/haven_rust".to_string());
@@ -29,12 +30,17 @@ async fn test_update_patch_semantics() {
         .unwrap();
 
     let user_id = UserId::from_uuid(Uuid::new_v4());
-    sqlx::query("INSERT INTO \"user\" (id, account_id) VALUES ($1, $2)")
-        .bind(user_id.as_uuid())
-        .bind(account_id)
-        .execute(&pool)
-        .await
-        .unwrap();
+    let handle = format!("user-{}", &user_id.as_uuid().to_string()[..6]);
+    sqlx::query(
+        "INSERT INTO \"user\" (id, account_id, display_name, handle) VALUES ($1, $2, $3, $4)",
+    )
+    .bind(user_id.as_uuid())
+    .bind(account_id)
+    .bind("Test User")
+    .bind(&handle)
+    .execute(&pool)
+    .await
+    .unwrap();
 
     // 2. Create an offer
     let co = CreateOffer {
@@ -123,11 +129,18 @@ async fn test_update_patch_semantics() {
     assert!(!page2.items.is_empty());
 
     // Ensure no overlap between page 1 and page 2
-    let p1_ids: std::collections::HashSet<_> = page1.items.iter().map(|o| o.id).collect();
+    let p1_ids: std::collections::HashSet<_> = page1.items.iter().map(|o| o.offer.id).collect();
     for item in &page2.items {
         assert!(
-            !p1_ids.contains(&item.id),
+            !p1_ids.contains(&item.offer.id),
             "Keyset pagination must not duplicate items"
         );
+        assert_eq!(item.maker_display_name.as_str(), "Test User");
+        assert_eq!(item.maker_handle.as_str(), &handle);
     }
+
+    // 8. Test list_by_user pagination
+    let user_page = repo.list_by_user(user_id, None, 3).await.unwrap();
+    assert_eq!(user_page.items.len(), 3);
+    assert!(user_page.next_cursor.is_some());
 }

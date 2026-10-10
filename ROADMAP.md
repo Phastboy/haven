@@ -41,11 +41,11 @@ An offer should no longer exist only for the person who created it. Other people
 
 An offer is made by someone. Haven is not a marketplace of anonymous listings competing on price; it is a place where people are known by what they offer. A person should have an identity that others can see and return to.
 
-* [ ] A person can have a profile that represents them.
-* [ ] A person can edit their profile.
-* [ ] A person can see who made an offer.
-* [ ] A person can visit another person's public profile.
-* [ ] A person's profile shows the offers they have made.
+* [x] A person can have a profile that represents them.
+* [x] A person can edit their profile.
+* [x] A person can see who made an offer.
+* [x] A person can visit another person's public profile.
+* [x] A person's profile shows the offers they have made.
 
 **The question:**
 

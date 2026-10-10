@@ -15,7 +15,8 @@ mod tests;
 use crate::DbPool;
 use async_trait::async_trait;
 use haven_domain::offer::{
-    CreateOffer, Offer, OfferCursor, OfferId, OfferPage, OfferSlug, UpdateOffer, UserId,
+    CreateOffer, Offer, OfferCursor, OfferId, OfferPage, OfferSlug, PublicOfferPage, UpdateOffer,
+    UserId,
 };
 use haven_domain::ports::{IdempotencyKey, OfferRepository, RepoError};
 
@@ -52,8 +53,25 @@ impl OfferRepository for PostgresOfferRepository {
         &self,
         cursor: Option<&OfferCursor>,
         limit: usize,
-    ) -> Result<OfferPage, RepoError> {
+    ) -> Result<PublicOfferPage, RepoError> {
         feed::list_public(&self.pool, cursor, limit).await
+    }
+
+    async fn list_by_user(
+        &self,
+        user_id: UserId,
+        cursor: Option<&OfferCursor>,
+        limit: usize,
+    ) -> Result<OfferPage, RepoError> {
+        feed::list_by_user(
+            &self.pool,
+            feed::UserFeedQuery {
+                user_id,
+                cursor,
+                limit,
+            },
+        )
+        .await
     }
 
     async fn create(

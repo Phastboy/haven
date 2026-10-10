@@ -24,7 +24,27 @@ pub use validation::{
 };
 
 use crate::error::OfferValidationError;
-pub use crate::user::UserId;
+pub use crate::user::{DisplayName, ProfileHandle, UserId};
+
+/// Public offer presentation containing core offer details and maker identity.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PublicOffer {
+    /// Associated core offer.
+    pub offer: Offer,
+    /// Public display name of the maker.
+    pub maker_display_name: DisplayName,
+    /// Public unique handle of the maker.
+    pub maker_handle: ProfileHandle,
+}
+
+/// Paginated page of public offers with maker details.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PublicOfferPage {
+    /// List of public offers in this page.
+    pub items: Vec<PublicOffer>,
+    /// Opaque next cursor token for pagination, if more items exist.
+    pub next_cursor: Option<String>,
+}
 
 /// Newtype wrapping a UUID that identifies an Offer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]

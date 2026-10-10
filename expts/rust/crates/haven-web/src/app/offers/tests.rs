@@ -34,12 +34,74 @@ impl UserRepository for TestUserRepository {
     async fn find_by_account(&self, _account_id: AccountId) -> Result<Option<User>, RepoError> {
         unimplemented!()
     }
-    async fn create(&self, _account_id: AccountId) -> Result<User, RepoError> {
+    async fn find_by_id(&self, user_id: UserId) -> Result<Option<User>, RepoError> {
+        let lock = self.users_by_token.lock().unwrap();
+        for u in lock.values() {
+            if u.id == user_id {
+                return Ok(Some(u.clone()));
+            }
+        }
+        Ok(None)
+    }
+    async fn find_by_handle(&self, handle: &ProfileHandle) -> Result<Option<User>, RepoError> {
+        let lock = self.users_by_token.lock().unwrap();
+        for u in lock.values() {
+            if u.handle.as_str() == handle.as_str() {
+                return Ok(Some(u.clone()));
+            }
+        }
+        Ok(None)
+    }
+    async fn create(
+        &self,
+        _account_id: AccountId,
+        _profile: &UserProfileUpdate,
+    ) -> Result<User, RepoError> {
         unimplemented!()
+    }
+    async fn update_profile(
+        &self,
+        user_id: UserId,
+        profile: &UserProfileUpdate,
+    ) -> Result<User, RepoError> {
+        let mut lock = self.users_by_token.lock().unwrap();
+        for u in lock.values() {
+            if u.id != user_id && u.handle.as_str() == profile.handle.as_str() {
+                return Err(RepoError::Conflict {
+                    entity: "user",
+                    key: profile.handle.as_str().to_string(),
+                });
+            }
+        }
+        for u in lock.values_mut() {
+            if u.id == user_id {
+                u.display_name = profile.display_name.clone();
+                u.handle = profile.handle.clone();
+                u.bio = profile.bio.clone();
+                u.updated_at = Utc::now();
+                return Ok(u.clone());
+            }
+        }
+        Err(RepoError::NotFound {
+            entity: "user",
+            id: user_id.to_string(),
+        })
     }
     async fn find_by_session(&self, token_hash: &HashedToken) -> Result<Option<User>, RepoError> {
         let lock = self.users_by_token.lock().unwrap();
         Ok(lock.get(token_hash.as_str()).cloned())
+    }
+}
+
+fn mock_user(id: UserId, account_id: AccountId, handle_str: &str) -> User {
+    User {
+        id,
+        account_id,
+        display_name: DisplayName::parse(handle_str).unwrap(),
+        handle: ProfileHandle::parse(handle_str).unwrap(),
+        bio: None,
+        created_at: Utc::now(),
+        updated_at: Utc::now(),
     }
 }
 
@@ -357,18 +419,8 @@ async fn test_offers_new_redirects_to_manage_new() {
 async fn test_owner_routes_enforce_ownership_and_identical_404() {
     let (router, registry) = setup_test_app();
 
-    let user1 = User {
-        id: UserId::generate(),
-        account_id: AccountId::generate(),
-        created_at: Utc::now(),
-        updated_at: Utc::now(),
-    };
-    let user2 = User {
-        id: UserId::generate(),
-        account_id: AccountId::generate(),
-        created_at: Utc::now(),
-        updated_at: Utc::now(),
-    };
+    let user1 = mock_user(UserId::generate(), AccountId::generate(), "user-one");
+    let user2 = mock_user(UserId::generate(), AccountId::generate(), "user-two");
 
     let session1_token = create_auth_session(&registry.users_repo, user1.clone());
     let session2_token = create_auth_session(&registry.users_repo, user2.clone());
@@ -592,12 +644,7 @@ async fn test_auth_pages_render_with_components_and_classes() {
 async fn test_origin_policy_allows_trusted_origin_and_rejects_untrusted() {
     let (router, registry) = setup_test_app();
 
-    let user = User {
-        id: UserId::generate(),
-        account_id: AccountId::generate(),
-        created_at: Utc::now(),
-        updated_at: Utc::now(),
-    };
+    let user = mock_user(UserId::generate(), AccountId::generate(), "user-origin");
     let session_token = create_auth_session(&registry.users_repo, user);
 
     // 1. Untrusted origin on state-changing POST must receive 403 Forbidden
@@ -631,18 +678,8 @@ async fn test_origin_policy_allows_trusted_origin_and_rejects_untrusted() {
 async fn test_update_offer_ownership_checked_before_invalid_form() {
     let (router, registry) = setup_test_app();
 
-    let user1 = User {
-        id: UserId::generate(),
-        account_id: AccountId::generate(),
-        created_at: Utc::now(),
-        updated_at: Utc::now(),
-    };
-    let user2 = User {
-        id: UserId::generate(),
-        account_id: AccountId::generate(),
-        created_at: Utc::now(),
-        updated_at: Utc::now(),
-    };
+    let user1 = mock_user(UserId::generate(), AccountId::generate(), "user-one");
+    let user2 = mock_user(UserId::generate(), AccountId::generate(), "user-two");
 
     let _session1_token = create_auth_session(&registry.users_repo, user1.clone());
     let session2_token = create_auth_session(&registry.users_repo, user2);
@@ -672,4 +709,209 @@ async fn test_update_offer_ownership_checked_before_invalid_form() {
 
     let res_unauthorized = router.handle(req_unauthorized).await;
     assert_eq!(res_unauthorized.status(), http::StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn test_public_profile_route_renders_maker_and_offers_and_404_when_missing() {
+    let (router, registry) = setup_test_app();
+
+    // 1. Unknown handle returns 404
+    let req_missing = Request::builder()
+        .method("GET")
+        .uri("/profiles/unknown-handle")
+        .body(Body::empty())
+        .unwrap();
+    let res_missing = router.handle(req_missing).await;
+    assert_eq!(res_missing.status(), http::StatusCode::NOT_FOUND);
+
+    // 2. Known user with profile renders display name, handle, and empty state
+    let user = mock_user(UserId::generate(), AccountId::generate(), "alice-maker");
+    let _ = create_auth_session(&registry.users_repo, user.clone());
+
+    let req_user = Request::builder()
+        .method("GET")
+        .uri("/profiles/alice-maker")
+        .body(Body::empty())
+        .unwrap();
+    let res_user = router.handle(req_user).await;
+    assert_eq!(res_user.status(), http::StatusCode::OK);
+    let body = body_to_string(res_user.into_body()).await;
+    assert!(body.contains("alice-maker"));
+    assert!(body.contains("@alice-maker"));
+    assert!(body.contains("No offers yet"));
+
+    // 3. Known user with an offer renders the offer card
+    let create_offer = CreateOffer {
+        title: "Handmade Wooden Chair".to_string(),
+        description: "Solid oak handcrafted dining chair.".to_string(),
+        price: Price::new(15000).unwrap(),
+        currency: CurrencyCode::default_code(),
+    };
+    registry
+        .offers_repo
+        .create(user.id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
+        .await
+        .unwrap();
+
+    let req_with_offer = Request::builder()
+        .method("GET")
+        .uri("/profiles/alice-maker")
+        .body(Body::empty())
+        .unwrap();
+    let res_with_offer = router.handle(req_with_offer).await;
+    assert_eq!(res_with_offer.status(), http::StatusCode::OK);
+    let body_offer = body_to_string(res_with_offer.into_body()).await;
+    assert!(body_offer.contains("Handmade Wooden Chair"));
+    assert!(body_offer.contains("15000 NGN"));
+}
+
+#[tokio::test]
+async fn test_owner_profile_route_requires_auth_and_allows_editing() {
+    let (router, registry) = setup_test_app();
+
+    // 1. Unauthenticated GET redirects to /auth/sign-in
+    let req_unauth = Request::builder()
+        .method("GET")
+        .uri("/profile")
+        .body(Body::empty())
+        .unwrap();
+    let res_unauth = router.handle(req_unauth).await;
+    assert!(res_unauth.status().is_redirection());
+
+    // 2. Authenticated GET /profile renders dashboard view (not edit form)
+    let user = mock_user(UserId::generate(), AccountId::generate(), "alex-wood");
+    let session_token = create_auth_session(&registry.users_repo, user.clone());
+
+    let req_auth = Request::builder()
+        .method("GET")
+        .uri("/profile")
+        .header("cookie", format!("sid={session_token}"))
+        .body(Body::empty())
+        .unwrap();
+    let res_auth = router.handle(req_auth).await;
+    assert_eq!(res_auth.status(), http::StatusCode::OK);
+    let body_get = body_to_string(res_auth.into_body()).await;
+    // Renders identity and dashboard sections
+    assert!(body_get.contains("alex-wood"));
+    assert!(body_get.contains("@alex-wood"));
+    assert!(body_get.contains("/profile/edit"));
+    assert!(body_get.contains("Your Offers"));
+    assert!(body_get.contains("Sign Out"));
+    // Header only has clean nav (not cluttered with Sign Out form or Your Offers)
+    assert!(body_get.contains("<a href=\"/profile\">Profile</a>"));
+
+    // 3. Authenticated GET /profile/edit renders edit form
+    let req_edit = Request::builder()
+        .method("GET")
+        .uri("/profile/edit")
+        .header("cookie", format!("sid={session_token}"))
+        .body(Body::empty())
+        .unwrap();
+    let res_edit = router.handle(req_edit).await;
+    assert_eq!(res_edit.status(), http::StatusCode::OK);
+    let body_edit = body_to_string(res_edit.into_body()).await;
+    assert!(body_edit.contains("Edit Profile"));
+    assert!(body_edit.contains("value=\"alex-wood\""));
+
+    // 4. Authenticated POST /profile/edit updates profile and redirects to /profile?updated=1
+    let post_body = "display_name=Alexander+Wood&handle=alex-crafts&bio=Woodworking+artisan.";
+    let req_post = Request::builder()
+        .method("POST")
+        .uri("/profile/edit")
+        .header("cookie", format!("sid={session_token}"))
+        .header("origin", "http://localhost:3000")
+        .header("sec-fetch-site", "same-origin")
+        .header("content-type", "application/x-www-form-urlencoded")
+        .body(Body::from(post_body))
+        .unwrap();
+    let res_post = router.handle(req_post).await;
+    assert_eq!(res_post.status(), http::StatusCode::SEE_OTHER);
+    let location = res_post
+        .headers()
+        .get("location")
+        .unwrap()
+        .to_str()
+        .unwrap();
+    assert_eq!(location, "/profile?updated=1");
+
+    // 5. Verify user was updated
+    let updated_user = registry
+        .users_repo
+        .find_by_handle(&ProfileHandle::parse("alex-crafts").unwrap())
+        .await
+        .unwrap();
+    assert!(updated_user.is_some());
+    let u = updated_user.unwrap();
+    assert_eq!(u.display_name.as_str(), "Alexander Wood");
+    assert_eq!(u.bio.as_ref().unwrap().as_str(), "Woodworking artisan.");
+}
+
+#[tokio::test]
+async fn test_owner_profile_rejects_duplicate_handle() {
+    let (router, registry) = setup_test_app();
+
+    let user1 = mock_user(UserId::generate(), AccountId::generate(), "user-one");
+    let user2 = mock_user(UserId::generate(), AccountId::generate(), "user-two");
+    let _ = create_auth_session(&registry.users_repo, user1);
+    let session2 = create_auth_session(&registry.users_repo, user2);
+
+    // User 2 tries to take "user-one"
+    let post_body = "display_name=Second+User&handle=user-one&bio=";
+    let req_post = Request::builder()
+        .method("POST")
+        .uri("/profile/edit")
+        .header("cookie", format!("sid={session2}"))
+        .header("origin", "http://localhost:3000")
+        .header("sec-fetch-site", "same-origin")
+        .header("content-type", "application/x-www-form-urlencoded")
+        .body(Body::from(post_body))
+        .unwrap();
+    let res_post = router.handle(req_post).await;
+    assert_eq!(res_post.status(), http::StatusCode::UNPROCESSABLE_ENTITY);
+    let body = body_to_string(res_post.into_body()).await;
+    assert!(body.contains("already taken"));
+}
+
+#[tokio::test]
+async fn test_maker_attribution_rendered_on_offer_page_and_feed() {
+    let (router, registry) = setup_test_app();
+
+    let user = mock_user(UserId::generate(), AccountId::generate(), "artisan-bob");
+    let _ = create_auth_session(&registry.users_repo, user.clone());
+
+    let create_offer = CreateOffer {
+        title: "Handmade Ceramic Vase".to_string(),
+        description: "Stoneware vase fired in wood kiln.".to_string(),
+        price: Price::new(4500).unwrap(),
+        currency: CurrencyCode::default_code(),
+    };
+    let offer = registry
+        .offers_repo
+        .create(user.id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
+        .await
+        .unwrap();
+
+    // Check /offers/{slug}
+    let req_slug = Request::builder()
+        .method("GET")
+        .uri(format!("/offers/{}", offer.slug))
+        .body(Body::empty())
+        .unwrap();
+    let res_slug = router.handle(req_slug).await;
+    assert_eq!(res_slug.status(), http::StatusCode::OK);
+    let body_slug = body_to_string(res_slug.into_body()).await;
+    assert!(body_slug.contains("Offered by"));
+    assert!(body_slug.contains("/profiles/artisan-bob"));
+
+    // Check feed /offers
+    let req_feed = Request::builder()
+        .method("GET")
+        .uri("/offers")
+        .body(Body::empty())
+        .unwrap();
+    let res_feed = router.handle(req_feed).await;
+    assert_eq!(res_feed.status(), http::StatusCode::OK);
+    let body_feed = body_to_string(res_feed.into_body()).await;
+    assert!(body_feed.contains("Handmade Ceramic Vase"));
+    assert!(body_feed.contains("/profiles/test-maker"));
 }
