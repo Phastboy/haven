@@ -453,49 +453,52 @@ Both `crates/haven-web/src/app/auth/verify.rs` and `crates/haven-web/src/app/aut
 
 ---
 
-## 5. Recommended Refactoring Roadmap (When Approved)
+## 5. Refactoring Execution Status (Completed)
 
-When ready to implement refactorings, execute in distinct, isolated PRs following Rule 7 & Procedure ("pure move only, no behaviour changes, green build at each step"):
+> [!NOTE]
+> The audit baseline above records the pre-refactor state. All planned refactoring phases below were executed and completed in branch `refactor/rust-module-structure` (PR #26), verified with green test gates at every intermediate commit.
 
-1. **Phase 1: Test Extractions (Zero risk, removes ~1,100 lines of test bloat from production files)**
-   - Move tests from `token_store.rs` -> `token_store/tests.rs` (saves 335 lines).
-   - Move tests from `offer.rs` -> `offer/tests.rs` (saves 344 lines).
-   - Move tests from `google.rs` -> `app/auth/google/tests.rs` (saves 406 lines).
-   - Move tests from `db/offers.rs` -> `offers/tests.rs` (saves 135 lines).
+1. **Phase 1: Test Extractions [COMPLETED in commit `04aaa89`]**
+   - Moved tests from `token_store.rs` -> `token_store/tests.rs` (saves 335 lines).
+   - Moved tests from `offer.rs` -> `offer/tests.rs` (saves 344 lines).
+   - Moved tests from `google.rs` -> `app/auth/google/tests.rs` (saves 406 lines).
+   - Moved tests from `db/offers.rs` -> `offers/tests.rs` (saves 135 lines).
+   - Moved tests from `fields.rs` -> `fields/tests.rs` (saves 88 lines).
 
-2. **Phase 2: Eliminate Generic Dumping Ground (`cx_helpers.rs`)**
-   - Create `app/state.rs` for `AppState` and context accessors.
-   - Create `app/auth/guard.rs` for `current_user`, `require_auth`, `require_owner_auth`.
-   - Create `rate_limit.rs` for `RateLimiter` and token bucket state.
-   - Remove `cx_helpers.rs`.
+2. **Phase 2: Eliminate Generic Dumping Ground (`cx_helpers.rs`) [COMPLETED in commit `cbebd93`]**
+   - Created `app/state.rs` for `AppState` and context accessors.
+   - Created `app/auth/guard.rs` for `current_user`, `require_auth`, `require_owner_auth`.
+   - Created `rate_limit.rs` for `RateLimiter` and token bucket state.
+   - Removed `cx_helpers.rs`.
 
-3. **Phase 3: Module Assembly Compliance (Rule 1)**
-   - Move `index` from `app/offers.rs` to `app/offers/feed.rs`.
-   - Move `manage_list` from `app/offers/manage.rs` to `app/offers/manage/list.rs`.
-   - Re-export from parent files.
+3. **Phase 3: Module Assembly Compliance (Rule 1) [COMPLETED in commit `fede5e1`]**
+   - Moved `index` from `app/offers.rs` to `app/offers/feed.rs`.
+   - Moved `manage_list` from `app/offers/manage.rs` to `app/offers/manage/list.rs`.
+   - Made parent files pure module assembly.
 
-4. **Phase 4: Split Large Multi-Concern Modules**
-   - Split `app/auth/google.rs` into `config.rs`, `client.rs`, `routes.rs`.
+4. **Phase 4: Split Large Multi-Concern Modules [COMPLETED in commits `f20f017`, `55462a6`, `569bfe1`, `2a72772`]**
    - Split `haven-domain/src/offer.rs` into `price.rs`, `currency.rs`, `slug.rs`, `cursor.rs`, `validation.rs`.
-   - Relocate `UserId` into `haven-domain/src/user.rs`.
+   - Relocated `UserId` into `haven-domain/src/user.rs` with backwards-compatible re-export in `offer.rs`.
    - Split `haven-db/src/offers.rs` into `rows.rs`, `queries.rs`, `feed.rs`.
+   - Split `app/auth/google.rs` into `config.rs`, `client.rs`, `routes.rs`.
+   - Decomposed 153-line `main` in `load-test-support/src/main.rs` into `validate_local_database_url`, `seed_user`, `write_sessions`.
 
 ---
 
-## 6. Audit Verification
+## 6. Audit & Refactoring Verification
 
-The audit and proposed structures were verified against the workspace compiler, linter, test runner, and documentation generator:
+The completed refactorings were verified against the workspace compiler, linter, test runner, and documentation generator:
 
 ```bash
-$ cargo fmt --check
+$ cargo fmt --all --check
 # Result: clean
 
-$ cargo clippy --workspace --all-targets -- -D warnings
+$ cargo clippy --workspace --all-targets --all-features -- -D warnings
 # Result: clean (0 warnings)
 
 $ cargo test --workspace
-# Result: 55 passed; 0 failed; 0 ignored; 0 measured
+# Result: 81 passed; 0 failed; 0 ignored; 0 measured
 
-$ RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps
-# Result: clean documentation generation
+$ cargo doc --workspace --no-deps
+# Result: clean documentation generation (0 warnings)
 ```
