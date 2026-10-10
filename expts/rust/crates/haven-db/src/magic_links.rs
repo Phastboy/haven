@@ -16,6 +16,10 @@ impl PostgresMagicLinkRepository {
         Self { pool }
     }
 
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "Internal database row mapping from individual table columns"
+    )]
     fn map_row(
         id: Uuid,
         email: &str,
