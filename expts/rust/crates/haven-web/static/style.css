@@ -10,10 +10,10 @@
   --color-accent: #111827;
   --color-accent-text: #ffffff;
   --color-accent-hover: #1f2937;
-  --color-danger: #dc2626;
-  --color-danger-surface: #fef2f2;
-  --color-danger-border: #fca5a5;
-  --color-focus: #2563eb;
+  --color-danger: #111827;
+  --color-danger-surface: #f3f4f6;
+  --color-danger-border: #d1d5db;
+  --color-focus: #111827;
 
   /* Typography scale - Major Third (1.25) */
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -194,6 +194,30 @@ a {
   background-color: var(--color-danger-surface);
 }
 
+.btn-ghost {
+  background-color: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid transparent;
+  min-height: 36px;
+  min-width: unset;
+  padding: var(--space-1) var(--space-2);
+}
+
+.btn-ghost:hover {
+  color: var(--color-text);
+  background-color: var(--color-surface-hover);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.nav-sign-out-form {
+  display: inline;
+  margin: 0;
+  padding: 0;
+}
+
 /* Forms & Fields */
 .form-stack {
   display: flex;
@@ -253,8 +277,9 @@ a {
   font-weight: 500;
 }
 
-/* Form Error Summary Block */
-.form-error-summary {
+/* Form Error Summary & Banner Blocks */
+.form-error-summary,
+.form-error-banner {
   background-color: var(--color-danger-surface);
   border: 1px solid var(--color-danger-border);
   color: var(--color-danger);

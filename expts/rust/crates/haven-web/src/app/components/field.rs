@@ -19,6 +19,17 @@ pub async fn text_field(
     #[default] maxlength: Option<usize>,
     #[default] min: Option<i32>,
 ) -> TopcoatResult<impl View> {
+    let error_id = format!("{name}-error");
+    let help_id = format!("{name}-help");
+    let aria_invalid = error.is_some().then_some("true");
+    let described_by = if error.is_some() {
+        Some(error_id.clone())
+    } else if help.is_some() {
+        Some(help_id.clone())
+    } else {
+        None
+    };
+
     Ok(view! {
         <div class="field">
             <label class="field-label" for=(name.clone())>
@@ -36,11 +47,13 @@ pub async fn text_field(
                 minlength=(minlength.map(|m| m.to_string()))
                 maxlength=(maxlength.map(|m| m.to_string()))
                 min=(min.map(|m| m.to_string()))
+                aria-invalid=(aria_invalid)
+                aria-describedby=(described_by)
             />
             if let Some(err) = error {
-                <span class="field-error">(err)</span>
+                <span id=(error_id) class="field-error">(err)</span>
             } else if let Some(h) = help {
-                <span class="field-help">(h)</span>
+                <span id=(help_id) class="field-help">(h)</span>
             }
         </div>
     })
@@ -59,6 +72,17 @@ pub async fn textarea_field(
     #[default] minlength: Option<usize>,
     #[default] maxlength: Option<usize>,
 ) -> TopcoatResult<impl View> {
+    let error_id = format!("{name}-error");
+    let help_id = format!("{name}-help");
+    let aria_invalid = error.is_some().then_some("true");
+    let described_by = if error.is_some() {
+        Some(error_id.clone())
+    } else if help.is_some() {
+        Some(help_id.clone())
+    } else {
+        None
+    };
+
     Ok(view! {
         <div class="field">
             <label class="field-label" for=(name.clone())>
@@ -72,13 +96,15 @@ pub async fn textarea_field(
                 required=(required.then_some("required"))
                 minlength=(minlength.map(|m| m.to_string()))
                 maxlength=(maxlength.map(|m| m.to_string()))
+                aria-invalid=(aria_invalid)
+                aria-describedby=(described_by)
             >
                 (value.unwrap_or_default())
             </textarea>
             if let Some(err) = error {
-                <span class="field-error">(err)</span>
+                <span id=(error_id) class="field-error">(err)</span>
             } else if let Some(h) = help {
-                <span class="field-help">(h)</span>
+                <span id=(help_id) class="field-help">(h)</span>
             }
         </div>
     })
@@ -112,6 +138,9 @@ mod tests {
         assert!(html.contains("for=\"title\""));
         assert!(html.contains("Offer Title"));
         assert!(html.contains("value=\"Vintage Lamp\""));
+        assert!(html.contains("aria-invalid=\"true\""));
+        assert!(html.contains("aria-describedby=\"title-error\""));
+        assert!(html.contains("id=\"title-error\""));
         assert!(html.contains("class=\"field-error\""));
         assert!(html.contains("Title too short"));
     }
@@ -134,6 +163,8 @@ mod tests {
         let html = field.single().await.unwrap().render(__cx);
         assert!(html.contains("for=\"description\""));
         assert!(html.contains("A nice lamp"));
+        assert!(html.contains("aria-describedby=\"description-help\""));
+        assert!(html.contains("id=\"description-help\""));
         assert!(html.contains("class=\"field-help\""));
         assert!(html.contains("Describe condition and pickup location"));
     }

@@ -10,6 +10,7 @@ pub enum ButtonVariant {
     Primary,
     Secondary,
     Danger,
+    Ghost,
 }
 
 impl ButtonVariant {
@@ -18,6 +19,7 @@ impl ButtonVariant {
             Self::Primary => "btn btn-primary",
             Self::Secondary => "btn btn-secondary",
             Self::Danger => "btn btn-danger",
+            Self::Ghost => "btn btn-ghost",
         }
     }
 }
