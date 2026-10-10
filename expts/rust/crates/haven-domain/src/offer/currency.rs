@@ -12,7 +12,7 @@ pub const SUPPORTED_CURRENCIES: &[&str] = &["NGN", "USD", "EUR", "GBP", "CAD", "
 
 /// A 3-character ISO 4217 currency code whitelisted for Haven.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "UPPERCASE")]
+#[serde(try_from = "String", into = "String")]
 pub enum CurrencyCode {
     Ngn,
     Usd,
@@ -22,6 +22,28 @@ pub enum CurrencyCode {
     Aud,
     Kes,
     Ghs,
+}
+
+impl TryFrom<String> for CurrencyCode {
+    type Error = OfferValidationError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Self::parse(&value)
+    }
+}
+
+impl<'a> TryFrom<&'a str> for CurrencyCode {
+    type Error = OfferValidationError;
+
+    fn try_from(value: &'a str) -> Result<Self, Self::Error> {
+        Self::parse(value)
+    }
+}
+
+impl From<CurrencyCode> for String {
+    fn from(value: CurrencyCode) -> Self {
+        value.as_str().to_owned()
+    }
 }
 
 impl CurrencyCode {
