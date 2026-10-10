@@ -43,16 +43,18 @@ pub struct EmailDeliveryInputs<'a> {
     pub app_env: Option<&'a str>,
     pub environment: Option<&'a str>,
     pub env: Option<&'a str>,
+    pub topcoat_dev_url: Option<&'a str>,
 }
 
 /// Pure decision function computing whether email delivery should be active.
 ///
-/// In production environments (`APP_ENV`, `ENVIRONMENT`, or `ENV` set to `"production"` or `"prod"`),
-/// email delivery defaults to disabled unless explicitly activated via `EMAIL_DELIVERY_ENABLED=true` (or `1`).
+/// If `EMAIL_DELIVERY_ENABLED` is explicitly configured, its boolean value takes precedence.
+/// Otherwise, email delivery defaults to enabled ONLY when an environment marker explicitly
+/// identifies development (`APP_ENV`, `ENVIRONMENT`, or `ENV` set to `"development"` or `"dev"`,
+/// or when `TOPCOAT_DEV_URL` is set and non-empty).
 ///
-/// In development and non-production environments, email delivery defaults to enabled
-/// to allow local file-based mail delivery (`target/mail`). It can still be explicitly
-/// disabled by setting `EMAIL_DELIVERY_ENABLED=false` (or `0`).
+/// In production, unrecognized, or unset environments, email delivery defaults to disabled
+/// to ensure production safety and prevent unconfigured email delivery attempts.
 #[must_use]
 pub fn compute_email_delivery_enabled(inputs: EmailDeliveryInputs<'_>) -> bool {
     if let Some(explicit) = inputs.email_delivery_enabled {
@@ -60,35 +62,37 @@ pub fn compute_email_delivery_enabled(inputs: EmailDeliveryInputs<'_>) -> bool {
         return trimmed.eq_ignore_ascii_case("true") || trimmed == "1";
     }
 
-    let is_prod = |val: Option<&str>| {
+    let is_dev = |val: Option<&str>| {
         val.is_some_and(|v| {
             let t = v.trim();
-            t.eq_ignore_ascii_case("production") || t.eq_ignore_ascii_case("prod")
+            t.eq_ignore_ascii_case("development") || t.eq_ignore_ascii_case("dev")
         })
     };
 
-    let in_production =
-        is_prod(inputs.app_env) || is_prod(inputs.environment) || is_prod(inputs.env);
+    let has_topcoat_dev = inputs.topcoat_dev_url.is_some_and(|v| !v.trim().is_empty());
 
-    !in_production
+    is_dev(inputs.app_env) || is_dev(inputs.environment) || is_dev(inputs.env) || has_topcoat_dev
 }
 
 /// Returns whether email delivery infrastructure is active based on environment variables.
 ///
-/// In production, defaults to `false` unless explicitly activated via `EMAIL_DELIVERY_ENABLED=true`.
-/// In development and non-production modes, defaults to `true` to enable file-based mail delivery.
+/// In production, unset, or unrecognized environments, defaults to `false` unless explicitly activated
+/// via `EMAIL_DELIVERY_ENABLED=true`. In explicit development mode, defaults to `true` to enable
+/// local file-based mail delivery.
 #[must_use]
 pub fn is_email_delivery_enabled() -> bool {
     let email_delivery = std::env::var("EMAIL_DELIVERY_ENABLED").ok();
     let app_env = std::env::var("APP_ENV").ok();
     let environment = std::env::var("ENVIRONMENT").ok();
     let env = std::env::var("ENV").ok();
+    let topcoat_dev_url = std::env::var("TOPCOAT_DEV_URL").ok();
 
     compute_email_delivery_enabled(EmailDeliveryInputs {
         email_delivery_enabled: email_delivery.as_deref(),
         app_env: app_env.as_deref(),
         environment: environment.as_deref(),
         env: env.as_deref(),
+        topcoat_dev_url: topcoat_dev_url.as_deref(),
     })
 }
 
@@ -105,18 +109,17 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_compute_email_delivery_enabled_defaults_to_true_in_dev() {
-        assert!(compute_email_delivery_enabled(
+    fn test_compute_email_delivery_enabled_defaults_to_false_when_unset_or_production() {
+        // Defaults to false (production safe) when unset or empty
+        assert!(!compute_email_delivery_enabled(
             EmailDeliveryInputs::default()
         ));
-        assert!(compute_email_delivery_enabled(EmailDeliveryInputs {
-            app_env: Some("development"),
+        assert!(!compute_email_delivery_enabled(EmailDeliveryInputs {
+            app_env: Some(""),
             ..Default::default()
         }));
-    }
 
-    #[test]
-    fn test_compute_email_delivery_enabled_defaults_to_false_in_production() {
+        // Production or unrecognized environments default to false
         assert!(!compute_email_delivery_enabled(EmailDeliveryInputs {
             app_env: Some("production"),
             ..Default::default()
@@ -127,6 +130,30 @@ mod tests {
         }));
         assert!(!compute_email_delivery_enabled(EmailDeliveryInputs {
             env: Some("production"),
+            ..Default::default()
+        }));
+        assert!(!compute_email_delivery_enabled(EmailDeliveryInputs {
+            app_env: Some("staging"),
+            ..Default::default()
+        }));
+    }
+
+    #[test]
+    fn test_compute_email_delivery_enabled_defaults_to_true_for_explicit_dev() {
+        assert!(compute_email_delivery_enabled(EmailDeliveryInputs {
+            app_env: Some("development"),
+            ..Default::default()
+        }));
+        assert!(compute_email_delivery_enabled(EmailDeliveryInputs {
+            environment: Some("dev"),
+            ..Default::default()
+        }));
+        assert!(compute_email_delivery_enabled(EmailDeliveryInputs {
+            env: Some("DEV"),
+            ..Default::default()
+        }));
+        assert!(compute_email_delivery_enabled(EmailDeliveryInputs {
+            topcoat_dev_url: Some("http://localhost:8080"),
             ..Default::default()
         }));
     }
