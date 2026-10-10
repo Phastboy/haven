@@ -26,8 +26,8 @@ A person should be able to put something they are offering on Haven and manage i
 
 An offer should no longer exist only for the person who created it. Other people should be able to see what has been offered.
 
-* [ ] A person can see available offers.
-* [ ] A person can see another person's offer.
+* [x] A person can see available offers.
+* [x] A person can see another person's offer.
 
 **The question:**
 
@@ -37,14 +37,32 @@ An offer should no longer exist only for the person who created it. Other people
 
 ---
 
-## 0.3.x — Can someone act on it?
+## 0.3.x — Can I know who is behind an offer?
+
+An offer is made by someone. Haven is not a marketplace of anonymous listings competing on price; it is a place where people are known by what they offer. A person should have an identity that others can see and return to.
+
+* [ ] A person can have a profile that represents them.
+* [ ] A person can edit their profile.
+* [ ] A person can see who made an offer.
+* [ ] A person can visit another person's public profile.
+* [ ] A person's profile shows the offers they have made.
+
+**The question:**
+
+> Can I know who is behind an offer?
+
+**Done when:** A person looking at an offer can find out who made it, and from there see everything else that person offers.
+
+---
+
+## 0.4.x — Can someone act on it?
 
 Seeing an offer should be capable of leading to a meaningful response.
 
 The first form of action we are exploring is **commitment**: expressing that you are willing to take on the offer. What exactly that commitment means, and what should happen after it, will be discovered and defined during this version.
 
 * [ ] A person can express their willingness to take on an offer.
-* [ ] The person who made the offer can know about that expression of interest.
+* [ ] The person who made the offer can know about that expression of interest, and who it came from.
 * [ ] People can communicate when communication is necessary to understand or progress that commitment.
 
 **The question:**
@@ -55,7 +73,7 @@ The first form of action we are exploring is **commitment**: expressing that you
 
 ---
 
-## 0.4.x — Can someone find it?
+## 0.5.x — Can someone find it?
 
 As the number of offers grows, people should be able to find an offer they are looking for without already knowing where it is.
 
@@ -70,7 +88,7 @@ As the number of offers grows, people should be able to find an offer they are l
 
 ---
 
-## 0.5.x — Can I come back to what I care about?
+## 0.6.x — Can I come back to what I care about?
 
 People should be able to keep track of things and people they care about instead of having to find them again.
 
@@ -87,7 +105,7 @@ People should be able to keep track of things and people they care about instead
 
 ---
 
-## 0.6.x — Can I narrow it down?
+## 0.7.x — Can I narrow it down?
 
 Finding something should become more precise as the number of offers grows.
 
@@ -104,7 +122,7 @@ Finding something should become more precise as the number of offers grows.
 
 ---
 
-## 0.7.x — TBD
+## 0.8.x — TBD
 
 **The question:**
 
@@ -113,16 +131,6 @@ Finding something should become more precise as the number of offers grows.
 This version is intentionally undefined.
 
 It should be determined by what we learn from the previous versions rather than by filling the roadmap with features in advance.
-
----
-
-## 0.8.x — TBD
-
-**The question:**
-
-> What is the next thing Haven needs to prove?
-
-To be defined from what Haven has taught us by this point.
 
 ---
 
@@ -140,7 +148,7 @@ To be defined from what Haven has taught us by this point.
 
 An offer should be able to move beyond interest and communication into a successful conclusion between the people involved.
 
-Exactly what "closing" an offer requires will be determined by what we learn from 0.3.x and the versions that follow.
+Exactly what "closing" an offer requires will be determined by what we learn from 0.4.x and the versions that follow.
 
 * [ ] Two people can reach an agreement around an offer.
 * [ ] An offer can move from being available to being successfully closed.
@@ -214,51 +222,57 @@ Completion
                          HAVEN
                            │
                            ▼
-              ┌────────────────────────┐
-  0.1.x       │ Can I offer something? │
-              └────────────┬───────────┘
-                           │
-                           ▼
-              ┌────────────────────────┐
-  0.2.x       │ Can someone see it?    │
-              └────────────┬───────────┘
-                           │
-                           ▼
-              ┌────────────────────────┐
-  0.3.x       │ Can someone act on it? │
-              └────────────┬───────────┘
-                           │
-                           ▼
-              ┌────────────────────────┐
-  0.4.x       │ Can someone find it?   │
-              └────────────┬───────────┘
-                           │
-                           ▼
-              ┌────────────────────────┐
-  0.5.x       │ Can I come back to it? │
-              └────────────┬───────────┘
-                           │
-                           ▼
-              ┌────────────────────────┐
-  0.6.x       │ Can I narrow it down?  │
-              └────────────┬───────────┘
-                           │
-                           ▼
-              ┌────────────────────────┐
-  0.7–0.9     │          TBD            │
-              └────────────┬───────────┘
-                           │
-                           ▼
-              ┌─────────────────────────┐
-  1.0.x       │ Can two people close it?│
-              └────────────┬────────────┘
-                           │
-                           ▼
-              ┌─────────────────────────┐
-  1.x         │          TBD             │
-              └────────────┬────────────┘
-                           │
-                           ▼
+              ┌────────────────────────────┐
+  0.1.x       │ Can I offer something?     │
+              └─────────────┬──────────────┘
+                            │
+                            ▼
+              ┌────────────────────────────┐
+  0.2.x       │ Can someone see it?        │
+              └─────────────┬──────────────┘
+                            │
+                            ▼
+              ┌────────────────────────────┐
+  0.3.x       │ Can I know who is behind   │
+              │ an offer?                  │
+              └─────────────┬──────────────┘
+                            │
+                            ▼
+              ┌────────────────────────────┐
+  0.4.x       │ Can someone act on it?     │
+              └─────────────┬──────────────┘
+                            │
+                            ▼
+              ┌────────────────────────────┐
+  0.5.x       │ Can someone find it?       │
+              └─────────────┬──────────────┘
+                            │
+                            ▼
+              ┌────────────────────────────┐
+  0.6.x       │ Can I come back to it?     │
+              └─────────────┬──────────────┘
+                            │
+                            ▼
+              ┌────────────────────────────┐
+  0.7.x       │ Can I narrow it down?      │
+              └─────────────┬──────────────┘
+                            │
+                            ▼
+              ┌────────────────────────────┐
+  0.8–0.9     │            TBD             │
+              └─────────────┬──────────────┘
+                            │
+                            ▼
+              ┌────────────────────────────┐
+  1.0.x       │ Can two people close it?   │
+              └─────────────┬──────────────┘
+                            │
+                            ▼
+              ┌────────────────────────────┐
+  1.x         │            TBD             │
+              └─────────────┬──────────────┘
+                            │
+                            ▼
               ┌────────────────────────────┐
   2.0.x       │ Can Haven handle a complete│
               │ trade from beginning to end│
