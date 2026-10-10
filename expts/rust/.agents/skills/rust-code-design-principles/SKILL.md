@@ -26,6 +26,13 @@ If the repo has `ENGINEERING.md`, `SECURITY.md` or `PERFORMANCE_CONTRACT.md`, th
 - Domain names over mechanism names: `OfferSlug`, `OwnerId`, `can_edit`, not `Data`, `handle`, `process`.
 - No `utils.rs`, `helpers.rs`, `common.rs` dumping grounds; name modules for the concern they own.
 - Short is fine. The name plus signature should tell a reader what it does and what it can fail with.
+- **Small signatures: at most 3 arguments per function.** Four or more is a smell to fix, not to tolerate. Rust has no named or default arguments, so the fix is a type, not an options bag:
+  1. First ask whether the function does two jobs. If so, split it.
+  2. Otherwise ask whether the arguments already form a domain concept that needs a name (`NewOffer { title, price, description }`, `OfferEdit`) and pass that, with validated fields.
+  3. For many optional fields, use a builder.
+  4. Use newtypes (`OwnerId`, `OfferId`, `Price`) so same-typed arguments cannot be swapped, even at 2 or 3 parameters.
+  - Do not group unrelated values into a generic `Params` struct. That hides the smell instead of fixing it.
+  - Enforce it: set `too-many-arguments-threshold = 3` in `clippy.toml` (CI already runs clippy with `-D warnings`). Check whether the count includes `self` on your clippy version. A rare exception needs `#[allow(clippy::too_many_arguments)]` with a comment stating the reason.
 
 ### 3. Keep external systems behind a boundary
 Database, mail transport, payment provider, HTTP clients, the clock, the filesystem.
