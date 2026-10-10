@@ -1,9 +1,6 @@
 ---
-name: rust-code-design-principles
-description: >-
-  Use when writing, reviewing, or refactoring Rust code: apply ten design
-  principles with compiler- and lint-enforced mechanisms so code is readable,
-  changeable, and hard to break.
+name: "rust-code-design-principles"
+description: "Use when writing, reviewing, or refactoring Rust code: apply ten design principles with compiler- and lint-enforced mechanisms so code is readable, changeable, and hard to break."
 ---
 
 # Rust code design principles
@@ -69,7 +66,7 @@ Database, mail transport, payment provider, HTTP clients, the clock, the filesys
 - Improving one component should not mean editing the assembly (router, page layout, wiring) for each one. Assembly only composes; it holds no component logic.
 - Adding a component is additive: a new module plus one registration line.
 - Crate and module boundaries follow concerns (domain rules, persistence, web layer, test support), and dependencies point one way: web depends on domain and DB, domain depends on neither.
-- Use `pub(crate)` and private-by-default so internals cannot be reached from outside their module.
+- Default to private. Widen only as far as needed: `pub(super)` when only the parent module needs it, `pub(crate)` only for items intentionally shared across the crate, and `pub` only for the crate's deliberate public API. Internals should not be reachable from outside their module unless that reach is intended.
 
 ### 9. Hard to break (outcome)
 Achieved by principles 3 to 6 plus enforcement in CI:

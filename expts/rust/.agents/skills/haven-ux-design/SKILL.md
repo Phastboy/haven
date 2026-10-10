@@ -1,9 +1,6 @@
 ---
-name: haven-ux-design
-description: >-
-  Use when designing or reviewing how Haven screens behave and feel: flow,
-  feedback, consistency, icons, spacing, alignment, typography, and restraint
-  with effects. Pairs with haven-ui-design.
+name: "haven-ux-design"
+description: "Use when designing or reviewing how Haven screens behave and feel: flow, feedback, consistency, icons, spacing, alignment, typography, and restraint with effects. Pairs with haven-ui-design."
 ---
 
 # Haven UX design
@@ -39,7 +36,7 @@ Every element must earn its place. Test: **if this were removed, would anyone lo
 ## 5. Icons: a rule, not a mood
 Icons help when they let someone grasp meaning at a glance and cost when they decorate or make people guess. Rule:
 1. **Icon plus label by default** for navigation and actions.
-2. **Icon-only only for a small closed set** of universally understood actions (for example close), always with an accessible name and a visible focus state. The set is listed in `docs/DESIGN.md`; adding to it needs a reason.
+2. **Icon-only only for this closed set** of universally understood actions, always with an accessible name and a visible focus state: **close/dismiss**, **expand/collapse**, **open/close menu**. Every other action is icon plus label. To add an action to the set, record it in `docs/DESIGN.md` with the reason; until it is recorded there, it is not in the set.
 3. **No icon where text is already faster to scan:** form labels, body copy, headings, table text.
 4. **No icon that repeats the label next to it** without adding meaning (redundant, see 3).
 5. **One concept, one icon, everywhere.** One style, one size scale, one stroke weight. Never two icons for the same concept or one icon for two concepts.
