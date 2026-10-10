@@ -57,9 +57,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let email_delivery = app::state::is_email_delivery_enabled();
     if email_delivery {
-        writeln!(std::io::stdout(), "Email delivery: enabled (file transport: target/mail)").unwrap_or(());
+        writeln!(
+            std::io::stdout(),
+            "Email delivery: enabled (file transport: target/mail)"
+        )
+        .unwrap_or(());
     } else {
-        writeln!(std::io::stdout(), "Email delivery: disabled (unconfigured in production)").unwrap_or(());
+        writeln!(
+            std::io::stdout(),
+            "Email delivery: disabled (unconfigured in production)"
+        )
+        .unwrap_or(());
     }
 
     let is_prod = |var: &str| {
@@ -73,9 +81,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .is_ok_and(|v| v.eq_ignore_ascii_case("true") || v == "1");
 
     if in_production || strict_origin {
-        writeln!(std::io::stdout(), "Origin policy: strict (enforcing trusted origins)").unwrap_or(());
+        writeln!(
+            std::io::stdout(),
+            "Origin policy: strict (enforcing trusted origins)"
+        )
+        .unwrap_or(());
     } else {
-        writeln!(std::io::stdout(), "Origin policy: dev mode (relaxed for local network testing)").unwrap_or(());
+        writeln!(
+            std::io::stdout(),
+            "Origin policy: dev mode (relaxed for local network testing)"
+        )
+        .unwrap_or(());
     }
 
     let registry = Arc::new(PostgresRegistry::new(&pool));

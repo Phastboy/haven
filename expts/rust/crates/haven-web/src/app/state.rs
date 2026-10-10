@@ -106,7 +106,9 @@ mod tests {
 
     #[test]
     fn test_compute_email_delivery_enabled_defaults_to_true_in_dev() {
-        assert!(compute_email_delivery_enabled(EmailDeliveryInputs::default()));
+        assert!(compute_email_delivery_enabled(
+            EmailDeliveryInputs::default()
+        ));
         assert!(compute_email_delivery_enabled(EmailDeliveryInputs {
             app_env: Some("development"),
             ..Default::default()
