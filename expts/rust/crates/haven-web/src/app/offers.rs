@@ -2,8 +2,6 @@
 
 pub mod feed;
 pub mod fields;
-pub mod manage;
-pub mod new;
 pub mod slug;
 
 #[cfg(test)]

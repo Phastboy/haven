@@ -10,7 +10,7 @@ Status: draft. Only entries under **Decided** were confirmed by the owner. Every
 |---|---|---|---|---|---|---|
 | 0.1.x | Can I offer something? | create account, sign in, create / see own / edit / delete an offer | none yet | none | completed | met historical baseline (see PERFORMANCE_CONTRACT.md) |
 | 0.2.x | Can someone see it? | offer becomes public on create (generates slug); manage own via `/offers/manage/{id}` | see available offers (public feed), see another person's offer (`/offers/{slug}`) | an offer becomes visible to others | completed | met ≥ 1,200 iters/s host direct |
-| 0.3.x | Can I know who is behind an offer? | has profile, edits profile, profile displays made offers | sees who made an offer, visits public profile, sees maker's offers | knowing who is behind an offer | completed | met target; keyset pagination |
+| 0.3.x | Can I know who is behind an offer? | has profile, edits profile; profile shell wraps identity overview, offers management, and account | sees who made an offer, visits public profile, sees maker's offers | knowing who is behind an offer | completed | met target; keyset pagination |
 | 0.4.x | Can someone act on it? | know about expressed interest | express willingness to take on an offer | commitment | current | |
 | 0.5.x | Can someone find it? | | find an offer by name, narrow by price | | not reached | |
 | 0.6.x | Can I come back to what I care about? | | save an offer, follow a person, return to both | | not reached | |
@@ -73,6 +73,11 @@ sequenceDiagram
 - 2026-10-10: Maker attribution with a link to their public profile appears on both the single offer view (`/offers/{slug}`) and each card in the main public feed (`/offers`).
 - 2026-10-10: Separation of profile view and edit: `/profile` is the owner dashboard (identity overview, direct link to public profile, "Your Offers" management, and sign-out form); `/profile/edit` is the dedicated edit form.
 - 2026-10-10: Header decluttering: Top-level navigation is kept minimal ("Offers" and "Sign In" or "Profile"). "Sign Out" and "Your Offers" live within the `/profile` dashboard.
+- 2026-10-12: Mental model refactoring (v0.3.1): Users follow web app affordances, not typed URLs. Removed dead routes (`/offers/new`, bare `/profiles`, `/auth/google/callback`). Canonical Google OAuth callback endpoint is `/auth/google/redirect` (matching production Google Cloud configuration).
+- 2026-10-12: Authenticated visitors always land on `/offers` (from `/`, `/auth/sign-in`, Google OAuth callback, magic link verification, and site header logo).
+- 2026-10-12: Profile shell architecture: `/profile` is the top-level shell with tab navigation (`Overview`, `Offers`, `Account`). All owner offer management lives under `/profile/offers` (`/profile/offers`, `/profile/offers/new`, `/profile/offers/{id}`, `/profile/offers/{id}/edit`, `/profile/offers/{id}/delete`).
+- 2026-10-12: Zero-JS Popover delete confirmation: `/profile/offers/{id}` uses native HTML Popover API with `<dialog popover="auto">` and `<form method="post">` for destructive confirmation without any client-side JavaScript.
+- 2026-10-12: Consistent post-action destinations: Offer create/edit/delete return to `/profile/offers`; profile edit returns to `/profile`.
 
 ### Open questions
 - **Blocking:**

@@ -35,7 +35,7 @@ pub struct RawGoogleOAuthConfig {
     pub redirect_uri: Option<String>,
     /// Public base URL used to construct redirect URI if not explicitly provided.
     pub public_base_url: Option<String>,
-    /// Optional custom callback endpoint path (defaults to `/auth/google/callback`).
+    /// Optional custom callback endpoint path (defaults to `/auth/google/redirect`).
     pub callback_endpoint: Option<String>,
 }
 
@@ -89,7 +89,7 @@ impl GoogleOAuthConfig {
                             .callback_endpoint
                             .map(|s| s.trim().to_string())
                             .filter(|s| !s.is_empty())
-                            .unwrap_or_else(|| "/auth/google/callback".to_string());
+                            .unwrap_or_else(|| "/auth/google/redirect".to_string());
                         let endpoint = if endpoint.starts_with('/') {
                             endpoint
                         } else {

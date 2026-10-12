@@ -218,21 +218,13 @@ async fn handle_google_callback(cx: &topcoat::context::Cx) -> topcoat::Result<()
         .await
         .map_err(map_err)?;
 
-    Err(see_other("/offers/new").into())
-}
-
-/// GET /auth/google/callback
-///
-/// Handles the Google OAuth 2.0 authorization callback.
-#[topcoat::router::page("/auth/google/callback")]
-pub async fn google_callback(cx: &topcoat::context::Cx) -> topcoat::Result<()> {
-    handle_google_callback(cx).await
+    Err(see_other("/offers").into())
 }
 
 /// GET /auth/google/redirect
 ///
-/// Alias route for /auth/google/callback to accommodate credentials configured
-/// with /auth/google/redirect as their authorized redirect URI.
+/// Canonical route handling the Google OAuth 2.0 authorization callback matching
+/// the redirect URI registered in production.
 #[topcoat::router::page("/auth/google/redirect")]
 pub async fn google_redirect(cx: &topcoat::context::Cx) -> topcoat::Result<()> {
     handle_google_callback(cx).await

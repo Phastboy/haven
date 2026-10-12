@@ -48,10 +48,10 @@ Status key: **decided** (owner confirmed), **default** (assistant's choice becau
 - **Why:** offset pagination skips or duplicates rows as new offers are created concurrently. Keyset paging guarantees stable, constant-time indexed seeks.
 - **Replaces:** offset-based (`page=N`) pagination.
 
-### 9. Route separation: public slug vs owner UUID (decided, 2026-10-08)
-- **What:** public offer views live at `/offers/{slug}`; management lives at `/offers/manage/{id}`. Visiting by slug never questions ownership (no edit or delete controls displayed).
-- **Why:** slugs are SEO-friendly and public. `/offers/manage/{id}` enforces authenticated ownership for editing and deletion. Probing other IDs yields identical 404 responses (IDOR prevention).
-- **Replaces:** single overloaded route attempting to serve both public viewing and owner editing.
+### 9. Route separation: public slug vs owner UUID (decided, 2026-10-08; refined 2026-10-12)
+- **What:** public offer views live at `/offers/{slug}`; owner management lives at `/profile/offers/{id}`. Visiting by slug never questions ownership (no edit or delete controls displayed).
+- **Why:** slugs are SEO-friendly and public. `/profile/offers/{id}` enforces authenticated ownership for editing and deletion. Probing other IDs yields identical 404 responses (IDOR prevention).
+- **Replaces:** single overloaded route attempting to serve both public viewing and owner editing, and previously separate `/offers/manage/{id}` hierarchy.
 
 ### 10. Automated query-count test (decided, 2026-10-08)
 - **What:** automated test verifying that rendering a list of offers runs in $O(1)$ database queries.
@@ -68,15 +68,30 @@ Status key: **decided** (owner confirmed), **default** (assistant's choice becau
 - **Why:** avoids cluttering the top bar with competing actions and cognitive noise. Respects UX hierarchy where session termination and owner management live under the account context.
 - **Replaces:** header carrying "Offers", "Your Offers", "Profile", and an inline "Sign Out" button side by side.
 
-### 13. Separation of profile dashboard and profile edit (decided, 2026-10-10)
-- **What:** `/profile` serves as a clean viewing dashboard (identity summary, public link, owner offers management, and sign-out form). Editing profile information is separated into a dedicated route at `/profile/edit` with explicit form submission and return redirects.
-- **Why:** simultaneously viewing and editing on the same screen creates administrative visual clutter and ambiguous form state. Dedicated routes provide calm hierarchy and clear intent.
-- **Replaces:** combined view-and-edit form occupying the profile root.
+### 13. Profile as shell with modular dashboard sections (decided, 2026-10-10; refined 2026-10-12)
+- **What:** `/profile` serves as a persistent shell with tabbed navigation: Overview (`/profile`), Offers (`/profile/offers`), and Account (`/profile/account`). Profile editing is isolated at `/profile/edit`. Offer creation and management live under `/profile/offers/*`.
+- **Why:** avoids monolithic profile screens by treating sections as modular children within an identity shell. Improving the offers section touches only its own component, preserving shell and account stability.
+- **Replaces:** pouring inventory, forms, identity, and sign-out into a single unstructured dashboard.
 
 ### 14. Maker identity attribution slot (decided, 2026-10-10)
 - **What:** offer cards in the public feed and the public offer detail page display a clean maker attribution slot ("by <maker_name>") linking directly to `/profiles/{handle}`.
 - **Why:** Haven is not an anonymous price-competing listing site; it is a place where people are known by what they offer. Responders can evaluate maker identity and view everything else they offer.
 - **Replaces:** offers without visible author attribution.
+
+### 15. Zero-JavaScript Popover confirmation dialog (decided, 2026-10-12)
+- **What:** offer deletion confirmation on `/profile/offers/{id}` uses the native HTML Popover API with `<dialog id="delete-offer-dialog" popover="auto" class="confirm-dialog">`, triggered by `<button popovertarget="delete-offer-dialog">`, cancelled by `<button popovertarget="delete-offer-dialog" popovertargetaction="hide">`, and submitted via `<form method="post" action="/profile/offers/{id}/delete">`.
+- **Why:** eliminates a separate delete confirmation GET route while strictly upholding Haven's zero-JavaScript principle. The browser's native Popover API manages light-dismiss (clicking outside or pressing Escape) and keyboard focus without client-side scripts.
+- **Replaces:** dedicated `/offers/manage/{id}/delete` confirmation GET screen.
+
+### 16. Canonical OAuth callback and dead-route elimination (decided, 2026-10-12)
+- **What:** `/auth/google/redirect` is the sole canonical Google OAuth callback URI matching production configuration. Pruned duplicate `/auth/google/callback`, bare collection redirect `/profiles`, and unused `/offers/new`.
+- **Why:** visitors follow links and affordances rendered by the application rather than typing URLs. Removing duplicate routes eliminates maintenance surface and ambiguity.
+- **Replaces:** duplicate route aliases and convenience redirects.
+
+### 17. Consistent post-action destinations (decided, 2026-10-12)
+- **What:** authenticated visitors navigating to `/`, `/auth/sign-in`, or completing OAuth/magic-link authentication always land on `/offers`. Post-action form redirects return directly to the originating section: offer create/edit/delete return to `/profile/offers`; profile edit returns to `/profile`.
+- **Why:** predictable destinations reinforce the user's mental model and eliminate jarring transitions across disparate views.
+- **Replaces:** arbitrary redirects sending creators to public detail views or landing pages.
 
 ## References: borrowed and rejected
 
@@ -131,18 +146,18 @@ For each screen, add: purpose (stage and lane), content used (from the schema), 
   - *Forbidden:* N/A (public route; never checks ownership).
   - *Failure midway:* If an offer is deleted while being viewed, subsequent interactions or reloads cleanly render 404.
 
-### 3. Owner Management (`/offers/manage`, `/offers/manage/{id}`)
-- **Stage & Lane:** Stage 0.1.x / 0.2.x, Offerer lane (managing own inventory).
-- **Purpose:** Offerer manages their existing offers (list, create, edit, delete).
+### 3. Owner Offers Section & Command Center (`/profile/offers`, `/profile/offers/{id}`)
+- **Stage & Lane:** Stage 0.1.x / 0.3.x, Offerer lane (managing own inventory).
+- **Purpose:** Offerer manages their existing offers (list, create, edit, delete) within the `/profile` shell.
 - **Content used:** Owner's offers list and forms (`title`, `price`, `currency`, `description`, `id`).
-- **Hierarchy:** On list: Primary action is "Create an Offer" (`/offers/manage/new`). Per item: "Edit" is secondary, "Delete" is calm secondary button. On forms: Primary action is submission button.
+- **Hierarchy:** On offers list: Primary action is "Create an Offer" (`/profile/offers/new`). Per item: "Manage" button links to `/profile/offers/{id}`. On command center (`/profile/offers/{id}`): "Edit Offer" and "View Public" are secondary actions, "Delete Offer" opens the Popover confirmation dialog. On forms: Primary action is submission button.
 - **State matrix:**
-  - *Empty:* "You haven't created any offers yet." with prompt and action to create one.
-  - *Typical:* List of owner's own offers with edit and delete links; edit form pre-filled with existing data.
+  - *Empty:* "No offers yet. Create your first offer to make it available to others." with prompt and action to create one.
+  - *Typical:* Keyset-paginated list of owner's own offers; command center displays summary with Edit, View Public, and Delete buttons.
   - *Long text:* Descriptions clamped on list; full textarea on edit.
   - *Error:* Validation errors re-render form with inputs preserved, error summary at top, and inline messages next to invalid fields.
   - *Forbidden or not found:* Unauthenticated visits redirect to `/auth/sign-in`. Requests for offers owned by others return 404 (IDOR prevention).
-  - *Failure midway / Destructive:* Deletion requires explicit confirmation naming the offer to be removed before executing POST.
+  - *Destructive / Popover:* Deletion triggers native `<dialog popover="auto">` with confirmation prompt, Cancel button, and POST form. Light-dismiss via Escape or backdrop click without JavaScript.
 
 ### 4. Authentication Screens (`/auth/sign-in`, `/auth/sent`, `/auth/verify`)
 - **Stage & Lane:** Stage 0.1.x, Offerer & Responder lanes (session acquisition).
@@ -170,13 +185,14 @@ For each screen, add: purpose (stage and lane), content used (from the schema), 
   - *Not found (404):* Returns 404 with clean not-found message when handle does not exist.
   - *Forbidden:* N/A (public route; no auth required).
 
-### 6. Owner Profile Dashboard (`/profile`) & Profile Edit (`/profile/edit`)
+### 6. Owner Profile Shell (`/profile`), Profile Edit (`/profile/edit`), & Account (`/profile/account`)
 - **Stage & Lane:** Stage 0.3.x, Offerer lane (identity & account management).
-- **Purpose:** Authenticated user views their identity overview, jumps to their public profile, manages their created offers, navigates to profile editing, or signs out.
-- **Content used:** `User.display_name`, `User.handle`, `User.bio`, `User.email`, and user's own `Offer` list.
-- **Hierarchy:** On dashboard: Primary action is "Edit Profile" (`/profile/edit`). Secondary action is "Create an Offer" under Your Offers. At bottom: quiet "Sign Out" form under Account section. On edit form: Primary action is "Save Profile" submit button; secondary is "Cancel" link back to `/profile`.
+- **Purpose:** Authenticated user views their identity overview within the profile shell, jumps to their public profile, edits profile details, or terminates their session from the Account section.
+- **Content used:** `User.display_name`, `User.handle`, `User.bio`, `User.email`.
+- **Hierarchy:** Profile shell provides persistent tabs: Overview, Offers, Account. On Overview (`/profile`): Primary action is "Edit Profile" (`/profile/edit`); secondary is "View Public Profile" (`/profiles/{handle}`). On Edit form (`/profile/edit`): Primary action is "Save Profile" submit button; secondary is "Cancel" link back to `/profile`. On Account (`/profile/account`): Primary action is "Sign Out" form button (POST `/auth/sign-out`).
 - **State matrix:**
-  - *Typical:* Profile identity card with "Edit Profile" CTA and public profile link, followed by "Your Offers" section with edit/delete actions, and sign-out form at bottom.
+  - *Typical Overview:* Identity card with display name, handle, bio, "Edit Profile" CTA, and public profile link.
+  - *Typical Account:* Identity summary with email and session termination card ("Sign Out").
   - *Edit form typical:* Form pre-filled with current display name, handle, and bio.
   - *Edit validation error:* Errors displayed inline above each field (e.g. handle taken, invalid chars, display name too short) and in error banner.
   - *Updated banner:* Success notice rendered when arriving back via `/profile?updated=1`.
