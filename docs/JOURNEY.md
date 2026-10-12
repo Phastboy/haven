@@ -31,7 +31,7 @@ sequenceDiagram
   R->>H: see available offers (public feed)
   R->>H: see another person's offer (/offers/{slug}) with maker link
   Note over R,H: 0.3.x handoff: knowing who is behind an offer
-  R->>H: visit maker's public profile (/profiles/{id_or_handle})
+  R->>H: visit maker's public profile (/profiles/{handle})
   H-->>R: show maker profile & all their offers
 ```
 
@@ -58,13 +58,13 @@ sequenceDiagram
 **A person can visit another person's public profile.**
 - Anyone can request the public profile via a clean URL (`/profiles/{handle}`).
 - Zero authentication required: public, cacheable, and SEO-friendly.
-- Displays the person's display name, bio/about, and account creation/member-since metadata.
+- Displays the person's display name, @handle, optional bio/about, and their available offers.
 
 **A person's profile shows the offers they have made.**
 - On the public profile page, a dedicated section lists all available offers created by that person.
 - Uses keyset cursor pagination on `(created_at, id)` scoped to `user_id` to prevent pagination drift.
 - Each offer card displays title, price/free, currency, and links to `/offers/{slug}`.
-- If the person has no available offers, an honest empty state is shown ("No offers available right now").
+- If the person has no available offers, an honest empty state is shown ("No offers yet" / "This person has not posted any offers yet. Check back later.").
 
 ### Decided
 - 2026-10-10: Profile representation includes `display_name` (2–50 chars), optional `bio` (up to 500 chars), and a unique URL-safe `handle` (3–30 lowercase alphanumeric + hyphens).

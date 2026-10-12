@@ -66,7 +66,7 @@ async fn seed_user(registry: &dyn Registry, i: usize) -> SessionOutput {
         .mark_verified(account.id)
         .await
         .expect("mark verified");
-    let suffix = format!("{:04x}", i % 65536);
+    let suffix = format!("{:08x}", i);
     let initial_profile =
         haven_domain::user::UserProfileUpdate::from_email_initial(email.as_str(), &suffix);
     let user = registry

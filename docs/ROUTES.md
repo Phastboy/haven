@@ -94,7 +94,7 @@ This document catalogs every route currently available in Haven, its HTTP method
   - **Maker Identity:** Maker's display name (`h1`), handle badge (`@handle`), and bio paragraph (omitted neatly if empty).
   - **Maker's Catalog:** Dedicated section ("Offers by {display_name}") listing all active offers created by this maker.
   - **Catalog Offer Cards:** Title links to `/offers/{slug}`, price, description, keyset pagination.
-  - **Empty State:** "No offers available right now" if maker has no published offers.
+  - **Empty State:** "No offers yet" ("This person has not posted any offers yet. Check back later.") if maker has no published offers.
 - **Failure States:**
   - Non-existent handle returns HTTP 404 Not Found.
 
@@ -173,7 +173,7 @@ This document catalogs every route currently available in Haven, its HTTP method
   - **Identity Preview:** Current display name, `@handle`, bio, and email address.
   - **Public Profile Affordance:** "View Public Profile" link pointing directly to `/profiles/{handle}`.
   - **Edit Profile Affordance:** "Edit Profile" button linking to `/profile/edit`.
-  - **Update Notice:** Green success banner ("Profile updated successfully") when redirected from edit with `?updated=1`.
+  - **Update Notice:** Confirmation banner ("Your profile has been updated.") when redirected from edit with `?updated=1`.
   - **Your Offers Section:**
     - "Create an Offer" primary button (`/offers/manage/new`).
     - List of owner's offers with "Edit" (`/offers/manage/{id}/edit`) and "Delete" (`/offers/manage/{id}/delete`) actions.

@@ -1,9 +1,9 @@
 -- 011_user_profile_fields.sql: Add profile fields to user entity for v0.3.x
 
--- 1. Add profile columns with temporary safe defaults for backward compatibility during rollout
+-- 1. Add profile columns with safe non-volatile defaults / nullable for lock-free migration
 ALTER TABLE "user"
     ADD COLUMN display_name VARCHAR(50) NOT NULL DEFAULT 'Member',
-    ADD COLUMN handle VARCHAR(30) NOT NULL DEFAULT ('user-' || substr(gen_random_uuid()::text, 1, 8)),
+    ADD COLUMN handle VARCHAR(30),
     ADD COLUMN bio TEXT;
 
 -- 2. Backfill existing user records using their account email local-part
@@ -11,7 +11,8 @@ ALTER TABLE "user"
 UPDATE "user" u
 SET
     display_name = COALESCE(
-        NULLIF(trim(left(split_part(a.email, '@', 1), 50)), ''),
+        CASE WHEN char_length(trim(left(split_part(a.email, '@', 1), 50))) >= 2
+             THEN trim(left(split_part(a.email, '@', 1), 50)) END,
         'Member'
     ),
     handle = COALESCE(
@@ -30,8 +31,13 @@ SET
 FROM account a
 WHERE u.account_id = a.id;
 
--- 3. Remove temporary default on handle and display_name so future inserts explicitly supply them
-ALTER TABLE "user" ALTER COLUMN handle DROP DEFAULT;
+-- Ensure no orphaned rows have NULL handle before enforcing NOT NULL
+UPDATE "user"
+SET handle = 'user-' || substr(id::text, 1, 6)
+WHERE handle IS NULL;
+
+-- 3. Enforce NOT NULL on handle and remove temporary default on display_name
+ALTER TABLE "user" ALTER COLUMN handle SET NOT NULL;
 ALTER TABLE "user" ALTER COLUMN display_name DROP DEFAULT;
 
 -- 4. Enforce domain constraints on user profile fields
