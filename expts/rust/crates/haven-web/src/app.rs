@@ -21,7 +21,7 @@ pub fn router() -> topcoat::router::RouterBuilder {
 
 #[topcoat::router::route(GET "/robots.txt")]
 pub async fn robots_txt() -> TopcoatResult<&'static str> {
-    Ok("User-agent: *\nDisallow: /offers/manage/\n")
+    Ok("User-agent: *\nDisallow: /profile/\n")
 }
 
 #[topcoat::router::layer]
@@ -60,7 +60,11 @@ pub async fn root_layout(
             <body>
                 <header class="site-header">
                     <nav class="nav-container">
-                        <a href="/" class="site-logo">"Haven"</a>
+                        if user.is_some() {
+                            <a href="/offers" class="site-logo">"Haven"</a>
+                        } else {
+                            <a href="/" class="site-logo">"Haven"</a>
+                        }
                         <ul class="nav-links">
                             <li><a href="/offers">"Offers"</a></li>
                             if user.is_some() {

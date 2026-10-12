@@ -65,7 +65,7 @@ fn parse_defaults_redirect_uri_from_public_base_url() {
 
     assert_eq!(
         config.redirect_uri,
-        "https://haven.app/auth/google/callback"
+        "https://haven.app/auth/google/redirect"
     );
 }
 
@@ -85,7 +85,7 @@ fn authorization_url_generates_valid_google_consent_url() {
     let config = GoogleOAuthConfig {
         client_id: "test-client-id.apps.googleusercontent.com".into(),
         client_secret: "test-secret".into(),
-        redirect_uri: "http://localhost:3000/auth/google/callback".into(),
+        redirect_uri: "http://localhost:3000/auth/google/redirect".into(),
     };
 
     let raw_url = config.authorization_url("secure-csrf-token").unwrap();
@@ -102,7 +102,7 @@ fn authorization_url_generates_valid_google_consent_url() {
     );
     assert_eq!(
         pairs.get("redirect_uri").map(String::as_str),
-        Some("http://localhost:3000/auth/google/callback")
+        Some("http://localhost:3000/auth/google/redirect")
     );
     assert_eq!(pairs.get("response_type").map(String::as_str), Some("code"));
     assert_eq!(
@@ -247,7 +247,7 @@ async fn test_google_redirect_when_oauth_enabled() {
     let config = GoogleOAuthConfig {
         client_id: "test-client-id.apps.googleusercontent.com".into(),
         client_secret: "test-secret".into(),
-        redirect_uri: "http://localhost:3000/auth/google/callback".into(),
+        redirect_uri: "http://localhost:3000/auth/google/redirect".into(),
     };
     let router = test_router(Some(config));
     let request = http::Request::builder()
@@ -268,7 +268,7 @@ async fn test_google_redirect_when_oauth_enabled() {
     assert!(location.starts_with("https://accounts.google.com/o/oauth2/v2/auth?"));
     assert!(location.contains("client_id=test-client-id.apps.googleusercontent.com"));
     assert!(
-        location.contains("redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fgoogle%2Fcallback")
+        location.contains("redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fgoogle%2Fredirect")
     );
     assert!(location.contains("state="));
 
@@ -290,7 +290,7 @@ async fn test_callback_redirects_when_user_cancels() {
     let router = test_router(None);
     let request = http::Request::builder()
         .method("GET")
-        .uri("/auth/google/callback?error=access_denied")
+        .uri("/auth/google/redirect?error=access_denied")
         .body(topcoat::router::Body::empty())
         .unwrap();
 
@@ -312,7 +312,7 @@ async fn test_callback_redirects_when_params_missing() {
     let router = test_router(None);
     let request = http::Request::builder()
         .method("GET")
-        .uri("/auth/google/callback")
+        .uri("/auth/google/redirect")
         .body(topcoat::router::Body::empty())
         .unwrap();
 
@@ -334,7 +334,7 @@ async fn test_callback_rejects_missing_state_cookie() {
     let router = test_router(None);
     let request = http::Request::builder()
         .method("GET")
-        .uri("/auth/google/callback?code=sample-code&state=sample-state")
+        .uri("/auth/google/redirect?code=sample-code&state=sample-state")
         .body(topcoat::router::Body::empty())
         .unwrap();
 
@@ -356,7 +356,7 @@ async fn test_callback_rejects_state_mismatch() {
     let router = test_router(None);
     let request = http::Request::builder()
         .method("GET")
-        .uri("/auth/google/callback?code=sample-code&state=incoming-state")
+        .uri("/auth/google/redirect?code=sample-code&state=incoming-state")
         .header("cookie", "g_oauth_state=different-cookie-state")
         .body(topcoat::router::Body::empty())
         .unwrap();
@@ -371,28 +371,6 @@ async fn test_callback_rejects_state_mismatch() {
             .to_str()
             .unwrap(),
         "/auth/sign-in?error=state_mismatch"
-    );
-}
-
-#[tokio::test]
-async fn test_redirect_route_handles_request() {
-    let router = test_router(None);
-    let request = http::Request::builder()
-        .method("GET")
-        .uri("/auth/google/redirect")
-        .body(topcoat::router::Body::empty())
-        .unwrap();
-
-    let response = router.handle(request).await;
-    assert_eq!(response.status(), http::StatusCode::SEE_OTHER);
-    assert_eq!(
-        response
-            .headers()
-            .get("location")
-            .unwrap()
-            .to_str()
-            .unwrap(),
-        "/auth/sign-in?error=invalid_request"
     );
 }
 

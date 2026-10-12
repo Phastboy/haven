@@ -110,5 +110,5 @@ pub async fn verify_submit(
         }
     }
 
-    Err(see_other("/offers/new").into())
+    Err(see_other("/offers").into())
 }

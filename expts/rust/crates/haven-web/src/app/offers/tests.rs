@@ -186,13 +186,14 @@ async fn test_unauthenticated_requests_refused_for_every_manage_route() {
 
     let dummy_id = Uuid::new_v4();
     let manage_routes = [
-        ("GET", "/offers/manage".to_string()),
-        ("GET", "/offers/manage/new".to_string()),
-        ("POST", "/offers/manage/new".to_string()),
-        ("GET", format!("/offers/manage/{dummy_id}")),
-        ("GET", format!("/offers/manage/{dummy_id}/edit")),
-        ("POST", format!("/offers/manage/{dummy_id}/edit")),
-        ("POST", format!("/offers/manage/{dummy_id}/delete")),
+        ("GET", "/profile/offers".to_string()),
+        ("GET", "/profile/offers/new".to_string()),
+        ("POST", "/profile/offers/new".to_string()),
+        ("GET", format!("/profile/offers/{dummy_id}")),
+        ("GET", format!("/profile/offers/{dummy_id}/edit")),
+        ("POST", format!("/profile/offers/{dummy_id}/edit")),
+        ("POST", format!("/profile/offers/{dummy_id}/delete")),
+        ("GET", "/profile/account".to_string()),
     ];
 
     for (method, uri) in &manage_routes {
@@ -377,42 +378,27 @@ async fn test_robots_txt_disallows_manage() {
 
     let body = body_to_string(res.into_body()).await;
     assert!(body.contains("User-agent: *"));
-    assert!(body.contains("Disallow: /offers/manage/"));
+    assert!(body.contains("Disallow: /profile/"));
 }
 
 #[tokio::test]
-async fn test_offers_new_redirects_to_manage_new() {
+async fn test_pruned_endpoints_return_not_found() {
     let (router, _) = setup_test_app();
 
-    let req = Request::builder()
-        .method("GET")
-        .uri("/offers/new")
-        .body(Body::empty())
-        .unwrap();
+    for uri in ["/offers/new", "/profiles", "/offers/manage"] {
+        let req = Request::builder()
+            .method("GET")
+            .uri(uri)
+            .body(Body::empty())
+            .unwrap();
 
-    let res = router.handle(req).await;
-    assert_eq!(res.status(), http::StatusCode::SEE_OTHER);
-    let loc = res
-        .headers()
-        .get("location")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("");
-    assert_eq!(loc, "/offers/manage/new");
-
-    let post_req = Request::builder()
-        .method("POST")
-        .uri("/offers/new")
-        .body(Body::empty())
-        .unwrap();
-
-    let post_res = router.handle(post_req).await;
-    assert_eq!(post_res.status(), http::StatusCode::PERMANENT_REDIRECT);
-    let post_loc = post_res
-        .headers()
-        .get("location")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("");
-    assert_eq!(post_loc, "/offers/manage/new");
+        let res = router.handle(req).await;
+        assert_eq!(
+            res.status(),
+            http::StatusCode::NOT_FOUND,
+            "Endpoint {uri} was not pruned to 404"
+        );
+    }
 }
 
 #[tokio::test]
@@ -441,7 +427,7 @@ async fn test_owner_routes_enforce_ownership_and_identical_404() {
     // 1. User 1 accesses their own offer via ID route
     let req_owner = Request::builder()
         .method("GET")
-        .uri(format!("/offers/manage/{}", offer.id))
+        .uri(format!("/profile/offers/{}", offer.id))
         .header("cookie", format!("sid={session1_token}"))
         .body(Body::empty())
         .unwrap();
@@ -465,28 +451,16 @@ async fn test_owner_routes_enforce_ownership_and_identical_404() {
 
     let body = body_to_string(res_owner.into_body()).await;
     assert!(body.contains("User 1 Painting"));
-    assert!(body.contains(&format!("href=\"/offers/manage/{}/edit\"", offer.id)));
-    assert!(body.contains(&format!("href=\"/offers/manage/{}/delete\"", offer.id)));
+    assert!(body.contains(&format!("href=\"/profile/offers/{}/edit\"", offer.id)));
+    assert!(body.contains("popovertarget=\"delete-offer-dialog\""));
+    assert!(body.contains("<dialog id=\"delete-offer-dialog\" popover=\"auto\""));
+    assert!(body.contains(&format!("action=\"/profile/offers/{}/delete\"", offer.id)));
     assert!(body.contains(&format!("href=\"/offers/{}\"", offer.slug)));
-
-    // 1b. User 1 accesses the delete confirmation page
-    let req_confirm = Request::builder()
-        .method("GET")
-        .uri(format!("/offers/manage/{}/delete", offer.id))
-        .header("cookie", format!("sid={session1_token}"))
-        .body(Body::empty())
-        .unwrap();
-    let res_confirm = router.handle(req_confirm).await;
-    assert_eq!(res_confirm.status(), http::StatusCode::OK);
-    let confirm_body = body_to_string(res_confirm.into_body()).await;
-    assert!(confirm_body.contains("Delete Offer"));
-    assert!(confirm_body.contains("Confirm Delete"));
-    assert!(confirm_body.contains(&format!("action=\"/offers/manage/{}/delete\"", offer.id)));
 
     // 2. User 2 accesses User 1's offer via ID route (must return 404, identical to nonexistent)
     let req_not_owner = Request::builder()
         .method("GET")
-        .uri(format!("/offers/manage/{}", offer.id))
+        .uri(format!("/profile/offers/{}", offer.id))
         .header("cookie", format!("sid={session2_token}"))
         .body(Body::empty())
         .unwrap();
@@ -494,21 +468,11 @@ async fn test_owner_routes_enforce_ownership_and_identical_404() {
     let res_not_owner = router.handle(req_not_owner).await;
     assert_eq!(res_not_owner.status(), http::StatusCode::NOT_FOUND);
 
-    // 2b. User 2 accesses User 1's delete confirmation page (must return 404)
-    let req_not_owner_confirm = Request::builder()
-        .method("GET")
-        .uri(format!("/offers/manage/{}/delete", offer.id))
-        .header("cookie", format!("sid={session2_token}"))
-        .body(Body::empty())
-        .unwrap();
-    let res_not_owner_confirm = router.handle(req_not_owner_confirm).await;
-    assert_eq!(res_not_owner_confirm.status(), http::StatusCode::NOT_FOUND);
-
     // 3. User 2 accesses nonexistent UUID (must return 404)
     let non_existent_id = Uuid::new_v4();
     let req_nonexistent = Request::builder()
         .method("GET")
-        .uri(format!("/offers/manage/{non_existent_id}"))
+        .uri(format!("/profile/offers/{non_existent_id}"))
         .header("cookie", format!("sid={session2_token}"))
         .body(Body::empty())
         .unwrap();
@@ -519,7 +483,7 @@ async fn test_owner_routes_enforce_ownership_and_identical_404() {
     // User 1's offers list only shows their offers
     let req_list = Request::builder()
         .method("GET")
-        .uri("/offers/manage")
+        .uri("/profile/offers")
         .header("cookie", format!("sid={session1_token}"))
         .body(Body::empty())
         .unwrap();
@@ -528,6 +492,37 @@ async fn test_owner_routes_enforce_ownership_and_identical_404() {
     assert_eq!(res_list.status(), http::StatusCode::OK);
     let list_body = body_to_string(res_list.into_body()).await;
     assert!(list_body.contains("User 1 Painting"));
+
+    // User 1 deletes their offer via POST
+    let req_delete = Request::builder()
+        .method("POST")
+        .uri(format!("/profile/offers/{}/delete", offer.id))
+        .header("cookie", format!("sid={session1_token}"))
+        .header("origin", "http://localhost:3000")
+        .header("sec-fetch-site", "same-origin")
+        .body(Body::empty())
+        .unwrap();
+    let res_delete = router.handle(req_delete).await;
+    assert_eq!(res_delete.status(), http::StatusCode::SEE_OTHER);
+    assert_eq!(
+        res_delete
+            .headers()
+            .get("location")
+            .unwrap()
+            .to_str()
+            .unwrap(),
+        "/profile/offers"
+    );
+
+    // After deletion, offer is gone (returns 404)
+    let req_deleted_check = Request::builder()
+        .method("GET")
+        .uri(format!("/profile/offers/{}", offer.id))
+        .header("cookie", format!("sid={session1_token}"))
+        .body(Body::empty())
+        .unwrap();
+    let res_deleted_check = router.handle(req_deleted_check).await;
+    assert_eq!(res_deleted_check.status(), http::StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]
@@ -650,7 +645,7 @@ async fn test_origin_policy_allows_trusted_origin_and_rejects_untrusted() {
     // 1. Untrusted origin on state-changing POST must receive 403 Forbidden
     let req_untrusted = Request::builder()
         .method("POST")
-        .uri("/offers/manage/new")
+        .uri("/profile/offers/new")
         .header("cookie", format!("sid={session_token}"))
         .header("origin", "https://evil.example.com")
         .header("sec-fetch-site", "cross-site")
@@ -663,7 +658,7 @@ async fn test_origin_policy_allows_trusted_origin_and_rejects_untrusted() {
     // 2. Trusted origin on state-changing POST passes OriginLayer (not 403)
     let req_trusted = Request::builder()
         .method("POST")
-        .uri("/offers/manage/new")
+        .uri("/profile/offers/new")
         .header("cookie", format!("sid={session_token}"))
         .header("origin", "http://localhost:3000")
         .header("sec-fetch-site", "same-origin")
@@ -700,7 +695,7 @@ async fn test_update_offer_ownership_checked_before_invalid_form() {
     // Must return 404 Not Found (ownership check first), NOT 422 Unprocessable Entity!
     let req_unauthorized = Request::builder()
         .method("POST")
-        .uri(format!("/offers/manage/{}/edit", offer.id))
+        .uri(format!("/profile/offers/{}/edit", offer.id))
         .header("cookie", format!("sid={session2_token}"))
         .header("origin", "http://localhost:3000")
         .header("sec-fetch-site", "same-origin")
@@ -796,9 +791,24 @@ async fn test_owner_profile_route_requires_auth_and_allows_editing() {
     assert!(body_get.contains("@alex-wood"));
     assert!(body_get.contains("/profile/edit"));
     assert!(body_get.contains("Your Offers"));
-    assert!(body_get.contains("Sign Out"));
+    assert!(body_get.contains("href=\"/profile/offers\""));
+    assert!(body_get.contains("href=\"/profile/account\""));
     // Header only has clean nav (not cluttered with Sign Out form or Your Offers)
     assert!(body_get.contains("<a href=\"/profile\">Profile</a>"));
+
+    // 2b. Authenticated GET /profile/account renders account section with sign out
+    let req_account = Request::builder()
+        .method("GET")
+        .uri("/profile/account")
+        .header("cookie", format!("sid={session_token}"))
+        .body(Body::empty())
+        .unwrap();
+    let res_account = router.handle(req_account).await;
+    assert_eq!(res_account.status(), http::StatusCode::OK);
+    let body_account = body_to_string(res_account.into_body()).await;
+    assert!(body_account.contains("Account &amp; Session"));
+    assert!(body_account.contains("Sign Out"));
+    assert!(body_account.contains("action=\"/auth/sign-out\""));
 
     // 3. Authenticated GET /profile/edit renders edit form
     let req_edit = Request::builder()

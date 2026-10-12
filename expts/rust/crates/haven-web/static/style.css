@@ -686,43 +686,186 @@ input:disabled {
   max-width: 32rem;
 }
 
-/* Profile Dashboard View */
-.profile-dashboard {
+/* Profile Shell & Navigation */
+.profile-shell {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-5);
 }
 
-.profile-dashboard-header {
+.profile-shell-header {
   border-bottom: 1px solid var(--color-border);
-  padding-bottom: var(--space-5);
+  padding-bottom: var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
 .profile-header-actions {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  margin-top: var(--space-2);
+  margin-top: var(--space-1);
 }
 
-.profile-section {
+.profile-nav {
+  display: flex;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-2);
+}
+
+.profile-tab {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-base);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+}
+
+.profile-tab:hover {
+  color: var(--color-text);
+  background-color: var(--color-surface-hover);
+}
+
+.profile-tab.active,
+.profile-tab[aria-current="page"] {
+  color: var(--color-text);
+  font-weight: 600;
+  background-color: var(--color-surface);
+  border-bottom: 2px solid var(--color-accent);
+}
+
+.profile-shell-content {
+  padding-top: var(--space-3);
+}
+
+/* Profile Overview Section */
+.profile-overview-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-4);
+}
+
+.overview-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  padding-bottom: var(--space-5);
-  border-bottom: 1px solid var(--color-border);
 }
 
-.profile-account-section {
-  border-bottom: none;
-  padding-top: var(--space-2);
+.overview-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.profile-manage-link-bar {
+.overview-card-actions {
+  margin-top: var(--space-2);
+}
+
+/* Profile Offers Section */
+.profile-offers-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Profile Account Section */
+.profile-account-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.account-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 32rem;
+}
+
+.account-detail-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.detail-label {
+  font-size: var(--text-sm);
+}
+
+.detail-value {
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+.sign-out-section {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+/* Native Popover Confirmation Dialog */
+dialog[popover],
+[popover] {
+  margin: auto;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  padding: var(--space-5);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  max-width: 28rem;
+  width: 90vw;
+}
+
+[popover]::backdrop {
+  background-color: rgba(0, 0, 0, 0.45);
+}
+
+.confirm-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.dialog-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.dialog-message {
+  font-size: var(--text-base);
+  color: var(--color-text);
+  line-height: var(--leading-normal);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-3);
   margin-top: var(--space-3);
 }
+
+.dialog-confirm-form {
+  display: inline-block;
+  margin: 0;
+}
+
 
 

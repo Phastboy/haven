@@ -3,40 +3,42 @@ use crate::app::components::field::{text_field, textarea_field};
 use topcoat::{Result as TopcoatResult, context::Cx, router::error::see_other, view::view};
 
 #[derive(Default)]
-struct EditOfferFormFields {
+struct NewOfferFormFields {
     title: Option<String>,
     description: Option<String>,
     price: Option<String>,
     currency: Option<String>,
 }
 
-struct EditOfferFormView {
-    offer_id: haven_domain::offer::OfferId,
-    fields: EditOfferFormFields,
+struct NewOfferFormView {
+    idempotency_key: String,
+    fields: NewOfferFormFields,
     error_banner: Option<String>,
     status_code: Option<http::StatusCode>,
 }
 
-fn render_edit_offer_form(cx: &Cx, view_data: EditOfferFormView) -> impl topcoat::view::View {
+fn render_new_offer_form(cx: &Cx, view_data: NewOfferFormView) -> impl topcoat::view::View {
     let __cx = cx;
-    let offer_id = view_data.offer_id;
+    let idempotency_key = view_data.idempotency_key;
     let fields = view_data.fields;
     view! {
-        <div class="edit-offer">
+        <div class="new-offer">
             <meta name="robots" content="noindex" />
             if let Some(status) = view_data.status_code {
                 (status)
             }
             <div class="page-header">
-                <h1>"Edit Offer"</h1>
-                <p class="text-muted">"Update your offer's details."</p>
+                <a href="/profile/offers" class="text-muted back-link">"← Back to your offers"</a>
+                <h1>"New Offer"</h1>
+                <p class="text-muted">"Create a new offer to list on Haven."</p>
             </div>
             if let Some(err) = view_data.error_banner {
                 <div class="form-error-banner" role="alert">
                     <p>(err)</p>
                 </div>
             }
-            <form method="post" action=(format!("/offers/manage/{}/edit", offer_id)) class="form-stack">
+            <form method="post" action="/profile/offers/new" class="form-stack">
+                <input type="hidden" name="idempotency_key" value=(idempotency_key) />
                 text_field(
                     label: "Title",
                     name: "title",
@@ -72,11 +74,11 @@ fn render_edit_offer_form(cx: &Cx, view_data: EditOfferFormView) -> impl topcoat
                 )
                 <div class="form-actions">
                     button(
-                        text: "Save Changes",
+                        text: "Create Offer",
                         variant: ButtonVariant::Primary,
                     )
                     button_link(
-                        href: format!("/offers/manage/{}", offer_id),
+                        href: "/profile/offers",
                         text: "Cancel",
                         variant: ButtonVariant::Secondary,
                     )
@@ -86,58 +88,43 @@ fn render_edit_offer_form(cx: &Cx, view_data: EditOfferFormView) -> impl topcoat
     }
 }
 
-/// Renders the edit offer form for an existing offer owned by the current user.
 #[topcoat::router::page]
-pub async fn edit_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
-    let id_uuid = *topcoat::router::path_param::<super::Id>(cx)?;
-    let offer =
-        crate::app::auth::guard::owned_offer(cx, haven_domain::offer::OfferId::from_uuid(id_uuid))
-            .await?;
-
-    Ok(render_edit_offer_form(
+pub async fn new_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
+    let _ = crate::app::auth::guard::require_owner_auth(cx).await?;
+    let idempotency_key = uuid::Uuid::new_v4().to_string();
+    Ok(render_new_offer_form(
         cx,
-        EditOfferFormView {
-            offer_id: offer.id,
-            fields: EditOfferFormFields {
-                title: Some(offer.title),
-                description: Some(offer.description),
-                price: Some(offer.price.as_i32().to_string()),
-                currency: Some(offer.currency.as_str().to_string()),
-            },
+        NewOfferFormView {
+            idempotency_key,
+            fields: NewOfferFormFields::default(),
             error_banner: None,
             status_code: None,
         },
     ))
 }
 
-/// Form payload for submitting updates to an existing offer.
 #[derive(serde::Deserialize)]
-pub struct EditOfferForm {
-    pub title: Option<String>,
+pub struct NewOfferForm {
+    pub idempotency_key: uuid::Uuid,
+    pub title: String,
     pub description: Option<String>,
     pub price: Option<String>,
     pub currency: Option<String>,
 }
 
-/// Processes an offer edit submission, verifying ownership prior to form validation.
 #[topcoat::router::page(POST)]
-pub async fn update_offer(
+pub async fn create_offer(
     cx: &Cx,
-    form: Option<topcoat::router::content::Form<EditOfferForm>>,
+    form: Option<topcoat::router::content::Form<NewOfferForm>>,
 ) -> TopcoatResult<impl topcoat::view::View> {
-    let id_uuid = *topcoat::router::path_param::<super::Id>(cx)?;
-    let offer_id = haven_domain::offer::OfferId::from_uuid(id_uuid);
-
-    // Ownership and auth check
-    crate::app::auth::guard::owned_offer(cx, offer_id).await?;
     let user = crate::app::auth::guard::require_owner_auth(cx).await?;
 
     let Some(form) = form else {
-        return Ok(render_edit_offer_form(
+        return Ok(render_new_offer_form(
             cx,
-            EditOfferFormView {
-                offer_id,
-                fields: EditOfferFormFields::default(),
+            NewOfferFormView {
+                idempotency_key: uuid::Uuid::new_v4().to_string(),
+                fields: NewOfferFormFields::default(),
                 error_banner: Some("Missing form submission.".to_string()),
                 status_code: Some(http::StatusCode::UNPROCESSABLE_ENTITY),
             },
@@ -145,27 +132,24 @@ pub async fn update_offer(
     };
 
     let f = form.0;
-    let fields = EditOfferFormFields {
-        title: f.title,
-        description: f.description,
-        price: f.price,
-        currency: f.currency,
+    let raw_key = f.idempotency_key.to_string();
+    let fields = NewOfferFormFields {
+        title: Some(f.title.clone()),
+        description: f.description.clone(),
+        price: f.price.clone(),
+        currency: f.currency.clone(),
     };
 
-    let patch = match super::super::super::fields::parse_for_patch(
-        super::super::super::fields::RawOfferPatch {
-            title: fields.title.as_deref(),
-            description: fields.description.as_deref(),
-            price: fields.price.as_deref(),
-            currency: fields.currency.as_deref(),
-        },
+    let (price, currency) = match crate::app::offers::fields::parse_for_create(
+        f.price.as_deref(),
+        f.currency.as_deref(),
     ) {
-        Ok(p) => p,
+        Ok(res) => res,
         Err(e) => {
-            return Ok(render_edit_offer_form(
+            return Ok(render_new_offer_form(
                 cx,
-                EditOfferFormView {
-                    offer_id,
+                NewOfferFormView {
+                    idempotency_key: raw_key,
                     fields,
                     error_banner: Some(e.to_string()),
                     status_code: Some(http::StatusCode::UNPROCESSABLE_ENTITY),
@@ -174,18 +158,18 @@ pub async fn update_offer(
         }
     };
 
-    let domain_update = haven_domain::offer::UpdateOffer {
-        title: patch.title,
-        description: patch.description,
-        price: patch.price,
-        currency: patch.currency,
+    let create_req = haven_domain::offer::CreateOffer {
+        title: f.title,
+        description: f.description.unwrap_or_default(),
+        price,
+        currency,
     };
 
-    if let Err(e) = domain_update.validate() {
-        return Ok(render_edit_offer_form(
+    if let Err(e) = create_req.validate() {
+        return Ok(render_new_offer_form(
             cx,
-            EditOfferFormView {
-                offer_id,
+            NewOfferFormView {
+                idempotency_key: raw_key,
                 fields,
                 error_banner: Some(e.to_string()),
                 status_code: Some(http::StatusCode::UNPROCESSABLE_ENTITY),
@@ -193,11 +177,15 @@ pub async fn update_offer(
         ));
     }
 
-    crate::app::state::registry(cx)
+    let _offer = crate::app::state::registry(cx)
         .offers()
-        .update(offer_id, user.id, &domain_update)
+        .create(
+            user.id,
+            haven_domain::ports::IdempotencyKey::new(f.idempotency_key),
+            &create_req,
+        )
         .await
         .map_err(crate::app::state::map_repo_err)?;
 
-    Err(see_other(format!("/offers/manage/{offer_id}")).into())
+    Err(see_other("/profile/offers").into())
 }

@@ -8,29 +8,27 @@ This document catalogs every route currently available in Haven, its HTTP method
 
 | Route Pattern | Method | Access Tier | Purpose | Primary Affordance |
 |---|---|---|---|---|
-| `/` | `GET` | Public | Landing page | "Browse Offers" / "Sign In" |
+| `/` | `GET` | Public | Landing page | "Browse Offers" / "Sign In" (redirects authed to `/offers`) |
 | `/offers` | `GET` | Public | Available offers feed | Keyset pagination, offer cards, maker links |
 | `/offers/{slug}` | `GET` | Public | Single offer detail | View full offer description, maker link |
-| `/offers/new` | `GET`, `POST` | Public | Convenience redirect | Redirects to `/offers/manage/new` |
-| `/profiles` | `GET` | Public | Defensive redirect | Redirects to `/offers` |
 | `/profiles/{handle}` | `GET` | Public | Public maker profile | Maker bio, catalog of maker's offers |
-| `/auth/sign-in` | `GET`, `POST` | Public / Guest | Sign-in portal | Email magic link, Google OAuth CTA |
+| `/auth/sign-in` | `GET`, `POST` | Public / Guest | Sign-in portal | Email magic link, Google OAuth CTA (redirects authed to `/offers`) |
 | `/auth/sent` | `GET` | Public | Confirmation notice | Notice to check email inbox |
-| `/auth/verify` | `GET`, `POST` | Public (token) | Magic link verification | "Confirm and Sign In" token exchange |
+| `/auth/verify` | `GET`, `POST` | Public (token) | Magic link verification | "Confirm and Sign In" token exchange (redirects to `/offers`) |
 | `/auth/google` | `GET` | Public | Google OAuth entrypoint | Generates CSRF state, redirects to Google |
-| `/auth/google/callback` | `GET` | Public | Google OAuth callback | Exchanges OAuth code, creates session |
-| `/auth/google/redirect` | `GET` | Public | Google OAuth alias | Alias for `/auth/google/callback` |
+| `/auth/google/redirect` | `GET` | Public | Google OAuth callback | Canonical callback, exchanges code, redirects to `/offers` |
 | `/auth/sign-out` | `POST` | Authenticated | Terminate session | Clears session cookie, redirects to sign-in |
-| `/profile` | `GET` | Authenticated | Owner profile dashboard | Profile preview, "Edit Profile", "Your Offers", "Sign Out" |
+| `/profile` | `GET` | Authenticated | Profile overview (shell) | Identity summary, "Edit Profile", "View Public Profile" |
 | `/profile/edit` | `GET`, `POST` | Authenticated | Edit owner profile | Display name, handle, bio form |
-| `/offers/manage` | `GET` | Authenticated | Owner offers catalog | "Create an Offer", edit/delete offer links |
-| `/offers/manage/new` | `GET`, `POST` | Authenticated | Create an offer | Title, description, price, currency form |
-| `/offers/manage/{id}` | `GET` | Authenticated | Owner offer detail | View own offer, edit/delete actions |
-| `/offers/manage/{id}/edit` | `GET`, `POST` | Authenticated | Edit own offer | Patch form for title, description, price, currency |
-| `/offers/manage/{id}/delete` | `GET`, `POST` | Authenticated | Delete own offer | Confirmation screen & delete submission |
+| `/profile/offers` | `GET` | Authenticated | Owner offers catalog | "Create an Offer", keyset pagination, manage links |
+| `/profile/offers/new` | `GET`, `POST` | Authenticated | Create an offer | Title, description, price, currency form |
+| `/profile/offers/{id}` | `GET` | Authenticated | Owner offer command center | View own offer, edit, view public, zero-JS Popover delete |
+| `/profile/offers/{id}/edit` | `GET`, `POST` | Authenticated | Edit own offer | Patch form for title, description, price, currency |
+| `/profile/offers/{id}/delete` | `POST` | Authenticated | Delete own offer | Deletion submission (triggered from Popover dialog) |
+| `/profile/account` | `GET` | Authenticated | Account & session | Account details, "Sign Out" form button |
 | `/style.css` | `GET` | Public | Application stylesheet | CSS design tokens & semantic styles |
 | `/health` | `GET` | Public | Uptime / Health check | HTTP 200 health verification |
-| `/robots.txt` | `GET` | Public | Crawl instructions | Disallows indexing of `/offers/manage/` |
+| `/robots.txt` | `GET` | Public | Crawl instructions | Disallows indexing of `/profile/` |
 
 ---
 
@@ -73,16 +71,6 @@ This document catalogs every route currently available in Haven, its HTTP method
 - **Failure States:**
   - Non-existent slug returns clean HTTP 404 Not Found page with link back to available offers.
 
-#### `GET /offers/new` & `POST /offers/new` — Redirect Routes
-- **Access Tier:** Public.
-- **Behavior:**
-  - `GET /offers/new` issues HTTP 303 See Other redirecting to `/offers/manage/new`.
-  - `POST /offers/new` issues HTTP 301 Moved Permanently redirecting to `/offers/manage/new`.
-
-#### `GET /profiles` — Defensive Redirect
-- **Access Tier:** Public.
-- **Behavior:**
-  - Redirects (HTTP 303 See Other) to `/offers` to prevent dead-end browsing when visitors request the parent directory.
 
 #### `GET /profiles/{handle}` — Public Maker Profile
 - **Access Tier:** Public.
@@ -103,7 +91,7 @@ This document catalogs every route currently available in Haven, its HTTP method
 ### 2. Authentication & Session
 
 #### `GET /auth/sign-in` — Sign-In Portal
-- **Access Tier:** Public (guests; authenticated users redirect to `/profile`).
+- **Access Tier:** Public (guests; authenticated users redirect to `/offers`).
 - **Affordances:**
   - **Email Magic Link Form:** Email input field and "Send Magic Link" primary button. When email delivery is not operational (`EMAIL_DELIVERY_ENABLED=false`), form fields and button are disabled with an explicit notice directing users to Google OAuth.
   - **Google OAuth CTA:** "Continue with Google" button linking to `/auth/google`.
@@ -134,7 +122,7 @@ This document catalogs every route currently available in Haven, its HTTP method
 - **Behavior:**
   - Hashes submitted token and verifies against `magic_links` table.
   - Checks expiration and consumed status.
-  - Creates authenticated session, writes HTTP-only `sid` session cookie, marks link consumed, and redirects to `/profile`.
+  - Creates authenticated session, writes HTTP-only `sid` session cookie, marks link consumed, and redirects to `/offers`.
 - **Failure States:**
   - Expired, consumed, or invalid token returns verification error view with "Request a new link" button.
 
@@ -145,15 +133,16 @@ This document catalogs every route currently available in Haven, its HTTP method
   - Issues HTTP 303 redirect to Google OAuth 2.0 authorization consent endpoint.
   - If Google OAuth is unconfigured, falls back to `/auth/sign-in`. If already signed in, redirects to `/offers`.
 
-#### `GET /auth/google/callback` & `GET /auth/google/redirect` — Google OAuth Callback
+#### `GET /auth/google/redirect` — Google OAuth Callback (Canonical)
 - **Access Tier:** Public.
 - **Behavior:**
+  - Matches registered production OAuth redirect URI. (Deprecated `/auth/google/callback` was pruned to eliminate duplicate endpoints).
   - Reads `code` and `state` from query parameters.
   - Verifies state against `oauth_state` cookie (CSRF prevention).
   - Exchanges authorization code for access token via Google token endpoint.
   - Fetches user info from Google UserInfo endpoint (email, display name).
   - If user exists by email, authenticates; if user is new, provisionally assigns default handle and display name.
-  - Creates authenticated session, sets `sid` cookie, and redirects to `/profile`.
+  - Creates authenticated session, sets `sid` cookie, and redirects to `/offers`.
 
 #### `POST /auth/sign-out` — Session Termination
 - **Access Tier:** Authenticated.
@@ -161,26 +150,25 @@ This document catalogs every route currently available in Haven, its HTTP method
   - Invalidates current session record from database.
   - Clears `sid` cookie.
   - Issues HTTP 303 redirect to `/auth/sign-in`.
-  - Accessible via the Account section of the `/profile` dashboard.
+  - Accessible via the Account section of the `/profile/account` view.
 
 ---
 
-### 3. Owner Dashboard & Management
+### 3. Owner Profile Shell & Dashboard Sections
 
-#### `GET /profile` — Owner Profile Dashboard
+Haven wraps all owner capabilities inside a unified `/profile` shell. A persistent header displays the owner's identity (display name and handle) alongside section navigation tabs:
+- **Overview:** `/profile`
+- **Offers:** `/profile/offers`
+- **Account:** `/profile/account`
+
+Active tabs receive visual emphasis and `aria-current="page"`. Child sections render inside this shell while maintaining isolated responsibilities.
+
+#### `GET /profile` — Profile Overview
 - **Access Tier:** Authenticated (unauthenticated requests redirect to `/auth/sign-in`).
 - **Affordances:**
-  - **Identity Preview:** Current display name, `@handle`, bio, and email address.
-  - **Public Profile Affordance:** "View Public Profile" link pointing directly to `/profiles/{handle}`.
-  - **Edit Profile Affordance:** "Edit Profile" button linking to `/profile/edit`.
+  - **Identity Card:** Displays display name, handle (`@handle`), bio, and link to public profile (`/profiles/{handle}`).
+  - **Edit Identity Affordance:** "Edit Profile" link button leading to `/profile/edit`.
   - **Update Notice:** Confirmation banner ("Your profile has been updated.") when redirected from edit with `?updated=1`.
-  - **Your Offers Section:**
-    - "Create an Offer" primary button (`/offers/manage/new`).
-    - List of owner's offers with "Edit" (`/offers/manage/{id}/edit`) and "Delete" (`/offers/manage/{id}/delete`) actions.
-    - Empty state affordance if user has no offers yet.
-  - **Account & Session Section:**
-    - Displays authenticated email.
-    - "Sign Out" form button (POST `/auth/sign-out`).
 
 #### `GET /profile/edit` — Owner Profile Edit Form
 - **Access Tier:** Authenticated.
@@ -200,14 +188,15 @@ This document catalogs every route currently available in Haven, its HTTP method
   - On success: redirects (HTTP 303) to `/profile?updated=1`.
   - On validation or collision error: re-renders form with existing inputs preserved and inline error banners.
 
-#### `GET /offers/manage` — Dedicated Owner Offers Catalog
+#### `GET /profile/offers` — Owner Offers Catalog
 - **Access Tier:** Authenticated.
 - **Affordances:**
-  - "Create an Offer" button (`/offers/manage/new`).
-  - List of owner's own offers with edit and delete links.
-  - Keyset pagination controls.
+  - Section header: "Your Offers" with description.
+  - "Create an Offer" primary button linking to `/profile/offers/new`.
+  - Keyset-paginated list of owner's offers with title, formatted price, date, and "Manage" button linking to `/profile/offers/{id}`.
+  - Empty state with clear messaging and "Create your first offer" CTA when zero offers exist.
 
-#### `GET /offers/manage/new` — Create Offer Form
+#### `GET /profile/offers/new` — Create Offer Form
 - **Access Tier:** Authenticated.
 - **Affordances:**
   - Text input for `title` (3 to 100 characters).
@@ -215,50 +204,55 @@ This document catalogs every route currently available in Haven, its HTTP method
   - Number input for `price` (minor units; 0 for free).
   - Select dropdown for `currency` (NGN, USD, EUR, GBP, CAD, AUD, KES, GHS; required if price > 0).
   - "Create Offer" submit button.
-  - "Cancel" link back to `/profile` / `/offers/manage`.
+  - "Cancel" link back to `/profile/offers`.
+- **Behavior:**
+  - On validation error: re-renders form with values preserved and error messages.
+  - On success: creates offer and redirects (HTTP 303) to `/profile/offers`.
 
-#### `POST /offers/manage/new` — Process Offer Creation
+#### `POST /profile/offers/new` — Process Offer Creation
 - **Access Tier:** Authenticated.
 - **Behavior:**
-  - Validates fields, generates URL slug from title and unique suffix, persists offer record associated with current user.
-  - Redirects (HTTP 303) to public offer view `/offers/{slug}`.
+  - Validates inputs, creates offer in database associated with current owner.
+  - Redirects (HTTP 303) to `/profile/offers`.
 
-#### `GET /offers/manage/{id}` — Owner Offer Detail View
-- **Access Tier:** Authenticated (owner only).
-- **Behavior:**
-  - Validates that current user owns offer `{id}`. Probing non-existent IDs or IDs belonging to other users returns identical HTTP 404 (IDOR prevention).
+#### `GET /profile/offers/{id}` — Owner Offer Command Center
+- **Access Tier:** Authenticated (owner only; probing non-existent IDs or IDs owned by others returns HTTP 404).
 - **Affordances:**
-  - Displays offer properties.
-  - "Edit Offer" button (`/offers/manage/{id}/edit`).
-  - "Delete Offer" button (`/offers/manage/{id}/delete`).
-  - Link to public view (`/offers/{slug}`).
+  - Summary display of offer: title, price, description, date, and link to public view (`/offers/{slug}`).
+  - "Edit Offer" secondary button linking to `/profile/offers/{id}/edit`.
+  - "View Public" link pointing to `/offers/{slug}`.
+  - "Back to Your Offers" link pointing to `/profile/offers`.
+  - **Zero-JavaScript Popover Delete Affordance:**
+    - "Delete Offer" destructive button with `popovertarget="delete-offer-dialog"`.
+    - Native modal dialog: `<dialog id="delete-offer-dialog" popover="auto" class="confirm-dialog">`.
+    - Dialog contents: clear warning prompt, "Cancel" button with `popovertarget="delete-offer-dialog" popovertargetaction="hide"`, and `<form method="post" action="/profile/offers/{id}/delete"><button type="submit" class="btn-danger">Yes, Delete Offer</button></form>`.
+    - Dismisses automatically on Escape key or backdrop click via native HTML Popover API with zero JavaScript.
 
-#### `GET /offers/manage/{id}/edit` — Edit Offer Form
+#### `GET /profile/offers/{id}/edit` — Edit Offer Form
 - **Access Tier:** Authenticated (owner only).
 - **Affordances:**
   - Pre-filled inputs for title, description, price, and currency.
   - "Save Changes" submit button.
-  - "Cancel" link back to `/offers/manage/{id}`.
+  - "Cancel" link back to `/profile/offers/{id}`.
 
-#### `POST /offers/manage/{id}/edit` — Process Offer Update
+#### `POST /profile/offers/{id}/edit` — Process Offer Update
 - **Access Tier:** Authenticated (owner only).
 - **Behavior:**
   - Applies partial patch updates while preserving untouched fields.
   - Validates domain rules and updates database.
-  - Redirects (HTTP 303) to `/offers/manage/{id}`.
+  - Redirects (HTTP 303) to `/profile/offers`.
 
-#### `GET /offers/manage/{id}/delete` — Delete Confirmation Screen
-- **Access Tier:** Authenticated (owner only).
-- **Affordances:**
-  - Explanatory prompt identifying the specific offer to be removed.
-  - Destructive "Delete Offer" submit button (POST `/offers/manage/{id}/delete`).
-  - "Cancel" link back to `/offers/manage/{id}`.
-
-#### `POST /offers/manage/{id}/delete` — Process Offer Deletion
+#### `POST /profile/offers/{id}/delete` — Process Offer Deletion
 - **Access Tier:** Authenticated (owner only).
 - **Behavior:**
   - Enforces ownership and removes offer record from database.
-  - Redirects (HTTP 303) to `/profile`.
+  - Redirects (HTTP 303) to `/profile/offers`.
+
+#### `GET /profile/account` — Account & Session Overview
+- **Access Tier:** Authenticated.
+- **Affordances:**
+  - Signed-in identity details (display name and handle).
+  - Session termination card with "Sign Out" form button (POST `/auth/sign-out`).
 
 ---
 
@@ -279,6 +273,6 @@ This document catalogs every route currently available in Haven, its HTTP method
 - **Response:**
   ```text
   User-agent: *
-  Disallow: /offers/manage/
+  Disallow: /profile/
   ```
 - **Purpose:** Allows web spiders to index public content while disallowing private management areas.
