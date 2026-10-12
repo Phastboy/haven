@@ -1106,4 +1106,24 @@ async fn test_public_offer_back_returns_to_owner_offer_page() {
     let body = body_to_string(res.into_body()).await;
     // Must return to where the user came from (/profile/offers/{id}), NOT fall back to /offers
     assert!(body.contains(&format!("href=\"/profile/offers/{}\"", offer.id)));
+
+    // When clicking back from public view to owner management view, referer is the public view.
+    // The owner view must resolve its back button to /profile/offers, NOT loop back to /offers/{slug}!
+    let public_page_url = format!("http://localhost:3000/offers/{}", offer.slug);
+    let req_owner = Request::builder()
+        .method("GET")
+        .uri(format!("/profile/offers/{}", offer.id))
+        .header("host", "localhost:3000")
+        .header("cookie", format!("sid={session}"))
+        .header("referer", &public_page_url)
+        .body(Body::empty())
+        .unwrap();
+
+    let res_owner = router.handle(req_owner).await;
+    assert_eq!(res_owner.status(), http::StatusCode::OK);
+    let body_owner = body_to_string(res_owner.into_body()).await;
+    let back_btn_expected = "href=\"/profile/offers\" class=\"child-back-btn\"";
+    assert!(body_owner.contains(back_btn_expected));
+    let back_btn_loop = format!("href=\"/offers/{}\" class=\"child-back-btn\"", offer.slug);
+    assert!(!body_owner.contains(&back_btn_loop));
 }

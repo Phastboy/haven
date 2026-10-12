@@ -70,22 +70,45 @@ pub fn classify_route(path: &str, current_user_handle: Option<&str>) -> Navigati
     }
 }
 
-/// Checks if `referer_path` is the same as or a descendant child of `current_path`.
+/// Determines if navigating back to `referer_path` from `current_path` would cause
+/// a navigation loop or cross-hierarchy regression.
 ///
-/// This prevents navigation loops where ascending from a child page (e.g. from
-/// `/profile/offers/{id}` to `/profile/offers`) would cause the parent page's back
-/// button to point back down into the child.
-fn is_same_or_descendant(referer_path: &str, current_path: &str) -> bool {
+/// Returns `true` if `referer_path` should be rejected in favor of `fallback_parent`:
+/// 1. Self-referential loop (e.g. page refresh): `referer_path == current_path`.
+/// 2. Descendant child loop: `referer_path` is a child of `current_path`
+///    (e.g. ascending from `/profile/offers/{id}` to `/profile/offers`).
+/// 3. Cross-lane owner/public loop:
+///    When on an owner management page (`/profile/...`), reject referers from the public
+///    discovery lane (`/offers/...` or `/profiles/...`). When an owner views the public
+///    offer page and clicks back to return to the owner management view (`/profile/offers/{id}`),
+///    the owner view's back button must proceed up to `/profile/offers`, never looping
+///    back and forth with `/offers/{slug}`.
+fn should_reject_referer(referer_path: &str, current_path: &str) -> bool {
     let ref_clean = referer_path.trim_end_matches('/');
     let curr_clean = current_path.trim_end_matches('/');
+
+    // 1. Self loop (page refresh)
     if ref_clean == curr_clean {
         return true;
     }
-    if curr_clean.is_empty() || curr_clean == "/" {
-        return false;
+
+    // 2. Descendant child loop (ascending up from a child page)
+    if !curr_clean.is_empty() && curr_clean != "/" {
+        let child_prefix = format!("{curr_clean}/");
+        if ref_clean.starts_with(&child_prefix) {
+            return true;
+        }
     }
-    let child_prefix = format!("{curr_clean}/");
-    ref_clean.starts_with(&child_prefix)
+
+    // 3. Cross-lane owner/public loop:
+    // Owner pages (/profile/...) must never point back to public views (/offers/... or /profiles/...).
+    if (curr_clean.starts_with("/profile/") || curr_clean == "/profile")
+        && (ref_clean.starts_with("/offers/") || ref_clean.starts_with("/profiles/"))
+    {
+        return true;
+    }
+
+    false
 }
 
 fn extract_host_name(h: &str) -> &str {
@@ -172,8 +195,8 @@ pub fn resolve_safe_back_url(
         }
 
         let path = parsed_url.path();
-        // Prevent loop when referer matches current path or is a descendant of current path
-        if is_same_or_descendant(path, current_path) {
+        // Prevent loop when referer matches current path, is a descendant, or causes cross-lane cycles
+        if should_reject_referer(path, current_path) {
             return fallback_parent.to_string();
         }
 
@@ -191,7 +214,7 @@ pub fn resolve_safe_back_url(
 
     // Extract path portion without query for loop checking
     let path_part = referer.split('?').next().unwrap_or(referer);
-    if is_same_or_descendant(path_part, current_path) {
+    if should_reject_referer(path_part, current_path) {
         return fallback_parent.to_string();
     }
 
@@ -415,5 +438,25 @@ mod tests {
         );
         let back = resolve_safe_back_url(&headers, "/offers/rustic-table-123", "/offers");
         assert_eq!(back, "/profile/offers/3f2504e0-4f89-11d3-9a0c-0305e82c3301");
+    }
+
+    #[test]
+    fn test_resolve_safe_back_url_prevents_loop_between_owner_offer_and_public_view() {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            http::header::HOST,
+            HeaderValue::from_static("localhost:3000"),
+        );
+        // Returning from public offer page to owner management view must NOT link back to public view
+        headers.insert(
+            http::header::REFERER,
+            HeaderValue::from_static("http://localhost:3000/offers/rustic-table-123"),
+        );
+        let back = resolve_safe_back_url(
+            &headers,
+            "/profile/offers/3f2504e0-4f89-11d3-9a0c-0305e82c3301",
+            "/profile/offers",
+        );
+        assert_eq!(back, "/profile/offers");
     }
 }
