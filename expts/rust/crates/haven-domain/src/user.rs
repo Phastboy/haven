@@ -417,17 +417,21 @@ mod tests {
 
         let handle2 = ProfileHandle::generate_initial("a@example.com", "9999");
         assert_eq!(handle2.as_str(), "a-9999");
+
+        // High entropy 8-character hex suffix
+        let handle3 = ProfileHandle::generate_initial("alex.doe@example.com", "7a1b3c9d");
+        assert_eq!(handle3.as_str(), "alex-doe-7a1b3c9d");
     }
 
     #[test]
     fn test_user_profile_update_from_email_initial() {
-        let update = UserProfileUpdate::from_email_initial("alex.doe@example.com", "7a1b");
+        let update = UserProfileUpdate::from_email_initial("alex.doe@example.com", "7a1b3c9d");
         assert_eq!(update.display_name.as_str(), "alex.doe");
-        assert_eq!(update.handle.as_str(), "alex-doe-7a1b");
+        assert_eq!(update.handle.as_str(), "alex-doe-7a1b3c9d");
         assert!(update.bio.is_none());
 
-        let fallback = UserProfileUpdate::from_email_initial("a@example.com", "1234");
-        assert_eq!(fallback.display_name.as_str(), "a-1234");
-        assert_eq!(fallback.handle.as_str(), "a-1234");
+        let fallback = UserProfileUpdate::from_email_initial("a@example.com", "12345678");
+        assert_eq!(fallback.display_name.as_str(), "a-12345678");
+        assert_eq!(fallback.handle.as_str(), "a-12345678");
     }
 }

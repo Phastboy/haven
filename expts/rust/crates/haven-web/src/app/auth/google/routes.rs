@@ -169,16 +169,29 @@ async fn handle_google_callback(cx: &topcoat::context::Cx) -> topcoat::Result<()
         .await
         .map_err(map_err)?;
     if user.is_none() {
-        let suffix = &uuid::Uuid::new_v4().simple().to_string()[..4];
-        let initial_profile = haven_domain::user::UserProfileUpdate::from_email_initial(
-            account.email.as_str(),
-            suffix,
-        );
-        registry
-            .users()
-            .create(account.id, &initial_profile)
-            .await
-            .map_err(map_err)?;
+        let mut created = false;
+        for _ in 0..3 {
+            let hex = uuid::Uuid::new_v4().simple().to_string();
+            let suffix = &hex[..8];
+            let initial_profile = haven_domain::user::UserProfileUpdate::from_email_initial(
+                account.email.as_str(),
+                suffix,
+            );
+            match registry.users().create(account.id, &initial_profile).await {
+                Ok(_) => {
+                    created = true;
+                    break;
+                }
+                Err(haven_domain::ports::RepoError::Conflict { .. }) => {}
+                Err(e) => return Err(map_err(e)),
+            }
+        }
+        if !created {
+            return Err(map_err(haven_domain::ports::RepoError::Conflict {
+                entity: "user",
+                key: "handle".to_string(),
+            }));
+        }
     }
 
     // 6. Issue session

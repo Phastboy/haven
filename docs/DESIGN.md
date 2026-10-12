@@ -164,7 +164,7 @@ For each screen, add: purpose (stage and lane), content used (from the schema), 
 - **Hierarchy:** Primary emphasis is the maker's identity (`display_name`, `@handle`, bio). Secondary section is their offers feed (`Offers by <display_name>`). Quiet elements: back link to all offers.
 - **State matrix:**
   - *Typical:* Maker header with display name, @handle, and bio (if provided), followed by a list of their available offers.
-  - *Empty (no offers):* "No offers available right now." calm empty state message.
+  - *Empty (no offers):* "No offers yet" ("This person has not posted any offers yet. Check back later.") calm empty state message.
   - *No bio:* Bio paragraph collapses neatly without leaving awkward empty gaps.
   - *Long text:* Display name wraps cleanly; long bio renders in comfortable reading measure (45–75 chars).
   - *Not found (404):* Returns 404 with clean not-found message when handle does not exist.
