@@ -22,25 +22,23 @@ pub enum NavigationLayout {
 #[must_use]
 pub fn classify_route(path: &str, current_user_handle: Option<&str>) -> NavigationLayout {
     let normalized = path.trim_end_matches('/');
-    let clean_path = if normalized.is_empty() { "/" } else { normalized };
+    let clean_path = if normalized.is_empty() {
+        "/"
+    } else {
+        normalized
+    };
 
     match clean_path {
         "/" | "/offers" | "/profile" => NavigationLayout::Main,
-        "/profile/offers/new" => {
-            NavigationLayout::Child {
-                fallback_parent: "/profile/offers",
-            }
-        }
-        p if p.starts_with("/profile/offers/") && p.ends_with("/edit") => {
-            NavigationLayout::Child {
-                fallback_parent: "/profile/offers",
-            }
-        }
-        p if p.starts_with("/profile/offers/") => {
-            NavigationLayout::Child {
-                fallback_parent: "/profile/offers",
-            }
-        }
+        "/profile/offers/new" => NavigationLayout::Child {
+            fallback_parent: "/profile/offers",
+        },
+        p if p.starts_with("/profile/offers/") && p.ends_with("/edit") => NavigationLayout::Child {
+            fallback_parent: "/profile/offers",
+        },
+        p if p.starts_with("/profile/offers/") => NavigationLayout::Child {
+            fallback_parent: "/profile/offers",
+        },
         "/profile/offers" => NavigationLayout::Child {
             fallback_parent: "/profile",
         },
@@ -72,11 +70,29 @@ pub fn classify_route(path: &str, current_user_handle: Option<&str>) -> Navigati
     }
 }
 
+/// Checks if `referer_path` is the same as or a descendant child of `current_path`.
+///
+/// This prevents navigation loops where ascending from a child page (e.g. from
+/// `/profile/offers/{id}` to `/profile/offers`) would cause the parent page's back
+/// button to point back down into the child.
+fn is_same_or_descendant(referer_path: &str, current_path: &str) -> bool {
+    let ref_clean = referer_path.trim_end_matches('/');
+    let curr_clean = current_path.trim_end_matches('/');
+    if ref_clean == curr_clean {
+        return true;
+    }
+    if curr_clean.is_empty() || curr_clean == "/" {
+        return false;
+    }
+    let child_prefix = format!("{curr_clean}/");
+    ref_clean.starts_with(&child_prefix)
+}
+
 /// Resolves a safe same-site return URL from the `Referer` request header.
 ///
 /// To prevent open redirect and UI loop vulnerabilities:
 /// - If `Referer` is absent, invalid, or cross-origin: returns `fallback_parent`.
-/// - If `Referer` points to `current_path` (e.g. page refresh): returns `fallback_parent`.
+/// - If `Referer` points to `current_path` or a descendant child (e.g. page refresh or returning up from a child): returns `fallback_parent`.
 /// - Protocol-relative (`//`), `javascript:`, and non-HTTP URLs are strictly rejected.
 /// - Only same-site relative paths (with optional query parameters) are accepted.
 #[must_use]
@@ -137,8 +153,8 @@ pub fn resolve_safe_back_url(
         }
 
         let path = parsed_url.path();
-        // Prevent loop when referer matches current path
-        if path == current_path {
+        // Prevent loop when referer matches current path or is a descendant of current path
+        if is_same_or_descendant(path, current_path) {
             return fallback_parent.to_string();
         }
 
@@ -156,7 +172,7 @@ pub fn resolve_safe_back_url(
 
     // Extract path portion without query for loop checking
     let path_part = referer.split('?').next().unwrap_or(referer);
-    if path_part == current_path {
+    if is_same_or_descendant(path_part, current_path) {
         return fallback_parent.to_string();
     }
 
@@ -226,7 +242,10 @@ mod tests {
             }
         );
         assert_eq!(
-            classify_route("/profile/offers/3f2504e0-4f89-11d3-9a0c-0305e82c3301/edit", None),
+            classify_route(
+                "/profile/offers/3f2504e0-4f89-11d3-9a0c-0305e82c3301/edit",
+                None
+            ),
             NavigationLayout::Child {
                 fallback_parent: "/profile/offers"
             }
@@ -310,5 +329,32 @@ mod tests {
         );
         let back = resolve_safe_back_url(&headers, "/offers/abc", "/offers");
         assert_eq!(back, "/offers");
+    }
+
+    #[test]
+    fn test_resolve_safe_back_url_rejects_child_descendant_loop() {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            http::header::HOST,
+            HeaderValue::from_static("localhost:3000"),
+        );
+        // Coming back up from /profile/offers/{id} to /profile/offers must NOT link back down to {id}
+        headers.insert(
+            http::header::REFERER,
+            HeaderValue::from_static(
+                "http://localhost:3000/profile/offers/3f2504e0-4f89-11d3-9a0c-0305e82c3301",
+            ),
+        );
+        let back = resolve_safe_back_url(&headers, "/profile/offers", "/profile");
+        assert_eq!(back, "/profile");
+
+        // Relative referer for child route also rejected
+        let mut headers_rel = HeaderMap::new();
+        headers_rel.insert(
+            http::header::REFERER,
+            HeaderValue::from_static("/profile/offers/new"),
+        );
+        let back_rel = resolve_safe_back_url(&headers_rel, "/profile/offers", "/profile");
+        assert_eq!(back_rel, "/profile");
     }
 }

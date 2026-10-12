@@ -11,7 +11,7 @@ Resolve conflicts in this strict order:
 Security, accessibility, and data integrity are non-negotiable. If requirements conflict, stop and ask rather than inventing a rule.
 
 ## 2. Current Product Scope Only
-Implement only capabilities that exist in the current release stage:
+Implement strictly the capabilities that exist in the current release stage:
 - No speculative navigation or disabled buttons for future features.
 - No placeholder sections, mock data, or fake functionality.
 - Integrate new capabilities only when their roadmap stage arrives.

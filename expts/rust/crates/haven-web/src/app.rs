@@ -64,11 +64,8 @@ pub async fn root_layout(
     let (is_child, back_url) = match nav_layout {
         NavigationLayout::Main => (false, String::new()),
         NavigationLayout::Child { fallback_parent } => {
-            let url = resolve_safe_back_url(
-                topcoat::router::request::headers(cx),
-                path,
-                fallback_parent,
-            );
+            let url =
+                resolve_safe_back_url(topcoat::router::request::headers(cx), path, fallback_parent);
             (true, url)
         }
     };

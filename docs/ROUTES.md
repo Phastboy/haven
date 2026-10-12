@@ -39,9 +39,8 @@ Haven enforces a strict two-layout rule across all routes:
 | `/profile/edit` | `GET`, `POST` | Authenticated | Child | `/profile` | Edit owner profile | Display name, handle, bio form |
 | `/profile/offers` | `GET` | Authenticated | Child | `/profile` | Owner offers catalog | "Create an Offer", keyset pagination, manage links |
 | `/profile/offers/new` | `GET`, `POST` | Authenticated | Child | `/profile/offers` | Create an offer | Title, description, price, currency form |
-| `/profile/offers/{id}` | `GET` | Authenticated | Child | `/profile/offers` | Owner offer command center | View own offer, edit, view public, zero-JS Popover delete |
+| `/profile/offers/{id}` | `GET`, `POST`, `DELETE` | Authenticated | Child | `/profile/offers` | Owner offer command center & deletion | View own offer, edit, view public, zero-JS Popover delete |
 | `/profile/offers/{id}/edit` | `GET`, `POST` | Authenticated | Child | `/profile/offers` | Edit own offer | Patch form for title, description, price, currency |
-| `/profile/offers/{id}/delete` | `POST` | Authenticated | Child | `/profile/offers` | Delete own offer | Deletion submission (triggered from Popover dialog) |
 | `/profile/account` | `GET` | Authenticated | Child | `/profile` | Account & session | Account details, "Sign Out" form button |
 | `/style.css` | `GET` | Public | Static | — | Application stylesheet | CSS design tokens & semantic styles |
 | `/health` | `GET` | Public | System | — | Uptime / Health check | HTTP 200 health verification |
@@ -242,7 +241,7 @@ Active tabs receive visual emphasis and `aria-current="page"`. Child sections re
   - **Zero-JavaScript Popover Delete Affordance:**
     - "Delete Offer" destructive button with `popovertarget="delete-offer-dialog"`.
     - Native modal dialog: `<dialog id="delete-offer-dialog" popover="auto" class="confirm-dialog">`.
-    - Dialog contents: clear warning prompt, "Cancel" button with `popovertarget="delete-offer-dialog" popovertargetaction="hide"`, and `<form method="post" action="/profile/offers/{id}/delete"><button type="submit" class="btn-danger">Yes, Delete Offer</button></form>`.
+    - Dialog contents: clear warning prompt, "Cancel" button with `popovertarget="delete-offer-dialog" popovertargetaction="hide"`, and `<form method="post" action="/profile/offers/{id}"><button type="submit" class="btn-danger">Yes, Delete Offer</button></form>`.
     - Dismisses automatically on Escape key or backdrop click via native HTML Popover API with zero JavaScript.
 
 #### `GET /profile/offers/{id}/edit` — Edit Offer Form
@@ -259,9 +258,10 @@ Active tabs receive visual emphasis and `aria-current="page"`. Child sections re
   - Validates domain rules and updates database.
   - Redirects (HTTP 303) to `/profile/offers`.
 
-#### `POST /profile/offers/{id}/delete` — Process Offer Deletion
+#### `POST, DELETE /profile/offers/{id}` — Process Offer Deletion
 - **Access Tier:** Authenticated (owner only).
 - **Behavior:**
+  - Follows RESTful convention where the HTTP method describes the action instead of embedding verbs into the endpoint URI.
   - Enforces ownership and removes offer record from database.
   - Redirects (HTTP 303) to `/profile/offers`.
 

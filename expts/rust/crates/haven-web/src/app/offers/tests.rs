@@ -192,7 +192,7 @@ async fn test_unauthenticated_requests_refused_for_every_manage_route() {
         ("GET", format!("/profile/offers/{dummy_id}")),
         ("GET", format!("/profile/offers/{dummy_id}/edit")),
         ("POST", format!("/profile/offers/{dummy_id}/edit")),
-        ("POST", format!("/profile/offers/{dummy_id}/delete")),
+        ("POST", format!("/profile/offers/{dummy_id}")),
         ("GET", "/profile/account".to_string()),
     ];
 
@@ -454,7 +454,7 @@ async fn test_owner_routes_enforce_ownership_and_identical_404() {
     assert!(body.contains(&format!("href=\"/profile/offers/{}/edit\"", offer.id)));
     assert!(body.contains("popovertarget=\"delete-offer-dialog\""));
     assert!(body.contains("<dialog id=\"delete-offer-dialog\" popover=\"auto\""));
-    assert!(body.contains(&format!("action=\"/profile/offers/{}/delete\"", offer.id)));
+    assert!(body.contains(&format!("action=\"/profile/offers/{}\"", offer.id)));
     assert!(body.contains(&format!("href=\"/offers/{}\"", offer.slug)));
 
     // 2. User 2 accesses User 1's offer via ID route (must return 404, identical to nonexistent)
@@ -479,12 +479,37 @@ async fn test_owner_routes_enforce_ownership_and_identical_404() {
 
     let res_nonexistent = router.handle(req_nonexistent).await;
     assert_eq!(res_nonexistent.status(), http::StatusCode::NOT_FOUND);
+}
 
-    // User 1's offers list only shows their offers
+#[tokio::test]
+async fn test_owner_offers_quick_delete_and_navigation_loop_guard() {
+    let (router, registry) = setup_test_app();
+
+    let user1 = mock_user(UserId::generate(), AccountId::generate(), "user-one");
+    let session1_token = create_auth_session(&registry.users_repo, user1.clone());
+
+    let create_offer = CreateOffer {
+        title: "User 1 Painting".to_string(),
+        description: "Original acrylic on canvas by user 1.".to_string(),
+        price: Price::ZERO,
+        currency: CurrencyCode::default_code(),
+    };
+    let offer = registry
+        .offers_repo
+        .create(user1.id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
+        .await
+        .unwrap();
+
+    // User 1's offers list shows their offers and has inline quick delete dialog
     let req_list = Request::builder()
         .method("GET")
         .uri("/profile/offers")
+        .header("host", "localhost:3000")
         .header("cookie", format!("sid={session1_token}"))
+        .header(
+            "referer",
+            format!("http://localhost:3000/profile/offers/{}", offer.id),
+        )
         .body(Body::empty())
         .unwrap();
 
@@ -492,11 +517,16 @@ async fn test_owner_routes_enforce_ownership_and_identical_404() {
     assert_eq!(res_list.status(), http::StatusCode::OK);
     let list_body = body_to_string(res_list.into_body()).await;
     assert!(list_body.contains("User 1 Painting"));
+    // Quick delete affordance present directly on listing
+    assert!(list_body.contains(&format!("action=\"/profile/offers/{}\"", offer.id)));
+    assert!(list_body.contains(&format!("confirm-del-profile-offers-{}", offer.id)));
+    // Navigation loop guard: coming up from /profile/offers/{id} must point back up to /profile, not loop back to {id}
+    assert!(list_body.contains("href=\"/profile\""));
 
-    // User 1 deletes their offer via POST
+    // User 1 deletes their offer via POST /profile/offers/{id}
     let req_delete = Request::builder()
         .method("POST")
-        .uri(format!("/profile/offers/{}/delete", offer.id))
+        .uri(format!("/profile/offers/{}", offer.id))
         .header("cookie", format!("sid={session1_token}"))
         .header("origin", "http://localhost:3000")
         .header("sec-fetch-site", "same-origin")
@@ -989,7 +1019,10 @@ async fn test_navigation_layout_rule_main_vs_child() {
         .method("GET")
         .uri(format!("/offers/{}", offer.slug))
         .header("host", "localhost:3000")
-        .header("referer", format!("http://localhost:3000/offers/{}", offer.slug))
+        .header(
+            "referer",
+            format!("http://localhost:3000/offers/{}", offer.slug),
+        )
         .body(Body::empty())
         .unwrap();
     let res_child_refresh = router.handle(req_child_refresh).await;
@@ -1037,4 +1070,3 @@ async fn test_navigation_layout_rule_main_vs_child() {
     let body_profile_pub_no_ref = body_to_string(res_profile_pub_no_ref.into_body()).await;
     assert!(body_profile_pub_no_ref.contains("href=\"/profile\""));
 }
-
