@@ -205,7 +205,7 @@ For each screen, add: purpose (stage and lane), content used (from the schema), 
 - **Stage & Lane:** Stage 0.3.x, Offerer lane (identity & account management).
 - **Purpose:** Authenticated user views their identity overview within the profile shell, jumps to their public profile, edits profile details, or terminates their session from the Account section.
 - **Content used:** `User.display_name`, `User.handle`, `User.bio`, `User.email`.
-- **Hierarchy:** Profile shell provides persistent tabs: Overview, Offers, Account. On Overview (`/profile`): Primary action is "Edit Profile" (`/profile/edit`); secondary is "View Public Profile" (`/profiles/{handle}`). On Edit form (`/profile/edit`): Primary action is "Save Profile" submit button; secondary is "Cancel" link back to `/profile`. On Account (`/profile/account`): Primary action is "Sign Out" form button (POST `/auth/sign-out`).
+- **Hierarchy:** Profile shell provides persistent tabs: Overview, Offers, Account. Within Overview (`/profile`): Primary action is "Edit Profile" (`/profile/edit`); secondary is "View Public Profile" (`/profiles/{handle}`). The Edit form (`/profile/edit`) features a "Save Profile" primary submit button alongside a "Cancel" link back to `/profile`. Finally, Account (`/profile/account`) provides a primary "Sign Out" form button (POST `/auth/sign-out`).
 - **State matrix:**
   - *Typical Overview:* Identity card with display name, handle, bio, "Edit Profile" CTA, and public profile link.
   - *Typical Account:* Identity summary with email and session termination card ("Sign Out").

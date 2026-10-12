@@ -1,8 +1,7 @@
-pub mod delete;
 pub mod edit;
 
 use crate::app::components::button::{ButtonVariant, button_link};
-use topcoat::{Result as TopcoatResult, context::Cx, view::view};
+use topcoat::{Result as TopcoatResult, context::Cx, router::error::see_other, view::view};
 
 topcoat::router::module_param!(id: uuid::Uuid, error = not_found);
 
@@ -21,7 +20,7 @@ pub async fn view_offer(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
 
     let public_slug_href = format!("/offers/{}", offer.slug);
     let edit_href = format!("/profile/offers/{}/edit", offer.id);
-    let delete_action_href = format!("/profile/offers/{}/delete", offer.id);
+    let delete_action_href = format!("/profile/offers/{}", offer.id);
     let offer_title = offer.title.clone();
 
     Ok(view! {
@@ -83,4 +82,21 @@ pub async fn view_offer(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
             </dialog>
         </div>
     })
+}
+
+#[topcoat::router::page([POST, DELETE])]
+pub async fn delete_offer(cx: &Cx) -> TopcoatResult<()> {
+    let id_uuid = *topcoat::router::path_param::<Id>(cx)?;
+    let offer_id = haven_domain::offer::OfferId::from_uuid(id_uuid);
+
+    // Authorization check
+    let user = crate::app::auth::guard::require_owner_auth(cx).await?;
+
+    crate::app::state::registry(cx)
+        .offers()
+        .delete(offer_id, user.id)
+        .await
+        .map_err(crate::app::state::map_repo_err)?;
+
+    Err(see_other("/profile/offers").into())
 }
