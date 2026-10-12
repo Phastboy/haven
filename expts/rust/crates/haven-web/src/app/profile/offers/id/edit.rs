@@ -28,9 +28,6 @@ fn render_edit_offer_form(cx: &Cx, view_data: EditOfferFormView) -> impl topcoat
                 (status)
             }
             <div class="page-header">
-                <a href=(format!("/profile/offers/{}", offer_id)) class="text-muted back-link">
-                    "← Back to offer"
-                </a>
                 <h1>"Edit Offer"</h1>
                 <p class="text-muted">"Update your offer's details."</p>
             </div>

@@ -4,7 +4,11 @@ pub mod account;
 pub mod edit;
 pub mod offers;
 
-use crate::app::components::button::{ButtonVariant, button_link};
+use crate::app::components::{
+    identity_block::{IdentityBlockData, identity_block},
+    profile_row::{ProfileRowData, RowIcon},
+    row_group::{ProfileGroupData, row_group},
+};
 use topcoat::{
     Result as TopcoatResult,
     context::Cx,
@@ -20,65 +24,12 @@ pub struct ProfileQuery {
 
 #[topcoat::router::layout]
 pub async fn profile_layout(cx: &Cx, slot: topcoat::router::Slot<'_>) -> TopcoatResult<impl View> {
-    let user = crate::app::auth::guard::require_owner_auth(cx).await?;
-    let path = topcoat::router::request::uri(cx).path();
-    let is_overview =
-        path == "/profile" || path == "/profile/" || path.starts_with("/profile/edit");
-    let is_offers = path.starts_with("/profile/offers");
-    let is_account = path.starts_with("/profile/account");
-
-    let public_profile_href = format!("/profiles/{}", user.handle.as_str());
-    let display_name_str = user.display_name.as_str().to_string();
-    let handle_str = format!("@{}", user.handle.as_str());
-    let bio_str = user.bio.as_ref().map(|b| b.as_str().to_string());
+    let _user = crate::app::auth::guard::require_owner_auth(cx).await?;
 
     Ok(view! {
-        <div class="profile-shell">
+        <div class="profile-page-shell">
             <meta name="robots" content="noindex" />
-            <div class="profile-shell-header">
-                <div class="profile-identity">
-                    <h1 class="profile-display-name">(display_name_str)</h1>
-                    <span class="profile-handle text-muted">(handle_str)</span>
-                </div>
-                if let Some(bio) = bio_str {
-                    <p class="profile-bio">(bio)</p>
-                } else {
-                    <p class="profile-bio text-muted">"No bio added yet."</p>
-                }
-                <div class="profile-header-actions">
-                    <a href=(public_profile_href) class="text-muted public-profile-link">
-                        "View public profile →"
-                    </a>
-                </div>
-            </div>
-
-            <nav class="profile-nav" aria-label="Profile Sections">
-                <a
-                    href="/profile"
-                    class=(if is_overview { "profile-tab active" } else { "profile-tab" })
-                    aria-current=(if is_overview { Some("page") } else { None })
-                >
-                    "Overview"
-                </a>
-                <a
-                    href="/profile/offers"
-                    class=(if is_offers { "profile-tab active" } else { "profile-tab" })
-                    aria-current=(if is_offers { Some("page") } else { None })
-                >
-                    "Offers"
-                </a>
-                <a
-                    href="/profile/account"
-                    class=(if is_account { "profile-tab active" } else { "profile-tab" })
-                    aria-current=(if is_account { Some("page") } else { None })
-                >
-                    "Account"
-                </a>
-            </nav>
-
-            <div class="profile-shell-content">
-                (slot)
-            </div>
+            (slot)
         </div>
     })
 }
@@ -89,60 +40,89 @@ pub async fn profile_overview(cx: &Cx) -> TopcoatResult<impl View> {
     let query = topcoat::router::query_params::<ProfileQuery>(cx).ok();
     let is_updated = query.as_ref().and_then(|q| q.updated.as_deref()) == Some("1");
 
-    let offers = crate::app::state::registry(cx)
-        .offers()
-        .find_by_user(user.id)
-        .await
-        .map_err(crate::app::state::map_repo_err)?;
-    let offers_count = offers.len();
+    let joined_date = user.created_at.format("Joined %B %Y").to_string();
+    let identity_data = IdentityBlockData {
+        display_name: user.display_name.as_str().to_string(),
+        handle: user.handle.as_str().to_string(),
+        joined_date,
+        avatar_url: None,
+        bio: user.bio.as_ref().map(|b| b.as_str().to_string()),
+    };
+
+    let profile_group_data = ProfileGroupData {
+        label: "PROFILE",
+        rows: vec![
+            ProfileRowData {
+                icon: RowIcon::PublicProfile,
+                title: "Public Profile".to_string(),
+                description: "View how others see your profile".to_string(),
+                href: format!("/profiles/{}", user.handle.as_str()),
+                is_post: false,
+            },
+            ProfileRowData {
+                icon: RowIcon::EditProfile,
+                title: "Edit Profile".to_string(),
+                description: "Update display name, handle, or bio".to_string(),
+                href: "/profile/edit".to_string(),
+                is_post: false,
+            },
+        ],
+    };
+
+    let offers_group_data = ProfileGroupData {
+        label: "OFFERS",
+        rows: vec![
+            ProfileRowData {
+                icon: RowIcon::Offers,
+                title: "Your Offers".to_string(),
+                description: "Manage your active listings".to_string(),
+                href: "/profile/offers".to_string(),
+                is_post: false,
+            },
+            ProfileRowData {
+                icon: RowIcon::CreateOffer,
+                title: "Create an Offer".to_string(),
+                description: "Publish a new offer for others to see".to_string(),
+                href: "/profile/offers/new".to_string(),
+                is_post: false,
+            },
+        ],
+    };
+
+    let account_group_data = ProfileGroupData {
+        label: "ACCOUNT",
+        rows: vec![
+            ProfileRowData {
+                icon: RowIcon::Account,
+                title: "Account & Session".to_string(),
+                description: "Manage signed-in email and session".to_string(),
+                href: "/profile/account".to_string(),
+                is_post: false,
+            },
+            ProfileRowData {
+                icon: RowIcon::SignOut,
+                title: "Sign Out".to_string(),
+                description: "End your current session".to_string(),
+                href: "/auth/sign-out".to_string(),
+                is_post: true,
+            },
+        ],
+    };
 
     Ok(view! {
-        <div class="profile-overview-section">
+        <div class="profile-overview">
             if is_updated {
                 <div class="notice-banner" role="status">
                     <p>"Your profile has been updated."</p>
                 </div>
             }
 
-            <div class="overview-grid">
-                <div class="overview-card">
-                    <div class="overview-card-header">
-                        <h2 class="section-title">"Identity"</h2>
-                        button_link(
-                            href: "/profile/edit",
-                            text: "Edit Profile",
-                            variant: ButtonVariant::Secondary,
-                        )
-                    </div>
-                    <p class="text-muted">
-                        "Your identity as seen by people viewing your offers and public profile."
-                    </p>
-                </div>
+            identity_block(data: identity_data)
 
-                <div class="overview-card">
-                    <div class="overview-card-header">
-                        <h2 class="section-title">"Your Offers"</h2>
-                        button_link(
-                            href: "/profile/offers",
-                            text: "View All Offers",
-                            variant: ButtonVariant::Secondary,
-                        )
-                    </div>
-                    <p class="text-muted">
-                        if offers_count == 0 {
-                            "You haven't created any offers yet."
-                        } else {
-                            (format!("You have {offers_count} active offer(s)."))
-                        }
-                    </p>
-                    <div class="overview-card-actions">
-                        button_link(
-                            href: "/profile/offers/new",
-                            text: "Create an Offer",
-                            variant: ButtonVariant::Primary,
-                        )
-                    </div>
-                </div>
+            <div class="profile-sections">
+                row_group(group: profile_group_data)
+                row_group(group: offers_group_data)
+                row_group(group: account_group_data)
             </div>
         </div>
     })

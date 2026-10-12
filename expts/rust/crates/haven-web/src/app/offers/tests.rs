@@ -925,3 +925,116 @@ async fn test_maker_attribution_rendered_on_offer_page_and_feed() {
     assert!(body_feed.contains("Handmade Ceramic Vase"));
     assert!(body_feed.contains("/profiles/test-maker"));
 }
+
+#[tokio::test]
+async fn test_navigation_layout_rule_main_vs_child() {
+    let (router, registry) = setup_test_app();
+
+    let user = mock_user(UserId::generate(), AccountId::generate(), "artisan-nav");
+    let _ = create_auth_session(&registry.users_repo, user.clone());
+    let create_offer = CreateOffer {
+        title: "Carved Wooden Bowl".to_string(),
+        description: "Hand-carved wooden bowl from walnut.".to_string(),
+        price: Price::new(3000).unwrap(),
+        currency: CurrencyCode::default_code(),
+    };
+    let offer = registry
+        .offers_repo
+        .create(user.id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
+        .await
+        .unwrap();
+
+    // 1. Top-level route /offers uses Main layout
+    let req_main = Request::builder()
+        .method("GET")
+        .uri("/offers")
+        .body(Body::empty())
+        .unwrap();
+    let res_main = router.handle(req_main).await;
+    assert_eq!(res_main.status(), http::StatusCode::OK);
+    let body_main = body_to_string(res_main.into_body()).await;
+    assert!(body_main.contains("layout-main"));
+    assert!(!body_main.contains("layout-child"));
+    assert!(!body_main.contains("child-header"));
+
+    // 2. Child route /offers/{slug} with no Referer uses Child layout with fallback parent
+    let req_child_no_ref = Request::builder()
+        .method("GET")
+        .uri(format!("/offers/{}", offer.slug))
+        .body(Body::empty())
+        .unwrap();
+    let res_child_no_ref = router.handle(req_child_no_ref).await;
+    assert_eq!(res_child_no_ref.status(), http::StatusCode::OK);
+    let body_child_no_ref = body_to_string(res_child_no_ref.into_body()).await;
+    assert!(body_child_no_ref.contains("layout-child"));
+    assert!(body_child_no_ref.contains("site-header desktop-only"));
+    assert!(body_child_no_ref.contains("child-header"));
+    assert!(body_child_no_ref.contains("href=\"/offers\""));
+
+    // 3. Child route with same-site Referer returns previous page
+    let req_child_with_ref = Request::builder()
+        .method("GET")
+        .uri(format!("/offers/{}", offer.slug))
+        .header("host", "localhost:3000")
+        .header("referer", "http://localhost:3000/offers?sort=newest")
+        .body(Body::empty())
+        .unwrap();
+    let res_child_with_ref = router.handle(req_child_with_ref).await;
+    assert_eq!(res_child_with_ref.status(), http::StatusCode::OK);
+    let body_child_with_ref = body_to_string(res_child_with_ref.into_body()).await;
+    assert!(body_child_with_ref.contains("href=\"/offers?sort=newest\""));
+
+    // 4. Child route with self-referencing Referer (refresh) guards against loop
+    let req_child_refresh = Request::builder()
+        .method("GET")
+        .uri(format!("/offers/{}", offer.slug))
+        .header("host", "localhost:3000")
+        .header("referer", format!("http://localhost:3000/offers/{}", offer.slug))
+        .body(Body::empty())
+        .unwrap();
+    let res_child_refresh = router.handle(req_child_refresh).await;
+    assert_eq!(res_child_refresh.status(), http::StatusCode::OK);
+    let body_child_refresh = body_to_string(res_child_refresh.into_body()).await;
+    assert!(body_child_refresh.contains("href=\"/offers\""));
+
+    // 5. Back button uses an explicit SVG icon, not a unicode text sign
+    assert!(body_child_refresh.contains("back-icon-svg"));
+    assert!(body_child_refresh.contains("<svg"));
+
+    // 6. Public profile navigated from /profile returns to /profile via Referer
+    let session = create_auth_session(&registry.users_repo, user.clone());
+    let req_profile_pub_ref = Request::builder()
+        .method("GET")
+        .uri(format!("/profiles/{}", user.handle.as_str()))
+        .header("host", "localhost:3000")
+        .header("cookie", format!("sid={session}"))
+        .header("referer", "http://localhost:3000/profile")
+        .body(Body::empty())
+        .unwrap();
+    let res_profile_pub_ref = router.handle(req_profile_pub_ref).await;
+    assert_eq!(res_profile_pub_ref.status(), http::StatusCode::OK);
+    // Security layer sets Referrer-Policy: same-origin
+    assert_eq!(
+        res_profile_pub_ref
+            .headers()
+            .get("referrer-policy")
+            .and_then(|v| v.to_str().ok()),
+        Some("same-origin")
+    );
+    let body_profile_pub_ref = body_to_string(res_profile_pub_ref.into_body()).await;
+    assert!(body_profile_pub_ref.contains("href=\"/profile\""));
+    assert!(body_profile_pub_ref.contains("back-icon-svg"));
+
+    // 7. Public profile viewed directly by owner falls back to /profile (parent)
+    let req_profile_pub_no_ref = Request::builder()
+        .method("GET")
+        .uri(format!("/profiles/{}", user.handle.as_str()))
+        .header("cookie", format!("sid={session}"))
+        .body(Body::empty())
+        .unwrap();
+    let res_profile_pub_no_ref = router.handle(req_profile_pub_no_ref).await;
+    assert_eq!(res_profile_pub_no_ref.status(), http::StatusCode::OK);
+    let body_profile_pub_no_ref = body_to_string(res_profile_pub_no_ref.into_body()).await;
+    assert!(body_profile_pub_no_ref.contains("href=\"/profile\""));
+}
+

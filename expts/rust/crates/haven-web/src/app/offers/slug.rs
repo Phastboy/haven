@@ -90,7 +90,6 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
             <div class="offer-detail">
                 <link rel="canonical" href=(canonical_url) />
                 <div class="page-header">
-                    <a href="/offers" class="text-muted back-link">"← Back to all offers"</a>
                     <div class="offer-detail-header">
                         <h1 class="offer-detail-title">(offer.title)</h1>
                         <div class="offer-detail-price">(price_text)</div>
