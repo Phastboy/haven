@@ -1070,3 +1070,40 @@ async fn test_navigation_layout_rule_main_vs_child() {
     let body_profile_pub_no_ref = body_to_string(res_profile_pub_no_ref.into_body()).await;
     assert!(body_profile_pub_no_ref.contains("href=\"/profile\""));
 }
+
+#[tokio::test]
+async fn test_public_offer_back_returns_to_owner_offer_page() {
+    let (router, registry) = setup_test_app();
+    let user = mock_user(UserId::generate(), AccountId::generate(), "artisan");
+    let session = create_auth_session(&registry.users_repo, user.clone());
+
+    let create_offer = CreateOffer {
+        title: "Handcrafted Desk".to_string(),
+        description: "Solid oak study desk.".to_string(),
+        price: Price::ZERO,
+        currency: CurrencyCode::default_code(),
+    };
+    let offer = registry
+        .offers_repo
+        .create(user.id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
+        .await
+        .unwrap();
+
+    let owner_page_url = format!("http://localhost:3000/profile/offers/{}", offer.id);
+
+    // Navigating to public offer page from owner manage view
+    let req = Request::builder()
+        .method("GET")
+        .uri(format!("/offers/{}", offer.slug))
+        .header("host", "localhost:3000")
+        .header("cookie", format!("sid={session}"))
+        .header("referer", &owner_page_url)
+        .body(Body::empty())
+        .unwrap();
+
+    let res = router.handle(req).await;
+    assert_eq!(res.status(), http::StatusCode::OK);
+    let body = body_to_string(res.into_body()).await;
+    // Must return to where the user came from (/profile/offers/{id}), NOT fall back to /offers
+    assert!(body.contains(&format!("href=\"/profile/offers/{}\"", offer.id)));
+}

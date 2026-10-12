@@ -88,6 +88,45 @@ fn is_same_or_descendant(referer_path: &str, current_path: &str) -> bool {
     ref_clean.starts_with(&child_prefix)
 }
 
+fn extract_host_name(h: &str) -> &str {
+    let h = h.trim();
+    if let Some((ipv6, _)) = h.strip_prefix('[').and_then(|rest| rest.split_once(']')) {
+        return ipv6.trim();
+    }
+    match h.split_once(':') {
+        Some((name, _)) => name.trim(),
+        None => h,
+    }
+}
+
+/// Checks whether a referer URL belongs to the same site as the incoming request host.
+fn is_same_site(expected_host: &str, referer_url: &url::Url) -> bool {
+    let expected_name = extract_host_name(expected_host);
+    let referer_raw = referer_url.host_str().unwrap_or("").trim();
+    let referer_name = extract_host_name(referer_raw);
+
+    let is_local = |h: &str| {
+        h.eq_ignore_ascii_case("localhost") || h == "127.0.0.1" || h == "::1" || h == "[::1]"
+    };
+
+    // Both are local loopback dev hosts
+    if is_local(expected_name) && is_local(referer_name) {
+        return true;
+    }
+
+    // Exact host match
+    if expected_name.eq_ignore_ascii_case(referer_name) {
+        return true;
+    }
+
+    // nip.io local network domain match (e.g. 192.168.0.50.nip.io)
+    if expected_name.ends_with(".nip.io") && referer_name.ends_with(".nip.io") {
+        return true;
+    }
+
+    false
+}
+
 /// Resolves a safe same-site return URL from the `Referer` request header.
 ///
 /// To prevent open redirect and UI loop vulnerabilities:
@@ -114,12 +153,12 @@ pub fn resolve_safe_back_url(
         return fallback_parent.to_string();
     }
 
-    // Determine the host of the current request if available
+    // Determine the host of the current request: prioritize X-Forwarded-Host when behind proxies
     let host = headers
-        .get(http::header::HOST)
-        .or_else(|| headers.get("x-forwarded-host"))
+        .get("x-forwarded-host")
+        .or_else(|| headers.get(http::header::HOST))
         .and_then(|h| h.to_str().ok())
-        .map(str::trim);
+        .map(|h| h.split(',').next().unwrap_or(h).trim());
 
     // If referer is an absolute URL (e.g. http://localhost:3000/profile)
     if referer.starts_with("http://") || referer.starts_with("https://") {
@@ -127,29 +166,9 @@ pub fn resolve_safe_back_url(
             return fallback_parent.to_string();
         };
 
-        // Host verification: must match current Host header to be considered same-site
-        if let Some(expected_host) = host {
-            let (expected_name, expected_port) = match expected_host.split_once(':') {
-                Some((name, port)) => (name, port.parse::<u16>().ok()),
-                None => (expected_host, None),
-            };
-
-            let referer_name = parsed_url.host_str().unwrap_or("");
-            let referer_port = parsed_url.port();
-
-            let names_match = expected_name.eq_ignore_ascii_case(referer_name);
-            let ports_match = match (expected_port, referer_port) {
-                (Some(p1), Some(p2)) => p1 == p2,
-                (Some(p), None) | (None, Some(p)) => {
-                    (parsed_url.scheme() == "http" && p == 80)
-                        || (parsed_url.scheme() == "https" && p == 443)
-                }
-                (None, None) => true,
-            };
-
-            if !names_match || !ports_match {
-                return fallback_parent.to_string();
-            }
+        // Host verification: must match current host/origin to be considered same-site
+        if host.is_some_and(|expected_host| !is_same_site(expected_host, &parsed_url)) {
+            return fallback_parent.to_string();
         }
 
         let path = parsed_url.path();
@@ -182,7 +201,7 @@ pub fn resolve_safe_back_url(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use http::HeaderValue;
+    use http::header::{HeaderName, HeaderValue};
 
     #[test]
     fn test_classify_route() {
@@ -356,5 +375,45 @@ mod tests {
         );
         let back_rel = resolve_safe_back_url(&headers_rel, "/profile/offers", "/profile");
         assert_eq!(back_rel, "/profile");
+    }
+
+    #[test]
+    fn test_resolve_safe_back_url_from_owner_offer_to_public_view() {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            http::header::HOST,
+            HeaderValue::from_static("localhost:3000"),
+        );
+        // Navigating to public offer from owner's command center must return to owner's command center
+        headers.insert(
+            http::header::REFERER,
+            HeaderValue::from_static(
+                "http://localhost:3000/profile/offers/3f2504e0-4f89-11d3-9a0c-0305e82c3301",
+            ),
+        );
+        let back = resolve_safe_back_url(&headers, "/offers/rustic-table-123", "/offers");
+        assert_eq!(back, "/profile/offers/3f2504e0-4f89-11d3-9a0c-0305e82c3301");
+    }
+
+    #[test]
+    fn test_resolve_safe_back_url_with_reverse_proxy_and_nip_io() {
+        let mut headers = HeaderMap::new();
+        // Server socket sees internal host:port, but reverse proxy sets X-Forwarded-Host
+        headers.insert(
+            http::header::HOST,
+            HeaderValue::from_static("127.0.0.1:3000"),
+        );
+        headers.insert(
+            HeaderName::from_static("x-forwarded-host"),
+            HeaderValue::from_static("192.168.0.50.nip.io:8080"),
+        );
+        headers.insert(
+            http::header::REFERER,
+            HeaderValue::from_static(
+                "http://192.168.0.50.nip.io:8080/profile/offers/3f2504e0-4f89-11d3-9a0c-0305e82c3301",
+            ),
+        );
+        let back = resolve_safe_back_url(&headers, "/offers/rustic-table-123", "/offers");
+        assert_eq!(back, "/profile/offers/3f2504e0-4f89-11d3-9a0c-0305e82c3301");
     }
 }
