@@ -31,6 +31,13 @@ Never copy a platform's surface. Take apart what it does, record what is borrowe
 5. **Modularity.** Improving one component later must not require editing the page that assembles it, and adding a component must not require editing every page. See "Structure".
 6. **Verify framework facts.** How Topcoat defines view components, escapes output, serves static files, handles forms, and sets headers must be checked with `rust-crate-docs` against the locked version. Do not assume.
 7. **If the owner has not decided something that shapes the look** (light or dark theme, accent color, typeface), ask. Do not choose silently and do not default to a framework's stock palette.
+8. **Navigation layout rule (Main vs Child).** Exactly two layouts exist across the app:
+   - **Main layout:** Top-level routes (`/offers`, `/profile`, `/`). Shows primary navigation (`.site-header`) on all screen sizes. No back header.
+   - **Child layout:** Every other route (e.g. `/offers/{slug}`, `/profiles/{handle}`, `/profile/edit`, `/profile/offers`, `/profile/offers/*`, `/profile/account`, `/auth/*`).
+     - **Mobile (`<= 640px`):** Primary navigation is hidden (`.desktop-only`); the header contains only a clean back button (`.child-header` with an explicit SVG arrow-left icon and "Back" label, meeting the 44px touch target). Unicode character signs (e.g. `"←"`, `"›"`) are strictly forbidden as icons.
+     - **Large screens (`> 640px`):** Primary navigation remains visible (wide screens have room for it and hiding it saves no space); the back button stays visible beneath primary navigation for consistent back-navigation affordance across devices.
+   - **Safe back navigation ("Where you came from" default, Parent fallback):** The back button returns the user to the safe same-site page they came from (via validated `Referer`, enabled via `Referrer-Policy: same-origin`). If `Referer` is absent, refreshed, or external, it falls back to the child's configured parent route (`/profile` when viewing own profile, `/offers` when viewing public offers). External URLs, protocol-relative (`//`), and self-referencing loops are strictly rejected.
+   - **Pages never build their own navigation headers or ad-hoc back links:** Route classification is central (`crates/haven-web/src/app/navigation.rs`); individual views assemble content only.
 
 ## Process (run per screen)
 
@@ -62,7 +69,7 @@ Never copy a platform's surface. Take apart what it does, record what is borrowe
 - **Pages assemble, components decide nothing about the page.** A page imports components; adding or improving a component must not require editing the other pages or a central registry beyond one export line. If improving a component forces changes to many pages, the interface is wrong.
 - **Layers:** `tokens` (variables only) → `base` (element defaults) → `components` → `pages` (layout only). Lower layers never depend on higher ones.
 - **Semantic token names** (`--color-accent`, `--space-4`), never raw values or color names in components.
-- Components do not hard-code copy that belongs to the page; pass text in.
+- **Layout chrome is decoupled from pages.** Top-level routes use the Main layout; child routes use the Child layout. Individual pages do not render headers or back links (see rule 8).
 - **Slot-based rows and cards.** A repeated item (an offer in a list) is one component with named, optional slots in a fixed arrangement, for example: **leading** (image or icon, optional), **title**, **description** (muted, clamped to two lines), **value** (the most important secondary fact, such as price), **status** (only if a real status exists), and **action**. Alignment is fixed: the same slot is always in the same place on every row, so a list reads as one object. An absent slot collapses cleanly and the remaining slots keep their alignment, so adding an image or icon later changes the leading slot only and touches no page. Do not add a slot until the schema has data for it, and do not reserve empty space for slots that do not exist yet.
 
 ## States

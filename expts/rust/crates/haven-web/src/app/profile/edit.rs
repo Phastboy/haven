@@ -44,7 +44,6 @@ fn render_profile_edit_form(cx: &Cx, view_data: ProfileEditFormViewData) -> impl
                 (status)
             }
             <div class="page-header">
-                <a href="/profile" class="text-muted back-link">"← Back to your profile"</a>
                 <h1>"Edit Profile"</h1>
                 <p class="text-muted">"Update your public name, handle, and bio."</p>
             </div>

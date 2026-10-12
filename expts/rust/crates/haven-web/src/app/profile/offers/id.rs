@@ -28,7 +28,6 @@ pub async fn view_offer(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
         <div class="offer-detail">
             <meta name="robots" content="noindex" />
             <div class="page-header">
-                <a href="/profile/offers" class="text-muted back-link">"← Back to your offers"</a>
                 <div class="offer-detail-header">
                     <h1 class="offer-detail-title">(offer.title)</h1>
                     <div class="offer-detail-price">(price_text)</div>

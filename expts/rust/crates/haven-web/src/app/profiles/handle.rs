@@ -1,6 +1,7 @@
 //! Public profile page by handle: `/profiles/{handle}`.
 
 use crate::app::components::empty_state::empty_state;
+use crate::app::components::identity_block::{IdentityBlockData, identity_block};
 use crate::app::components::offer_card::offer_card;
 use crate::app::components::pagination::pagination_nav;
 use topcoat::{
@@ -47,23 +48,21 @@ pub async fn view_profile(cx: &Cx) -> TopcoatResult<impl View> {
         .next_cursor
         .map(|c| format!("/profiles/{}?after={c}", user.handle.as_str()));
 
-    let display_name_str = user.display_name.as_str().to_string();
-    let handle_str = format!("@{}", user.handle.as_str());
     let bio_text = user.bio.as_ref().map(|b| b.as_str().to_string());
     let offers_heading = format!("Offers by {}", user.display_name.as_str());
+    let joined_date = user.created_at.format("Joined %B %Y").to_string();
+
+    let identity_data = IdentityBlockData {
+        display_name: user.display_name.as_str().to_string(),
+        handle: user.handle.as_str().to_string(),
+        joined_date,
+        avatar_url: None,
+        bio: bio_text,
+    };
 
     Ok(view! {
         <div class="profile-page">
-            <div class="page-header profile-header">
-                <a href="/offers" class="text-muted back-link">"← Back to all offers"</a>
-                <div class="profile-identity">
-                    <h1 class="profile-display-name">(display_name_str)</h1>
-                    <span class="profile-handle text-muted">(handle_str)</span>
-                </div>
-                if let Some(bio) = bio_text {
-                    <p class="profile-bio">(bio)</p>
-                }
-            </div>
+            identity_block(data: identity_data)
 
             <section class="profile-offers">
                 <h2 class="section-title">(offers_heading)</h2>

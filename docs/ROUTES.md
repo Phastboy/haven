@@ -4,31 +4,48 @@ This document catalogs every route currently available in Haven, its HTTP method
 
 ---
 
+## Navigation Layout Rule
+
+Haven enforces a strict two-layout rule across all routes:
+
+1. **Top-Level Routes (`NavigationLayout::Main`):** `/offers`, `/profile`, and `/`.
+   - **Mobile (`<= 640px`):** Main layout renders primary navigation (`.site-header`). No back button is shown.
+   - **Desktop (`> 640px`):** Main layout renders primary navigation.
+2. **Child Routes (`NavigationLayout::Child`):** Every other route (e.g. `/offers/{slug}`, `/profiles/{handle}`, `/profile/edit`, `/profile/offers`, `/profile/offers/new`, `/profile/offers/{id}`, `/profile/offers/{id}/edit`, `/profile/account`, `/auth/*`).
+   - **Mobile (`<= 640px`):** Primary navigation is completely hidden (`.site-header.desktop-only`). The header contains only a clean back button (`.child-header` with an explicit SVG arrow-left icon and "Back" label).
+   - **Desktop (`> 640px`):** Primary navigation remains visible (wide screens have room for it and hiding it saves no space). The back header remains visible below the primary navigation for consistent back-navigation affordance across devices.
+3. **Safe Back URL Resolution:**
+   - The default destination is always the page the user came from using the validated same-site `Referer` request header (`Referrer-Policy: same-origin` is enforced).
+   - If `Referer` is absent, cross-site, protocol-relative (`//`), or matches the current URL (browser refresh loop guard), it falls back safely to the child's configured parent route (`/offers`, `/profile`, etc.).
+   - Individual page templates never construct their own header or ad-hoc back link. Route classification occurs centrally in `crates/haven-web/src/app/navigation.rs`.
+
+---
+
 ## Route Overview at a Glance
 
-| Route Pattern | Method | Access Tier | Purpose | Primary Affordance |
-|---|---|---|---|---|
-| `/` | `GET` | Public | Landing page | "Browse Offers" / "Sign In" (redirects authed to `/offers`) |
-| `/offers` | `GET` | Public | Available offers feed | Keyset pagination, offer cards, maker links |
-| `/offers/{slug}` | `GET` | Public | Single offer detail | View full offer description, maker link |
-| `/profiles/{handle}` | `GET` | Public | Public maker profile | Maker bio, catalog of maker's offers |
-| `/auth/sign-in` | `GET`, `POST` | Public / Guest | Sign-in portal | Email magic link, Google OAuth CTA (redirects authed to `/offers`) |
-| `/auth/sent` | `GET` | Public | Confirmation notice | Notice to check email inbox |
-| `/auth/verify` | `GET`, `POST` | Public (token) | Magic link verification | "Confirm and Sign In" token exchange (redirects to `/offers`) |
-| `/auth/google` | `GET` | Public | Google OAuth entrypoint | Generates CSRF state, redirects to Google |
-| `/auth/google/redirect` | `GET` | Public | Google OAuth callback | Canonical callback, exchanges code, redirects to `/offers` |
-| `/auth/sign-out` | `POST` | Authenticated | Terminate session | Clears session cookie, redirects to sign-in |
-| `/profile` | `GET` | Authenticated | Profile overview (shell) | Identity summary, "Edit Profile", "View Public Profile" |
-| `/profile/edit` | `GET`, `POST` | Authenticated | Edit owner profile | Display name, handle, bio form |
-| `/profile/offers` | `GET` | Authenticated | Owner offers catalog | "Create an Offer", keyset pagination, manage links |
-| `/profile/offers/new` | `GET`, `POST` | Authenticated | Create an offer | Title, description, price, currency form |
-| `/profile/offers/{id}` | `GET` | Authenticated | Owner offer command center | View own offer, edit, view public, zero-JS Popover delete |
-| `/profile/offers/{id}/edit` | `GET`, `POST` | Authenticated | Edit own offer | Patch form for title, description, price, currency |
-| `/profile/offers/{id}/delete` | `POST` | Authenticated | Delete own offer | Deletion submission (triggered from Popover dialog) |
-| `/profile/account` | `GET` | Authenticated | Account & session | Account details, "Sign Out" form button |
-| `/style.css` | `GET` | Public | Application stylesheet | CSS design tokens & semantic styles |
-| `/health` | `GET` | Public | Uptime / Health check | HTTP 200 health verification |
-| `/robots.txt` | `GET` | Public | Crawl instructions | Disallows indexing of `/profile/` |
+| Route Pattern | Method | Access Tier | Layout | Fallback Parent | Purpose | Primary Affordance |
+|---|---|---|---|---|---|---|
+| `/` | `GET` | Public | Main | — | Landing page | "Browse Offers" / "Sign In" (redirects authed to `/offers`) |
+| `/offers` | `GET` | Public | Main | — | Available offers feed | Keyset pagination, offer cards, maker links |
+| `/offers/{slug}` | `GET` | Public | Child | `/offers` | Single offer detail | View full offer description, maker link |
+| `/profiles/{handle}` | `GET` | Public | Child | `/profile` (owner) / `/offers` | Public maker profile | Maker bio, catalog of maker's offers |
+| `/auth/sign-in` | `GET`, `POST` | Public / Guest | Child | `/` | Sign-in portal | Email magic link, Google OAuth CTA (redirects authed to `/offers`) |
+| `/auth/sent` | `GET` | Public | Child | `/` | Confirmation notice | Notice to check email inbox |
+| `/auth/verify` | `GET`, `POST` | Public (token) | Child | `/` | Magic link verification | "Confirm and Sign In" token exchange (redirects to `/offers`) |
+| `/auth/google` | `GET` | Public | Child | `/` | Google OAuth entrypoint | Generates CSRF state, redirects to Google |
+| `/auth/google/redirect` | `GET` | Public | Child | `/` | Google OAuth callback | Canonical callback, exchanges code, redirects to `/offers` |
+| `/auth/sign-out` | `POST` | Authenticated | Child | `/` | Terminate session | Clears session cookie, redirects to sign-in |
+| `/profile` | `GET` | Authenticated | Main | — | Profile overview (shell) | Identity summary, "Edit Profile", "View Public Profile" |
+| `/profile/edit` | `GET`, `POST` | Authenticated | Child | `/profile` | Edit owner profile | Display name, handle, bio form |
+| `/profile/offers` | `GET` | Authenticated | Child | `/profile` | Owner offers catalog | "Create an Offer", keyset pagination, manage links |
+| `/profile/offers/new` | `GET`, `POST` | Authenticated | Child | `/profile/offers` | Create an offer | Title, description, price, currency form |
+| `/profile/offers/{id}` | `GET` | Authenticated | Child | `/profile/offers` | Owner offer command center | View own offer, edit, view public, zero-JS Popover delete |
+| `/profile/offers/{id}/edit` | `GET`, `POST` | Authenticated | Child | `/profile/offers` | Edit own offer | Patch form for title, description, price, currency |
+| `/profile/offers/{id}/delete` | `POST` | Authenticated | Child | `/profile/offers` | Delete own offer | Deletion submission (triggered from Popover dialog) |
+| `/profile/account` | `GET` | Authenticated | Child | `/profile` | Account & session | Account details, "Sign Out" form button |
+| `/style.css` | `GET` | Public | Static | — | Application stylesheet | CSS design tokens & semantic styles |
+| `/health` | `GET` | Public | System | — | Uptime / Health check | HTTP 200 health verification |
+| `/robots.txt` | `GET` | Public | System | — | Crawl instructions | Disallows indexing of `/profile/` |
 
 ---
 
@@ -67,7 +84,7 @@ This document catalogs every route currently available in Haven, its HTTP method
   - **Headline & Price:** Full title and price badge.
   - **Maker Attribution:** "Offered by <a href="/profiles/{handle}">Maker Name</a>".
   - **Description Body:** Complete description rendered in comfortable 45–75 character measure.
-  - **Back Navigation:** "← Back to all offers" link (`/offers`).
+  - **Back Navigation:** Provided by child layout header (`← Back` returning to previous page or falling back to `/offers`).
 - **Failure States:**
   - Non-existent slug returns clean HTTP 404 Not Found page with link back to available offers.
 
@@ -78,7 +95,7 @@ This document catalogs every route currently available in Haven, its HTTP method
   - Looks up maker by `@handle`.
   - Fetches maker's public identity and list of available offers created by them in $O(1)$ query count.
 - **Affordances:**
-  - **Back Navigation:** "← Back to all offers" link (`/offers`).
+  - **Back Navigation:** Provided by child layout header (`← Back` returning to previous page or falling back to `/offers`).
   - **Maker Identity:** Maker's display name (`h1`), handle badge (`@handle`), and bio paragraph (omitted neatly if empty).
   - **Maker's Catalog:** Dedicated section ("Offers by {display_name}") listing all active offers created by this maker.
   - **Catalog Offer Cards:** Title links to `/offers/{slug}`, price, description, keyset pagination.

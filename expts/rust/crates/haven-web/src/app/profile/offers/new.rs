@@ -28,7 +28,6 @@ fn render_new_offer_form(cx: &Cx, view_data: NewOfferFormView) -> impl topcoat::
                 (status)
             }
             <div class="page-header">
-                <a href="/profile/offers" class="text-muted back-link">"← Back to your offers"</a>
                 <h1>"New Offer"</h1>
                 <p class="text-muted">"Create a new offer to list on Haven."</p>
             </div>
