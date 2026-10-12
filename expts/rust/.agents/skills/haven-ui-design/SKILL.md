@@ -16,91 +16,62 @@ description: >-
 
 ## Intent
 
-The UI should feel designed by a person who understood what each screen is for, not generated from a template. That feeling comes from **decisions with reasons**, not from a look. Reference direction set by the owner: Airbnb's restraint (content is the decoration, almost no chrome, one accent, consistent cards, progressive disclosure) with Pinterest as second reference (only relevant when saving and collections appear, roadmap 0.5.x). Offers have no images for now, so the UI is **text-led**: hierarchy comes from size, weight, color, and spacing.
+The UI should feel designed by a person who understood what each screen is for, not generated from a template. That feeling comes from **decisions with reasons**, not from a look. Reference direction set by the owner: Airbnb's restraint (content is the decoration, almost no chrome, one accent, consistent cards, progressive disclosure) with Pinterest as second reference (relevant when saving and collections appear in 0.5.x).
 
-Never copy a platform's surface. Take apart what it does, record what is borrowed and why it fits Haven's content, and leave the rest.
-
-**Structure carries the meaning; color is optional.** The owner's strongest taste is alignment and coordination: a consistent structure that could hold any content, understandable in plain black and white. So design **monochrome first** (black, white, grays). Hierarchy must work from size, weight, position, and spacing alone. Add the single accent last, and only where the eye should go. If a screen stops making sense in grayscale, the structure is wrong, not the colors.
+Offers have no images yet, so the UI is **text-led until the image stage (0.3.5)**: hierarchy comes from size, weight, and spacing. Structure carries the meaning; color is optional. Design **monochrome first** (black, white, grays). If a screen stops making sense in grayscale, the structure is wrong. The primary action stands out through fill, weight, and position; errors and destructive actions carry words, icons, or placement; links are underlined; focus uses a thick high-contrast outline.
 
 ## Core rules
 
-1. **Journey first, then screen.** Read `docs/JOURNEY.md` (via `haven-journey`). Design only screens for the **current stage and lanes that exist**. Do not design later-stage screens (for example discovery during 0.1.x).
-2. **Real content, never lorem ipsum.** Take the fields, lengths, optionality, and empty cases from the schema and code that exist now (`haven-db` models, domain types). If a screen needs content the schema does not have, stop and ask; do not invent fields or copy.
-3. **Every decision has a reason**, written down in `docs/DESIGN.md` (decision log: what, why, what it replaces, date). A decision with no reason is cut. Referencing an established platform is welcome when it supports the reason.
-4. **JIT.** Decide a token, component, or pattern when a screen first needs it, not in advance. Do not build a component library speculatively.
-5. **Modularity.** Improving one component later must not require editing the page that assembles it, and adding a component must not require editing every page. See "Structure".
-6. **Verify framework facts.** How Topcoat defines view components, escapes output, serves static files, handles forms, and sets headers must be checked with `rust-crate-docs` against the locked version. Do not assume.
-7. **If the owner has not decided something that shapes the look** (light or dark theme, accent color, typeface), ask. Do not choose silently and do not default to a framework's stock palette.
+1. **Journey first, then screen.** Read `docs/JOURNEY.md` (via `haven-journey`). Design only screens for the current stage and lanes that exist.
+2. **Real content, never lorem ipsum.** Take fields, lengths, and empty cases from the schema (`haven-db` models, domain types). Do not invent fields or copy.
+3. **Every decision has a reason**, written down in `docs/DESIGN.md` (decision log: what, why, what it replaces, date).
+4. **JIT.** Decide a token, component, or pattern when a screen first needs it, not in advance.
+5. **Modularity.** Improving one component must not require editing the page that assembles it.
+6. **Verify framework facts.** Verify Topcoat view components, escaping, and headers with `rust-crate-docs`.
+7. **If the owner has not decided something that shapes the look** (theme, accent color, typeface), ask.
 8. **Navigation layout rule (Main vs Child).** Exactly two layouts exist across the app:
    - **Main layout:** Top-level routes (`/offers`, `/profile`, `/`). Shows primary navigation (`.site-header`) on all screen sizes. No back header.
    - **Child layout:** Every other route (e.g. `/offers/{slug}`, `/profiles/{handle}`, `/profile/edit`, `/profile/offers`, `/profile/offers/*`, `/profile/account`, `/auth/*`).
-     - **Mobile (`<= 640px`):** Primary navigation is hidden (`.desktop-only`); the header contains only a clean back button (`.child-header` with an explicit SVG arrow-left icon and "Back" label, meeting the 44px touch target). Unicode character signs (e.g. `"←"`, `"›"`) are strictly forbidden as icons.
-     - **Large screens (`> 640px`):** Primary navigation remains visible (wide screens have room for it and hiding it saves no space); the back button stays visible beneath primary navigation for consistent back-navigation affordance across devices.
+     - **Mobile (`<= 640px`):** Primary navigation is hidden (`.desktop-only`); header contains only a clean back button (`.child-header` with an explicit SVG arrow-left icon and "Back" label, meeting the 44px touch target). Unicode character signs (e.g. `"←"`, `"›"`) are strictly forbidden as icons.
+     - **Large screens (`> 640px`):** Primary navigation remains visible; the back button stays visible beneath primary navigation for consistent back-navigation affordance across devices.
    - **Safe back navigation ("Where you came from" default, Parent fallback):** The back button returns the user to the safe same-site page they came from (via validated `Referer`, enabled via `Referrer-Policy: same-origin`). If `Referer` is absent, refreshed, or external, it falls back to the child's configured parent route (`/profile` when viewing own profile, `/offers` when viewing public offers). External URLs, protocol-relative (`//`), and self-referencing loops are strictly rejected.
    - **Pages never build their own navigation headers or ad-hoc back links:** Route classification is central (`crates/haven-web/src/app/navigation.rs`); individual views assemble content only.
 
 ## Process (run per screen)
 
-1. **Purpose.** Which stage, which lane, what is the person trying to do here, and what did they just do before arriving? One sentence.
-2. **Content inventory.** List every piece of data shown or collected, with real example values at realistic lengths (short, typical, very long), and what is optional.
-3. **Hierarchy.** Decide the single primary action, what the eye should hit first, second, third, and what is deliberately quiet. One primary action per screen. If two things compete, one is secondary.
-4. **Reference teardown (when useful).** Name the reference screen, list what you borrow (density, grid, type scale, emphasis, interaction) and why it suits this content. A reference is not a decision until the reason is written.
-5. **Layout.** Mobile-first single column with a sensible max width and comfortable line length (about 45 to 75 characters for text). Group by proximity: space between groups larger than space within groups. Use a grid only where content is genuinely tabular or repeated.
-6. **Tokens.** Use only tokens from `references/tokens.md`. Add a token only with a reason, in `DESIGN.md`. **Monochrome first:** build and judge the screen in black, white, and grays, then add the accent last. Check the finished screen in grayscale.
-7. **States.** Design every state before calling a screen done: empty, loading (server-rendered, so mostly "slow response"), validation error, server error, not found or not permitted, long text, many items, partially filled, disabled, focus, and failure midway. See "States".
-8. **Build** as modular view components (see "Structure").
-9. **Critique** against `references/ai-tells.md`. Every match must be justified by a content reason or removed.
-10. **Record** decisions and open questions in `docs/DESIGN.md`.
+1. **Purpose & Arriving Question.** Which stage, which lane, and what question does the person arrive with? ("which of my offers is this?", "what does it cost?").
+2. **Content inventory.** List real data fields shown or collected, with realistic lengths and optionality.
+3. **Hierarchy & Relative Emphasis.** Decide the single primary action. Defaults stay quiet (muted gray, regular weight) so only the exception stands out.
+4. **Layout & Edges.** Single column mobile-first with comfortable measure (45–75 chars).
+   - **Edges:** Lock every element to a shared edge. Each row creates the edge the next stacks onto.
+   - **Dividers:** Default to spacing. Hairlines are allowed only when a row needs a bottom edge to stack onto; always **inset to the content column**, never full-bleed.
+   - **Cards are optional:** Default to clean sections and rows. Use a card only when a bounded unit has its own identity. Never nest bordered containers.
+   - **One direction per section:** Stack vertically or scroll horizontally on narrow screens, never both.
+   - **Differentiate before adding space:** Differentiate rows using real schema fields in the leading slot or status chips before adding whitespace.
+5. **Tokens.** Role tokens only (`--color-bg`, `--color-surface`, `--color-text`, `--color-text-muted`, `--color-border`, `--color-focus`). Judge in grayscale.
+6. **States.** Design every state: empty (first-use vs no-results), slow response, validation error, server error, not found / forbidden, long text, disabled, focus, and failure midway.
+7. **Build as modular view components.**
+8. **Critique against `references/ai-tells.md`.**
+9. **Record decisions in `docs/DESIGN.md`.**
 
 ## Server-rendered specifics
 
-- **HTML first.** Use semantic elements (`header`, `main`, `nav`, `form`, `label`, `button`, `ul`, headings in order). Everything works without JavaScript. Add JS only when a stage needs behaviour HTML cannot give, with the reason in `DESIGN.md`.
-- **Forms.** Every state-changing action is a form submission (not a link). Include the anti-CSRF mechanism (verify what Topcoat provides; see `rust-security-review`). After a successful POST, redirect (post/redirect/get) so refresh does not resubmit. On validation failure, re-render the form with the person's input preserved, an error message next to the field it concerns, and a short summary at the top for long forms. Every input has a visible `label` (not placeholder-only). Say what is wrong and how to fix it.
-- **Destructive actions** (delete an offer) need a clear, calm confirmation step that names what will be removed; the destructive button is not the primary-styled one on the page unless it is the point of the screen.
-- **CSS delivery.** One stylesheet served from the app's own origin, built from tokens plus per-component rules. No inline `<style>`, `style=""`, or inline `<script>`, so a strict CSP (see `rust-security-review`) keeps working. Do not load third-party CSS, fonts, or scripts. Verify how static assets are served in Topcoat and what the project already uses for CSS (do not introduce a CSS framework without asking).
-- **Type.** Default to a system font stack (fast, no layout shift, no external request). A custom typeface is an owner decision, self-hosted if chosen.
-- **Escaping.** All user text goes through the framework's escaping. Never use a raw-HTML escape hatch for user content. Check how the view layer does this before relying on it.
-- **Performance.** Keep HTML and CSS small and avoid layout shift: these screens count against the load-testing gate. Do not add assets without a reason.
+- **HTML first.** Semantic elements only. Everything works without JavaScript.
+- **Forms.** State mutations use POST forms with anti-CSRF. Post/redirect/get on success. Preserve inputs and show inline field errors on validation failure.
+- **Destructive actions:** Require a clear, calm confirmation step (native `<dialog popover="auto">`).
+- **CSS delivery.** One stylesheet (`/style.css`) built from tokens and semantic rules. Strict CSP (`default-src 'self'`). Zero inline styles or `<style>` blocks.
+- **Type.** Default system font stack (`--font-sans`). Base body size is at least 16px (prevents iOS Safari auto-zoom on input focus).
+- **Navigation on small screens:** Plain top-bar links for top-level destinations. Add a bottom bar only when there are 3 to 5 real primary destinations (JIT).
+- **Deferred patterns:** Bottom sheets, swipe gestures, long-press menus, and animated transitions are deferred under the effects gate.
+- **Escaping:** All user-supplied text is escaped by Topcoat.
 
 ## Structure (modularity)
 
-- **Components are small, single-purpose view functions or types** (verify Topcoat's mechanism). Each takes plain data in and returns markup; none fetches data, reads the session, or decides authorization.
-- **One module per component**, with its own CSS section or file, named by what it is (`offer_card`, `field`, `form_error`, `button`), never by where it is used.
-- **Pages assemble, components decide nothing about the page.** A page imports components; adding or improving a component must not require editing the other pages or a central registry beyond one export line. If improving a component forces changes to many pages, the interface is wrong.
-- **Layers:** `tokens` (variables only) → `base` (element defaults) → `components` → `pages` (layout only). Lower layers never depend on higher ones.
-- **Semantic token names** (`--color-accent`, `--space-4`), never raw values or color names in components.
-- **Layout chrome is decoupled from pages.** Top-level routes use the Main layout; child routes use the Child layout. Individual pages do not render headers or back links (see rule 8).
-- **Slot-based rows and cards.** A repeated item (an offer in a list) is one component with named, optional slots in a fixed arrangement, for example: **leading** (image or icon, optional), **title**, **description** (muted, clamped to two lines), **value** (the most important secondary fact, such as price), **status** (only if a real status exists), and **action**. Alignment is fixed: the same slot is always in the same place on every row, so a list reads as one object. An absent slot collapses cleanly and the remaining slots keep their alignment, so adding an image or icon later changes the leading slot only and touches no page. Do not add a slot until the schema has data for it, and do not reserve empty space for slots that do not exist yet.
-
-## States
-
-For each screen record, in `DESIGN.md`, the state matrix: **empty / typical / long / error / forbidden or not found / failure midway**, and what the person sees and can do next in each. Rules:
-- Empty states explain what belongs here and offer the one next action, without decoration.
-- Errors say what happened and what to do, in plain words. Never show internal messages, IDs, or stack information.
-- Not-permitted and not-found look the same for records the person does not own (matches `rust-security-review` IDOR guidance).
-- Focus is always visible; nothing relies on color alone; interactive targets are at least 44px tall on touch.
+- **Components are small, single-purpose view functions.** Take plain typed props in, return markup. Never fetch data, read sessions, or perform authorization.
+- **One module per component:** Named by what it is (`offer_card`, `identity_block`, `profile_row`, `row_group`, `button`), never by where it is used.
+- **Slot-based rows and cards:** Fixed arrangement of slots: **leading** (icon now, thumbnail later), **title**, **description** (clamped to two lines), **value** (price), **status/chips** (real categorical fields only), and **action/trailing**. An absent slot collapses cleanly without breaking alignment.
+- **Images (Stage 0.3.5):** Screens are text-led until 0.3.5. Images occupy the leading slot. When current, load `haven-ui-images`.
 
 ## Accessibility baseline
 
-Text contrast at least 4.5:1 (3:1 for large text and for UI boundaries and focus indicators), visible focus, keyboard-operable everything, labels on every control, headings in order, meaningful link text, and a design that still reads in grayscale. Check these before reporting a screen done.
-
-## When to stop and ask
-
-- The schema or journey does not say what a screen needs to show or collect.
-- A look-shaping choice (theme, accent, typeface, density) is undecided.
-- Topcoat's component, form, or asset behaviour cannot be verified.
-- Two good designs differ by a product decision (for example one form vs a step-by-step flow depends on how many fields an offer really has).
-
-## Report format
-
-```
-Screen: <name>   Stage/lane: <stage, lane>
-Purpose: <one sentence>
-Content used: <fields and where they come from>
-Hierarchy: primary action, then order of attention
-Decisions made (with reasons): ...
-States covered: ...
-Components added or changed: ...
-AI-tells check: <matches found and how each was justified or removed>
-Open questions: ...
-```
+Contrast ≥ 4.5:1 (3:1 for large text and boundaries/focus outlines), visible focus, keyboard-operable controls, visible labels on every form input, and designs that remain fully readable in grayscale.
