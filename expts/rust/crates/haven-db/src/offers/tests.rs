@@ -1,6 +1,6 @@
 use super::*;
 use haven_domain::offer::{CreateOffer, CurrencyCode, Price, UpdateOffer};
-use haven_domain::ports::{IdempotencyKey, OfferRepository};
+use haven_domain::ports::{IdempotencyKey, OfferImageRepository, OfferRepository};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -8,7 +8,7 @@ use uuid::Uuid;
 #[allow(clippy::too_many_lines, reason = "Comprehensive patch semantics test")]
 async fn test_update_patch_semantics() {
     let db_url = std::env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "postgres://user:password@127.0.0.1:5433/haven_rust".to_string());
+        .unwrap_or_else(|_| "postgres://user:password@127.0.0.1:5432/haven_rust".to_string());
 
     let pool = match PgPool::connect(&db_url).await {
         Ok(p) => p,
@@ -16,8 +16,14 @@ async fn test_update_patch_semantics() {
     };
 
     sqlx::migrate!("../../migrations").run(&pool).await.unwrap();
+    sqlx::query("TRUNCATE TABLE offer_image, offer, \"user\", account CASCADE")
+        .execute(&pool)
+        .await
+        .unwrap();
 
     let repo = PostgresOfferRepository::new(pool.clone());
+    let img_repo = images::PostgresOfferImageRepository::new(pool.clone());
+    let dims = haven_domain::image::ImageDimensions::new(800, 600).unwrap();
 
     // 1. Create a dummy account and user
     let account_id = Uuid::new_v4();
@@ -104,7 +110,7 @@ async fn test_update_patch_semantics() {
     assert_eq!(found.id, offer.id);
     assert_eq!(found.slug, offer.slug);
 
-    // 7. Seed multiple offers and test keyset feed pagination
+    // 7. Seed multiple offers with images and test keyset feed pagination
     for i in 1..=5 {
         let req = CreateOffer {
             title: format!("Feed Offer {i}"),
@@ -112,7 +118,17 @@ async fn test_update_patch_semantics() {
             price: Price::new(10_i32.saturating_mul(i)).unwrap(),
             currency: CurrencyCode::parse("USD").unwrap(),
         };
-        repo.create(user_id, IdempotencyKey::new(Uuid::new_v4()), &req)
+        let created = repo
+            .create(user_id, IdempotencyKey::new(Uuid::new_v4()), &req)
+            .await
+            .unwrap();
+        let item_pub_id = haven_domain::image::ImagePublicId::parse(format!(
+            "v12345/haven/offers/test_img_{i}_{}",
+            Uuid::new_v4().simple()
+        ))
+        .unwrap();
+        img_repo
+            .add_image(created.id, user_id, &item_pub_id, dims)
             .await
             .unwrap();
     }
@@ -143,4 +159,54 @@ async fn test_update_patch_semantics() {
     let user_page = repo.list_by_user(user_id, None, 3).await.unwrap();
     assert_eq!(user_page.items.len(), 3);
     assert!(user_page.next_cursor.is_some());
+
+    // 9. Test OfferImageRepository operations
+    let pub_id1 = haven_domain::image::ImagePublicId::parse(format!(
+        "v12345/haven/offers/test_img_sec9_1_{}",
+        Uuid::new_v4().simple()
+    ))
+    .unwrap();
+    let img1 = img_repo
+        .add_image(offer.id, user_id, &pub_id1, dims)
+        .await
+        .unwrap();
+    assert_eq!(img1.position.as_u8(), 1);
+
+    let pub_id2 = haven_domain::image::ImagePublicId::parse(format!(
+        "v12345/haven/offers/test_img_sec9_2_{}",
+        Uuid::new_v4().simple()
+    ))
+    .unwrap();
+    let img2 = img_repo
+        .add_image(offer.id, user_id, &pub_id2, dims)
+        .await
+        .unwrap();
+    assert_eq!(img2.position.as_u8(), 2);
+
+    let images_list = img_repo.find_by_offer(offer.id).await.unwrap();
+    assert_eq!(images_list.len(), 2);
+    assert_eq!(images_list[0].id, img1.id);
+    assert_eq!(images_list[1].id, img2.id);
+
+    // Reorder images
+    let reordered = img_repo
+        .reorder_images(offer.id, user_id, &[img2.id, img1.id])
+        .await
+        .unwrap();
+    assert_eq!(reordered[0].id, img2.id);
+    assert_eq!(reordered[0].position.as_u8(), 1);
+    assert_eq!(reordered[1].id, img1.id);
+    assert_eq!(reordered[1].position.as_u8(), 2);
+
+    // Remove image
+    let removed_pub_id = img_repo
+        .remove_image(offer.id, user_id, img2.id)
+        .await
+        .unwrap();
+    assert_eq!(removed_pub_id.as_str(), pub_id2.as_str());
+
+    let remaining = img_repo.find_by_offer(offer.id).await.unwrap();
+    assert_eq!(remaining.len(), 1);
+    assert_eq!(remaining[0].id, img1.id);
+    assert_eq!(remaining[0].position.as_u8(), 1);
 }

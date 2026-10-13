@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            WITH ranked AS (\n                SELECT id, ROW_NUMBER() OVER (ORDER BY position ASC) AS new_pos\n                FROM offer_image\n                WHERE offer_id = $1\n            )\n            UPDATE offer_image\n            SET position = ranked.new_pos::smallint\n            FROM ranked\n            WHERE offer_image.id = ranked.id\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6697737b0d547367fdddfcde52f8f0e1dc05c9c8b2d17c718bfbc82176f09541"
+}

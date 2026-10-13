@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, user_id, slug, title, description, price, currency, created_at, updated_at\n            FROM offer\n            WHERE user_id = $1 AND (created_at, id) < ($2, $3)\n            ORDER BY created_at DESC, id DESC\n            LIMIT $4\n            ",
+  "query": "\n            UPDATE \"user\"\n            SET avatar_public_id = $2,\n                updated_at = now()\n            WHERE id = $1\n            RETURNING id, account_id, handle, display_name, bio, avatar_public_id, created_at, updated_at\n            ",
   "describe": {
     "columns": [
       {
@@ -9,95 +9,84 @@
         "type_info": "Uuid",
         "origin": {
           "Table": {
-            "table": "offer",
+            "table": "\"user\"",
             "name": "id"
           }
         }
       },
       {
         "ordinal": 1,
-        "name": "user_id",
+        "name": "account_id",
         "type_info": "Uuid",
         "origin": {
           "Table": {
-            "table": "offer",
-            "name": "user_id"
+            "table": "\"user\"",
+            "name": "account_id"
           }
         }
       },
       {
         "ordinal": 2,
-        "name": "slug",
+        "name": "handle",
         "type_info": "Varchar",
         "origin": {
           "Table": {
-            "table": "offer",
-            "name": "slug"
+            "table": "\"user\"",
+            "name": "handle"
           }
         }
       },
       {
         "ordinal": 3,
-        "name": "title",
+        "name": "display_name",
         "type_info": "Varchar",
         "origin": {
           "Table": {
-            "table": "offer",
-            "name": "title"
+            "table": "\"user\"",
+            "name": "display_name"
           }
         }
       },
       {
         "ordinal": 4,
-        "name": "description",
+        "name": "bio",
         "type_info": "Text",
         "origin": {
           "Table": {
-            "table": "offer",
-            "name": "description"
+            "table": "\"user\"",
+            "name": "bio"
           }
         }
       },
       {
         "ordinal": 5,
-        "name": "price",
-        "type_info": "Int4",
+        "name": "avatar_public_id",
+        "type_info": "Varchar",
         "origin": {
           "Table": {
-            "table": "offer",
-            "name": "price"
+            "table": "\"user\"",
+            "name": "avatar_public_id"
           }
         }
       },
       {
         "ordinal": 6,
-        "name": "currency",
-        "type_info": "Bpchar",
-        "origin": {
-          "Table": {
-            "table": "offer",
-            "name": "currency"
-          }
-        }
-      },
-      {
-        "ordinal": 7,
         "name": "created_at",
         "type_info": "Timestamptz",
         "origin": {
           "Table": {
-            "table": "offer",
+            "table": "\"user\"",
             "name": "created_at"
           }
         }
       },
       {
-        "ordinal": 8,
+        "ordinal": 7,
         "name": "updated_at",
         "type_info": "Timestamptz",
         "origin": {
           "Table": {
-            "table": "offer",
+            "table": "\"user\"",
             "name": "updated_at"
           }
         }
@@ -106,9 +95,7 @@
     "parameters": {
       "Left": [
         "Uuid",
-        "Timestamptz",
-        "Uuid",
-        "Int8"
+        "Varchar"
       ]
     },
     "nullable": [
@@ -116,12 +103,11 @@
       false,
       false,
       false,
-      false,
-      false,
-      false,
+      true,
+      true,
       false,
       false
     ]
   },
-  "hash": "11b0b20f9b4e6d8f4c6dfdfbee2cf2b732bd9fd5b5f15de69153f1fb76acf946"
+  "hash": "990fd707d6e42e1429952e5df949443203f9f296ae47fa5aaa5982b33ce42278"
 }

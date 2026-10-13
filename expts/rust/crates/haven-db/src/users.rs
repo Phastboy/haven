@@ -17,6 +17,7 @@ struct UserDbRow {
     handle: String,
     display_name: String,
     bio: Option<String>,
+    avatar_public_id: Option<String>,
     created_at: chrono::DateTime<chrono::Utc>,
     updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -37,6 +38,14 @@ impl PostgresUserRepository {
             ),
             _ => None,
         };
+        let avatar_public_id = match row.avatar_public_id {
+            Some(a) if !a.trim().is_empty() => {
+                Some(haven_domain::image::ImagePublicId::parse(&a).map_err(|_| {
+                    RepoError::Corrupt("Invalid avatar_public_id in database".into())
+                })?)
+            }
+            _ => None,
+        };
 
         Ok(User {
             id: UserId::from_uuid(row.id),
@@ -44,6 +53,7 @@ impl PostgresUserRepository {
             handle,
             display_name,
             bio,
+            avatar_public_id,
             created_at: row.created_at,
             updated_at: row.updated_at,
         })
@@ -56,7 +66,7 @@ impl UserRepository for PostgresUserRepository {
         let id_uuid = account_id.as_uuid();
         let row = sqlx::query!(
             r#"
-            SELECT id, account_id, handle, display_name, bio, created_at, updated_at
+            SELECT id, account_id, handle, display_name, bio, avatar_public_id, created_at, updated_at
             FROM "user"
             WHERE account_id = $1
             "#,
@@ -73,6 +83,7 @@ impl UserRepository for PostgresUserRepository {
                 handle: r.handle,
                 display_name: r.display_name,
                 bio: r.bio,
+                avatar_public_id: r.avatar_public_id,
                 created_at: r.created_at,
                 updated_at: r.updated_at,
             })
@@ -84,7 +95,7 @@ impl UserRepository for PostgresUserRepository {
         let id_uuid = user_id.as_uuid();
         let row = sqlx::query!(
             r#"
-            SELECT id, account_id, handle, display_name, bio, created_at, updated_at
+            SELECT id, account_id, handle, display_name, bio, avatar_public_id, created_at, updated_at
             FROM "user"
             WHERE id = $1
             "#,
@@ -101,6 +112,7 @@ impl UserRepository for PostgresUserRepository {
                 handle: r.handle,
                 display_name: r.display_name,
                 bio: r.bio,
+                avatar_public_id: r.avatar_public_id,
                 created_at: r.created_at,
                 updated_at: r.updated_at,
             })
@@ -112,7 +124,7 @@ impl UserRepository for PostgresUserRepository {
         let handle_str = handle.as_str();
         let row = sqlx::query!(
             r#"
-            SELECT id, account_id, handle, display_name, bio, created_at, updated_at
+            SELECT id, account_id, handle, display_name, bio, avatar_public_id, created_at, updated_at
             FROM "user"
             WHERE lower(handle) = lower($1)
             "#,
@@ -129,6 +141,7 @@ impl UserRepository for PostgresUserRepository {
                 handle: r.handle,
                 display_name: r.display_name,
                 bio: r.bio,
+                avatar_public_id: r.avatar_public_id,
                 created_at: r.created_at,
                 updated_at: r.updated_at,
             })
@@ -150,7 +163,7 @@ impl UserRepository for PostgresUserRepository {
             r#"
             INSERT INTO "user" (account_id, handle, display_name, bio)
             VALUES ($1, $2, $3, $4)
-            RETURNING id, account_id, handle, display_name, bio, created_at, updated_at
+            RETURNING id, account_id, handle, display_name, bio, avatar_public_id, created_at, updated_at
             "#,
             id_uuid,
             handle_str,
@@ -167,6 +180,7 @@ impl UserRepository for PostgresUserRepository {
             handle: row.handle,
             display_name: row.display_name,
             bio: row.bio,
+            avatar_public_id: row.avatar_public_id,
             created_at: row.created_at,
             updated_at: row.updated_at,
         })
@@ -190,7 +204,7 @@ impl UserRepository for PostgresUserRepository {
                 bio = $4,
                 updated_at = now()
             WHERE id = $1
-            RETURNING id, account_id, handle, display_name, bio, created_at, updated_at
+            RETURNING id, account_id, handle, display_name, bio, avatar_public_id, created_at, updated_at
             "#,
             id_uuid,
             handle_str,
@@ -211,6 +225,7 @@ impl UserRepository for PostgresUserRepository {
             handle: row.handle,
             display_name: row.display_name,
             bio: row.bio,
+            avatar_public_id: row.avatar_public_id,
             created_at: row.created_at,
             updated_at: row.updated_at,
         })
@@ -220,7 +235,7 @@ impl UserRepository for PostgresUserRepository {
         let hash_str = token_hash.as_str();
         let row = sqlx::query!(
             r#"
-            SELECT u.id, u.account_id, u.handle, u.display_name, u.bio, u.created_at, u.updated_at
+            SELECT u.id, u.account_id, u.handle, u.display_name, u.bio, u.avatar_public_id, u.created_at, u.updated_at
             FROM session s
             JOIN "user" u ON s.account_id = u.account_id
             WHERE s.token_hash = $1 AND s.expires_at > now()
@@ -238,10 +253,50 @@ impl UserRepository for PostgresUserRepository {
                 handle: r.handle,
                 display_name: r.display_name,
                 bio: r.bio,
+                avatar_public_id: r.avatar_public_id,
                 created_at: r.created_at,
                 updated_at: r.updated_at,
             })
         })
         .transpose()
+    }
+
+    async fn update_avatar(
+        &self,
+        user_id: UserId,
+        avatar_public_id: Option<&haven_domain::image::ImagePublicId>,
+    ) -> Result<User, RepoError> {
+        let id_uuid = user_id.as_uuid();
+        let avatar_str = avatar_public_id.map(haven_domain::image::ImagePublicId::as_str);
+
+        let row = sqlx::query!(
+            r#"
+            UPDATE "user"
+            SET avatar_public_id = $2,
+                updated_at = now()
+            WHERE id = $1
+            RETURNING id, account_id, handle, display_name, bio, avatar_public_id, created_at, updated_at
+            "#,
+            id_uuid,
+            avatar_str
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(crate::map_sqlx_err)?
+        .ok_or_else(|| RepoError::NotFound {
+            entity: "user",
+            id: user_id.to_string(),
+        })?;
+
+        Self::map_row(UserDbRow {
+            id: row.id,
+            account_id: row.account_id,
+            handle: row.handle,
+            display_name: row.display_name,
+            bio: row.bio,
+            avatar_public_id: row.avatar_public_id,
+            created_at: row.created_at,
+            updated_at: row.updated_at,
+        })
     }
 }

@@ -9,10 +9,11 @@ use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use crate::image::{ImageDimensions, ImageId, ImagePosition, ImagePublicId, OfferImage};
 use crate::offer::{CreateOffer, Offer, OfferId, UpdateOffer, UserId};
 use crate::ports::{
-    AccountRepository, IdempotencyKey, MagicLinkRepository, OfferRepository, Registry, RepoError,
-    SessionRepository, UserRepository,
+    AccountRepository, IdempotencyKey, MagicLinkRepository, OfferImageRepository, OfferRepository,
+    Registry, RepoError, SessionRepository, UserRepository,
 };
 use chrono::Utc;
 
@@ -166,6 +167,8 @@ impl OfferRepository for FakeOfferRepository {
             description: req.description.clone(),
             price: req.price,
             currency: req.currency,
+            image_count: 0,
+            images: Vec::new(),
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
@@ -219,7 +222,7 @@ impl OfferRepository for FakeOfferRepository {
 }
 
 pub struct FakeRegistry {
-    offers: Box<dyn OfferRepository>,
+    offers: Box<FakeOfferRepository>,
 }
 
 impl Default for FakeRegistry {
@@ -227,6 +230,144 @@ impl Default for FakeRegistry {
         Self {
             offers: Box::new(FakeOfferRepository::default()),
         }
+    }
+}
+
+#[async_trait]
+impl OfferImageRepository for FakeOfferRepository {
+    async fn find_by_offer(&self, offer_id: OfferId) -> Result<Vec<OfferImage>, RepoError> {
+        let lock = self.offers.lock().unwrap();
+        let images = lock
+            .iter()
+            .find(|o| o.id == offer_id)
+            .map(|o| o.images.clone())
+            .unwrap_or_default();
+        Ok(images)
+    }
+
+    async fn add_image(
+        &self,
+        offer_id: OfferId,
+        user_id: UserId,
+        public_id: &ImagePublicId,
+        dimensions: ImageDimensions,
+    ) -> Result<OfferImage, RepoError> {
+        let mut lock = self.offers.lock().unwrap();
+        let offer = lock
+            .iter_mut()
+            .find(|o| o.id == offer_id && o.user_id == user_id)
+            .ok_or_else(|| RepoError::NotFound {
+                entity: "offer",
+                id: offer_id.to_string(),
+            })?;
+
+        if offer.images.len() >= 5 {
+            return Err(RepoError::Conflict {
+                entity: "offer_image",
+                key: "maximum 5 images per offer".into(),
+            });
+        }
+
+        let pos_u8 = u8::try_from(offer.images.len().saturating_add(1))
+            .map_err(|_| RepoError::Corrupt("image position exceeds valid bounds".into()))?;
+        let position = ImagePosition::new(pos_u8).map_err(|e| RepoError::Corrupt(e.to_string()))?;
+
+        let image = OfferImage {
+            id: ImageId::generate(),
+            offer_id,
+            public_id: public_id.clone(),
+            position,
+            dimensions,
+            created_at: Utc::now(),
+        };
+
+        offer.images.push(image.clone());
+        offer.image_count = u8::try_from(offer.images.len())
+            .map_err(|_| RepoError::Corrupt("image count exceeds valid bounds".into()))?;
+        Ok(image)
+    }
+
+    async fn remove_image(
+        &self,
+        offer_id: OfferId,
+        user_id: UserId,
+        image_id: ImageId,
+    ) -> Result<ImagePublicId, RepoError> {
+        let mut lock = self.offers.lock().unwrap();
+        let offer = lock
+            .iter_mut()
+            .find(|o| o.id == offer_id && o.user_id == user_id)
+            .ok_or_else(|| RepoError::NotFound {
+                entity: "offer",
+                id: offer_id.to_string(),
+            })?;
+
+        let idx = offer
+            .images
+            .iter()
+            .position(|img| img.id == image_id)
+            .ok_or_else(|| RepoError::NotFound {
+                entity: "offer_image",
+                id: image_id.to_string(),
+            })?;
+
+        let removed = offer.images.remove(idx);
+        for (i, img) in offer.images.iter_mut().enumerate() {
+            let pos_u8 = u8::try_from(i.saturating_add(1))
+                .map_err(|_| RepoError::Corrupt("image position exceeds valid bounds".into()))?;
+            img.position =
+                ImagePosition::new(pos_u8).map_err(|e| RepoError::Corrupt(e.to_string()))?;
+        }
+        offer.image_count = u8::try_from(offer.images.len())
+            .map_err(|_| RepoError::Corrupt("image count exceeds valid bounds".into()))?;
+        Ok(removed.public_id)
+    }
+
+    async fn reorder_images(
+        &self,
+        offer_id: OfferId,
+        user_id: UserId,
+        order: &[ImageId],
+    ) -> Result<Vec<OfferImage>, RepoError> {
+        let mut lock = self.offers.lock().unwrap();
+        let offer = lock
+            .iter_mut()
+            .find(|o| o.id == offer_id && o.user_id == user_id)
+            .ok_or_else(|| RepoError::NotFound {
+                entity: "offer",
+                id: offer_id.to_string(),
+            })?;
+
+        if order.len() != offer.images.len() {
+            return Err(RepoError::Conflict {
+                entity: "offer_image",
+                key: "reorder list length mismatch".into(),
+            });
+        }
+
+        let mut reordered = Vec::with_capacity(order.len());
+        for target_id in order {
+            let found = offer
+                .images
+                .iter()
+                .find(|img| img.id == *target_id)
+                .cloned()
+                .ok_or_else(|| RepoError::NotFound {
+                    entity: "offer_image",
+                    id: target_id.to_string(),
+                })?;
+            reordered.push(found);
+        }
+
+        for (i, img) in reordered.iter_mut().enumerate() {
+            let pos_u8 = u8::try_from(i.saturating_add(1))
+                .map_err(|_| RepoError::Corrupt("image position exceeds valid bounds".into()))?;
+            img.position =
+                ImagePosition::new(pos_u8).map_err(|e| RepoError::Corrupt(e.to_string()))?;
+        }
+
+        offer.images.clone_from(&reordered);
+        Ok(reordered)
     }
 }
 
@@ -251,6 +392,9 @@ impl Registry for FakeRegistry {
     }
     fn sessions(&self) -> &(dyn SessionRepository + 'static) {
         unimplemented!()
+    }
+    fn offer_images(&self) -> &(dyn OfferImageRepository + 'static) {
+        self.offers.as_ref()
     }
 }
 

@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            DELETE FROM offer_image\n            WHERE id = $1 AND offer_id = $2\n            RETURNING public_id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "public_id",
+        "type_info": "Varchar",
+        "origin": {
+          "Table": {
+            "table": "offer_image",
+            "name": "public_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "fec8acc70908ffce937eadda5af77308702fa2163bb30ee13a1915d1e080b0a5"
+}

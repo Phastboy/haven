@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                UPDATE offer_image\n                SET position = $2\n                WHERE id = $1\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int2"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "200aa0f7f498ad595f0e131ff81b3c7bb8d82f0df116d0628d8b5d40b56c1aa4"
+}

@@ -128,9 +128,9 @@ CREATE INDEX idx_offer_feed_visible ON offer (created_at DESC, id DESC)
 
 ### Phase 2: Domain Models & Repositories
 - [x] Define `ImageId`, `ImagePublicId`, `ImagePosition` (1..=5), and `ImageDimensions` value objects in `haven-domain`.
-- [ ] Update `Offer` entity with image list and visibility status (`is_public = image_count >= 1`).
-- [ ] Add `OfferImageRepository` methods in `haven-db` (`add_image`, `remove_image`, `reorder_images`).
-- [ ] Update public feed query (`list_active`) to filter on `image_count >= 1`.
+- [x] Update `Offer` entity with image list and visibility status (`is_public = image_count >= 1`).
+- [x] Add `OfferImageRepository` methods in `haven-db` (`add_image`, `remove_image`, `reorder_images`).
+- [x] Update public feed query (`list_active`) to filter on `image_count >= 1`.
 
 ### Phase 3: Profile Avatar Integration
 - [ ] Add avatar upload affordance to `/profile/edit`.

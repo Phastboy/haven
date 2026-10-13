@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, account_id, handle, display_name, bio, created_at, updated_at\n            FROM \"user\"\n            WHERE lower(handle) = lower($1)\n            ",
+  "query": "\n            SELECT id, account_id, handle, display_name, bio, avatar_public_id, created_at, updated_at\n            FROM \"user\"\n            WHERE account_id = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -60,6 +60,17 @@
       },
       {
         "ordinal": 5,
+        "name": "avatar_public_id",
+        "type_info": "Varchar",
+        "origin": {
+          "Table": {
+            "table": "\"user\"",
+            "name": "avatar_public_id"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
         "name": "created_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -70,7 +81,7 @@
         }
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "updated_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -83,7 +94,7 @@
     ],
     "parameters": {
       "Left": [
-        "Text"
+        "Uuid"
       ]
     },
     "nullable": [
@@ -92,9 +103,10 @@
       false,
       false,
       true,
+      true,
       false,
       false
     ]
   },
-  "hash": "669dd7049802728b029b7516804256d3e197471798c73457cec4db8a23d40853"
+  "hash": "cf899f38a857f73c4ca77698fce01fd1f83dc16ff98c4b066a5ec0c0d758170c"
 }

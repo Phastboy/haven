@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT u.id, u.account_id, u.handle, u.display_name, u.bio, u.created_at, u.updated_at\n            FROM session s\n            JOIN \"user\" u ON s.account_id = u.account_id\n            WHERE s.token_hash = $1 AND s.expires_at > now()\n            ",
+  "query": "\n            SELECT u.id, u.account_id, u.handle, u.display_name, u.bio, u.avatar_public_id, u.created_at, u.updated_at\n            FROM session s\n            JOIN \"user\" u ON s.account_id = u.account_id\n            WHERE s.token_hash = $1 AND s.expires_at > now()\n            ",
   "describe": {
     "columns": [
       {
@@ -60,6 +60,17 @@
       },
       {
         "ordinal": 5,
+        "name": "avatar_public_id",
+        "type_info": "Varchar",
+        "origin": {
+          "Table": {
+            "table": "\"user\"",
+            "name": "avatar_public_id"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
         "name": "created_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -70,7 +81,7 @@
         }
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "updated_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -92,9 +103,10 @@
       false,
       false,
       true,
+      true,
       false,
       false
     ]
   },
-  "hash": "26cb07af1078a5037efbde19515177e3ce6ae9dbaf865aef06a6558b00528d65"
+  "hash": "852b72e7ebf1a40375cf0a395986fa60e0d4355a03dcd441180076a9f3887698"
 }

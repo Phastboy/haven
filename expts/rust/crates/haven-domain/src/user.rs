@@ -326,6 +326,8 @@ pub struct User {
     pub display_name: DisplayName,
     /// Optional bio or about section.
     pub bio: Option<Bio>,
+    /// Optional public avatar image ID.
+    pub avatar_public_id: Option<crate::image::ImagePublicId>,
     /// Timestamp when this participant was created.
     pub created_at: DateTime<Utc>,
     /// Timestamp when this participant was last updated.
