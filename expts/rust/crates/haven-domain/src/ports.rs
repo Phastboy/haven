@@ -171,6 +171,53 @@ pub trait SessionRepository: Send + Sync {
     async fn delete(&self, session_id: SessionId) -> Result<(), RepoError>;
 }
 
+/// Result metadata returned after a successful image upload to an external host.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StoredImage {
+    /// Opaque public ID assigned by the host (e.g. `offers/{offer_id}/{uuid}`).
+    pub public_id: String,
+    /// Width of the stored image in pixels.
+    pub width: u32,
+    /// Height of the stored image in pixels.
+    pub height: u32,
+    /// Format identifier of the stored asset (e.g. "webp", "jpg").
+    pub format: String,
+    /// Size of the stored asset in bytes.
+    pub bytes: usize,
+}
+
+/// Errors occurring during image storage operations.
+#[derive(Debug, Error)]
+pub enum StorageError {
+    #[error("image upload failed: {0}")]
+    UploadFailed(String),
+
+    #[error("image deletion failed: {0}")]
+    DeleteFailed(String),
+
+    #[error("image storage service unavailable: {0}")]
+    Unavailable(String),
+}
+
+/// Secondary port for uploading and deleting image assets from external storage.
+#[async_trait]
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Image upload takes &self, target folder, public ID suffix, and raw image byte slice"
+)]
+pub trait ImageStorage: Send + Sync {
+    /// Uploads raw image bytes to a specified storage folder with a given public ID suffix.
+    async fn upload(
+        &self,
+        folder: &str,
+        public_id_suffix: &str,
+        bytes: &[u8],
+    ) -> Result<StoredImage, StorageError>;
+
+    /// Deletes an image asset from storage by its public ID.
+    async fn delete(&self, public_id: &str) -> Result<(), StorageError>;
+}
+
 /// A single composition root.
 pub trait Registry: Send + Sync {
     fn offers(&self) -> &(dyn OfferRepository + 'static);

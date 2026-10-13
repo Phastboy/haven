@@ -204,6 +204,7 @@ fn test_router(oauth_config: Option<GoogleOAuthConfig>) -> topcoat::router::Rout
         google_oauth: oauth_config,
         http_client: reqwest::Client::new(),
         email_delivery_enabled: None,
+        image_storage: std::sync::Arc::new(crate::storage::MockImageStorage::new()),
     };
 
     crate::app::router()

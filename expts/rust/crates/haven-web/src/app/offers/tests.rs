@@ -142,6 +142,7 @@ fn setup_test_app() -> (topcoat::router::Router, TestRegistry) {
         google_oauth: None,
         http_client: reqwest::Client::new(),
         email_delivery_enabled: Some(false),
+        image_storage: Arc::new(crate::storage::MockImageStorage::new()),
     };
 
     let origins = crate::app::origin::compute_trusted_origins("3000", None, None);

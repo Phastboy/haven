@@ -2,6 +2,7 @@
 
 mod app;
 pub mod rate_limit;
+pub mod storage;
 pub mod token_store;
 
 use haven_db::PostgresRegistry;
@@ -94,12 +95,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap_or(());
     }
 
+    let cloudinary_config = storage::CloudinaryConfig::from_env()?;
+    let image_storage = init_image_storage(cloudinary_config, &http_client);
+
     let registry = Arc::new(PostgresRegistry::new(&pool));
     let state = app::state::AppState {
         registry,
         google_oauth,
         http_client,
         email_delivery_enabled: None,
+        image_storage,
     };
 
     let router = app::router()
@@ -123,4 +128,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     topcoat::start(router).await?;
     Ok(())
+}
+
+fn init_image_storage(
+    cloudinary_config: Option<storage::CloudinaryConfig>,
+    http_client: &reqwest::Client,
+) -> Arc<dyn haven_domain::ports::ImageStorage> {
+    if let Some(cfg) = cloudinary_config {
+        writeln!(
+            std::io::stdout(),
+            "Image storage: Cloudinary ({})",
+            cfg.cloud_name
+        )
+        .unwrap_or(());
+        Arc::new(storage::CloudinaryStorage::new(cfg, http_client.clone()))
+    } else {
+        writeln!(
+            std::io::stdout(),
+            "Image storage: In-memory Mock (Cloudinary not configured)"
+        )
+        .unwrap_or(());
+        Arc::new(storage::MockImageStorage::new())
+    }
 }

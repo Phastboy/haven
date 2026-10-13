@@ -12,6 +12,11 @@ pub struct AppState {
     pub google_oauth: Option<crate::app::auth::google::GoogleOAuthConfig>,
     pub http_client: reqwest::Client,
     pub email_delivery_enabled: Option<bool>,
+    #[allow(
+        dead_code,
+        reason = "wiring for upcoming image upload endpoints in Phase 3 & 4"
+    )]
+    pub image_storage: std::sync::Arc<dyn haven_domain::ports::ImageStorage>,
 }
 
 pub fn registry(cx: &Cx) -> &dyn Registry {
@@ -24,6 +29,14 @@ pub fn google_oauth(cx: &Cx) -> Option<&crate::app::auth::google::GoogleOAuthCon
 
 pub fn http_client(cx: &Cx) -> &reqwest::Client {
     &app_context::<AppState>(cx).http_client
+}
+
+#[allow(
+    dead_code,
+    reason = "accessor for upcoming image upload endpoints in Phase 3 & 4"
+)]
+pub fn image_storage(cx: &Cx) -> &dyn haven_domain::ports::ImageStorage {
+    &*app_context::<AppState>(cx).image_storage
 }
 
 pub fn map_repo_err(e: RepoError) -> RouterError {
