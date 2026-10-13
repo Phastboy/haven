@@ -19,6 +19,8 @@ dotenvy = "0.15"
 url = "2.5.8"
 reqwest = { workspace = true }
 thiserror = { workspace = true }
+sha1 = { workspace = true }
+hex = { workspace = true }
 
 [lints]
 workspace=true

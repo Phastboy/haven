@@ -86,6 +86,34 @@ pub enum ProfileError {
     BioTooLong,
 }
 
+/// Image validation and format errors.
+#[derive(Debug, Error, PartialEq, Eq, Clone)]
+pub enum ImageValidationError {
+    #[error("unsupported image format: must be JPEG, PNG, or WebP")]
+    UnsupportedFormat,
+
+    #[error("image file exceeds 5 MB limit")]
+    FileTooLarge,
+
+    #[error("image file is empty")]
+    EmptyFile,
+
+    #[error("invalid image position {0}: must be between 1 and 5")]
+    InvalidPosition(u8),
+
+    #[error("image dimensions must be positive integers")]
+    InvalidDimensions,
+
+    #[error("invalid image public ID: {0}")]
+    InvalidPublicId(String),
+
+    #[error("an offer cannot exceed 5 images")]
+    MaxImagesExceeded,
+
+    #[error("an offer must have at least 1 image to be public")]
+    MinImagesRequired,
+}
+
 /// Unified domain error type composed from concern-specific error enums.
 #[derive(Debug, Error, PartialEq, Eq, Clone)]
 pub enum DomainError {
@@ -103,4 +131,7 @@ pub enum DomainError {
 
     #[error(transparent)]
     Profile(#[from] ProfileError),
+
+    #[error(transparent)]
+    Image(#[from] ImageValidationError),
 }
