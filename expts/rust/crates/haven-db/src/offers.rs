@@ -1,6 +1,7 @@
 //! PostgreSQL implementation of `OfferRepository` and submodule assembly.
 
 pub mod feed;
+pub mod images;
 pub mod queries;
 pub mod rows;
 
@@ -8,6 +9,7 @@ pub mod rows;
 #[allow(
     clippy::unwrap_used,
     clippy::manual_let_else,
+    clippy::indexing_slicing,
     reason = "test assertions and optional local db connectivity"
 )]
 mod tests;

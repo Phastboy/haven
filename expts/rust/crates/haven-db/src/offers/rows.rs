@@ -17,6 +17,8 @@ pub(super) fn map_row(
     description: String,
     price: i32,
     currency: &str,
+    image_count: i16,
+    images: Vec<haven_domain::image::OfferImage>,
     created_at: chrono::DateTime<chrono::Utc>,
     updated_at: chrono::DateTime<chrono::Utc>,
 ) -> Result<Offer, RepoError> {
@@ -24,6 +26,8 @@ pub(super) fn map_row(
     let c =
         CurrencyCode::parse(currency).map_err(|_| RepoError::Corrupt("Invalid currency".into()))?;
     let s = OfferSlug::parse(&slug).map_err(|_| RepoError::Corrupt("Invalid slug".into()))?;
+    let cnt = u8::try_from(image_count.max(0))
+        .map_err(|_| RepoError::Corrupt("Invalid image_count".into()))?;
 
     Ok(Offer {
         id: OfferId::from_uuid(id),
@@ -33,6 +37,8 @@ pub(super) fn map_row(
         description,
         price: p,
         currency: c,
+        image_count: cnt,
+        images,
         created_at,
         updated_at,
     })

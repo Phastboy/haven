@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE offer\n            SET image_count = image_count + 1, updated_at = NOW()\n            WHERE id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6c0b3ff4c901b9a4f01e82a59b415761100c0c07d2b2337953c93fdd60d688a6"
+}

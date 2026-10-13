@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, user_id, slug, title, description, price, currency, created_at, updated_at\n            FROM offer\n            WHERE user_id = $1\n            ORDER BY created_at DESC, id DESC\n            LIMIT $2\n            ",
+  "query": "\n            SELECT o.id, o.user_id, o.slug, o.title, o.description, o.price, o.currency, o.image_count, o.created_at, o.updated_at,\n                   u.display_name, u.handle\n            FROM offer o\n            JOIN \"user\" u ON o.user_id = u.id\n            WHERE o.image_count >= 1 AND (o.created_at, o.id) < ($1, $2)\n            ORDER BY o.created_at DESC, o.id DESC\n            LIMIT $3\n            ",
   "describe": {
     "columns": [
       {
@@ -82,6 +82,17 @@
       },
       {
         "ordinal": 7,
+        "name": "image_count",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "offer",
+            "name": "image_count"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
         "name": "created_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -92,7 +103,7 @@
         }
       },
       {
-        "ordinal": 8,
+        "ordinal": 9,
         "name": "updated_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -101,10 +112,33 @@
             "name": "updated_at"
           }
         }
+      },
+      {
+        "ordinal": 10,
+        "name": "display_name",
+        "type_info": "Varchar",
+        "origin": {
+          "Table": {
+            "table": "\"user\"",
+            "name": "display_name"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "handle",
+        "type_info": "Varchar",
+        "origin": {
+          "Table": {
+            "table": "\"user\"",
+            "name": "handle"
+          }
+        }
       }
     ],
     "parameters": {
       "Left": [
+        "Timestamptz",
         "Uuid",
         "Int8"
       ]
@@ -118,8 +152,11 @@
       false,
       false,
       false,
+      false,
+      false,
+      false,
       false
     ]
   },
-  "hash": "409f2c080760bbf900ffe30c32f0e4f1f08984016eac3cf18741bbc92ff213f8"
+  "hash": "9b923bdd70cd1097a91f4ac83a0f1db56e930c11a960152d097536ac36504a33"
 }

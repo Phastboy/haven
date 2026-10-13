@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, user_id, slug, title, description, price, currency, created_at, updated_at\n            FROM offer\n            WHERE user_id = $1\n            ORDER BY created_at DESC, id DESC\n            ",
+  "query": "\n            SELECT id, user_id, slug, title, description, price, currency, image_count, created_at, updated_at\n            FROM offer\n            WHERE user_id = $1 AND (created_at, id) < ($2, $3)\n            ORDER BY created_at DESC, id DESC\n            LIMIT $4\n            ",
   "describe": {
     "columns": [
       {
@@ -82,6 +82,17 @@
       },
       {
         "ordinal": 7,
+        "name": "image_count",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "offer",
+            "name": "image_count"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
         "name": "created_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -92,7 +103,7 @@
         }
       },
       {
-        "ordinal": 8,
+        "ordinal": 9,
         "name": "updated_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -105,7 +116,10 @@
     ],
     "parameters": {
       "Left": [
-        "Uuid"
+        "Uuid",
+        "Timestamptz",
+        "Uuid",
+        "Int8"
       ]
     },
     "nullable": [
@@ -117,8 +131,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "a5ac8cdbcb1f5feffa86d5a974cf2baad4dcdb877427cea33a3b82f85edc0ae9"
+  "hash": "7282f90dafefd4c0d04a5c44599d18886de5d7f29364500f7ebf9ec62581feb6"
 }

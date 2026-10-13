@@ -87,6 +87,24 @@ impl UserRepository for TestUserRepository {
             id: user_id.to_string(),
         })
     }
+    async fn update_avatar(
+        &self,
+        user_id: UserId,
+        avatar: Option<&haven_domain::image::ImagePublicId>,
+    ) -> Result<User, RepoError> {
+        let mut lock = self.users_by_token.lock().unwrap();
+        for u in lock.values_mut() {
+            if u.id == user_id {
+                u.avatar_public_id = avatar.cloned();
+                u.updated_at = Utc::now();
+                return Ok(u.clone());
+            }
+        }
+        Err(RepoError::NotFound {
+            entity: "user",
+            id: user_id.to_string(),
+        })
+    }
     async fn find_by_session(&self, token_hash: &HashedToken) -> Result<Option<User>, RepoError> {
         let lock = self.users_by_token.lock().unwrap();
         Ok(lock.get(token_hash.as_str()).cloned())
@@ -99,6 +117,7 @@ fn mock_user(id: UserId, account_id: AccountId, handle_str: &str) -> User {
         account_id,
         display_name: DisplayName::parse(handle_str).unwrap(),
         handle: ProfileHandle::parse(handle_str).unwrap(),
+        avatar_public_id: None,
         bio: None,
         created_at: Utc::now(),
         updated_at: Utc::now(),
@@ -112,6 +131,9 @@ pub struct TestRegistry {
 
 impl Registry for TestRegistry {
     fn offers(&self) -> &(dyn OfferRepository + 'static) {
+        &self.offers_repo
+    }
+    fn offer_images(&self) -> &(dyn OfferImageRepository + 'static) {
         &self.offers_repo
     }
     fn accounts(&self) -> &(dyn AccountRepository + 'static) {

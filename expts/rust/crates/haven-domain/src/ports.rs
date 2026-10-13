@@ -1,4 +1,5 @@
 use crate::account::{Account, AccountId, Email};
+use crate::image::{ImageDimensions, ImageId, ImagePublicId, OfferImage};
 use crate::magic_link::MagicLink;
 use crate::offer::{
     CreateOffer, Offer, OfferCursor, OfferId, OfferPage, OfferSlug, PublicOfferPage, UpdateOffer,
@@ -130,6 +131,11 @@ pub trait UserRepository: Send + Sync {
         profile: &UserProfileUpdate,
     ) -> Result<User, RepoError>;
     async fn find_by_session(&self, token_hash: &HashedToken) -> Result<Option<User>, RepoError>;
+    async fn update_avatar(
+        &self,
+        user_id: UserId,
+        avatar_public_id: Option<&ImagePublicId>,
+    ) -> Result<User, RepoError>;
 }
 
 #[async_trait]
@@ -218,6 +224,46 @@ pub trait ImageStorage: Send + Sync {
     async fn delete(&self, public_id: &str) -> Result<(), StorageError>;
 }
 
+/// Repository port for managing offer images and their ordering.
+#[async_trait]
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Repository port trait methods take &self alongside domain arguments"
+)]
+pub trait OfferImageRepository: Send + Sync {
+    /// Returns all images for a given offer, ordered by position (1..=5).
+    async fn find_by_offer(&self, offer_id: OfferId) -> Result<Vec<OfferImage>, RepoError>;
+
+    /// Adds an image to an offer, verifying ownership, enforcing maximum of 5 images,
+    /// assigning the next sequential position, and incrementing offer `image_count`.
+    async fn add_image(
+        &self,
+        offer_id: OfferId,
+        user_id: UserId,
+        public_id: &ImagePublicId,
+        dimensions: ImageDimensions,
+    ) -> Result<OfferImage, RepoError>;
+
+    /// Removes an image from an offer by its image ID, verifying ownership,
+    /// compacting remaining image positions (1..=N), and decrementing offer `image_count`.
+    /// Returns the deleted image's `ImagePublicId` so external storage can be purged.
+    async fn remove_image(
+        &self,
+        offer_id: OfferId,
+        user_id: UserId,
+        image_id: ImageId,
+    ) -> Result<ImagePublicId, RepoError>;
+
+    /// Reorders images for an offer, ensuring the order contains all and only existing images,
+    /// updating positions 1..=N.
+    async fn reorder_images(
+        &self,
+        offer_id: OfferId,
+        user_id: UserId,
+        order: &[ImageId],
+    ) -> Result<Vec<OfferImage>, RepoError>;
+}
+
 /// A single composition root.
 pub trait Registry: Send + Sync {
     fn offers(&self) -> &(dyn OfferRepository + 'static);
@@ -225,4 +271,5 @@ pub trait Registry: Send + Sync {
     fn users(&self) -> &(dyn UserRepository + 'static);
     fn magic_links(&self) -> &(dyn MagicLinkRepository + 'static);
     fn sessions(&self) -> &(dyn SessionRepository + 'static);
+    fn offer_images(&self) -> &(dyn OfferImageRepository + 'static);
 }

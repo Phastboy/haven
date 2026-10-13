@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            UPDATE \"user\"\n            SET handle = $2,\n                display_name = $3,\n                bio = $4,\n                updated_at = now()\n            WHERE id = $1\n            RETURNING id, account_id, handle, display_name, bio, created_at, updated_at\n            ",
+  "query": "\n            SELECT id, account_id, handle, display_name, bio, avatar_public_id, created_at, updated_at\n            FROM \"user\"\n            WHERE lower(handle) = lower($1)\n            ",
   "describe": {
     "columns": [
       {
@@ -60,6 +60,17 @@
       },
       {
         "ordinal": 5,
+        "name": "avatar_public_id",
+        "type_info": "Varchar",
+        "origin": {
+          "Table": {
+            "table": "\"user\"",
+            "name": "avatar_public_id"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
         "name": "created_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -70,7 +81,7 @@
         }
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "updated_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -83,9 +94,6 @@
     ],
     "parameters": {
       "Left": [
-        "Uuid",
-        "Varchar",
-        "Varchar",
         "Text"
       ]
     },
@@ -95,9 +103,10 @@
       false,
       false,
       true,
+      true,
       false,
       false
     ]
   },
-  "hash": "0ed2c03d0177985239bc81bd6955a09afa0c7578b1c98657bfe842fd0ce45a73"
+  "hash": "b80fdc840def78ea3d8b348c6ff9586983220314761bd65485eadfb64dbe28d3"
 }

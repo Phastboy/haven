@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT o.id, o.user_id, o.slug, o.title, o.description, o.price, o.currency, o.created_at, o.updated_at,\n                   u.display_name, u.handle\n            FROM offer o\n            JOIN \"user\" u ON o.user_id = u.id\n            ORDER BY o.created_at DESC, o.id DESC\n            LIMIT $1\n            ",
+  "query": "\n                SELECT id, user_id, slug, title, description, price, currency, image_count, created_at, updated_at\n                FROM offer\n                WHERE user_id = $1 AND idempotency_key = $2\n                ",
   "describe": {
     "columns": [
       {
@@ -82,6 +82,17 @@
       },
       {
         "ordinal": 7,
+        "name": "image_count",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "offer",
+            "name": "image_count"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
         "name": "created_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -92,7 +103,7 @@
         }
       },
       {
-        "ordinal": 8,
+        "ordinal": 9,
         "name": "updated_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -101,33 +112,12 @@
             "name": "updated_at"
           }
         }
-      },
-      {
-        "ordinal": 9,
-        "name": "display_name",
-        "type_info": "Varchar",
-        "origin": {
-          "Table": {
-            "table": "\"user\"",
-            "name": "display_name"
-          }
-        }
-      },
-      {
-        "ordinal": 10,
-        "name": "handle",
-        "type_info": "Varchar",
-        "origin": {
-          "Table": {
-            "table": "\"user\"",
-            "name": "handle"
-          }
-        }
       }
     ],
     "parameters": {
       "Left": [
-        "Int8"
+        "Uuid",
+        "Uuid"
       ]
     },
     "nullable": [
@@ -140,9 +130,8 @@
       false,
       false,
       false,
-      false,
       false
     ]
   },
-  "hash": "4558003870a76f963357da0197ee5651e5aad96cf19590b6173dd676384282b9"
+  "hash": "921819986f7cc8423741a9bddd2cb5a227ec4c9d662938d788d249ed093e2a52"
 }

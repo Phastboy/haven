@@ -5,8 +5,8 @@ pub mod sessions;
 pub mod users;
 
 use haven_domain::ports::{
-    AccountRepository, MagicLinkRepository, OfferRepository, Registry, SessionRepository,
-    UserRepository,
+    AccountRepository, MagicLinkRepository, OfferImageRepository, OfferRepository, Registry,
+    SessionRepository, UserRepository,
 };
 use sqlx::PgPool;
 
@@ -14,6 +14,7 @@ pub type DbPool = PgPool;
 
 pub struct PostgresRegistry {
     offers: Box<dyn OfferRepository>,
+    offer_images: Box<dyn OfferImageRepository>,
     accounts: Box<dyn AccountRepository>,
     users: Box<dyn UserRepository>,
     magic_links: Box<dyn MagicLinkRepository>,
@@ -24,6 +25,9 @@ impl PostgresRegistry {
     pub fn new(pool: &DbPool) -> Self {
         Self {
             offers: Box::new(offers::PostgresOfferRepository::new(pool.clone())),
+            offer_images: Box::new(offers::images::PostgresOfferImageRepository::new(
+                pool.clone(),
+            )),
             accounts: Box::new(accounts::PostgresAccountRepository::new(pool.clone())),
             users: Box::new(users::PostgresUserRepository::new(pool.clone())),
             magic_links: Box::new(magic_links::PostgresMagicLinkRepository::new(pool.clone())),
@@ -35,6 +39,9 @@ impl PostgresRegistry {
 impl Registry for PostgresRegistry {
     fn offers(&self) -> &(dyn OfferRepository + 'static) {
         self.offers.as_ref()
+    }
+    fn offer_images(&self) -> &(dyn OfferImageRepository + 'static) {
+        self.offer_images.as_ref()
     }
     fn accounts(&self) -> &(dyn AccountRepository + 'static) {
         self.accounts.as_ref()

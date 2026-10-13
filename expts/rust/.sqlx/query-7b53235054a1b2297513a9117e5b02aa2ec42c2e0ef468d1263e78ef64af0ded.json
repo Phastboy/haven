@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n                SELECT id, user_id, slug, title, description, price, currency, created_at, updated_at\n                FROM offer\n                WHERE user_id = $1 AND idempotency_key = $2\n                ",
+  "query": "\n            SELECT id, user_id, slug, title, description, price, currency, image_count, created_at, updated_at\n            FROM offer\n            WHERE slug = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -82,6 +82,17 @@
       },
       {
         "ordinal": 7,
+        "name": "image_count",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "offer",
+            "name": "image_count"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
         "name": "created_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -92,7 +103,7 @@
         }
       },
       {
-        "ordinal": 8,
+        "ordinal": 9,
         "name": "updated_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -105,8 +116,7 @@
     ],
     "parameters": {
       "Left": [
-        "Uuid",
-        "Uuid"
+        "Text"
       ]
     },
     "nullable": [
@@ -118,8 +128,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "64e6c5479a25a9eef736b26006e36c3b9a1d4b99ed0f9a701f43aa0dcf26a1f9"
+  "hash": "7b53235054a1b2297513a9117e5b02aa2ec42c2e0ef468d1263e78ef64af0ded"
 }

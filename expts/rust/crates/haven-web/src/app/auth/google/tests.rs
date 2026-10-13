@@ -185,6 +185,9 @@ fn test_router(oauth_config: Option<GoogleOAuthConfig>) -> topcoat::router::Rout
         fn offers(&self) -> &(dyn haven_domain::ports::OfferRepository + 'static) {
             unimplemented!()
         }
+        fn offer_images(&self) -> &(dyn haven_domain::ports::OfferImageRepository + 'static) {
+            unimplemented!()
+        }
         fn accounts(&self) -> &(dyn haven_domain::ports::AccountRepository + 'static) {
             unimplemented!()
         }

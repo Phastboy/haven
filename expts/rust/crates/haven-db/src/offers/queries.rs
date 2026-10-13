@@ -18,7 +18,7 @@ pub(super) async fn find_owned(
     let u_id = user_id.as_uuid();
     let row = sqlx::query!(
         r#"
-            SELECT id, user_id, slug, title, description, price, currency, created_at, updated_at
+            SELECT id, user_id, slug, title, description, price, currency, image_count, created_at, updated_at
             FROM offer
             WHERE id = $1 AND user_id = $2
             "#,
@@ -29,8 +29,9 @@ pub(super) async fn find_owned(
     .await
     .map_err(crate::map_sqlx_err)?;
 
-    row.map(|r| {
-        map_row(
+    if let Some(r) = row {
+        let images = super::images::fetch_images_for_offer(pool, offer_id).await?;
+        let offer = map_row(
             r.id,
             r.user_id,
             r.slug,
@@ -38,18 +39,22 @@ pub(super) async fn find_owned(
             r.description,
             r.price,
             &r.currency,
+            r.image_count,
+            images,
             r.created_at,
             r.updated_at,
-        )
-    })
-    .transpose()
+        )?;
+        Ok(Some(offer))
+    } else {
+        Ok(None)
+    }
 }
 
 pub(super) async fn find_by_user(pool: &DbPool, user_id: UserId) -> Result<Vec<Offer>, RepoError> {
     let u_id = user_id.as_uuid();
     let rows = sqlx::query!(
         r#"
-            SELECT id, user_id, slug, title, description, price, currency, created_at, updated_at
+            SELECT id, user_id, slug, title, description, price, currency, image_count, created_at, updated_at
             FROM offer
             WHERE user_id = $1
             ORDER BY created_at DESC, id DESC
@@ -70,6 +75,8 @@ pub(super) async fn find_by_user(pool: &DbPool, user_id: UserId) -> Result<Vec<O
             r.description,
             r.price,
             &r.currency,
+            r.image_count,
+            Vec::new(),
             r.created_at,
             r.updated_at,
         )?);
@@ -84,7 +91,7 @@ pub(super) async fn find_by_slug(
     let slug_str = slug.as_str();
     let row = sqlx::query!(
         r#"
-            SELECT id, user_id, slug, title, description, price, currency, created_at, updated_at
+            SELECT id, user_id, slug, title, description, price, currency, image_count, created_at, updated_at
             FROM offer
             WHERE slug = $1
             "#,
@@ -94,8 +101,9 @@ pub(super) async fn find_by_slug(
     .await
     .map_err(crate::map_sqlx_err)?;
 
-    row.map(|r| {
-        map_row(
+    if let Some(r) = row {
+        let images = super::images::fetch_images_for_offer(pool, OfferId::from_uuid(r.id)).await?;
+        let offer = map_row(
             r.id,
             r.user_id,
             r.slug,
@@ -103,11 +111,15 @@ pub(super) async fn find_by_slug(
             r.description,
             r.price,
             &r.currency,
+            r.image_count,
+            images,
             r.created_at,
             r.updated_at,
-        )
-    })
-    .transpose()
+        )?;
+        Ok(Some(offer))
+    } else {
+        Ok(None)
+    }
 }
 
 #[allow(
@@ -139,7 +151,7 @@ pub(super) async fn create(
             INSERT INTO offer (id, user_id, slug, title, description, price, currency, idempotency_key)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             ON CONFLICT (user_id, idempotency_key) DO NOTHING
-            RETURNING id, user_id, slug, title, description, price, currency, created_at, updated_at
+            RETURNING id, user_id, slug, title, description, price, currency, image_count, created_at, updated_at
             "#,
         offer_id,
         u_id,
@@ -163,13 +175,15 @@ pub(super) async fn create(
             r.description,
             r.price,
             &r.currency,
+            r.image_count,
+            Vec::new(),
             r.created_at,
             r.updated_at,
         )
     } else {
         let r = sqlx::query!(
             r#"
-                SELECT id, user_id, slug, title, description, price, currency, created_at, updated_at
+                SELECT id, user_id, slug, title, description, price, currency, image_count, created_at, updated_at
                 FROM offer
                 WHERE user_id = $1 AND idempotency_key = $2
                 "#,
@@ -188,6 +202,8 @@ pub(super) async fn create(
             r.description,
             r.price,
             &r.currency,
+            r.image_count,
+            Vec::new(),
             r.created_at,
             r.updated_at,
         )
@@ -220,7 +236,7 @@ pub(super) async fn update(
                 currency = COALESCE($4, currency),
                 updated_at = NOW()
             WHERE id = $5 AND user_id = $6
-            RETURNING id, user_id, slug, title, description, price, currency, created_at, updated_at
+            RETURNING id, user_id, slug, title, description, price, currency, image_count, created_at, updated_at
             "#,
         title_val,
         desc_val,
@@ -234,17 +250,22 @@ pub(super) async fn update(
     .map_err(crate::map_sqlx_err)?;
 
     match row {
-        Some(r) => map_row(
-            r.id,
-            r.user_id,
-            r.slug,
-            r.title,
-            r.description,
-            r.price,
-            &r.currency,
-            r.created_at,
-            r.updated_at,
-        ),
+        Some(r) => {
+            let images = super::images::fetch_images_for_offer(pool, offer_id).await?;
+            map_row(
+                r.id,
+                r.user_id,
+                r.slug,
+                r.title,
+                r.description,
+                r.price,
+                &r.currency,
+                r.image_count,
+                images,
+                r.created_at,
+                r.updated_at,
+            )
+        }
         None => Err(RepoError::NotFound {
             entity: "offer",
             id: offer_id.to_string(),

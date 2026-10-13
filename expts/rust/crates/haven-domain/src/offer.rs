@@ -99,10 +99,28 @@ pub struct Offer {
     pub price: Price,
     /// ISO 4217 currency code.
     pub currency: CurrencyCode,
+    /// Total count of uploaded images (0..=5).
+    pub image_count: u8,
+    /// Uploaded images ordered by position index.
+    pub images: Vec<crate::image::OfferImage>,
     /// Timestamp when this offer was published.
     pub created_at: DateTime<Utc>,
     /// Timestamp when this offer was last updated.
     pub updated_at: DateTime<Utc>,
+}
+
+impl Offer {
+    /// Returns true if the offer has at least 1 image and is publicly discoverable.
+    #[must_use]
+    pub fn is_public(&self) -> bool {
+        self.image_count >= 1
+    }
+
+    /// Returns the cover image (position 1) if present.
+    #[must_use]
+    pub fn cover_image(&self) -> Option<&crate::image::OfferImage> {
+        self.images.iter().find(|img| img.position.is_cover())
+    }
 }
 
 /// Data needed to create a new offer.

@@ -17,7 +17,7 @@ CREATE TABLE offer_image (
     width INTEGER NOT NULL CHECK (width > 0),
     height INTEGER NOT NULL CHECK (height > 0),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT uq_offer_image_position UNIQUE (offer_id, position),
+    CONSTRAINT uq_offer_image_position UNIQUE (offer_id, position) DEFERRABLE INITIALLY DEFERRED,
     CONSTRAINT uq_offer_image_public_id UNIQUE (public_id)
 );
 
