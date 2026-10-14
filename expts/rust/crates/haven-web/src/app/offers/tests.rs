@@ -1044,6 +1044,7 @@ async fn test_navigation_layout_rule_main_vs_child() {
     assert!(body_main.contains("layout-main"));
     assert!(!body_main.contains("layout-child"));
     assert!(!body_main.contains("child-header"));
+    assert!(body_main.contains("bottom-nav"));
 
     // 2. Child route /offers/{slug} with no Referer uses Child layout with fallback parent
     let req_child_no_ref = Request::builder()
@@ -1058,6 +1059,7 @@ async fn test_navigation_layout_rule_main_vs_child() {
     assert!(body_child_no_ref.contains("site-header desktop-only"));
     assert!(body_child_no_ref.contains("child-header"));
     assert!(body_child_no_ref.contains("href=\"/offers\""));
+    assert!(!body_child_no_ref.contains("bottom-nav"));
 
     // 3. Child route with same-site Referer returns previous page
     let req_child_with_ref = Request::builder()
