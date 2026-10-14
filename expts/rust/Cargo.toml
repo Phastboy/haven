@@ -10,7 +10,6 @@ rust-version = "1.99"
 publish = false
 
 [profile.release]
-opt-level = "z"
 overflow-checks = true
 lto = true
 codegen-units = 1
