@@ -45,7 +45,7 @@ pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
                 )
             } else {
                 <ul class="offer-list" role="list">
-                    for item in page.items {
+                    for (idx, item) in page.items.iter().enumerate() {
                         let cover = item.offer.cover_image();
                         let cover_url = cover.map(|img| crate::app::components::image::card_url(cloud_name, img.public_id.as_str()));
                         let cover_srcset = cover.map(|img| crate::app::components::image::card_srcset(cloud_name, img.public_id.as_str()));
@@ -62,6 +62,7 @@ pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
                             maker_href: Some(format!("/profiles/{}", item.maker_handle.as_str())),
                             cover_image_url: cover_url,
                             cover_image_srcset: cover_srcset,
+                            is_above_fold: idx < 2,
                         )
                     }
                 </ul>

@@ -37,10 +37,16 @@ pub async fn view_offer(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
         } else if let Some(err) = q.error.as_deref() {
             let msg = match err {
                 "too_large" => "Photo is too large. Maximum size is 5 MB.",
-                "invalid_format" => "Unsupported format. Only JPEG, PNG, and WebP are allowed (no SVG).",
+                "invalid_format" => {
+                    "Unsupported format. Only JPEG, PNG, and WebP are allowed (no SVG)."
+                }
                 "upload_failed" => "Photo upload failed. Please try again.",
-                "max_images_reached" => "An offer can have at most 5 photos. Remove one to add another.",
-                "last_image" => "An offer needs at least one photo. Add another first, or replace this one.",
+                "max_images_reached" => {
+                    "An offer can have at most 5 photos. Remove one to add another."
+                }
+                "last_image" => {
+                    "An offer needs at least one photo. Add another first, or replace this one."
+                }
                 "empty_file" => "Selected file is empty. Please choose an image.",
                 "missing_file" => "Please select an image file to upload.",
                 _ => "An error occurred while managing photos.",

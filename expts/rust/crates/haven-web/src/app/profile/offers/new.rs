@@ -5,7 +5,9 @@
 
 use crate::app::components::button::{ButtonVariant, button, button_link};
 use crate::app::components::field::{text_field, textarea_field};
-use haven_domain::image::{ImageDimensions, ImagePublicId, MAX_IMAGE_BYTES, validate_image_magic_bytes};
+use haven_domain::image::{
+    ImageDimensions, ImagePublicId, MAX_IMAGE_BYTES, validate_image_magic_bytes,
+};
 use topcoat::{
     Result as TopcoatResult,
     context::Cx,
@@ -193,7 +195,10 @@ pub async fn create_offer(
                 NewOfferFormView {
                     idempotency_key: raw_key,
                     fields,
-                    error_banner: Some("Unsupported photo format. Only JPEG, PNG, and WebP are allowed (no SVG).".to_string()),
+                    error_banner: Some(
+                        "Unsupported photo format. Only JPEG, PNG, and WebP are allowed (no SVG)."
+                            .to_string(),
+                    ),
                     status_code: Some(http::StatusCode::UNPROCESSABLE_ENTITY),
                 },
             ));

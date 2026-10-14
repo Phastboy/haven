@@ -13,10 +13,7 @@ pub struct DeleteOfferImageForm {
 }
 
 #[topcoat::router::page([POST, DELETE])]
-pub async fn delete_image(
-    cx: &Cx,
-    form: Option<Form<DeleteOfferImageForm>>,
-) -> TopcoatResult<()> {
+pub async fn delete_image(cx: &Cx, form: Option<Form<DeleteOfferImageForm>>) -> TopcoatResult<()> {
     let id_uuid = *topcoat::router::path_param::<super::super::Id>(cx)?;
     let offer_id = haven_domain::offer::OfferId::from_uuid(id_uuid);
 
