@@ -61,14 +61,33 @@ pub async fn process_pending_purges(
                         }
                     }
                     Err(e) => {
-                        writeln!(
-                            std::io::stderr(),
-                            "[outbox_worker] failed to delete asset {}: {e}",
-                            item.public_id
-                        )
-                        .unwrap_or(());
+                        let is_terminal = item.attempts >= 5;
+                        if is_terminal {
+                            writeln!(
+                                std::io::stderr(),
+                                "[outbox_worker] TERMINAL FAILURE: image purge permanently failed after 5 attempts for outbox_id={}, public_id={}: {e}",
+                                item.id,
+                                item.public_id
+                            )
+                            .unwrap_or(());
+                        } else {
+                            writeln!(
+                                std::io::stderr(),
+                                "[outbox_worker] failed to delete asset {} (attempt {}/5): {e}",
+                                item.public_id,
+                                item.attempts
+                            )
+                            .unwrap_or(());
+                        }
+
+                        let db_error_msg = if is_terminal {
+                            format!("TERMINAL FAILURE (max attempts reached): {e}")
+                        } else {
+                            e.to_string()
+                        };
+
                         if let Err(db_err) =
-                            haven_db::outbox::record_purge_failure(pool, item.id, &e.to_string())
+                            haven_db::outbox::record_purge_failure(pool, item.id, &db_error_msg)
                                 .await
                         {
                             writeln!(
@@ -104,7 +123,12 @@ async fn run_worker(pool: DbPool, storage: Arc<dyn ImageStorage>, config: Outbox
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::expect_used, reason = "test assertions")]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    reason = "test assertions"
+)]
 mod tests {
     use super::*;
     use crate::storage::MockImageStorage;
@@ -133,5 +157,51 @@ mod tests {
             .await
             .unwrap();
         assert!(remaining.is_none());
+    }
+
+    #[sqlx::test(migrations = "../../migrations")]
+    async fn test_outbox_worker_handles_terminal_failure_and_requeue(pool: PgPool) {
+        let storage =
+            Arc::new(MockImageStorage::new().with_delete_error("Cloudinary 403 Forbidden"));
+        let public_id = "test/purge/failing_asset".to_string();
+
+        let id: uuid::Uuid = sqlx::query_scalar(
+            "INSERT INTO image_purge_outbox (public_id, attempts) VALUES ($1, 4) RETURNING id",
+        )
+        .bind(&public_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+
+        // 5th attempt (terminal failure)
+        let processed = process_pending_purges(&pool, storage.as_ref(), 10).await;
+        assert_eq!(processed, 1);
+
+        let dead_letters = haven_db::outbox::list_failed_purges(&pool, 10)
+            .await
+            .unwrap();
+        assert_eq!(dead_letters.len(), 1);
+        assert_eq!(dead_letters[0].id, id);
+        assert_eq!(dead_letters[0].attempts, 5);
+        assert!(
+            dead_letters[0]
+                .last_error
+                .as_deref()
+                .unwrap_or("")
+                .starts_with("TERMINAL FAILURE")
+        );
+
+        // Ensure terminal records are skipped in subsequent worker passes
+        let next_processed = process_pending_purges(&pool, storage.as_ref(), 10).await;
+        assert_eq!(next_processed, 0);
+
+        // Requeue and verify it is processed again
+        let requeued = haven_db::outbox::requeue_failed_purge(&pool, id)
+            .await
+            .unwrap();
+        assert!(requeued);
+
+        let reclaimed_count = process_pending_purges(&pool, storage.as_ref(), 10).await;
+        assert_eq!(reclaimed_count, 1);
     }
 }

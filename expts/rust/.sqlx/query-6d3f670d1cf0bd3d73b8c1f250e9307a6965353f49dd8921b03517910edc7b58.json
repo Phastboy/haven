@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE image_purge_outbox\n        SET attempts = 0, last_attempt_at = NULL, last_error = NULL\n        WHERE id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6d3f670d1cf0bd3d73b8c1f250e9307a6965353f49dd8921b03517910edc7b58"
+}

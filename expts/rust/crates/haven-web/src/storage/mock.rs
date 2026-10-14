@@ -8,6 +8,7 @@ use std::sync::{Arc, Mutex};
 pub struct MockImageStorage {
     uploaded: Arc<Mutex<Vec<StoredImage>>>,
     deleted: Arc<Mutex<Vec<String>>>,
+    delete_error: Arc<Mutex<Option<String>>>,
 }
 
 impl MockImageStorage {
@@ -17,7 +18,17 @@ impl MockImageStorage {
         Self {
             uploaded: Arc::new(Mutex::new(Vec::new())),
             deleted: Arc::new(Mutex::new(Vec::new())),
+            delete_error: Arc::new(Mutex::new(None)),
         }
+    }
+
+    /// Configures the mock to fail deletion attempts with the specified error message.
+    #[must_use]
+    pub fn with_delete_error(self, err: impl Into<String>) -> Self {
+        if let Ok(mut guard) = self.delete_error.lock() {
+            *guard = Some(err.into());
+        }
+        self
     }
 
     /// Returns a snapshot of all successfully uploaded image records.
@@ -62,6 +73,14 @@ impl ImageStorage for MockImageStorage {
     }
 
     async fn delete(&self, public_id: &str) -> Result<(), StorageError> {
+        if let Some(err) = self
+            .delete_error
+            .lock()
+            .ok()
+            .and_then(|guard| guard.clone())
+        {
+            return Err(StorageError::DeleteFailed(err));
+        }
         if let Ok(mut guard) = self.deleted.lock() {
             guard.push(public_id.to_string());
         }
