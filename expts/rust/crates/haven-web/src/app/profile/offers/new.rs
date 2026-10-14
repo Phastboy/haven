@@ -1,6 +1,17 @@
+#![allow(
+    clippy::too_many_lines,
+    reason = "Multipart offer creation with validation, form error rendering, and image upload"
+)]
+
 use crate::app::components::button::{ButtonVariant, button, button_link};
 use crate::app::components::field::{text_field, textarea_field};
-use topcoat::{Result as TopcoatResult, context::Cx, router::error::see_other, view::view};
+use haven_domain::image::{ImageDimensions, ImagePublicId, MAX_IMAGE_BYTES, validate_image_magic_bytes};
+use topcoat::{
+    Result as TopcoatResult,
+    context::Cx,
+    router::{content::multipart::Multipart, error::see_other},
+    view::view,
+};
 
 #[derive(Default)]
 struct NewOfferFormFields {
@@ -36,7 +47,7 @@ fn render_new_offer_form(cx: &Cx, view_data: NewOfferFormView) -> impl topcoat::
                     <p>(err)</p>
                 </div>
             }
-            <form method="post" action="/profile/offers/new" class="form-stack">
+            <form method="post" action="/profile/offers/new" enctype="multipart/form-data" class="form-stack">
                 <input type="hidden" name="idempotency_key" value=(idempotency_key) />
                 text_field(
                     label: "Title",
@@ -71,6 +82,17 @@ fn render_new_offer_form(cx: &Cx, view_data: NewOfferFormView) -> impl topcoat::
                     placeholder: Some("NGN (required if price > 0)".to_string()),
                     maxlength: Some(3),
                 )
+                <div class="field">
+                    <label for="new-offer-photo" class="field-label">"Cover Photo (optional)"</label>
+                    <input
+                        type="file"
+                        id="new-offer-photo"
+                        name="photo"
+                        accept="image/jpeg,image/png,image/webp"
+                        class="file-input"
+                    />
+                    <p class="field-help text-muted">"JPEG, PNG, or WebP up to 5 MB. Offers without a photo stay private to you."</p>
+                </div>
                 <div class="form-actions">
                     button(
                         text: "Create Offer",
@@ -102,23 +124,14 @@ pub async fn new_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> 
     ))
 }
 
-#[derive(serde::Deserialize)]
-pub struct NewOfferForm {
-    pub idempotency_key: uuid::Uuid,
-    pub title: String,
-    pub description: Option<String>,
-    pub price: Option<String>,
-    pub currency: Option<String>,
-}
-
 #[topcoat::router::page(POST)]
 pub async fn create_offer(
     cx: &Cx,
-    form: Option<topcoat::router::content::Form<NewOfferForm>>,
+    multipart: Option<Multipart>,
 ) -> TopcoatResult<impl topcoat::view::View> {
     let user = crate::app::auth::guard::require_owner_auth(cx).await?;
 
-    let Some(form) = form else {
+    let Some(mut mp) = multipart else {
         return Ok(render_new_offer_form(
             cx,
             NewOfferFormView {
@@ -130,18 +143,66 @@ pub async fn create_offer(
         ));
     };
 
-    let f = form.0;
-    let raw_key = f.idempotency_key.to_string();
+    let mut key: Option<String> = None;
+    let mut title: Option<String> = None;
+    let mut description: Option<String> = None;
+    let mut price: Option<String> = None;
+    let mut currency: Option<String> = None;
+    let mut photo_bytes: Option<Vec<u8>> = None;
+
+    while let Ok(Some(field)) = mp.next_field().await {
+        match field.name() {
+            Some("idempotency_key") => key = field.text().await.ok(),
+            Some("title") => title = field.text().await.ok(),
+            Some("description") => description = field.text().await.ok(),
+            Some("price") => price = field.text().await.ok(),
+            Some("currency") => currency = field.text().await.ok(),
+            Some("photo") => {
+                if let Ok(bytes) = field.bytes().await {
+                    photo_bytes = (!bytes.is_empty()).then(|| bytes.to_vec());
+                }
+            }
+            _ => {}
+        }
+    }
+
+    let raw_key = key.unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
     let fields = NewOfferFormFields {
-        title: Some(f.title.clone()),
-        description: f.description.clone(),
-        price: f.price.clone(),
-        currency: f.currency.clone(),
+        title,
+        description,
+        price,
+        currency,
     };
 
+    if let Some(bytes) = photo_bytes.as_ref() {
+        if bytes.len() > MAX_IMAGE_BYTES {
+            return Ok(render_new_offer_form(
+                cx,
+                NewOfferFormView {
+                    idempotency_key: raw_key,
+                    fields,
+                    error_banner: Some("Photo is too large. Maximum size is 5 MB.".to_string()),
+                    status_code: Some(http::StatusCode::UNPROCESSABLE_ENTITY),
+                },
+            ));
+        }
+
+        if validate_image_magic_bytes(bytes).is_err() {
+            return Ok(render_new_offer_form(
+                cx,
+                NewOfferFormView {
+                    idempotency_key: raw_key,
+                    fields,
+                    error_banner: Some("Unsupported photo format. Only JPEG, PNG, and WebP are allowed (no SVG).".to_string()),
+                    status_code: Some(http::StatusCode::UNPROCESSABLE_ENTITY),
+                },
+            ));
+        }
+    }
+
     let (price, currency) = match crate::app::offers::fields::parse_for_create(
-        f.price.as_deref(),
-        f.currency.as_deref(),
+        fields.price.as_deref(),
+        fields.currency.as_deref(),
     ) {
         Ok(res) => res,
         Err(e) => {
@@ -157,9 +218,12 @@ pub async fn create_offer(
         }
     };
 
+    let title_str = fields.title.clone().unwrap_or_default();
+    let desc_str = fields.description.clone().unwrap_or_default();
+
     let create_req = haven_domain::offer::CreateOffer {
-        title: f.title,
-        description: f.description.unwrap_or_default(),
+        title: title_str,
+        description: desc_str,
         price,
         currency,
     };
@@ -176,15 +240,35 @@ pub async fn create_offer(
         ));
     }
 
-    let _offer = crate::app::state::registry(cx)
+    let key_uuid = uuid::Uuid::parse_str(&raw_key).unwrap_or_else(|_| uuid::Uuid::new_v4());
+
+    let offer = crate::app::state::registry(cx)
         .offers()
         .create(
             user.id,
-            haven_domain::ports::IdempotencyKey::new(f.idempotency_key),
+            haven_domain::ports::IdempotencyKey::new(key_uuid),
             &create_req,
         )
         .await
         .map_err(crate::app::state::map_repo_err)?;
 
-    Err(see_other("/profile/offers").into())
+    if let Some(bytes) = photo_bytes.as_ref() {
+        let storage = crate::app::state::image_storage(cx);
+        let folder = format!("offers/{}", offer.id);
+        let suffix = uuid::Uuid::new_v4().to_string();
+        if let Ok(stored) = storage.upload(&folder, &suffix, bytes).await {
+            let dimensions = ImageDimensions::new(stored.width, stored.height).unwrap_or_default();
+            if let Ok(public_id) = ImagePublicId::parse(&stored.public_id) {
+                match crate::app::state::registry(cx)
+                    .offer_images()
+                    .add_image(offer.id, user.id, &public_id, dimensions)
+                    .await
+                {
+                    Ok(_) | Err(_) => {}
+                }
+            }
+        }
+    }
+
+    Err(see_other(format!("/profile/offers/{}", offer.id)).into())
 }

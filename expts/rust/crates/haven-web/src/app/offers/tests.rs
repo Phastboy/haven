@@ -264,6 +264,10 @@ async fn test_unauthenticated_requests_refused_for_every_manage_route() {
 }
 
 #[tokio::test]
+#[allow(
+    clippy::too_many_lines,
+    reason = "Comprehensive integration test for slug caching and headers"
+)]
 async fn test_public_slug_route_caching_and_headers() {
     let (router, registry) = setup_test_app();
 
@@ -278,6 +282,14 @@ async fn test_public_slug_route_caching_and_headers() {
     let offer = registry
         .offers_repo
         .create(user_id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
+        .await
+        .unwrap();
+
+    let pub_id = haven_domain::image::ImagePublicId::parse("offers/test/cover.jpg").unwrap();
+    let dims = haven_domain::image::ImageDimensions::new(640, 480).unwrap();
+    registry
+        .offers_repo
+        .add_image(offer.id, user_id, &pub_id, dims)
         .await
         .unwrap();
 
@@ -956,6 +968,14 @@ async fn test_maker_attribution_rendered_on_offer_page_and_feed() {
         .await
         .unwrap();
 
+    let pub_id = haven_domain::image::ImagePublicId::parse("offers/bob/vase.jpg").unwrap();
+    let dims = haven_domain::image::ImageDimensions::new(640, 480).unwrap();
+    registry
+        .offers_repo
+        .add_image(offer.id, user.id, &pub_id, dims)
+        .await
+        .unwrap();
+
     // Check /offers/{slug}
     let req_slug = Request::builder()
         .method("GET")
@@ -982,6 +1002,10 @@ async fn test_maker_attribution_rendered_on_offer_page_and_feed() {
 }
 
 #[tokio::test]
+#[allow(
+    clippy::too_many_lines,
+    reason = "Comprehensive integration test for navigation layout hierarchy"
+)]
 async fn test_navigation_layout_rule_main_vs_child() {
     let (router, registry) = setup_test_app();
 
@@ -996,6 +1020,14 @@ async fn test_navigation_layout_rule_main_vs_child() {
     let offer = registry
         .offers_repo
         .create(user.id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
+        .await
+        .unwrap();
+
+    let pub_id = haven_domain::image::ImagePublicId::parse("offers/nav/bowl.jpg").unwrap();
+    let dims = haven_domain::image::ImageDimensions::new(640, 480).unwrap();
+    registry
+        .offers_repo
+        .add_image(offer.id, user.id, &pub_id, dims)
         .await
         .unwrap();
 
@@ -1395,3 +1427,417 @@ async fn test_avatar_deletion() {
     assert!(body_edit.contains("Avatar photo removed."));
     assert!(!body_edit.contains("action=\"/profile/avatar/delete\""));
 }
+
+fn create_multipart_form(
+    fields: &[(&str, &str)],
+    files: &[(&str, &str, &str, &[u8])],
+) -> (String, Vec<u8>) {
+    let boundary = "------------------------testboundary9876543210";
+    let mut body = Vec::new();
+    for (name, val) in fields {
+        body.extend_from_slice(format!("--{boundary}\r\n").as_bytes());
+        body.extend_from_slice(
+            format!("Content-Disposition: form-data; name=\"{name}\"\r\n\r\n").as_bytes(),
+        );
+        body.extend_from_slice(val.as_bytes());
+        body.extend_from_slice(b"\r\n");
+    }
+    for (name, filename, content_type, bytes) in files {
+        body.extend_from_slice(format!("--{boundary}\r\n").as_bytes());
+        body.extend_from_slice(
+            format!("Content-Disposition: form-data; name=\"{name}\"; filename=\"{filename}\"\r\n").as_bytes(),
+        );
+        body.extend_from_slice(format!("Content-Type: {content_type}\r\n\r\n").as_bytes());
+        body.extend_from_slice(bytes);
+        body.extend_from_slice(b"\r\n");
+    }
+    body.extend_from_slice(format!("--{boundary}--\r\n").as_bytes());
+    (format!("multipart/form-data; boundary={boundary}"), body)
+}
+
+#[tokio::test]
+async fn test_offer_visibility_rules_and_slug_404() {
+    let (router, registry) = setup_test_app();
+
+    let user = mock_user(UserId::generate(), AccountId::generate(), "vis-user");
+    let session = create_auth_session(&registry.users_repo, user.clone());
+
+    let other_user = mock_user(UserId::generate(), AccountId::generate(), "other-vis-user");
+    let other_session = create_auth_session(&registry.users_repo, other_user);
+
+    let create_offer = CreateOffer {
+        title: "Invisible Without Photo".to_string(),
+        description: "This offer should be hidden until a photo is uploaded.".to_string(),
+        price: Price::new(100).unwrap(),
+        currency: CurrencyCode::default_code(),
+    };
+    let offer = registry
+        .offers_repo
+        .create(user.id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
+        .await
+        .unwrap();
+
+    let slug_url = format!("/offers/{}", offer.slug);
+
+    // 1. Unauthenticated request to /offers/{slug} returns 404
+    let req_anon = Request::builder()
+        .method("GET")
+        .uri(&slug_url)
+        .body(Body::empty())
+        .unwrap();
+    let res_anon = router.handle(req_anon).await;
+    assert_eq!(res_anon.status(), http::StatusCode::NOT_FOUND);
+
+    // 2. Non-owner authenticated request to /offers/{slug} returns 404
+    let req_other = Request::builder()
+        .method("GET")
+        .uri(&slug_url)
+        .header("cookie", format!("sid={other_session}"))
+        .body(Body::empty())
+        .unwrap();
+    let res_other = router.handle(req_other).await;
+    assert_eq!(res_other.status(), http::StatusCode::NOT_FOUND);
+
+    // 3. Unauthenticated request to /offers feed does NOT contain this offer
+    let req_feed = Request::builder()
+        .method("GET")
+        .uri("/offers")
+        .body(Body::empty())
+        .unwrap();
+    let res_feed = router.handle(req_feed).await;
+    assert_eq!(res_feed.status(), http::StatusCode::OK);
+    let body_feed = body_to_string(res_feed.into_body()).await;
+    assert!(!body_feed.contains("Invisible Without Photo"));
+
+    // 4. Owner GET /profile/offers/{id} renders calm banner: "Only you can see this offer. Add a photo to make it public."
+    let req_owner_view = Request::builder()
+        .method("GET")
+        .uri(format!("/profile/offers/{}", offer.id))
+        .header("cookie", format!("sid={session}"))
+        .body(Body::empty())
+        .unwrap();
+    let res_owner_view = router.handle(req_owner_view).await;
+    assert_eq!(res_owner_view.status(), http::StatusCode::OK);
+    let body_owner_view = body_to_string(res_owner_view.into_body()).await;
+    assert!(body_owner_view.contains("Only you can see this offer. Add a photo to make it public."));
+    assert!(body_owner_view.contains("No photos yet. Add at least one photo to make this offer public."));
+
+    // 5. Owner GET /offers/{slug} succeeds (owner preview permitted)
+    let req_owner_slug = Request::builder()
+        .method("GET")
+        .uri(&slug_url)
+        .header("cookie", format!("sid={session}"))
+        .body(Body::empty())
+        .unwrap();
+    let res_owner_slug = router.handle(req_owner_slug).await;
+    assert_eq!(res_owner_slug.status(), http::StatusCode::OK);
+
+    // 6. Add a photo to make the offer public
+    let pub_id = haven_domain::image::ImagePublicId::parse("offers/vis/cover.jpg").unwrap();
+    let dims = haven_domain::image::ImageDimensions::new(640, 480).unwrap();
+    registry
+        .offers_repo
+        .add_image(offer.id, user.id, &pub_id, dims)
+        .await
+        .unwrap();
+
+    // 7. Unauthenticated request to /offers/{slug} now returns 200 and renders detail photo stack
+    let req_anon_after = Request::builder()
+        .method("GET")
+        .uri(&slug_url)
+        .body(Body::empty())
+        .unwrap();
+    let res_anon_after = router.handle(req_anon_after).await;
+    assert_eq!(res_anon_after.status(), http::StatusCode::OK);
+    let body_anon_after = body_to_string(res_anon_after.into_body()).await;
+    assert!(body_anon_after.contains("offer-photo-stack"));
+    assert!(body_anon_after.contains("Invisible Without Photo, photo 1 of 1"));
+    assert!(body_anon_after.contains("t_detail"));
+
+    // 8. Public feed /offers now includes the offer with cover image
+    let req_feed_after = Request::builder()
+        .method("GET")
+        .uri("/offers")
+        .body(Body::empty())
+        .unwrap();
+    let res_feed_after = router.handle(req_feed_after).await;
+    assert_eq!(res_feed_after.status(), http::StatusCode::OK);
+    let body_feed_after = body_to_string(res_feed_after.into_body()).await;
+    assert!(body_feed_after.contains("Invisible Without Photo"));
+    assert!(body_feed_after.contains("offer-card-image"));
+    assert!(body_feed_after.contains("t_card"));
+}
+
+#[tokio::test]
+async fn test_offer_image_upload_and_limit() {
+    let (router, registry) = setup_test_app();
+
+    let user = mock_user(UserId::generate(), AccountId::generate(), "upload-tester");
+    let session = create_auth_session(&registry.users_repo, user.clone());
+
+    let create_offer = CreateOffer {
+        title: "Photo Upload Showcase".to_string(),
+        description: "Demonstrating image management and limits.".to_string(),
+        price: Price::new(500).unwrap(),
+        currency: CurrencyCode::default_code(),
+    };
+    let offer = registry
+        .offers_repo
+        .create(user.id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
+        .await
+        .unwrap();
+
+    let valid_jpeg = [
+        0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, b'J', b'F', b'I', b'F', 0x00, 0x01, 0x01, 0x01, 0x00,
+        0x48, 0x00, 0x48, 0x00, 0x00, 0xFF, 0xDB,
+    ];
+
+    // 1. Upload invalid format (e.g. text/SVG)
+    let (bad_ct, bad_body) = create_multipart_image("image", "script.svg", "image/svg+xml", b"<svg></svg>");
+    let req_bad = Request::builder()
+        .method("POST")
+        .uri(format!("/profile/offers/{}/images", offer.id))
+        .header("cookie", format!("sid={session}"))
+        .header("content-type", bad_ct)
+        .header("origin", "http://localhost:3000")
+        .header("sec-fetch-site", "same-origin")
+        .body(Body::from(bad_body))
+        .unwrap();
+    let res_bad = router.handle(req_bad).await;
+    assert_eq!(res_bad.status(), http::StatusCode::SEE_OTHER);
+    assert!(res_bad.headers().get("location").unwrap().to_str().unwrap().contains("error=invalid_format"));
+
+    // 2. Upload valid image 1
+    let (good_ct, good_body) = create_multipart_image("image", "photo1.jpg", "image/jpeg", &valid_jpeg);
+    let req_good1 = Request::builder()
+        .method("POST")
+        .uri(format!("/profile/offers/{}/images", offer.id))
+        .header("cookie", format!("sid={session}"))
+        .header("content-type", good_ct)
+        .header("origin", "http://localhost:3000")
+        .header("sec-fetch-site", "same-origin")
+        .body(Body::from(good_body))
+        .unwrap();
+    let res_good1 = router.handle(req_good1).await;
+    assert_eq!(res_good1.status(), http::StatusCode::SEE_OTHER);
+    assert!(res_good1.headers().get("location").unwrap().to_str().unwrap().contains("image_added=1"));
+
+    // Upload 4 more valid images to hit max 5
+    for i in 2..=5 {
+        let (ct, body) = create_multipart_image("image", &format!("photo{i}.jpg"), "image/jpeg", &valid_jpeg);
+        let req = Request::builder()
+            .method("POST")
+            .uri(format!("/profile/offers/{}/images", offer.id))
+            .header("cookie", format!("sid={session}"))
+            .header("content-type", ct)
+            .header("origin", "http://localhost:3000")
+            .header("sec-fetch-site", "same-origin")
+            .body(Body::from(body))
+            .unwrap();
+        let res = router.handle(req).await;
+        assert_eq!(res.status(), http::StatusCode::SEE_OTHER);
+    }
+
+    // 3. GET /profile/offers/{id} at max limit renders "5 of 5 photos. Remove one to add another." and hides upload form
+    let req_max_view = Request::builder()
+        .method("GET")
+        .uri(format!("/profile/offers/{}", offer.id))
+        .header("cookie", format!("sid={session}"))
+        .body(Body::empty())
+        .unwrap();
+    let res_max_view = router.handle(req_max_view).await;
+    assert_eq!(res_max_view.status(), http::StatusCode::OK);
+    let body_max_view = body_to_string(res_max_view.into_body()).await;
+    assert!(body_max_view.contains("5 of 5 photos. Remove one to add another."));
+    assert!(!body_max_view.contains("class=\"image-upload-form\""));
+    assert!(!body_max_view.contains("type=\"file\""));
+
+    // 4. Attempt 6th upload returns error=max_images_reached
+    let (extra_ct, extra_body) = create_multipart_image("image", "photo6.jpg", "image/jpeg", &valid_jpeg);
+    let req_extra = Request::builder()
+        .method("POST")
+        .uri(format!("/profile/offers/{}/images", offer.id))
+        .header("cookie", format!("sid={session}"))
+        .header("content-type", extra_ct)
+        .header("origin", "http://localhost:3000")
+        .header("sec-fetch-site", "same-origin")
+        .body(Body::from(extra_body))
+        .unwrap();
+    let res_extra = router.handle(req_extra).await;
+    assert_eq!(res_extra.status(), http::StatusCode::SEE_OTHER);
+    assert!(res_extra.headers().get("location").unwrap().to_str().unwrap().contains("error=max_images_reached"));
+}
+
+#[tokio::test]
+async fn test_offer_image_reordering() {
+    let (router, registry) = setup_test_app();
+
+    let user = mock_user(UserId::generate(), AccountId::generate(), "reorder-tester");
+    let session = create_auth_session(&registry.users_repo, user.clone());
+
+    let create_offer = CreateOffer {
+        title: "Reorderable Photos".to_string(),
+        description: "Testing image positions.".to_string(),
+        price: Price::new(100).unwrap(),
+        currency: CurrencyCode::default_code(),
+    };
+    let offer = registry
+        .offers_repo
+        .create(user.id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
+        .await
+        .unwrap();
+
+    let pub1 = haven_domain::image::ImagePublicId::parse("offers/reorder/first.jpg").unwrap();
+    let pub2 = haven_domain::image::ImagePublicId::parse("offers/reorder/second.jpg").unwrap();
+    let dims = haven_domain::image::ImageDimensions::new(640, 480).unwrap();
+
+    let img1 = registry.offers_repo.add_image(offer.id, user.id, &pub1, dims).await.unwrap();
+    let img2 = registry.offers_repo.add_image(offer.id, user.id, &pub2, dims).await.unwrap();
+
+    // Reorder: Move img2 up
+    let form_body = format!("image_id={}&direction=up", img2.id.as_uuid());
+    let req_reorder = Request::builder()
+        .method("POST")
+        .uri(format!("/profile/offers/{}/images/reorder", offer.id))
+        .header("cookie", format!("sid={session}"))
+        .header("content-type", "application/x-www-form-urlencoded")
+        .header("origin", "http://localhost:3000")
+        .header("sec-fetch-site", "same-origin")
+        .body(Body::from(form_body))
+        .unwrap();
+
+    let res_reorder = router.handle(req_reorder).await;
+    assert_eq!(res_reorder.status(), http::StatusCode::SEE_OTHER);
+    assert!(res_reorder.headers().get("location").unwrap().to_str().unwrap().contains("reordered=1"));
+
+    // Verify in repo that img2 is now position 1 (cover) and img1 is position 2
+    let updated_images = registry.offers_repo.find_by_offer(offer.id).await.unwrap();
+    assert_eq!(updated_images.len(), 2);
+    assert_eq!(updated_images[0].id, img2.id);
+    assert_eq!(updated_images[0].position.as_u8(), 1);
+    assert_eq!(updated_images[1].id, img1.id);
+    assert_eq!(updated_images[1].position.as_u8(), 2);
+}
+
+#[tokio::test]
+async fn test_offer_image_deletion_and_protection() {
+    let (router, registry) = setup_test_app();
+
+    let user = mock_user(UserId::generate(), AccountId::generate(), "delete-tester-offer");
+    let session = create_auth_session(&registry.users_repo, user.clone());
+
+    let create_offer = CreateOffer {
+        title: "Delete Protection Offer".to_string(),
+        description: "Checking last image protection.".to_string(),
+        price: Price::new(200).unwrap(),
+        currency: CurrencyCode::default_code(),
+    };
+    let offer = registry
+        .offers_repo
+        .create(user.id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
+        .await
+        .unwrap();
+
+    let pub1 = haven_domain::image::ImagePublicId::parse("offers/protect/only.jpg").unwrap();
+    let dims = haven_domain::image::ImageDimensions::new(640, 480).unwrap();
+    let img1 = registry.offers_repo.add_image(offer.id, user.id, &pub1, dims).await.unwrap();
+
+    // 1. Attempt to delete the only image -> rejected with ?error=last_image
+    let form_delete_last = format!("image_id={}", img1.id.as_uuid());
+    let req_del_last = Request::builder()
+        .method("POST")
+        .uri(format!("/profile/offers/{}/images/delete", offer.id))
+        .header("cookie", format!("sid={session}"))
+        .header("content-type", "application/x-www-form-urlencoded")
+        .header("origin", "http://localhost:3000")
+        .header("sec-fetch-site", "same-origin")
+        .body(Body::from(form_delete_last))
+        .unwrap();
+    let res_del_last = router.handle(req_del_last).await;
+    assert_eq!(res_del_last.status(), http::StatusCode::SEE_OTHER);
+    assert!(res_del_last.headers().get("location").unwrap().to_str().unwrap().contains("error=last_image"));
+
+    // 2. GET /profile/offers/{id} renders protection text
+    let req_view = Request::builder()
+        .method("GET")
+        .uri(format!("/profile/offers/{}", offer.id))
+        .header("cookie", format!("sid={session}"))
+        .body(Body::empty())
+        .unwrap();
+    let res_view = router.handle(req_view).await;
+    assert_eq!(res_view.status(), http::StatusCode::OK);
+    let body_view = body_to_string(res_view.into_body()).await;
+    assert!(body_view.contains("An offer needs at least one photo. Add another first, or replace this one."));
+
+    // 3. Add a second image
+    let pub2 = haven_domain::image::ImagePublicId::parse("offers/protect/second.jpg").unwrap();
+    let img2 = registry.offers_repo.add_image(offer.id, user.id, &pub2, dims).await.unwrap();
+
+    // 4. Delete the second image -> succeeds!
+    let form_delete_second = format!("image_id={}", img2.id.as_uuid());
+    let req_del_second = Request::builder()
+        .method("POST")
+        .uri(format!("/profile/offers/{}/images/delete", offer.id))
+        .header("cookie", format!("sid={session}"))
+        .header("content-type", "application/x-www-form-urlencoded")
+        .header("origin", "http://localhost:3000")
+        .header("sec-fetch-site", "same-origin")
+        .body(Body::from(form_delete_second))
+        .unwrap();
+    let res_del_second = router.handle(req_del_second).await;
+    assert_eq!(res_del_second.status(), http::StatusCode::SEE_OTHER);
+    assert!(res_del_second.headers().get("location").unwrap().to_str().unwrap().contains("image_deleted=1"));
+
+    // Image 2 is now deleted from repo
+    let remaining = registry.offers_repo.find_by_offer(offer.id).await.unwrap();
+    assert_eq!(remaining.len(), 1);
+    assert_eq!(remaining[0].id, img1.id);
+}
+
+#[tokio::test]
+async fn test_offer_create_with_multipart_photo() {
+    let (router, registry) = setup_test_app();
+
+    let user = mock_user(UserId::generate(), AccountId::generate(), "creator-user");
+    let session = create_auth_session(&registry.users_repo, user.clone());
+
+    let valid_jpeg = [
+        0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, b'J', b'F', b'I', b'F', 0x00, 0x01, 0x01, 0x01, 0x00,
+        0x48, 0x00, 0x48, 0x00, 0x00, 0xFF, 0xDB,
+    ];
+
+    let (ct, body) = create_multipart_form(
+        &[
+            ("title", "Multipart Handmade Quilt"),
+            ("description", "Cozy patchwork quilt handmade from cotton."),
+            ("price", "120"),
+            ("currency", "USD"),
+        ],
+        &[("photo", "quilt.jpg", "image/jpeg", &valid_jpeg)],
+    );
+
+    let req = Request::builder()
+        .method("POST")
+        .uri("/profile/offers/new")
+        .header("cookie", format!("sid={session}"))
+        .header("content-type", ct)
+        .header("origin", "http://localhost:3000")
+        .header("sec-fetch-site", "same-origin")
+        .body(Body::from(body))
+        .unwrap();
+
+    let res = router.handle(req).await;
+    assert_eq!(res.status(), http::StatusCode::SEE_OTHER);
+    let location = res.headers().get("location").unwrap().to_str().unwrap();
+    assert!(location.starts_with("/profile/offers/"));
+
+    // Verify offer created in repo has image attached and is public
+    let user_offers = registry.offers_repo.find_by_user(user.id).await.unwrap();
+    assert_eq!(user_offers.len(), 1);
+    let created = &user_offers[0];
+    assert_eq!(created.title, "Multipart Handmade Quilt");
+    assert_eq!(created.image_count, 1);
+    assert!(created.is_public());
+    assert!(created.cover_image().is_some());
+}
+

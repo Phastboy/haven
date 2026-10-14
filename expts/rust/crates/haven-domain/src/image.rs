@@ -135,6 +135,15 @@ impl ImageDimensions {
     }
 }
 
+impl Default for ImageDimensions {
+    fn default() -> Self {
+        Self {
+            width: 1280,
+            height: 960,
+        }
+    }
+}
+
 /// Validated opaque identifier for stored assets (e.g. Cloudinary public ID).
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ImagePublicId(String);

@@ -1,3 +1,8 @@
+#![allow(
+    clippy::too_many_lines,
+    reason = "Offer detail view with photo stack, maker attribution, and ETag caching"
+)]
+
 use topcoat::{
     Result as TopcoatResult,
     context::Cx,
@@ -41,13 +46,22 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
         .map_err(crate::app::state::map_repo_err)?
         .ok_or_else(topcoat::router::error::not_found)?;
 
+    let is_owner = match crate::app::auth::guard::current_user(cx).await {
+        Ok(Some(u)) => u.id == offer.user_id,
+        _ => false,
+    };
+
+    if !offer.is_public() && !is_owner {
+        return Err(topcoat::router::error::not_found().into());
+    }
+
     let maker = registry
         .users()
         .find_by_id(offer.user_id)
         .await
         .map_err(crate::app::state::map_repo_err)?;
 
-    // Shared caching policy with ETag
+    // Shared caching policy with ETag (only for public views)
     let etag = format!(
         "\"{:x}-{:x}-v{}\"",
         offer.id.as_uuid().as_u128(),
@@ -56,15 +70,22 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
     );
 
     let headers = topcoat::router::response::response_headers(cx);
-    headers.append(
-        topcoat::router::header::HeaderName::from_static("cache-control"),
-        topcoat::router::header::HeaderValue::from_static("public, max-age=60, s-maxage=300"),
-    );
-    if let Ok(etag_val) = topcoat::router::header::HeaderValue::from_str(&etag) {
+    if is_owner {
         headers.append(
-            topcoat::router::header::HeaderName::from_static("etag"),
-            etag_val,
+            topcoat::router::header::HeaderName::from_static("cache-control"),
+            topcoat::router::header::HeaderValue::from_static("private, no-cache"),
         );
+    } else {
+        headers.append(
+            topcoat::router::header::HeaderName::from_static("cache-control"),
+            topcoat::router::header::HeaderValue::from_static("public, max-age=60, s-maxage=300"),
+        );
+        if let Ok(etag_val) = topcoat::router::header::HeaderValue::from_str(&etag) {
+            headers.append(
+                topcoat::router::header::HeaderName::from_static("etag"),
+                etag_val,
+            );
+        }
     }
 
     let not_modified = topcoat::router::request::headers(cx)
@@ -82,6 +103,9 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
     };
 
     let canonical_url = format!("/offers/{}", offer.slug);
+    let cloud_name = crate::app::state::cloudinary_cloud_name(cx);
+    let total_images = offer.images.len();
+    let offer_title = offer.title.clone();
 
     Ok(view! {
         if not_modified {
@@ -91,7 +115,7 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
                 <link rel="canonical" href=(canonical_url) />
                 <div class="page-header">
                     <div class="offer-detail-header">
-                        <h1 class="offer-detail-title">(offer.title)</h1>
+                        <h1 class="offer-detail-title">(offer_title.clone())</h1>
                         <div class="offer-detail-price">(price_text)</div>
                     </div>
                     if let Some(user) = maker {
@@ -101,6 +125,24 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
                         </div>
                     }
                 </div>
+                if total_images > 0 {
+                    <div class="offer-photo-stack">
+                        for (idx, img) in offer.images.iter().enumerate() {
+                            let alt_text = format!("{}, photo {} of {}", offer_title, idx + 1, total_images);
+                            <div class="offer-photo-item">
+                                <img
+                                    src=(crate::app::components::image::detail_url(cloud_name, img.public_id.as_str()))
+                                    srcset=(crate::app::components::image::detail_srcset(cloud_name, img.public_id.as_str()))
+                                    alt=(alt_text)
+                                    class="offer-detail-image"
+                                    width="640"
+                                    height="480"
+                                    loading=(if idx == 0 { "eager" } else { "lazy" })
+                                />
+                            </div>
+                        }
+                    </div>
+                }
                 <div class="offer-detail-body">
                     <p>(offer.description)</p>
                 </div>

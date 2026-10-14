@@ -69,10 +69,10 @@ impl OfferRepository for FakeOfferRepository {
         let filtered: Vec<Offer> = if let Some(c) = cursor {
             sorted
                 .into_iter()
-                .filter(|o| (o.created_at, o.id.as_uuid()) < (c.created_at, c.id.as_uuid()))
+                .filter(|o| o.is_public() && (o.created_at, o.id.as_uuid()) < (c.created_at, c.id.as_uuid()))
                 .collect()
         } else {
-            sorted
+            sorted.into_iter().filter(super::offer::Offer::is_public).collect()
         };
 
         let has_more = filtered.len() > capped_limit;
