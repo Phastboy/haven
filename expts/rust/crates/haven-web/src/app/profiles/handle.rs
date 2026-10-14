@@ -51,12 +51,27 @@ pub async fn view_profile(cx: &Cx) -> TopcoatResult<impl View> {
     let bio_text = user.bio.as_ref().map(|b| b.as_str().to_string());
     let offers_heading = format!("Offers by {}", user.display_name.as_str());
     let joined_date = user.created_at.format("Joined %B %Y").to_string();
+    let cloud_name = crate::app::state::cloudinary_cloud_name(cx);
+    let (avatar_url, avatar_srcset) = match user.avatar_public_id.as_ref() {
+        Some(public_id) => (
+            Some(crate::app::components::image::avatar_url(
+                cloud_name,
+                public_id.as_str(),
+            )),
+            Some(crate::app::components::image::avatar_srcset(
+                cloud_name,
+                public_id.as_str(),
+            )),
+        ),
+        None => (None, None),
+    };
 
     let identity_data = IdentityBlockData {
         display_name: user.display_name.as_str().to_string(),
         handle: user.handle.as_str().to_string(),
         joined_date,
-        avatar_url: None,
+        avatar_url,
+        avatar_srcset,
         bio: bio_text,
     };
 

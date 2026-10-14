@@ -16,6 +16,8 @@ pub struct IdentityBlockData {
     pub joined_date: String,
     /// Optional avatar image URL (None for neutral initial placeholder).
     pub avatar_url: Option<String>,
+    /// Optional avatar srcset attribute for high-DPR displays (e.g. "1x, 2x").
+    pub avatar_srcset: Option<String>,
     /// Optional biography paragraph.
     pub bio: Option<String>,
 }
@@ -44,7 +46,11 @@ pub async fn identity_block(data: IdentityBlockData) -> TopcoatResult<impl View>
         <div class="identity-block">
             <div class="avatar-slot" aria-hidden="true">
                 if let Some(avatar_url) = data.avatar_url {
-                    <img src=(avatar_url) alt="" class="avatar-img" />
+                    if let Some(avatar_srcset) = data.avatar_srcset {
+                        <img src=(avatar_url) srcset=(avatar_srcset) alt="" class="avatar-img" />
+                    } else {
+                        <img src=(avatar_url) alt="" class="avatar-img" />
+                    }
                 } else {
                     <span class="avatar-initial">(initial)</span>
                 }
@@ -93,6 +99,7 @@ mod tests {
                 handle: "alex-wood".to_string(),
                 joined_date: "Joined October 2026".to_string(),
                 avatar_url: None,
+                avatar_srcset: None,
                 bio: Some("Cabinetmaker and restorer.".to_string()),
             })
         };
@@ -118,6 +125,7 @@ mod tests {
                 handle: "@taylor".to_string(),
                 joined_date: "Joined September 2026".to_string(),
                 avatar_url: Some("/static/avatar.png".to_string()),
+                avatar_srcset: None,
                 bio: None,
             })
         };
@@ -127,5 +135,25 @@ mod tests {
         assert!(html.contains("@taylor"));
         assert!(html.contains("<img src=\"/static/avatar.png\""));
         assert!(!html.contains("avatar-initial"));
+    }
+
+    #[tokio::test]
+    #[allow(clippy::unwrap_used, reason = "test assertions")]
+    async fn test_identity_block_renders_with_avatar_srcset() {
+        let cx = Cx::default();
+        let __cx = &cx;
+        let block = view! {
+            identity_block(data: IdentityBlockData {
+                display_name: "Taylor Craft".to_string(),
+                handle: "@taylor".to_string(),
+                joined_date: "Joined September 2026".to_string(),
+                avatar_url: Some("https://res.cloudinary.com/haven/image/private/t_avatar/users/123/avatar".to_string()),
+                avatar_srcset: Some("https://res.cloudinary.com/haven/image/private/t_avatar/users/123/avatar 1x, https://res.cloudinary.com/haven/image/private/t_avatar_2x/users/123/avatar 2x".to_string()),
+                bio: None,
+            })
+        };
+
+        let html = block.single().await.unwrap().render(__cx);
+        assert!(html.contains("srcset=\"https://res.cloudinary.com/haven/image/private/t_avatar/users/123/avatar 1x, https://res.cloudinary.com/haven/image/private/t_avatar_2x/users/123/avatar 2x\""));
     }
 }
