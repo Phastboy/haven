@@ -61,6 +61,12 @@ pub async fn root_layout(
         ("/auth/sign-in", "Sign In")
     };
 
+    let is_offers_active = path == "/" || path == "/offers" || path.starts_with("/offers/");
+    let is_profile_active = path == "/profile"
+        || path.starts_with("/profile/")
+        || path.starts_with("/profiles/")
+        || path.starts_with("/auth/");
+
     let (is_child, back_url) = match nav_layout {
         NavigationLayout::Main => (false, String::new()),
         NavigationLayout::Child { fallback_parent } => {
@@ -114,6 +120,34 @@ pub async fn root_layout(
                 <main class="main-container">
                     (slot)
                 </main>
+                <nav class="bottom-nav" aria-label="Mobile Navigation">
+                    <div class="bottom-nav-container">
+                        <a
+                            href="/offers"
+                            class=(if is_offers_active { "bottom-nav-link active" } else { "bottom-nav-link" })
+                            aria-current=(if is_offers_active { Some("page") } else { None })
+                        >
+                            <svg class="bottom-nav-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <rect x="3" y="3" width="7" height="7" />
+                                <rect x="14" y="3" width="7" height="7" />
+                                <rect x="14" y="14" width="7" height="7" />
+                                <rect x="3" y="14" width="7" height="7" />
+                            </svg>
+                            <span class="bottom-nav-text">"Offers"</span>
+                        </a>
+                        <a
+                            href=(auth_link_href)
+                            class=(if is_profile_active { "bottom-nav-link active" } else { "bottom-nav-link" })
+                            aria-current=(if is_profile_active { Some("page") } else { None })
+                        >
+                            <svg class="bottom-nav-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                <circle cx="12" cy="7" r="4" />
+                            </svg>
+                            <span class="bottom-nav-text">(auth_link_text)</span>
+                        </a>
+                    </div>
+                </nav>
             </body>
         </html>
     })

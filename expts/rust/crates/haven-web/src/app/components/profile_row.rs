@@ -69,19 +69,33 @@ pub struct ProfileRowData {
     pub icon: RowIcon,
     /// Primary title text.
     pub title: String,
-    /// Secondary muted description text.
-    pub description: String,
+    /// Optional secondary muted description text.
+    pub description: Option<String>,
     /// Target destination URL (or form action).
     pub href: String,
     /// If true, renders a POST form submit button instead of a GET link.
     pub is_post: bool,
+    /// If set, renders a button triggering a native Popover dialog instead of navigating.
+    pub popovertarget: Option<String>,
 }
 
 /// Renders a single row conforming to Haven's 44px min-height touch target and slot arrangement.
 #[component]
 pub async fn profile_row(data: ProfileRowData) -> TopcoatResult<impl View> {
     Ok(view! {
-        if data.is_post {
+        if let Some(target) = data.popovertarget {
+            <button type="button" class="profile-row profile-row-btn" popovertarget=(target)>
+                <div class="row-leading-slot" aria-hidden="true">
+                    row_icon(icon: data.icon)
+                </div>
+                <div class="row-text-slot">
+                    <span class="row-title">(data.title)</span>
+                    if let Some(desc) = data.description {
+                        <span class="row-description text-muted">(desc)</span>
+                    }
+                </div>
+            </button>
+        } else if data.is_post {
             <form action=(data.href) method="post" class="profile-row-form">
                 <button type="submit" class="profile-row profile-row-btn">
                     <div class="row-leading-slot" aria-hidden="true">
@@ -89,7 +103,9 @@ pub async fn profile_row(data: ProfileRowData) -> TopcoatResult<impl View> {
                     </div>
                     <div class="row-text-slot">
                         <span class="row-title">(data.title)</span>
-                        <span class="row-description text-muted">(data.description)</span>
+                        if let Some(desc) = data.description {
+                            <span class="row-description text-muted">(desc)</span>
+                        }
                     </div>
                     <div class="row-trailing-slot text-muted" aria-hidden="true">
                         <svg class="row-chevron-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -105,7 +121,9 @@ pub async fn profile_row(data: ProfileRowData) -> TopcoatResult<impl View> {
                 </div>
                 <div class="row-text-slot">
                     <span class="row-title">(data.title)</span>
-                    <span class="row-description text-muted">(data.description)</span>
+                    if let Some(desc) = data.description {
+                        <span class="row-description text-muted">(desc)</span>
+                    }
                 </div>
                 <div class="row-trailing-slot text-muted" aria-hidden="true">
                     <svg class="row-chevron-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -134,9 +152,10 @@ mod tests {
             profile_row(data: ProfileRowData {
                 icon: RowIcon::EditProfile,
                 title: "Edit Profile".to_string(),
-                description: "Update display name and bio.".to_string(),
+                description: Some("Update display name and bio.".to_string()),
                 href: "/profile/edit".to_string(),
                 is_post: false,
+                popovertarget: None,
             })
         };
 
@@ -157,17 +176,41 @@ mod tests {
             profile_row(data: ProfileRowData {
                 icon: RowIcon::SignOut,
                 title: "Sign Out".to_string(),
-                description: "End your current session.".to_string(),
+                description: Some("End your current session.".to_string()),
                 href: "/auth/sign-out".to_string(),
                 is_post: true,
+                popovertarget: None,
             })
         };
 
         let html = row.single().await.unwrap().render(__cx);
-        assert!(html.contains("<form action=\"/auth/sign-out\" method=\"post\""));
-        assert!(html.contains("type=\"submit\""));
+        assert!(html.contains(
+            "<form action=\"/auth/sign-out\" method=\"post\" class=\"profile-row-form\">"
+        ));
         assert!(html.contains("Sign Out"));
         assert!(html.contains("End your current session."));
         assert!(html.contains("row-chevron-svg"));
+    }
+
+    #[tokio::test]
+    #[allow(clippy::unwrap_used, reason = "test assertions")]
+    async fn test_profile_row_renders_popover_button() {
+        let cx = Cx::default();
+        let __cx = &cx;
+        let row = view! {
+            profile_row(data: ProfileRowData {
+                icon: RowIcon::SignOut,
+                title: "Sign out".to_string(),
+                description: None,
+                href: "/auth/sign-out".to_string(),
+                is_post: false,
+                popovertarget: Some("signout-dialog".to_string()),
+            })
+        };
+
+        let html = row.single().await.unwrap().render(__cx);
+        assert!(html.contains("<button type=\"button\" class=\"profile-row profile-row-btn\" popovertarget=\"signout-dialog\">"));
+        assert!(html.contains("Sign out"));
+        assert!(!html.contains("row-chevron-svg"));
     }
 }

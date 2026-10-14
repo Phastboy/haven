@@ -835,8 +835,8 @@ input:disabled {
 }
 
 .avatar-slot {
-  width: 72px;
-  height: 72px;
+  width: 80px;
+  height: 80px;
   border-radius: var(--radius-full);
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -844,7 +844,7 @@ input:disabled {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
 }
 
 .avatar-initial {
@@ -974,7 +974,7 @@ input:disabled {
 }
 
 .row-group-container {
-  background-color: var(--color-surface);
+  background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -1321,6 +1321,84 @@ dialog[popover],
   padding: var(--space-1) var(--space-2);
   font-size: var(--text-xs);
 }
+
+/* Bottom Navigation Bar (Mobile / Small Screens) */
+.bottom-nav {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  body {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .site-header:not(.desktop-only) .nav-links {
+    display: none;
+  }
+
+  .bottom-nav {
+    display: block;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background-color: var(--color-bg);
+    border-top: 1px solid var(--color-border);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .bottom-nav-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    height: 60px;
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 0 var(--space-4);
+  }
+
+  .bottom-nav-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 64px;
+    min-height: 44px;
+    text-decoration: none;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    font-weight: 400;
+    transition: color 0.15s ease;
+    gap: 2px;
+  }
+
+  .bottom-nav-link:hover {
+    color: var(--color-text);
+  }
+
+  .bottom-nav-link.active {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  .bottom-nav-link:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  .bottom-nav-icon {
+    stroke: currentColor;
+    display: block;
+  }
+
+  .bottom-nav-text {
+    font-size: 11px;
+    line-height: 1;
+  }
+}
+
 
 
 

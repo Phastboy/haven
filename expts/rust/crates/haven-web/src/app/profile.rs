@@ -6,6 +6,7 @@ pub mod edit;
 pub mod offers;
 
 use crate::app::components::{
+    confirm_dialog::confirm_dialog,
     identity_block::{IdentityBlockData, identity_block},
     profile_row::{ProfileRowData, RowIcon},
     row_group::{ProfileGroupData, row_group},
@@ -66,64 +67,38 @@ pub async fn profile_overview(cx: &Cx) -> TopcoatResult<impl View> {
         bio: user.bio.as_ref().map(|b| b.as_str().to_string()),
     };
 
-    let profile_group_data = ProfileGroupData {
-        label: "PROFILE",
-        rows: vec![
-            ProfileRowData {
-                icon: RowIcon::PublicProfile,
-                title: "Public Profile".to_string(),
-                description: "View how others see your profile".to_string(),
-                href: format!("/profiles/{}", user.handle.as_str()),
-                is_post: false,
-            },
-            ProfileRowData {
-                icon: RowIcon::EditProfile,
-                title: "Edit Profile".to_string(),
-                description: "Update display name, handle, or bio".to_string(),
-                href: "/profile/edit".to_string(),
-                is_post: false,
-            },
-        ],
-    };
-
-    let offers_group_data = ProfileGroupData {
-        label: "OFFERS",
+    let navigation_group_data = ProfileGroupData {
+        label: None,
         rows: vec![
             ProfileRowData {
                 icon: RowIcon::Offers,
-                title: "Your Offers".to_string(),
-                description: "Manage your active listings".to_string(),
+                title: "My offers".to_string(),
+                description: None,
                 href: "/profile/offers".to_string(),
                 is_post: false,
+                popovertarget: None,
             },
             ProfileRowData {
-                icon: RowIcon::CreateOffer,
-                title: "Create an Offer".to_string(),
-                description: "Publish a new offer for others to see".to_string(),
-                href: "/profile/offers/new".to_string(),
+                icon: RowIcon::EditProfile,
+                title: "Edit profile".to_string(),
+                description: None,
+                href: "/profile/edit".to_string(),
                 is_post: false,
+                popovertarget: None,
             },
         ],
     };
 
-    let account_group_data = ProfileGroupData {
-        label: "ACCOUNT",
-        rows: vec![
-            ProfileRowData {
-                icon: RowIcon::Account,
-                title: "Account & Session".to_string(),
-                description: "Manage signed-in email and session".to_string(),
-                href: "/profile/account".to_string(),
-                is_post: false,
-            },
-            ProfileRowData {
-                icon: RowIcon::SignOut,
-                title: "Sign Out".to_string(),
-                description: "End your current session".to_string(),
-                href: "/auth/sign-out".to_string(),
-                is_post: true,
-            },
-        ],
+    let sign_out_group_data = ProfileGroupData {
+        label: None,
+        rows: vec![ProfileRowData {
+            icon: RowIcon::SignOut,
+            title: "Sign out".to_string(),
+            description: None,
+            href: "/auth/sign-out".to_string(),
+            is_post: false,
+            popovertarget: Some("signout-dialog".to_string()),
+        }],
     };
 
     Ok(view! {
@@ -137,10 +112,18 @@ pub async fn profile_overview(cx: &Cx) -> TopcoatResult<impl View> {
             identity_block(data: identity_data)
 
             <div class="profile-sections">
-                row_group(group: profile_group_data)
-                row_group(group: offers_group_data)
-                row_group(group: account_group_data)
+                row_group(group: navigation_group_data)
+                row_group(group: sign_out_group_data)
             </div>
+
+            confirm_dialog(
+                id: "signout-dialog".to_string(),
+                title: "Sign out?".to_string(),
+                message: "Are you sure you want to sign out of Haven?".to_string(),
+                action_url: "/auth/sign-out".to_string(),
+                confirm_label: "Sign out".to_string(),
+                is_danger: true,
+            )
         </div>
     })
 }

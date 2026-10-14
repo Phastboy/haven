@@ -9,8 +9,8 @@ use topcoat::{
 /// Typed group data defining a section of rows.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProfileGroupData {
-    /// Uppercase group label shown above the container.
-    pub label: &'static str,
+    /// Optional uppercase group label shown above the container.
+    pub label: Option<&'static str>,
     /// List of rows contained in this group.
     pub rows: Vec<ProfileRowData>,
 }
@@ -20,7 +20,9 @@ pub struct ProfileGroupData {
 pub async fn row_group(group: ProfileGroupData) -> TopcoatResult<impl View> {
     Ok(view! {
         <div class="row-group">
-            <span class="row-group-label text-muted">(group.label)</span>
+            if let Some(lbl) = group.label {
+                <span class="row-group-label text-muted">(lbl)</span>
+            }
             <div class="row-group-container">
                 for row_data in group.rows {
                     profile_row(data: row_data)
@@ -46,21 +48,23 @@ mod tests {
         let __cx = &cx;
         let group = view! {
             row_group(group: ProfileGroupData {
-                label: "OFFERS",
+                label: Some("OFFERS"),
                 rows: vec![
                     ProfileRowData {
                         icon: RowIcon::Offers,
                         title: "Your Offers".to_string(),
-                        description: "Manage your listings.".to_string(),
+                        description: Some("Manage your listings.".to_string()),
                         href: "/profile/offers".to_string(),
                         is_post: false,
+                        popovertarget: None,
                     },
                     ProfileRowData {
                         icon: RowIcon::CreateOffer,
                         title: "Create an Offer".to_string(),
-                        description: "Publish a new offer.".to_string(),
+                        description: Some("Publish a new offer.".to_string()),
                         href: "/profile/offers/new".to_string(),
                         is_post: false,
+                        popovertarget: None,
                     },
                 ],
             })
@@ -73,5 +77,31 @@ mod tests {
         assert!(html.contains("Create an Offer"));
         assert!(html.contains("href=\"/profile/offers\""));
         assert!(html.contains("href=\"/profile/offers/new\""));
+    }
+
+    #[tokio::test]
+    #[allow(clippy::unwrap_used, reason = "test assertions")]
+    async fn test_row_group_renders_without_label() {
+        let cx = Cx::default();
+        let __cx = &cx;
+        let group = view! {
+            row_group(group: ProfileGroupData {
+                label: None,
+                rows: vec![
+                    ProfileRowData {
+                        icon: RowIcon::Offers,
+                        title: "My offers".to_string(),
+                        description: None,
+                        href: "/profile/offers".to_string(),
+                        is_post: false,
+                        popovertarget: None,
+                    },
+                ],
+            })
+        };
+
+        let html = group.single().await.unwrap().render(__cx);
+        assert!(!html.contains("row-group-label"));
+        assert!(html.contains("My offers"));
     }
 }

@@ -32,10 +32,6 @@ pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
 
     Ok(view! {
         <div class="offers-feed">
-            <div class="page-header">
-                <h1>"Available Offers"</h1>
-                <p class="text-muted">"Browse offers available right now on Haven."</p>
-            </div>
             if page.items.is_empty() {
                 empty_state(
                     title: "No offers available yet",
