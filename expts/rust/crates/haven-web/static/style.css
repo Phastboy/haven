@@ -1328,12 +1328,16 @@ dialog[popover],
 }
 
 @media (max-width: 640px) {
-  body {
+  body.layout-main {
     padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
   }
 
   .site-header:not(.desktop-only) .nav-links {
     display: none;
+  }
+
+  .layout-child .bottom-nav {
+    display: none !important;
   }
 
   .bottom-nav {
