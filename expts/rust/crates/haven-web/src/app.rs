@@ -31,7 +31,7 @@ pub async fn csp_layer(cx: &Cx, body: Body, next: Next<'_>) -> TopcoatResult<Res
     headers.append(
         topcoat::router::header::HeaderName::from_static("content-security-policy"),
         topcoat::router::header::HeaderValue::from_static(
-            "default-src 'self'; frame-ancestors 'none'; form-action 'self'",
+            "default-src 'self'; img-src 'self' https://res.cloudinary.com data:; frame-ancestors 'none'; form-action 'self'",
         ),
     );
     headers.append(

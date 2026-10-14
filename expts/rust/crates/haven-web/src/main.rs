@@ -96,6 +96,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let cloudinary_config = storage::CloudinaryConfig::from_env()?;
+    let cloudinary_cloud_name = cloudinary_config.as_ref().map(|c| c.cloud_name.clone());
     let image_storage = init_image_storage(cloudinary_config, &http_client);
 
     let registry = Arc::new(PostgresRegistry::new(&pool));
@@ -105,10 +106,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         http_client,
         email_delivery_enabled: None,
         image_storage,
+        cloudinary_cloud_name,
     };
 
     let router = app::router()
         .origin_policy(app::origin::build_origin_policy())
+        .layer(topcoat::router::BodyLimit::max(6 * 1024 * 1024))
         .cookies()
         .sessions(
             SessionConfig::builder()

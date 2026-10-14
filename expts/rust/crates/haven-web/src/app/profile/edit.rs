@@ -28,8 +28,38 @@ pub struct ProfileFieldErrors {
 struct ProfileEditFormViewData {
     fields: ProfileFormFields,
     errors: ProfileFieldErrors,
+    avatar_url: Option<String>,
+    avatar_srcset: Option<String>,
+    avatar_initial: String,
+    has_avatar: bool,
+    notice_banner: Option<String>,
     error_banner: Option<String>,
     status_code: Option<http::StatusCode>,
+}
+
+fn user_avatar_data(
+    cx: &Cx,
+    user: &haven_domain::user::User,
+) -> (Option<String>, Option<String>, String, bool) {
+    let cloud_name = crate::app::state::cloudinary_cloud_name(cx);
+    let (avatar_url, avatar_srcset) = match user.avatar_public_id.as_ref() {
+        Some(public_id) => (
+            Some(crate::app::components::image::avatar_url(
+                cloud_name,
+                public_id.as_str(),
+            )),
+            Some(crate::app::components::image::avatar_srcset(
+                cloud_name,
+                public_id.as_str(),
+            )),
+        ),
+        None => (None, None),
+    };
+    let avatar_initial = crate::app::components::identity_block::extract_avatar_initial(
+        user.display_name.as_str(),
+    );
+    let has_avatar = user.avatar_public_id.is_some();
+    (avatar_url, avatar_srcset, avatar_initial, has_avatar)
 }
 
 fn render_profile_edit_form(cx: &Cx, view_data: ProfileEditFormViewData) -> impl View {
@@ -45,13 +75,48 @@ fn render_profile_edit_form(cx: &Cx, view_data: ProfileEditFormViewData) -> impl
             }
             <div class="page-header">
                 <h1>"Edit Profile"</h1>
-                <p class="text-muted">"Update your public name, handle, and bio."</p>
+                <p class="text-muted">"Update your public name, handle, bio, and avatar."</p>
             </div>
+            if let Some(notice) = view_data.notice_banner {
+                <div class="notice-banner" role="status">
+                    <p>(notice)</p>
+                </div>
+            }
             if let Some(err) = view_data.error_banner {
                 <div class="form-error-banner" role="alert">
                     <p>(err)</p>
                 </div>
             }
+
+            <div class="avatar-edit-card">
+                <div class="avatar-slot" aria-hidden="true">
+                    if let Some(avatar_url) = view_data.avatar_url {
+                        if let Some(avatar_srcset) = view_data.avatar_srcset {
+                            <img src=(avatar_url) srcset=(avatar_srcset) alt="" class="avatar-img" />
+                        } else {
+                            <img src=(avatar_url) alt="" class="avatar-img" />
+                        }
+                    } else {
+                        <span class="avatar-initial">(view_data.avatar_initial)</span>
+                    }
+                </div>
+                <div class="avatar-edit-content">
+                    <span class="avatar-edit-title">"Profile Photo"</span>
+                    <p class="avatar-edit-help text-muted">"JPEG, PNG, or WebP up to 5 MB."</p>
+                    <div class="avatar-edit-actions">
+                        <form method="post" action="/profile/avatar" enctype="multipart/form-data" class="avatar-upload-form">
+                            <input type="file" name="avatar" accept="image/jpeg,image/png,image/webp" required="required" class="avatar-file-input" />
+                            <button type="submit" class="btn btn-secondary">"Upload photo"</button>
+                        </form>
+                        if view_data.has_avatar {
+                            <form method="post" action="/profile/avatar/delete" class="avatar-delete-form">
+                                <button type="submit" class="btn btn-secondary">"Remove photo"</button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </div>
+
             <form method="post" action="/profile/edit" class="form-stack">
                 text_field(
                     label: "Display Name",
@@ -97,9 +162,36 @@ fn render_profile_edit_form(cx: &Cx, view_data: ProfileEditFormViewData) -> impl
     }
 }
 
+/// Query parameters on `/profile/edit`.
+#[topcoat::router::query_params]
+pub struct ProfileEditQuery {
+    pub error: Option<String>,
+    pub avatar_updated: Option<String>,
+    pub avatar_deleted: Option<String>,
+}
+
 #[topcoat::router::page]
 pub async fn edit_page(cx: &Cx) -> TopcoatResult<impl View> {
     let user = crate::app::auth::guard::require_auth(cx).await?;
+    let query = topcoat::router::query_params::<ProfileEditQuery>(cx).ok();
+
+    let notice_banner = if query.as_ref().and_then(|q| q.avatar_updated.as_deref()) == Some("1") {
+        Some("Avatar photo updated successfully.".to_string())
+    } else if query.as_ref().and_then(|q| q.avatar_deleted.as_deref()) == Some("1") {
+        Some("Avatar photo removed.".to_string())
+    } else {
+        None
+    };
+
+    let error_banner = match query.as_ref().and_then(|q| q.error.as_deref()) {
+        Some("too_large") => Some("Avatar image exceeds the 5 MB limit. Please select a smaller photo.".to_string()),
+        Some("invalid_format") => Some("Invalid image format. Supported formats: JPEG, PNG, and WebP (SVG is not allowed).".to_string()),
+        Some("empty_file" | "missing_file") => Some("Please select an image file to upload.".to_string()),
+        Some("upload_failed") => Some("Image upload failed. Please try again.".to_string()),
+        _ => None,
+    };
+
+    let (avatar_url, avatar_srcset, avatar_initial, has_avatar) = user_avatar_data(cx, &user);
 
     Ok(render_profile_edit_form(
         cx,
@@ -113,7 +205,12 @@ pub async fn edit_page(cx: &Cx) -> TopcoatResult<impl View> {
                     .map_or_else(String::new, |b| b.as_str().to_string()),
             },
             errors: ProfileFieldErrors::default(),
-            error_banner: None,
+            avatar_url,
+            avatar_srcset,
+            avatar_initial,
+            has_avatar,
+            notice_banner,
+            error_banner,
             status_code: None,
         },
     ))
@@ -223,6 +320,7 @@ pub async fn update_profile(
     form: Option<topcoat::router::content::Form<ProfileForm>>,
 ) -> TopcoatResult<impl View> {
     let user = crate::app::auth::guard::require_auth(cx).await?;
+    let (avatar_url, avatar_srcset, avatar_initial, has_avatar) = user_avatar_data(cx, &user);
 
     let Some(form) = form else {
         return Ok(render_profile_edit_form(
@@ -237,6 +335,11 @@ pub async fn update_profile(
                         .map_or_else(String::new, |b| b.as_str().to_string()),
                 },
                 errors: ProfileFieldErrors::default(),
+                avatar_url,
+                avatar_srcset,
+                avatar_initial,
+                has_avatar,
+                notice_banner: None,
                 error_banner: Some("Missing form submission.".to_string()),
                 status_code: Some(http::StatusCode::UNPROCESSABLE_ENTITY),
             },
@@ -258,6 +361,11 @@ pub async fn update_profile(
                 ProfileEditFormViewData {
                     fields,
                     errors: field_errors,
+                    avatar_url,
+                    avatar_srcset,
+                    avatar_initial,
+                    has_avatar,
+                    notice_banner: None,
                     error_banner: Some("Please correct the errors below.".to_string()),
                     status_code: Some(http::StatusCode::UNPROCESSABLE_ENTITY),
                 },
@@ -280,6 +388,11 @@ pub async fn update_profile(
                 ProfileEditFormViewData {
                     fields,
                     errors,
+                    avatar_url,
+                    avatar_srcset,
+                    avatar_initial,
+                    has_avatar,
+                    notice_banner: None,
                     error_banner: Some("The requested handle is already taken.".to_string()),
                     status_code: Some(http::StatusCode::UNPROCESSABLE_ENTITY),
                 },

@@ -6,7 +6,7 @@ publish.workspace = true
 
 [dependencies]
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time", "sync"] }
-topcoat = { version = "0.10.0", features = ["router", "view", "discover", "session", "mail", "cookie", "mail-smtp"] }
+topcoat = { version = "0.10.0", features = ["router", "view", "discover", "session", "mail", "cookie", "mail-smtp", "multipart"] }
 haven-domain = { path = "../haven-domain" }
 haven-db = { path = "../haven-db" }
 uuid = { workspace = true, features = ["v4", "serde"] }

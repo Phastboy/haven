@@ -165,12 +165,14 @@ fn setup_test_app() -> (topcoat::router::Router, TestRegistry) {
         http_client: reqwest::Client::new(),
         email_delivery_enabled: Some(false),
         image_storage: Arc::new(crate::storage::MockImageStorage::new()),
+        cloudinary_cloud_name: None,
     };
 
     let origins = crate::app::origin::compute_trusted_origins("3000", None, None);
     let origin_policy = topcoat::router::OriginPolicy::new().trust_origins(origins);
     let router = crate::app::router()
         .origin_policy(origin_policy)
+        .layer(topcoat::router::BodyLimit::max(6 * 1024 * 1024))
         .cookies()
         .sessions(
             SessionConfig::builder()
@@ -1149,4 +1151,247 @@ async fn test_public_offer_back_returns_to_owner_offer_page() {
     assert!(body_owner.contains(back_btn_expected));
     let back_btn_loop = format!("href=\"/offers/{}\" class=\"child-back-btn\"", offer.slug);
     assert!(!body_owner.contains(&back_btn_loop));
+}
+
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Test helper builds multipart body from field name, filename, content type, and bytes"
+)]
+fn create_multipart_image(
+    field_name: &str,
+    filename: &str,
+    content_type: &str,
+    bytes: &[u8],
+) -> (String, Vec<u8>) {
+    let boundary = "------------------------testboundary1234567890";
+    let mut body = Vec::new();
+    body.extend_from_slice(format!("--{boundary}\r\n").as_bytes());
+    body.extend_from_slice(
+        format!("Content-Disposition: form-data; name=\"{field_name}\"; filename=\"{filename}\"\r\n")
+            .as_bytes(),
+    );
+    body.extend_from_slice(format!("Content-Type: {content_type}\r\n\r\n").as_bytes());
+    body.extend_from_slice(bytes);
+    body.extend_from_slice(format!("\r\n--{boundary}--\r\n").as_bytes());
+
+    (format!("multipart/form-data; boundary={boundary}"), body)
+}
+
+#[tokio::test]
+async fn test_avatar_upload_success_and_views_rendering() {
+    let (router, registry) = setup_test_app();
+
+    let user = mock_user(UserId::generate(), AccountId::generate(), "avatar-maker");
+    let session = create_auth_session(&registry.users_repo, user.clone());
+
+    // Valid JPEG magic bytes header: FF D8 FF E0 ...
+    let valid_jpeg_bytes = [
+        0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, b'J', b'F', b'I', b'F', 0x00, 0x01, 0x01, 0x01, 0x00,
+        0x48, 0x00, 0x48, 0x00, 0x00, 0xFF, 0xDB,
+    ];
+
+    let (content_type, body_bytes) =
+        create_multipart_image("avatar", "profile.jpg", "image/jpeg", &valid_jpeg_bytes);
+
+    // 1. Authenticated POST /profile/avatar with valid JPEG succeeds and redirects to /profile/edit?avatar_updated=1
+    let req_upload = Request::builder()
+        .method("POST")
+        .uri("/profile/avatar")
+        .header("cookie", format!("sid={session}"))
+        .header("origin", "http://localhost:3000")
+        .header("sec-fetch-site", "same-origin")
+        .header("content-type", content_type)
+        .body(Body::from(body_bytes))
+        .unwrap();
+
+    let res_upload = router.handle(req_upload).await;
+    assert_eq!(res_upload.status(), http::StatusCode::SEE_OTHER);
+    assert_eq!(
+        res_upload
+            .headers()
+            .get("location")
+            .unwrap()
+            .to_str()
+            .unwrap(),
+        "/profile/edit?avatar_updated=1"
+    );
+
+    // Verify user in repository now has avatar_public_id set
+    let updated_user = registry.users_repo.find_by_id(user.id).await.unwrap().unwrap();
+    assert!(updated_user.avatar_public_id.is_some());
+    let public_id_str = updated_user.avatar_public_id.as_ref().unwrap().as_str();
+
+    // 2. GET /profile renders avatar image with srcset
+    let req_profile = Request::builder()
+        .method("GET")
+        .uri("/profile")
+        .header("cookie", format!("sid={session}"))
+        .body(Body::empty())
+        .unwrap();
+
+    let res_profile = router.handle(req_profile).await;
+    assert_eq!(res_profile.status(), http::StatusCode::OK);
+    let body_profile = body_to_string(res_profile.into_body()).await;
+    assert!(body_profile.contains(&format!("https://res.cloudinary.com/haven/image/private/t_avatar/{public_id_str}")));
+    assert!(body_profile.contains("srcset="));
+    assert!(body_profile.contains(&format!("https://res.cloudinary.com/haven/image/private/t_avatar_2x/{public_id_str} 2x")));
+
+    // 3. GET /profiles/{handle} (public view) renders avatar image with srcset
+    let req_public = Request::builder()
+        .method("GET")
+        .uri(format!("/profiles/{}", user.handle.as_str()))
+        .body(Body::empty())
+        .unwrap();
+
+    let res_public = router.handle(req_public).await;
+    assert_eq!(res_public.status(), http::StatusCode::OK);
+    let body_public = body_to_string(res_public.into_body()).await;
+    assert!(body_public.contains(&format!("https://res.cloudinary.com/haven/image/private/t_avatar/{public_id_str}")));
+
+    // 4. GET /profile/edit?avatar_updated=1 renders success notice and "Remove photo" button
+    let req_edit = Request::builder()
+        .method("GET")
+        .uri("/profile/edit?avatar_updated=1")
+        .header("cookie", format!("sid={session}"))
+        .body(Body::empty())
+        .unwrap();
+
+    let res_edit = router.handle(req_edit).await;
+    assert_eq!(res_edit.status(), http::StatusCode::OK);
+    let body_edit = body_to_string(res_edit.into_body()).await;
+    assert!(body_edit.contains("Avatar photo updated successfully."));
+    assert!(body_edit.contains("action=\"/profile/avatar/delete\""));
+    assert!(body_edit.contains("Remove photo"));
+}
+
+#[tokio::test]
+async fn test_avatar_upload_rejections() {
+    let (router, registry) = setup_test_app();
+
+    // 1. Unauthenticated POST /profile/avatar redirects to /auth/sign-in
+    let req_unauth = Request::builder()
+        .method("POST")
+        .uri("/profile/avatar")
+        .header("origin", "http://localhost:3000")
+        .header("sec-fetch-site", "same-origin")
+        .body(Body::empty())
+        .unwrap();
+
+    let res_unauth = router.handle(req_unauth).await;
+    assert!(res_unauth.status().is_redirection());
+    assert_eq!(
+        res_unauth.headers().get("location").unwrap().to_str().unwrap(),
+        "/auth/sign-in"
+    );
+
+    let user = mock_user(UserId::generate(), AccountId::generate(), "reject-tester");
+    let session = create_auth_session(&registry.users_repo, user.clone());
+
+    // 2. Reject SVG upload (disallowed format / script injection prevention)
+    let svg_bytes = b"<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script></svg>";
+    let (content_type_svg, body_svg) =
+        create_multipart_image("avatar", "vector.svg", "image/svg+xml", svg_bytes);
+
+    let req_svg = Request::builder()
+        .method("POST")
+        .uri("/profile/avatar")
+        .header("cookie", format!("sid={session}"))
+        .header("origin", "http://localhost:3000")
+        .header("sec-fetch-site", "same-origin")
+        .header("content-type", content_type_svg)
+        .body(Body::from(body_svg))
+        .unwrap();
+
+    let res_svg = router.handle(req_svg).await;
+    assert_eq!(res_svg.status(), http::StatusCode::SEE_OTHER);
+    assert_eq!(
+        res_svg.headers().get("location").unwrap().to_str().unwrap(),
+        "/profile/edit?error=invalid_format"
+    );
+
+    // 3. Reject empty upload
+    let (content_type_empty, body_empty) =
+        create_multipart_image("avatar", "empty.jpg", "image/jpeg", &[]);
+
+    let req_empty = Request::builder()
+        .method("POST")
+        .uri("/profile/avatar")
+        .header("cookie", format!("sid={session}"))
+        .header("origin", "http://localhost:3000")
+        .header("sec-fetch-site", "same-origin")
+        .header("content-type", content_type_empty)
+        .body(Body::from(body_empty))
+        .unwrap();
+
+    let res_empty = router.handle(req_empty).await;
+    assert_eq!(res_empty.status(), http::StatusCode::SEE_OTHER);
+    assert_eq!(
+        res_empty.headers().get("location").unwrap().to_str().unwrap(),
+        "/profile/edit?error=empty_file"
+    );
+
+    // User's avatar must still be None
+    let user_check = registry.users_repo.find_by_id(user.id).await.unwrap().unwrap();
+    assert!(user_check.avatar_public_id.is_none());
+}
+
+#[tokio::test]
+async fn test_avatar_deletion() {
+    let (router, registry) = setup_test_app();
+
+    // 1. Unauthenticated POST /profile/avatar/delete redirects to sign-in
+    let req_unauth = Request::builder()
+        .method("POST")
+        .uri("/profile/avatar/delete")
+        .header("origin", "http://localhost:3000")
+        .header("sec-fetch-site", "same-origin")
+        .body(Body::empty())
+        .unwrap();
+
+    let res_unauth = router.handle(req_unauth).await;
+    assert!(res_unauth.status().is_redirection());
+    assert_eq!(
+        res_unauth.headers().get("location").unwrap().to_str().unwrap(),
+        "/auth/sign-in"
+    );
+
+    // 2. Authenticated user with avatar deletes avatar
+    let mut user = mock_user(UserId::generate(), AccountId::generate(), "delete-tester");
+    let public_id = haven_domain::image::ImagePublicId::parse("users/123/existing-avatar").unwrap();
+    user.avatar_public_id = Some(public_id);
+    let session = create_auth_session(&registry.users_repo, user.clone());
+
+    let req_delete = Request::builder()
+        .method("POST")
+        .uri("/profile/avatar/delete")
+        .header("cookie", format!("sid={session}"))
+        .header("origin", "http://localhost:3000")
+        .header("sec-fetch-site", "same-origin")
+        .body(Body::empty())
+        .unwrap();
+
+    let res_delete = router.handle(req_delete).await;
+    assert_eq!(res_delete.status(), http::StatusCode::SEE_OTHER);
+    assert_eq!(
+        res_delete.headers().get("location").unwrap().to_str().unwrap(),
+        "/profile/edit?avatar_deleted=1"
+    );
+
+    // User avatar must now be None
+    let user_check = registry.users_repo.find_by_id(user.id).await.unwrap().unwrap();
+    assert!(user_check.avatar_public_id.is_none());
+
+    // GET /profile/edit?avatar_deleted=1 shows removed notice and no remove button
+    let req_edit = Request::builder()
+        .method("GET")
+        .uri("/profile/edit?avatar_deleted=1")
+        .header("cookie", format!("sid={session}"))
+        .body(Body::empty())
+        .unwrap();
+
+    let res_edit = router.handle(req_edit).await;
+    assert_eq!(res_edit.status(), http::StatusCode::OK);
+    let body_edit = body_to_string(res_edit.into_body()).await;
+    assert!(body_edit.contains("Avatar photo removed."));
+    assert!(!body_edit.contains("action=\"/profile/avatar/delete\""));
 }

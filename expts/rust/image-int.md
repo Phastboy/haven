@@ -133,9 +133,9 @@ CREATE INDEX idx_offer_feed_visible ON offer (created_at DESC, id DESC)
 - [x] Update public feed query (`list_active`) to filter on `image_count >= 1`.
 
 ### Phase 3: Profile Avatar Integration
-- [ ] Add avatar upload affordance to `/profile/edit`.
-- [ ] Build `app::components::image` URL helper with named transformations (`avatar`, `thumb`, `card`, `detail`).
-- [ ] Render avatar in `IdentityBlock` when `avatar_public_id` is present; fall back cleanly to initial placeholder.
+- [x] Add avatar upload affordance to `/profile/edit`.
+- [x] Build `app::components::image` URL helper with named transformations (`avatar`, `thumb`, `card`, `detail`).
+- [x] Render avatar in `IdentityBlock` when `avatar_public_id` is present; fall back cleanly to initial placeholder.
 
 ### Phase 4: Offer Images & Management UI
 - [ ] Add image upload dropzone / input to `/profile/offers/new` and `/profile/offers/{id}`.
