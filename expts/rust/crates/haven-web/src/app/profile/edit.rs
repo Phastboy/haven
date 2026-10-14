@@ -55,9 +55,8 @@ fn user_avatar_data(
         ),
         None => (None, None),
     };
-    let avatar_initial = crate::app::components::identity_block::extract_avatar_initial(
-        user.display_name.as_str(),
-    );
+    let avatar_initial =
+        crate::app::components::identity_block::extract_avatar_initial(user.display_name.as_str());
     let has_avatar = user.avatar_public_id.is_some();
     (avatar_url, avatar_srcset, avatar_initial, has_avatar)
 }
@@ -184,9 +183,16 @@ pub async fn edit_page(cx: &Cx) -> TopcoatResult<impl View> {
     };
 
     let error_banner = match query.as_ref().and_then(|q| q.error.as_deref()) {
-        Some("too_large") => Some("Avatar image exceeds the 5 MB limit. Please select a smaller photo.".to_string()),
-        Some("invalid_format") => Some("Invalid image format. Supported formats: JPEG, PNG, and WebP (SVG is not allowed).".to_string()),
-        Some("empty_file" | "missing_file") => Some("Please select an image file to upload.".to_string()),
+        Some("too_large") => {
+            Some("Avatar image exceeds the 5 MB limit. Please select a smaller photo.".to_string())
+        }
+        Some("invalid_format") => Some(
+            "Invalid image format. Supported formats: JPEG, PNG, and WebP (SVG is not allowed)."
+                .to_string(),
+        ),
+        Some("empty_file" | "missing_file") => {
+            Some("Please select an image file to upload.".to_string())
+        }
         Some("upload_failed") => Some("Image upload failed. Please try again.".to_string()),
         _ => None,
     };

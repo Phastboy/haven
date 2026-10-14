@@ -124,8 +124,9 @@ async fn seed_user(registry: &dyn Registry, i: usize) -> SessionOutput {
             .await
             .expect("create offer");
 
-        let pub_id = haven_domain::image::ImagePublicId::parse(format!("offers/{}/cover", offer.id))
-            .expect("valid public id");
+        let pub_id =
+            haven_domain::image::ImagePublicId::parse(format!("offers/{}/cover", offer.id))
+                .expect("valid public id");
         registry
             .offer_images()
             .add_image(

@@ -3,6 +3,24 @@ use topcoat::{
     view::{View, component, view},
 };
 
+/// Computes up to two uppercase initials from a display name (e.g. "Eleanor Vance" -> "EV", "Alex" -> "A").
+#[must_use]
+pub fn extract_maker_initials(display_name: &str) -> String {
+    let words: Vec<&str> = display_name.split_whitespace().collect();
+    match words.as_slice() {
+        [] => "?".to_string(),
+        [single] => single
+            .chars()
+            .next()
+            .map_or_else(|| "?".to_string(), |c| c.to_uppercase().to_string()),
+        [first, .., last] => {
+            let f = first.chars().next().unwrap_or('?').to_uppercase();
+            let l = last.chars().next().unwrap_or('?').to_uppercase();
+            format!("{f}{l}")
+        }
+    }
+}
+
 /// Slot-based offer card component adhering to Haven's fixed alignment rules.
 #[component]
 #[allow(
@@ -20,6 +38,7 @@ pub async fn offer_card(
     #[default] delete_action: Option<String>,
     #[default] cover_image_url: Option<String>,
     #[default] cover_image_srcset: Option<String>,
+    #[default] is_above_fold: bool,
 ) -> TopcoatResult<impl View> {
     let dialog_id = delete_action
         .as_ref()
@@ -29,71 +48,93 @@ pub async fn offer_card(
         <li class="offer-card">
             <div class="offer-card-media">
                 if let Some(src) = cover_image_url {
-                    <img
-                        src=(src)
-                        srcset=(cover_image_srcset.unwrap_or_default())
-                        alt=""
-                        class="offer-card-image"
-                        width="320"
-                        height="240"
-                        loading="lazy"
-                    />
+                    if is_above_fold {
+                        <img
+                            src=(src)
+                            srcset=(cover_image_srcset.unwrap_or_default())
+                            alt=""
+                            class="offer-card-image"
+                            width="320"
+                            height="240"
+                            loading="eager"
+                            fetchpriority="high"
+                        />
+                    } else {
+                        <img
+                            src=(src)
+                            srcset=(cover_image_srcset.unwrap_or_default())
+                            alt=""
+                            class="offer-card-image"
+                            width="320"
+                            height="240"
+                            loading="lazy"
+                        />
+                    }
                 } else {
                     <div class="offer-card-placeholder" aria-hidden="true" />
                 }
             </div>
-            <div class="offer-header">
-                <h3 class="offer-title">
-                    <a href=(href)>(title.clone())</a>
-                </h3>
-                <span class="offer-price">(price_text)</span>
-            </div>
-            if let (Some(name), Some(url)) = (maker_name, maker_href) {
-                <div class="offer-maker">
-                    <span class="text-muted">"by "</span>
-                    <a href=(url) class="maker-link">(name)</a>
+            <div class="offer-card-content">
+                if let (Some(name), Some(url)) = (maker_name, maker_href) {
+                    let initials = extract_maker_initials(&name);
+                    <div class="offer-maker">
+                        <a href=(url) class="maker-link offer-maker-link">
+                            <span class="offer-maker-badge" aria-hidden="true">(initials)</span>
+                            <span class="offer-maker-name">(name)</span>
+                        </a>
+                    </div>
+                }
+                <div class="offer-header">
+                    <h3 class="offer-title">
+                        <a href=(href) class="offer-title-link">(title.clone())</a>
+                    </h3>
                 </div>
-            }
-            <p class="offer-description">(description)</p>
-            if edit_href.is_some() || delete_action.is_some() {
-                <div class="offer-actions">
-                    if let Some(edit_url) = edit_href {
-                        <a href=(edit_url) class="btn btn-secondary">"Edit"</a>
-                    }
-                    if let (Some(del_url), Some(dlg_id)) = (delete_action.as_ref(), dialog_id.as_ref()) {
-                        <button
-                            type="button"
-                            popovertarget=(dlg_id.clone())
-                            class="btn btn-danger"
-                        >
-                            "Delete"
-                        </button>
-                        <dialog id=(dlg_id.clone()) popover="auto" class="confirm-dialog">
-                            <div class="confirm-dialog-content">
-                                <h2 class="dialog-title">"Delete Offer"</h2>
-                                <p class="dialog-message">
-                                    "Are you sure you want to delete " <strong>(&title)</strong> "? This action cannot be undone."
-                                </p>
-                                <div class="dialog-actions">
-                                    <button
-                                        type="button"
-                                        popovertarget=(dlg_id.clone())
-                                        popovertargetaction="hide"
-                                        class="btn btn-secondary"
-                                    >
-                                        "Cancel"
-                                    </button>
-                                    <form method="post" action=(del_url) class="dialog-confirm-form">
-                                        <button type="submit" class="btn btn-danger">
-                                            "Confirm Delete"
+                <div class="offer-price">
+                    <span class="offer-price-value">(price_text)</span>
+                </div>
+                if !description.trim().is_empty() {
+                    <p class="offer-description">(description)</p>
+                }
+                if edit_href.is_some() || delete_action.is_some() {
+                    <div class="offer-actions">
+                        if let Some(edit_url) = edit_href {
+                            <a href=(edit_url) class="btn btn-secondary">"Edit"</a>
+                        }
+                        if let (Some(del_url), Some(dlg_id)) = (delete_action.as_ref(), dialog_id.as_ref()) {
+                            <button
+                                type="button"
+                                popovertarget=(dlg_id.clone())
+                                class="btn btn-danger"
+                            >
+                                "Delete"
+                            </button>
+                            <dialog id=(dlg_id.clone()) popover="auto" class="confirm-dialog">
+                                <div class="confirm-dialog-content">
+                                    <h2 class="dialog-title">"Delete Offer"</h2>
+                                    <p class="dialog-message">
+                                        "Are you sure you want to delete " <strong>(&title)</strong> "? This action cannot be undone."
+                                    </p>
+                                    <div class="dialog-actions">
+                                        <button
+                                            type="button"
+                                            popovertarget=(dlg_id.clone())
+                                            popovertargetaction="hide"
+                                            class="btn btn-secondary"
+                                        >
+                                            "Cancel"
                                         </button>
-                                    </form>
+                                        <form method="post" action=(del_url) class="dialog-confirm-form">
+                                            <button type="submit" class="btn btn-danger">
+                                                "Confirm Delete"
+                                            </button>
+                                        </form>
+                                    </div>
                                 </div>
-                            </div>
-                        </dialog>
-                    }
-                </div>
-            }
+                            </dialog>
+                        }
+                    </div>
+                }
+            </div>
         </li>
     })
 }
@@ -156,9 +197,45 @@ mod tests {
 
         let html = card.single().await.unwrap().render(__cx);
         assert!(html.contains("class=\"offer-card-image\""));
-        assert!(html.contains("src=\"https://res.cloudinary.com/haven/image/private/t_card/offers/123/cover.jpg\""));
+        assert!(html.contains(
+            "src=\"https://res.cloudinary.com/haven/image/private/t_card/offers/123/cover.jpg\""
+        ));
         assert!(html.contains("srcset=\"https://res.cloudinary.com/haven/image/private/t_card/offers/123/cover.jpg 1x, https://res.cloudinary.com/haven/image/private/t_card_2x/offers/123/cover.jpg 2x\""));
         assert!(html.contains("alt=\"\""));
+        assert!(html.contains("loading=\"lazy\""));
         assert!(!html.contains("offer-card-placeholder"));
+    }
+
+    #[tokio::test]
+    #[allow(clippy::unwrap_used, reason = "test assertions")]
+    async fn offer_card_renders_above_fold_eager_image() {
+        let cx = Cx::default();
+        let __cx = &cx;
+        let card = view! {
+            offer_card(
+                title: "Handmade Mug",
+                href: "/offers/handmade-mug-123",
+                price_text: "Free",
+                description: "Ceramic coffee mug.",
+                cover_image_url: Some("https://res.cloudinary.com/haven/image/private/t_card/offers/123/cover.jpg".to_string()),
+                cover_image_srcset: Some("https://res.cloudinary.com/haven/image/private/t_card/offers/123/cover.jpg 1x".to_string()),
+                is_above_fold: true,
+            )
+        };
+
+        let html = card.single().await.unwrap().render(__cx);
+        assert!(html.contains("loading=\"eager\""));
+        assert!(html.contains("fetchpriority=\"high\""));
+    }
+
+    #[test]
+    fn test_extract_maker_initials() {
+        assert_eq!(extract_maker_initials("Eleanor Vance"), "EV");
+        assert_eq!(extract_maker_initials("Marcus Reed"), "MR");
+        assert_eq!(extract_maker_initials("Sarah Lin"), "SL");
+        assert_eq!(extract_maker_initials("David Walsh"), "DW");
+        assert_eq!(extract_maker_initials("Alex"), "A");
+        assert_eq!(extract_maker_initials(""), "?");
+        assert_eq!(extract_maker_initials("Mary Jane Watson"), "MW");
     }
 }

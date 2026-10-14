@@ -154,14 +154,8 @@ mod tests {
             ImageVariant::Avatar.transformation_name(ImageDpr::Dpr2x),
             "t_avatar_2x"
         );
-        assert_eq!(
-            ImageVariant::Avatar.dimensions(ImageDpr::Dpr1x),
-            (96, 96)
-        );
-        assert_eq!(
-            ImageVariant::Avatar.dimensions(ImageDpr::Dpr2x),
-            (192, 192)
-        );
+        assert_eq!(ImageVariant::Avatar.dimensions(ImageDpr::Dpr1x), (96, 96));
+        assert_eq!(ImageVariant::Avatar.dimensions(ImageDpr::Dpr2x), (192, 192));
 
         assert_eq!(
             ImageVariant::Thumb.transformation_name(ImageDpr::Dpr1x),
@@ -171,14 +165,8 @@ mod tests {
             ImageVariant::Thumb.transformation_name(ImageDpr::Dpr2x),
             "t_thumb_2x"
         );
-        assert_eq!(
-            ImageVariant::Thumb.dimensions(ImageDpr::Dpr1x),
-            (120, 90)
-        );
-        assert_eq!(
-            ImageVariant::Thumb.dimensions(ImageDpr::Dpr2x),
-            (240, 180)
-        );
+        assert_eq!(ImageVariant::Thumb.dimensions(ImageDpr::Dpr1x), (120, 90));
+        assert_eq!(ImageVariant::Thumb.dimensions(ImageDpr::Dpr2x), (240, 180));
 
         assert_eq!(
             ImageVariant::Card.transformation_name(ImageDpr::Dpr1x),
@@ -188,14 +176,8 @@ mod tests {
             ImageVariant::Card.transformation_name(ImageDpr::Dpr2x),
             "t_card_2x"
         );
-        assert_eq!(
-            ImageVariant::Card.dimensions(ImageDpr::Dpr1x),
-            (320, 240)
-        );
-        assert_eq!(
-            ImageVariant::Card.dimensions(ImageDpr::Dpr2x),
-            (640, 480)
-        );
+        assert_eq!(ImageVariant::Card.dimensions(ImageDpr::Dpr1x), (320, 240));
+        assert_eq!(ImageVariant::Card.dimensions(ImageDpr::Dpr2x), (640, 480));
 
         assert_eq!(
             ImageVariant::Detail.transformation_name(ImageDpr::Dpr1x),
@@ -205,14 +187,8 @@ mod tests {
             ImageVariant::Detail.transformation_name(ImageDpr::Dpr2x),
             "t_detail_2x"
         );
-        assert_eq!(
-            ImageVariant::Detail.dimensions(ImageDpr::Dpr1x),
-            (640, 480)
-        );
-        assert_eq!(
-            ImageVariant::Detail.dimensions(ImageDpr::Dpr2x),
-            (960, 720)
-        );
+        assert_eq!(ImageVariant::Detail.dimensions(ImageDpr::Dpr1x), (640, 480));
+        assert_eq!(ImageVariant::Detail.dimensions(ImageDpr::Dpr2x), (960, 720));
     }
 
     #[test]

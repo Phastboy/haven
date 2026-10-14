@@ -1199,8 +1199,10 @@ fn create_multipart_image(
     let mut body = Vec::new();
     body.extend_from_slice(format!("--{boundary}\r\n").as_bytes());
     body.extend_from_slice(
-        format!("Content-Disposition: form-data; name=\"{field_name}\"; filename=\"{filename}\"\r\n")
-            .as_bytes(),
+        format!(
+            "Content-Disposition: form-data; name=\"{field_name}\"; filename=\"{filename}\"\r\n"
+        )
+        .as_bytes(),
     );
     body.extend_from_slice(format!("Content-Type: {content_type}\r\n\r\n").as_bytes());
     body.extend_from_slice(bytes);
@@ -1249,7 +1251,12 @@ async fn test_avatar_upload_success_and_views_rendering() {
     );
 
     // Verify user in repository now has avatar_public_id set
-    let updated_user = registry.users_repo.find_by_id(user.id).await.unwrap().unwrap();
+    let updated_user = registry
+        .users_repo
+        .find_by_id(user.id)
+        .await
+        .unwrap()
+        .unwrap();
     assert!(updated_user.avatar_public_id.is_some());
     let public_id_str = updated_user.avatar_public_id.as_ref().unwrap().as_str();
 
@@ -1264,9 +1271,13 @@ async fn test_avatar_upload_success_and_views_rendering() {
     let res_profile = router.handle(req_profile).await;
     assert_eq!(res_profile.status(), http::StatusCode::OK);
     let body_profile = body_to_string(res_profile.into_body()).await;
-    assert!(body_profile.contains(&format!("https://res.cloudinary.com/haven/image/private/t_avatar/{public_id_str}")));
+    assert!(body_profile.contains(&format!(
+        "https://res.cloudinary.com/haven/image/private/t_avatar/{public_id_str}"
+    )));
     assert!(body_profile.contains("srcset="));
-    assert!(body_profile.contains(&format!("https://res.cloudinary.com/haven/image/private/t_avatar_2x/{public_id_str} 2x")));
+    assert!(body_profile.contains(&format!(
+        "https://res.cloudinary.com/haven/image/private/t_avatar_2x/{public_id_str} 2x"
+    )));
 
     // 3. GET /profiles/{handle} (public view) renders avatar image with srcset
     let req_public = Request::builder()
@@ -1278,7 +1289,9 @@ async fn test_avatar_upload_success_and_views_rendering() {
     let res_public = router.handle(req_public).await;
     assert_eq!(res_public.status(), http::StatusCode::OK);
     let body_public = body_to_string(res_public.into_body()).await;
-    assert!(body_public.contains(&format!("https://res.cloudinary.com/haven/image/private/t_avatar/{public_id_str}")));
+    assert!(body_public.contains(&format!(
+        "https://res.cloudinary.com/haven/image/private/t_avatar/{public_id_str}"
+    )));
 
     // 4. GET /profile/edit?avatar_updated=1 renders success notice and "Remove photo" button
     let req_edit = Request::builder()
@@ -1312,7 +1325,12 @@ async fn test_avatar_upload_rejections() {
     let res_unauth = router.handle(req_unauth).await;
     assert!(res_unauth.status().is_redirection());
     assert_eq!(
-        res_unauth.headers().get("location").unwrap().to_str().unwrap(),
+        res_unauth
+            .headers()
+            .get("location")
+            .unwrap()
+            .to_str()
+            .unwrap(),
         "/auth/sign-in"
     );
 
@@ -1358,12 +1376,22 @@ async fn test_avatar_upload_rejections() {
     let res_empty = router.handle(req_empty).await;
     assert_eq!(res_empty.status(), http::StatusCode::SEE_OTHER);
     assert_eq!(
-        res_empty.headers().get("location").unwrap().to_str().unwrap(),
+        res_empty
+            .headers()
+            .get("location")
+            .unwrap()
+            .to_str()
+            .unwrap(),
         "/profile/edit?error=empty_file"
     );
 
     // User's avatar must still be None
-    let user_check = registry.users_repo.find_by_id(user.id).await.unwrap().unwrap();
+    let user_check = registry
+        .users_repo
+        .find_by_id(user.id)
+        .await
+        .unwrap()
+        .unwrap();
     assert!(user_check.avatar_public_id.is_none());
 }
 
@@ -1383,7 +1411,12 @@ async fn test_avatar_deletion() {
     let res_unauth = router.handle(req_unauth).await;
     assert!(res_unauth.status().is_redirection());
     assert_eq!(
-        res_unauth.headers().get("location").unwrap().to_str().unwrap(),
+        res_unauth
+            .headers()
+            .get("location")
+            .unwrap()
+            .to_str()
+            .unwrap(),
         "/auth/sign-in"
     );
 
@@ -1405,12 +1438,22 @@ async fn test_avatar_deletion() {
     let res_delete = router.handle(req_delete).await;
     assert_eq!(res_delete.status(), http::StatusCode::SEE_OTHER);
     assert_eq!(
-        res_delete.headers().get("location").unwrap().to_str().unwrap(),
+        res_delete
+            .headers()
+            .get("location")
+            .unwrap()
+            .to_str()
+            .unwrap(),
         "/profile/edit?avatar_deleted=1"
     );
 
     // User avatar must now be None
-    let user_check = registry.users_repo.find_by_id(user.id).await.unwrap().unwrap();
+    let user_check = registry
+        .users_repo
+        .find_by_id(user.id)
+        .await
+        .unwrap()
+        .unwrap();
     assert!(user_check.avatar_public_id.is_none());
 
     // GET /profile/edit?avatar_deleted=1 shows removed notice and no remove button
@@ -1445,7 +1488,8 @@ fn create_multipart_form(
     for (name, filename, content_type, bytes) in files {
         body.extend_from_slice(format!("--{boundary}\r\n").as_bytes());
         body.extend_from_slice(
-            format!("Content-Disposition: form-data; name=\"{name}\"; filename=\"{filename}\"\r\n").as_bytes(),
+            format!("Content-Disposition: form-data; name=\"{name}\"; filename=\"{filename}\"\r\n")
+                .as_bytes(),
         );
         body.extend_from_slice(format!("Content-Type: {content_type}\r\n\r\n").as_bytes());
         body.extend_from_slice(bytes);
@@ -1519,8 +1563,13 @@ async fn test_offer_visibility_rules_and_slug_404() {
     let res_owner_view = router.handle(req_owner_view).await;
     assert_eq!(res_owner_view.status(), http::StatusCode::OK);
     let body_owner_view = body_to_string(res_owner_view.into_body()).await;
-    assert!(body_owner_view.contains("Only you can see this offer. Add a photo to make it public."));
-    assert!(body_owner_view.contains("No photos yet. Add at least one photo to make this offer public."));
+    assert!(
+        body_owner_view.contains("Only you can see this offer. Add a photo to make it public.")
+    );
+    assert!(
+        body_owner_view
+            .contains("No photos yet. Add at least one photo to make this offer public.")
+    );
 
     // 5. Owner GET /offers/{slug} succeeds (owner preview permitted)
     let req_owner_slug = Request::builder()
@@ -1593,7 +1642,8 @@ async fn test_offer_image_upload_and_limit() {
     ];
 
     // 1. Upload invalid format (e.g. text/SVG)
-    let (bad_ct, bad_body) = create_multipart_image("image", "script.svg", "image/svg+xml", b"<svg></svg>");
+    let (bad_ct, bad_body) =
+        create_multipart_image("image", "script.svg", "image/svg+xml", b"<svg></svg>");
     let req_bad = Request::builder()
         .method("POST")
         .uri(format!("/profile/offers/{}/images", offer.id))
@@ -1605,10 +1655,19 @@ async fn test_offer_image_upload_and_limit() {
         .unwrap();
     let res_bad = router.handle(req_bad).await;
     assert_eq!(res_bad.status(), http::StatusCode::SEE_OTHER);
-    assert!(res_bad.headers().get("location").unwrap().to_str().unwrap().contains("error=invalid_format"));
+    assert!(
+        res_bad
+            .headers()
+            .get("location")
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .contains("error=invalid_format")
+    );
 
     // 2. Upload valid image 1
-    let (good_ct, good_body) = create_multipart_image("image", "photo1.jpg", "image/jpeg", &valid_jpeg);
+    let (good_ct, good_body) =
+        create_multipart_image("image", "photo1.jpg", "image/jpeg", &valid_jpeg);
     let req_good1 = Request::builder()
         .method("POST")
         .uri(format!("/profile/offers/{}/images", offer.id))
@@ -1620,11 +1679,20 @@ async fn test_offer_image_upload_and_limit() {
         .unwrap();
     let res_good1 = router.handle(req_good1).await;
     assert_eq!(res_good1.status(), http::StatusCode::SEE_OTHER);
-    assert!(res_good1.headers().get("location").unwrap().to_str().unwrap().contains("image_added=1"));
+    assert!(
+        res_good1
+            .headers()
+            .get("location")
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .contains("image_added=1")
+    );
 
     // Upload 4 more valid images to hit max 5
     for i in 2..=5 {
-        let (ct, body) = create_multipart_image("image", &format!("photo{i}.jpg"), "image/jpeg", &valid_jpeg);
+        let (ct, body) =
+            create_multipart_image("image", &format!("photo{i}.jpg"), "image/jpeg", &valid_jpeg);
         let req = Request::builder()
             .method("POST")
             .uri(format!("/profile/offers/{}/images", offer.id))
@@ -1653,7 +1721,8 @@ async fn test_offer_image_upload_and_limit() {
     assert!(!body_max_view.contains("type=\"file\""));
 
     // 4. Attempt 6th upload returns error=max_images_reached
-    let (extra_ct, extra_body) = create_multipart_image("image", "photo6.jpg", "image/jpeg", &valid_jpeg);
+    let (extra_ct, extra_body) =
+        create_multipart_image("image", "photo6.jpg", "image/jpeg", &valid_jpeg);
     let req_extra = Request::builder()
         .method("POST")
         .uri(format!("/profile/offers/{}/images", offer.id))
@@ -1665,7 +1734,15 @@ async fn test_offer_image_upload_and_limit() {
         .unwrap();
     let res_extra = router.handle(req_extra).await;
     assert_eq!(res_extra.status(), http::StatusCode::SEE_OTHER);
-    assert!(res_extra.headers().get("location").unwrap().to_str().unwrap().contains("error=max_images_reached"));
+    assert!(
+        res_extra
+            .headers()
+            .get("location")
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .contains("error=max_images_reached")
+    );
 }
 
 #[tokio::test]
@@ -1691,8 +1768,16 @@ async fn test_offer_image_reordering() {
     let pub2 = haven_domain::image::ImagePublicId::parse("offers/reorder/second.jpg").unwrap();
     let dims = haven_domain::image::ImageDimensions::new(640, 480).unwrap();
 
-    let img1 = registry.offers_repo.add_image(offer.id, user.id, &pub1, dims).await.unwrap();
-    let img2 = registry.offers_repo.add_image(offer.id, user.id, &pub2, dims).await.unwrap();
+    let img1 = registry
+        .offers_repo
+        .add_image(offer.id, user.id, &pub1, dims)
+        .await
+        .unwrap();
+    let img2 = registry
+        .offers_repo
+        .add_image(offer.id, user.id, &pub2, dims)
+        .await
+        .unwrap();
 
     // Reorder: Move img2 up
     let form_body = format!("image_id={}&direction=up", img2.id.as_uuid());
@@ -1708,7 +1793,15 @@ async fn test_offer_image_reordering() {
 
     let res_reorder = router.handle(req_reorder).await;
     assert_eq!(res_reorder.status(), http::StatusCode::SEE_OTHER);
-    assert!(res_reorder.headers().get("location").unwrap().to_str().unwrap().contains("reordered=1"));
+    assert!(
+        res_reorder
+            .headers()
+            .get("location")
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .contains("reordered=1")
+    );
 
     // Verify in repo that img2 is now position 1 (cover) and img1 is position 2
     let updated_images = registry.offers_repo.find_by_offer(offer.id).await.unwrap();
@@ -1723,7 +1816,11 @@ async fn test_offer_image_reordering() {
 async fn test_offer_image_deletion_and_protection() {
     let (router, registry) = setup_test_app();
 
-    let user = mock_user(UserId::generate(), AccountId::generate(), "delete-tester-offer");
+    let user = mock_user(
+        UserId::generate(),
+        AccountId::generate(),
+        "delete-tester-offer",
+    );
     let session = create_auth_session(&registry.users_repo, user.clone());
 
     let create_offer = CreateOffer {
@@ -1740,7 +1837,11 @@ async fn test_offer_image_deletion_and_protection() {
 
     let pub1 = haven_domain::image::ImagePublicId::parse("offers/protect/only.jpg").unwrap();
     let dims = haven_domain::image::ImageDimensions::new(640, 480).unwrap();
-    let img1 = registry.offers_repo.add_image(offer.id, user.id, &pub1, dims).await.unwrap();
+    let img1 = registry
+        .offers_repo
+        .add_image(offer.id, user.id, &pub1, dims)
+        .await
+        .unwrap();
 
     // 1. Attempt to delete the only image -> rejected with ?error=last_image
     let form_delete_last = format!("image_id={}", img1.id.as_uuid());
@@ -1755,7 +1856,15 @@ async fn test_offer_image_deletion_and_protection() {
         .unwrap();
     let res_del_last = router.handle(req_del_last).await;
     assert_eq!(res_del_last.status(), http::StatusCode::SEE_OTHER);
-    assert!(res_del_last.headers().get("location").unwrap().to_str().unwrap().contains("error=last_image"));
+    assert!(
+        res_del_last
+            .headers()
+            .get("location")
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .contains("error=last_image")
+    );
 
     // 2. GET /profile/offers/{id} renders protection text
     let req_view = Request::builder()
@@ -1767,11 +1876,18 @@ async fn test_offer_image_deletion_and_protection() {
     let res_view = router.handle(req_view).await;
     assert_eq!(res_view.status(), http::StatusCode::OK);
     let body_view = body_to_string(res_view.into_body()).await;
-    assert!(body_view.contains("An offer needs at least one photo. Add another first, or replace this one."));
+    assert!(
+        body_view
+            .contains("An offer needs at least one photo. Add another first, or replace this one.")
+    );
 
     // 3. Add a second image
     let pub2 = haven_domain::image::ImagePublicId::parse("offers/protect/second.jpg").unwrap();
-    let img2 = registry.offers_repo.add_image(offer.id, user.id, &pub2, dims).await.unwrap();
+    let img2 = registry
+        .offers_repo
+        .add_image(offer.id, user.id, &pub2, dims)
+        .await
+        .unwrap();
 
     // 4. Delete the second image -> succeeds!
     let form_delete_second = format!("image_id={}", img2.id.as_uuid());
@@ -1786,7 +1902,15 @@ async fn test_offer_image_deletion_and_protection() {
         .unwrap();
     let res_del_second = router.handle(req_del_second).await;
     assert_eq!(res_del_second.status(), http::StatusCode::SEE_OTHER);
-    assert!(res_del_second.headers().get("location").unwrap().to_str().unwrap().contains("image_deleted=1"));
+    assert!(
+        res_del_second
+            .headers()
+            .get("location")
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .contains("image_deleted=1")
+    );
 
     // Image 2 is now deleted from repo
     let remaining = registry.offers_repo.find_by_offer(offer.id).await.unwrap();
@@ -1869,7 +1993,11 @@ async fn test_offer_images_security_and_authorization() {
 
     let pub1 = haven_domain::image::ImagePublicId::parse("offers/sec/img1.jpg").unwrap();
     let dims = haven_domain::image::ImageDimensions::new(640, 480).unwrap();
-    let img1 = registry.offers_repo.add_image(offer.id, user1.id, &pub1, dims).await.unwrap();
+    let img1 = registry
+        .offers_repo
+        .add_image(offer.id, user1.id, &pub1, dims)
+        .await
+        .unwrap();
 
     let valid_jpeg = [
         0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, b'J', b'F', b'I', b'F', 0x00, 0x01, 0x01, 0x01, 0x00,
@@ -1911,14 +2039,18 @@ async fn test_offer_images_security_and_authorization() {
         .header("content-type", "application/x-www-form-urlencoded")
         .header("origin", "http://localhost:3000")
         .header("sec-fetch-site", "same-origin")
-        .body(Body::from(format!("image_id={}&direction=up", img1.id.as_uuid())))
+        .body(Body::from(format!(
+            "image_id={}&direction=up",
+            img1.id.as_uuid()
+        )))
         .unwrap();
     let res_idor_reorder = router.handle(req_idor_reorder).await;
     assert_eq!(res_idor_reorder.status(), http::StatusCode::NOT_FOUND);
 
     // 4. File size cap: User 1 uploading oversized image (> 5 MB) is rejected with ?error=file_too_large
     let oversized = vec![0xFF; haven_domain::image::MAX_IMAGE_BYTES + 1];
-    let (large_ct, large_body) = create_multipart_image("image", "huge.jpg", "image/jpeg", &oversized);
+    let (large_ct, large_body) =
+        create_multipart_image("image", "huge.jpg", "image/jpeg", &oversized);
     let req_large = Request::builder()
         .method("POST")
         .uri(format!("/profile/offers/{}/images", offer.id))
@@ -1930,10 +2062,19 @@ async fn test_offer_images_security_and_authorization() {
         .unwrap();
     let res_large = router.handle(req_large).await;
     assert_eq!(res_large.status(), http::StatusCode::SEE_OTHER);
-    assert!(res_large.headers().get("location").unwrap().to_str().unwrap().contains("error=too_large"));
+    assert!(
+        res_large
+            .headers()
+            .get("location")
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .contains("error=too_large")
+    );
 
     // 5. CSRF defense: Cross-origin POST from untrusted origin is rejected with 403 Forbidden
-    let (ct_csrf, body_csrf) = create_multipart_image("image", "csrf.jpg", "image/jpeg", &valid_jpeg);
+    let (ct_csrf, body_csrf) =
+        create_multipart_image("image", "csrf.jpg", "image/jpeg", &valid_jpeg);
     let req_csrf = Request::builder()
         .method("POST")
         .uri(format!("/profile/offers/{}/images", offer.id))
@@ -1946,5 +2087,3 @@ async fn test_offer_images_security_and_authorization() {
     let res_csrf = router.handle(req_csrf).await;
     assert_eq!(res_csrf.status(), http::StatusCode::FORBIDDEN);
 }
-
-

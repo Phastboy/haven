@@ -407,7 +407,10 @@ mod tests {
 
         // File too large boundary check
         let exact_max = vec![0xFF, 0xD8, 0xFF, 0x00];
-        assert_eq!(validate_image_magic_bytes(&exact_max), Ok(ImageFormat::Jpeg));
+        assert_eq!(
+            validate_image_magic_bytes(&exact_max),
+            Ok(ImageFormat::Jpeg)
+        );
 
         // Excess bytes beyond 5MB
         let oversized = vec![0; MAX_IMAGE_BYTES + 1];

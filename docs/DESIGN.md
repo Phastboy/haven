@@ -109,6 +109,11 @@ Status key: **decided** (owner confirmed), **default** (assistant's choice becau
 - **Why:** On small mobile screens, top-level navigation competes with focused task completion and wastes critical vertical space; on wide screens, persistent primary navigation prevents disorientation. Explicit SVG icons scale predictably without font rendering variance or alignment drift across platforms.
 - **Replaces:** Ad-hoc text signs and back links placed inconsistently within individual page templates (`← Back to all offers`, `← Back to your offers`, `← Back to offer`) and showing redundant primary navigation on mobile child views.
 
+### 19. Borderless editorial cards with SEO stretched links and fold-aware lazy loading (decided, 2026-10-14)
+- **What:** Public offer listings use borderless, content-first cards separated by vertical whitespace and an inset hairline divider (`border-bottom: 1px solid var(--color-border)`). Cards feature a 4:3 hero media slot with `--radius-md` (8px) corners, maker identity row (avatar badge with computed initials e.g. "EV" and link to `/profiles/{handle}`), prominent headline title, and prominent price (e.g. "Free", "28 USD", "40 NGN" - strictly avoiding currency symbols). Real SEO-friendly linking wraps the title in an anchor stretched over the entire card hit area (`.offer-title-link::after`), leaving maker links and owner action buttons at `z-index: 2` independently clickable. Cover images above the fold (items < 2) load eagerly with `fetchpriority="high"`, while items below the fold use `loading="lazy"` with explicit dimensions (`width="320" height="240"`, `aspect-ratio: 4 / 3`) to eliminate layout shifts and conserve Cloudinary transformation budget.
+- **Why:** Replaces boxy bordered cards with Airbnb-style editorial restraint where content is the decoration. Real semantic anchors ensure SEO crawlers and screen readers find public offer slugs, while CSS stretched-link preserves tap-friendly mobile ergonomics without client-side JavaScript.
+- **Replaces:** Boxed cards (`border: 1px solid var(--color-border)`), uniform lazy loading, and text-only maker attribution.
+
 ## References: borrowed and rejected
 
 | Reference | Borrowed | Rejected | Why |

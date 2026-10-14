@@ -3,7 +3,9 @@
 pub mod delete;
 pub mod reorder;
 
-use haven_domain::image::{ImageDimensions, ImagePublicId, MAX_IMAGE_BYTES, validate_image_magic_bytes};
+use haven_domain::image::{
+    ImageDimensions, ImagePublicId, MAX_IMAGE_BYTES, validate_image_magic_bytes,
+};
 use topcoat::{
     Result as TopcoatResult,
     context::Cx,
@@ -19,7 +21,10 @@ pub async fn upload_image(cx: &Cx, multipart: Option<Multipart>) -> TopcoatResul
     let offer = crate::app::auth::guard::owned_offer(cx, offer_id).await?;
 
     if offer.images.len() >= 5 {
-        return Err(see_other(format!("/profile/offers/{offer_id}?error=max_images_reached")).into());
+        return Err(see_other(format!(
+            "/profile/offers/{offer_id}?error=max_images_reached"
+        ))
+        .into());
     }
 
     let Some(mut multipart) = multipart else {
@@ -30,7 +35,9 @@ pub async fn upload_image(cx: &Cx, multipart: Option<Multipart>) -> TopcoatResul
     while let Ok(Some(field)) = multipart.next_field().await {
         if field.name() == Some("image") {
             let Ok(data) = field.bytes().await else {
-                return Err(see_other(format!("/profile/offers/{offer_id}?error=too_large")).into());
+                return Err(
+                    see_other(format!("/profile/offers/{offer_id}?error=too_large")).into(),
+                );
             };
             if !data.is_empty() {
                 image_bytes = Some(data.to_vec());
