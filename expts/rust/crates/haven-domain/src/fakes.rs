@@ -12,8 +12,8 @@ use std::sync::{Arc, Mutex};
 use crate::image::{ImageDimensions, ImageId, ImagePosition, ImagePublicId, OfferImage};
 use crate::offer::{CreateOffer, Offer, OfferId, UpdateOffer, UserId};
 use crate::ports::{
-    AccountRepository, IdempotencyKey, MagicLinkRepository, OfferImageRepository, OfferRepository,
-    Registry, RepoError, SessionRepository, UserRepository,
+    AccountRepository, CreationStatus, IdempotencyKey, MagicLinkRepository, OfferImageRepository,
+    OfferRepository, Registry, RepoError, SessionRepository, UserRepository,
 };
 use chrono::Utc;
 
@@ -114,7 +114,7 @@ impl OfferRepository for FakeOfferRepository {
         let lock = self.offers.lock().unwrap();
         let mut sorted: Vec<Offer> = lock
             .iter()
-            .filter(|o| o.user_id == user_id)
+            .filter(|o| o.user_id == user_id && o.image_count >= 1)
             .cloned()
             .collect();
         sorted.sort_by(|a, b| {
@@ -152,11 +152,11 @@ impl OfferRepository for FakeOfferRepository {
         user_id: UserId,
         idempotency_key: IdempotencyKey,
         req: &CreateOffer,
-    ) -> Result<Offer, RepoError> {
+    ) -> Result<CreationStatus<Offer>, RepoError> {
         let mut idemp = self.idemp.lock().unwrap();
         let key = (user_id, idempotency_key.as_uuid());
         if let Some(offer) = idemp.get(&key) {
-            return Ok(offer.clone());
+            return Ok(CreationStatus::Replayed(offer.clone()));
         }
 
         let offer_id = OfferId::generate();
@@ -180,7 +180,7 @@ impl OfferRepository for FakeOfferRepository {
 
         self.offers.lock().unwrap().push(offer.clone());
         idemp.insert(key, offer.clone());
-        Ok(offer)
+        Ok(CreationStatus::Created(offer))
     }
 
     async fn update(
@@ -306,6 +306,13 @@ impl OfferImageRepository for FakeOfferRepository {
                 entity: "offer",
                 id: offer_id.to_string(),
             })?;
+
+        if offer.images.len() <= 1 {
+            return Err(RepoError::Conflict {
+                entity: "offer_image",
+                key: "an offer needs at least one image".into(),
+            });
+        }
 
         let idx = offer
             .images
@@ -437,11 +444,16 @@ mod tests {
 
         let results = join_all(futures).await;
 
-        let first_id = results[0].as_ref().unwrap().id;
+        let first_id = results[0].as_ref().unwrap().clone().into_inner().id;
+        let mut new_count = 0;
         for res in &results {
-            let offer = res.as_ref().unwrap();
-            assert_eq!(offer.id, first_id);
+            let status = res.as_ref().unwrap();
+            if status.is_new() {
+                new_count += 1;
+            }
+            assert_eq!(status.clone().into_inner().id, first_id);
         }
+        assert_eq!(new_count, 1);
 
         let offers = repo.offers.lock().unwrap();
         assert_eq!(offers.len(), 1);

@@ -50,13 +50,6 @@ pub async fn upload_avatar(cx: &Cx, multipart: Option<Multipart>) -> TopcoatResu
         return Err(see_other("/profile/edit?error=upload_failed").into());
     };
 
-    // Prevent storage leaks: delete old avatar asset if one was previously uploaded
-    if let Some(old_avatar) = user.avatar_public_id.as_ref() {
-        match storage.delete(old_avatar.as_str()).await {
-            Ok(()) | Err(_) => {}
-        }
-    }
-
     let Ok(public_id) = ImagePublicId::parse(&stored.public_id) else {
         return Err(see_other("/profile/edit?error=upload_failed").into());
     };

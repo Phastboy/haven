@@ -283,7 +283,8 @@ async fn test_public_slug_route_caching_and_headers() {
         .offers_repo
         .create(user_id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
         .await
-        .unwrap();
+        .unwrap()
+        .into_inner();
 
     let pub_id = haven_domain::image::ImagePublicId::parse("offers/test/cover.jpg").unwrap();
     let dims = haven_domain::image::ImageDimensions::new(640, 480).unwrap();
@@ -459,7 +460,8 @@ async fn test_owner_routes_enforce_ownership_and_identical_404() {
         .offers_repo
         .create(user1.id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
         .await
-        .unwrap();
+        .unwrap()
+        .into_inner();
 
     // 1. User 1 accesses their own offer via ID route
     let req_owner = Request::builder()
@@ -535,7 +537,8 @@ async fn test_owner_offers_quick_delete_and_navigation_loop_guard() {
         .offers_repo
         .create(user1.id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
         .await
-        .unwrap();
+        .unwrap()
+        .into_inner();
 
     // User 1's offers list shows their offers and has inline quick delete dialog
     let req_list = Request::builder()
@@ -756,7 +759,8 @@ async fn test_update_offer_ownership_checked_before_invalid_form() {
         .offers_repo
         .create(user1.id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
         .await
-        .unwrap();
+        .unwrap()
+        .into_inner();
 
     // User 2 sends empty/missing form to User 1's offer edit route.
     // Must return 404 Not Found (ownership check first), NOT 422 Unprocessable Entity!
@@ -802,16 +806,37 @@ async fn test_public_profile_route_renders_maker_and_offers_and_404_when_missing
     assert!(body.contains("@alice-maker"));
     assert!(body.contains("No offers yet"));
 
-    // 3. Known user with an offer renders the offer card
+    // 3. Known user with an offer without images remains hidden on public profile
     let create_offer = CreateOffer {
         title: "Handmade Wooden Chair".to_string(),
         description: "Solid oak handcrafted dining chair.".to_string(),
         price: Price::new(15000).unwrap(),
         currency: CurrencyCode::default_code(),
     };
-    registry
+    let created_status = registry
         .offers_repo
         .create(user.id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
+        .await
+        .unwrap();
+    let created = created_status.into_inner();
+
+    // Without images, public profile still shows "No offers yet"
+    let req_no_img = Request::builder()
+        .method("GET")
+        .uri("/profiles/alice-maker")
+        .body(Body::empty())
+        .unwrap();
+    let res_no_img = router.handle(req_no_img).await;
+    assert_eq!(res_no_img.status(), http::StatusCode::OK);
+    let body_no_img = body_to_string(res_no_img.into_body()).await;
+    assert!(body_no_img.contains("No offers yet"));
+
+    // Add an image: now the offer becomes publicly visible
+    let pub_id = haven_domain::image::ImagePublicId::parse("offers/alice/chair.jpg").unwrap();
+    let dims = haven_domain::image::ImageDimensions::new(640, 480).unwrap();
+    registry
+        .offers_repo
+        .add_image(created.id, user.id, &pub_id, dims)
         .await
         .unwrap();
 
@@ -967,7 +992,8 @@ async fn test_maker_attribution_rendered_on_offer_page_and_feed() {
         .offers_repo
         .create(user.id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
         .await
-        .unwrap();
+        .unwrap()
+        .into_inner();
 
     let pub_id = haven_domain::image::ImagePublicId::parse("offers/bob/vase.jpg").unwrap();
     let dims = haven_domain::image::ImageDimensions::new(640, 480).unwrap();
@@ -1022,7 +1048,8 @@ async fn test_navigation_layout_rule_main_vs_child() {
         .offers_repo
         .create(user.id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
         .await
-        .unwrap();
+        .unwrap()
+        .into_inner();
 
     let pub_id = haven_domain::image::ImagePublicId::parse("offers/nav/bowl.jpg").unwrap();
     let dims = haven_domain::image::ImageDimensions::new(640, 480).unwrap();
@@ -1147,7 +1174,8 @@ async fn test_public_offer_back_returns_to_owner_offer_page() {
         .offers_repo
         .create(user.id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
         .await
-        .unwrap();
+        .unwrap()
+        .into_inner();
 
     let owner_page_url = format!("http://localhost:3000/profile/offers/{}", offer.id);
 
@@ -1522,7 +1550,8 @@ async fn test_offer_visibility_rules_and_slug_404() {
         .offers_repo
         .create(user.id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
         .await
-        .unwrap();
+        .unwrap()
+        .into_inner();
 
     let slug_url = format!("/offers/{}", offer.slug);
 
@@ -1641,7 +1670,8 @@ async fn test_offer_image_upload_and_limit() {
         .offers_repo
         .create(user.id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
         .await
-        .unwrap();
+        .unwrap()
+        .into_inner();
 
     let valid_jpeg = [
         0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, b'J', b'F', b'I', b'F', 0x00, 0x01, 0x01, 0x01, 0x00,
@@ -1769,7 +1799,8 @@ async fn test_offer_image_reordering() {
         .offers_repo
         .create(user.id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
         .await
-        .unwrap();
+        .unwrap()
+        .into_inner();
 
     let pub1 = haven_domain::image::ImagePublicId::parse("offers/reorder/first.jpg").unwrap();
     let pub2 = haven_domain::image::ImagePublicId::parse("offers/reorder/second.jpg").unwrap();
@@ -1840,7 +1871,8 @@ async fn test_offer_image_deletion_and_protection() {
         .offers_repo
         .create(user.id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
         .await
-        .unwrap();
+        .unwrap()
+        .into_inner();
 
     let pub1 = haven_domain::image::ImagePublicId::parse("offers/protect/only.jpg").unwrap();
     let dims = haven_domain::image::ImageDimensions::new(640, 480).unwrap();
@@ -1996,7 +2028,8 @@ async fn test_offer_images_security_and_authorization() {
         .offers_repo
         .create(user1.id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
         .await
-        .unwrap();
+        .unwrap()
+        .into_inner();
 
     let pub1 = haven_domain::image::ImagePublicId::parse("offers/sec/img1.jpg").unwrap();
     let dims = haven_domain::image::ImageDimensions::new(640, 480).unwrap();

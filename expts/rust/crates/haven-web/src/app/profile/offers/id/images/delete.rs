@@ -32,15 +32,16 @@ pub async fn delete_image(cx: &Cx, form: Option<Form<DeleteOfferImageForm>>) -> 
     let target_image_id = ImageId::from_uuid(form.0.image_id);
 
     let registry = crate::app::state::registry(cx);
-    let deleted_public_id = registry
+    match registry
         .offer_images()
         .remove_image(offer_id, user.id, target_image_id)
         .await
-        .map_err(crate::app::state::map_repo_err)?;
-
-    let storage = crate::app::state::image_storage(cx);
-    match storage.delete(deleted_public_id.as_str()).await {
-        Ok(()) | Err(_) => {}
+    {
+        Ok(_) => {}
+        Err(haven_domain::ports::RepoError::Conflict { .. }) => {
+            return Err(see_other(format!("/profile/offers/{offer_id}?error=last_image")).into());
+        }
+        Err(e) => return Err(crate::app::state::map_repo_err(e)),
     }
 
     Err(see_other(format!("/profile/offers/{offer_id}?image_deleted=1")).into())

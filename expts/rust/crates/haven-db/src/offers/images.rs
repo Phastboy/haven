@@ -176,10 +176,10 @@ impl OfferImageRepository for PostgresOfferImageRepository {
 
         let mut tx = self.pool.begin().await.map_err(crate::map_sqlx_err)?;
 
-        // Verify offer exists and caller is owner
-        let _offer_row = sqlx::query!(
+        // Verify offer exists, caller is owner, and image_count > 1
+        let offer_row = sqlx::query!(
             r#"
-            SELECT id
+            SELECT id, image_count
             FROM offer
             WHERE id = $1 AND user_id = $2
             FOR UPDATE
@@ -195,12 +195,37 @@ impl OfferImageRepository for PostgresOfferImageRepository {
             id: offer_id.to_string(),
         })?;
 
-        // Delete the requested image
+        if offer_row.image_count <= 1 {
+            return Err(RepoError::Conflict {
+                entity: "offer_image",
+                key: "an offer needs at least one image".into(),
+            });
+        }
+
+        // Delete image, re-rank remaining positions, and decrement image_count in a single atomic CTE
         let deleted = sqlx::query!(
             r#"
-            DELETE FROM offer_image
-            WHERE id = $1 AND offer_id = $2
-            RETURNING public_id
+            WITH deleted AS (
+                DELETE FROM offer_image
+                WHERE id = $1 AND offer_id = $2
+                RETURNING public_id
+            ),
+            reranked AS (
+                UPDATE offer_image
+                SET position = ranked.new_pos::smallint
+                FROM (
+                    SELECT id, ROW_NUMBER() OVER (ORDER BY position ASC) AS new_pos
+                    FROM offer_image
+                    WHERE offer_id = $2 AND id != $1
+                ) ranked
+                WHERE offer_image.id = ranked.id
+            ),
+            updated_offer AS (
+                UPDATE offer
+                SET image_count = image_count - 1, updated_at = NOW()
+                WHERE id = $2 AND image_count > 1
+            )
+            SELECT public_id FROM deleted
             "#,
             img_id,
             o_id
@@ -212,38 +237,6 @@ impl OfferImageRepository for PostgresOfferImageRepository {
             entity: "offer_image",
             id: image_id.to_string(),
         })?;
-
-        // Re-index remaining images to sequential 1..=N positions
-        sqlx::query!(
-            r#"
-            WITH ranked AS (
-                SELECT id, ROW_NUMBER() OVER (ORDER BY position ASC) AS new_pos
-                FROM offer_image
-                WHERE offer_id = $1
-            )
-            UPDATE offer_image
-            SET position = ranked.new_pos::smallint
-            FROM ranked
-            WHERE offer_image.id = ranked.id
-            "#,
-            o_id
-        )
-        .execute(&mut *tx)
-        .await
-        .map_err(crate::map_sqlx_err)?;
-
-        // Decrement offer image_count
-        sqlx::query!(
-            r#"
-            UPDATE offer
-            SET image_count = GREATEST(0, image_count - 1), updated_at = NOW()
-            WHERE id = $1
-            "#,
-            o_id
-        )
-        .execute(&mut *tx)
-        .await
-        .map_err(crate::map_sqlx_err)?;
 
         tx.commit().await.map_err(crate::map_sqlx_err)?;
 
