@@ -40,7 +40,7 @@ pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
                 empty_state(
                     title: "No offers available yet",
                     message: "There are no offers posted on Haven right now. Check back soon or create the first one.",
-                    action_href: Some("/offers/manage/new".to_string()),
+                    action_href: Some("/profile/offers/new".to_string()),
                     action_label: Some("Create an Offer".to_string()),
                 )
             } else {

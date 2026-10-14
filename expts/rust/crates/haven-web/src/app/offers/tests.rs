@@ -1841,3 +1841,110 @@ async fn test_offer_create_with_multipart_photo() {
     assert!(created.cover_image().is_some());
 }
 
+#[tokio::test]
+#[allow(
+    clippy::too_many_lines,
+    reason = "Comprehensive security test for IDOR and upload boundaries"
+)]
+async fn test_offer_images_security_and_authorization() {
+    let (router, registry) = setup_test_app();
+
+    let user1 = mock_user(UserId::generate(), AccountId::generate(), "owner-user");
+    let session1 = create_auth_session(&registry.users_repo, user1.clone());
+
+    let user2 = mock_user(UserId::generate(), AccountId::generate(), "attacker-user");
+    let session2 = create_auth_session(&registry.users_repo, user2);
+
+    let create_offer = CreateOffer {
+        title: "Secure Offer".to_string(),
+        description: "Protected against IDOR and CSRF.".to_string(),
+        price: Price::new(250).unwrap(),
+        currency: CurrencyCode::default_code(),
+    };
+    let offer = registry
+        .offers_repo
+        .create(user1.id, IdempotencyKey::new(Uuid::new_v4()), &create_offer)
+        .await
+        .unwrap();
+
+    let pub1 = haven_domain::image::ImagePublicId::parse("offers/sec/img1.jpg").unwrap();
+    let dims = haven_domain::image::ImageDimensions::new(640, 480).unwrap();
+    let img1 = registry.offers_repo.add_image(offer.id, user1.id, &pub1, dims).await.unwrap();
+
+    let valid_jpeg = [
+        0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, b'J', b'F', b'I', b'F', 0x00, 0x01, 0x01, 0x01, 0x00,
+        0x48, 0x00, 0x48, 0x00, 0x00, 0xFF, 0xDB,
+    ];
+
+    // 1. IDOR: User 2 cannot upload images to User 1's offer (returns 404)
+    let (ct2, body2) = create_multipart_image("image", "hack.jpg", "image/jpeg", &valid_jpeg);
+    let req_idor_upload = Request::builder()
+        .method("POST")
+        .uri(format!("/profile/offers/{}/images", offer.id))
+        .header("cookie", format!("sid={session2}"))
+        .header("content-type", ct2)
+        .header("origin", "http://localhost:3000")
+        .header("sec-fetch-site", "same-origin")
+        .body(Body::from(body2))
+        .unwrap();
+    let res_idor_upload = router.handle(req_idor_upload).await;
+    assert_eq!(res_idor_upload.status(), http::StatusCode::NOT_FOUND);
+
+    // 2. IDOR: User 2 cannot delete images from User 1's offer (returns 404)
+    let req_idor_delete = Request::builder()
+        .method("POST")
+        .uri(format!("/profile/offers/{}/images/delete", offer.id))
+        .header("cookie", format!("sid={session2}"))
+        .header("content-type", "application/x-www-form-urlencoded")
+        .header("origin", "http://localhost:3000")
+        .header("sec-fetch-site", "same-origin")
+        .body(Body::from(format!("image_id={}", img1.id.as_uuid())))
+        .unwrap();
+    let res_idor_delete = router.handle(req_idor_delete).await;
+    assert_eq!(res_idor_delete.status(), http::StatusCode::NOT_FOUND);
+
+    // 3. IDOR: User 2 cannot reorder images on User 1's offer (returns 404)
+    let req_idor_reorder = Request::builder()
+        .method("POST")
+        .uri(format!("/profile/offers/{}/images/reorder", offer.id))
+        .header("cookie", format!("sid={session2}"))
+        .header("content-type", "application/x-www-form-urlencoded")
+        .header("origin", "http://localhost:3000")
+        .header("sec-fetch-site", "same-origin")
+        .body(Body::from(format!("image_id={}&direction=up", img1.id.as_uuid())))
+        .unwrap();
+    let res_idor_reorder = router.handle(req_idor_reorder).await;
+    assert_eq!(res_idor_reorder.status(), http::StatusCode::NOT_FOUND);
+
+    // 4. File size cap: User 1 uploading oversized image (> 5 MB) is rejected with ?error=file_too_large
+    let oversized = vec![0xFF; haven_domain::image::MAX_IMAGE_BYTES + 1];
+    let (large_ct, large_body) = create_multipart_image("image", "huge.jpg", "image/jpeg", &oversized);
+    let req_large = Request::builder()
+        .method("POST")
+        .uri(format!("/profile/offers/{}/images", offer.id))
+        .header("cookie", format!("sid={session1}"))
+        .header("content-type", large_ct)
+        .header("origin", "http://localhost:3000")
+        .header("sec-fetch-site", "same-origin")
+        .body(Body::from(large_body))
+        .unwrap();
+    let res_large = router.handle(req_large).await;
+    assert_eq!(res_large.status(), http::StatusCode::SEE_OTHER);
+    assert!(res_large.headers().get("location").unwrap().to_str().unwrap().contains("error=too_large"));
+
+    // 5. CSRF defense: Cross-origin POST from untrusted origin is rejected with 403 Forbidden
+    let (ct_csrf, body_csrf) = create_multipart_image("image", "csrf.jpg", "image/jpeg", &valid_jpeg);
+    let req_csrf = Request::builder()
+        .method("POST")
+        .uri(format!("/profile/offers/{}/images", offer.id))
+        .header("cookie", format!("sid={session1}"))
+        .header("content-type", ct_csrf)
+        .header("origin", "https://malicious-site.example.com")
+        .header("sec-fetch-site", "cross-site")
+        .body(Body::from(body_csrf))
+        .unwrap();
+    let res_csrf = router.handle(req_csrf).await;
+    assert_eq!(res_csrf.status(), http::StatusCode::FORBIDDEN);
+}
+
+
