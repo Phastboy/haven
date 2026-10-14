@@ -23,6 +23,7 @@ pub async fn profile_offers_page(cx: &Cx) -> TopcoatResult<impl View> {
         .map_err(crate::app::state::map_repo_err)?;
 
     let offers_count = offers.len();
+    let cloud_name = crate::app::state::cloudinary_cloud_name(cx);
 
     Ok(view! {
         <div class="profile-offers-section">
@@ -55,6 +56,9 @@ pub async fn profile_offers_page(cx: &Cx) -> TopcoatResult<impl View> {
             } else {
                 <ul class="offer-list" role="list">
                     for offer in offers {
+                        let cover = offer.cover_image();
+                        let cover_url = cover.map(|img| crate::app::components::image::card_url(cloud_name, img.public_id.as_str()));
+                        let cover_srcset = cover.map(|img| crate::app::components::image::card_srcset(cloud_name, img.public_id.as_str()));
                         offer_card(
                             title: offer.title.clone(),
                             href: format!("/profile/offers/{}", offer.id),
@@ -66,6 +70,8 @@ pub async fn profile_offers_page(cx: &Cx) -> TopcoatResult<impl View> {
                             description: offer.description.clone(),
                             edit_href: Some(format!("/profile/offers/{}/edit", offer.id)),
                             delete_action: Some(format!("/profile/offers/{}", offer.id)),
+                            cover_image_url: cover_url,
+                            cover_image_srcset: cover_srcset,
                         )
                     }
                 </ul>

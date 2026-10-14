@@ -28,6 +28,8 @@ pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
 
     let next_href = page.next_cursor.map(|c| format!("/offers?after={c}"));
 
+    let cloud_name = crate::app::state::cloudinary_cloud_name(cx);
+
     Ok(view! {
         <div class="offers-feed">
             <div class="page-header">
@@ -44,6 +46,9 @@ pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
             } else {
                 <ul class="offer-list" role="list">
                     for item in page.items {
+                        let cover = item.offer.cover_image();
+                        let cover_url = cover.map(|img| crate::app::components::image::card_url(cloud_name, img.public_id.as_str()));
+                        let cover_srcset = cover.map(|img| crate::app::components::image::card_srcset(cloud_name, img.public_id.as_str()));
                         offer_card(
                             title: item.offer.title.clone(),
                             href: format!("/offers/{}", item.offer.slug),
@@ -55,6 +60,8 @@ pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
                             description: item.offer.description.clone(),
                             maker_name: Some(item.maker_display_name.as_str().to_string()),
                             maker_href: Some(format!("/profiles/{}", item.maker_handle.as_str())),
+                            cover_image_url: cover_url,
+                            cover_image_srcset: cover_srcset,
                         )
                     }
                 </ul>

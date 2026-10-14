@@ -89,6 +89,9 @@ pub async fn view_profile(cx: &Cx) -> TopcoatResult<impl View> {
                 } else {
                     <ul class="offer-list" role="list">
                         for offer in page.items {
+                            let cover = offer.cover_image();
+                            let cover_url = cover.map(|img| crate::app::components::image::card_url(cloud_name, img.public_id.as_str()));
+                            let cover_srcset = cover.map(|img| crate::app::components::image::card_srcset(cloud_name, img.public_id.as_str()));
                             offer_card(
                                 title: offer.title.clone(),
                                 href: format!("/offers/{}", offer.slug),
@@ -98,6 +101,8 @@ pub async fn view_profile(cx: &Cx) -> TopcoatResult<impl View> {
                                     format!("{} {}", offer.price.as_i32(), offer.currency.as_str())
                                 },
                                 description: offer.description.clone(),
+                                cover_image_url: cover_url,
+                                cover_image_srcset: cover_srcset,
                             )
                         }
                     </ul>
