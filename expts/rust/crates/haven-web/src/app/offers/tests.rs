@@ -856,11 +856,12 @@ async fn test_owner_profile_route_requires_auth_and_allows_editing() {
     // Renders identity and dashboard sections
     assert!(body_get.contains("alex-wood"));
     assert!(body_get.contains("@alex-wood"));
-    assert!(body_get.contains("/profile/edit"));
-    assert!(body_get.contains("Your Offers"));
+    assert!(body_get.contains("href=\"/profile/edit\""));
+    assert!(body_get.contains("My offers"));
     assert!(body_get.contains("href=\"/profile/offers\""));
-    assert!(body_get.contains("href=\"/profile/account\""));
-    // Header only has clean nav (not cluttered with Sign Out form or Your Offers)
+    assert!(body_get.contains("Sign out"));
+    assert!(body_get.contains("id=\"signout-dialog\""));
+    // Header has clean nav
     assert!(body_get.contains("<a href=\"/profile\">Profile</a>"));
 
     // 2b. Authenticated GET /profile/account renders account section with sign out
@@ -1618,6 +1619,10 @@ async fn test_offer_visibility_rules_and_slug_404() {
 }
 
 #[tokio::test]
+#[allow(
+    clippy::too_many_lines,
+    reason = "Comprehensive integration test for offer image uploads and limits"
+)]
 async fn test_offer_image_upload_and_limit() {
     let (router, registry) = setup_test_app();
 

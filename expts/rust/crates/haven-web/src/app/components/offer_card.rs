@@ -108,29 +108,14 @@ pub async fn offer_card(
                             >
                                 "Delete"
                             </button>
-                            <dialog id=(dlg_id.clone()) popover="auto" class="confirm-dialog">
-                                <div class="confirm-dialog-content">
-                                    <h2 class="dialog-title">"Delete Offer"</h2>
-                                    <p class="dialog-message">
-                                        "Are you sure you want to delete " <strong>(&title)</strong> "? This action cannot be undone."
-                                    </p>
-                                    <div class="dialog-actions">
-                                        <button
-                                            type="button"
-                                            popovertarget=(dlg_id.clone())
-                                            popovertargetaction="hide"
-                                            class="btn btn-secondary"
-                                        >
-                                            "Cancel"
-                                        </button>
-                                        <form method="post" action=(del_url) class="dialog-confirm-form">
-                                            <button type="submit" class="btn btn-danger">
-                                                "Confirm Delete"
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </dialog>
+                            crate::app::components::confirm_dialog::confirm_dialog(
+                                id: dlg_id.clone(),
+                                title: "Delete Offer".to_string(),
+                                message: format!("Are you sure you want to delete \"{}\"? This action cannot be undone.", title),
+                                action_url: del_url.clone(),
+                                confirm_label: "Confirm Delete".to_string(),
+                                is_danger: true,
+                            )
                         }
                     </div>
                 }
