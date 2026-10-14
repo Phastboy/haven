@@ -49,6 +49,31 @@ impl std::fmt::Display for IdempotencyKey {
     }
 }
 
+/// Distinguishes between a newly created resource and a replayed idempotent request.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CreationStatus<T> {
+    /// The resource was newly created and persisted.
+    Created(T),
+    /// The resource already existed for this idempotency key; the existing state was returned.
+    Replayed(T),
+}
+
+impl<T> CreationStatus<T> {
+    /// Extracts the inner resource regardless of whether it was created or replayed.
+    #[must_use]
+    pub fn into_inner(self) -> T {
+        match self {
+            Self::Created(v) | Self::Replayed(v) => v,
+        }
+    }
+
+    /// Returns `true` if the resource was newly created.
+    #[must_use]
+    pub fn is_new(&self) -> bool {
+        matches!(self, Self::Created(_))
+    }
+}
+
 /// Infrastructure failures and database mapping errors.
 #[derive(Debug, Error)]
 pub enum RepoError {
@@ -96,7 +121,7 @@ pub trait OfferRepository: Send + Sync {
         user_id: UserId,
         key: IdempotencyKey,
         offer: &CreateOffer,
-    ) -> Result<Offer, RepoError>;
+    ) -> Result<CreationStatus<Offer>, RepoError>;
 
     async fn update(
         &self,

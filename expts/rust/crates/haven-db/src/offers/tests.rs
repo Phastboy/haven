@@ -4,23 +4,9 @@ use haven_domain::ports::{IdempotencyKey, OfferImageRepository, OfferRepository}
 use sqlx::PgPool;
 use uuid::Uuid;
 
-#[tokio::test]
+#[sqlx::test(migrations = "../../migrations")]
 #[allow(clippy::too_many_lines, reason = "Comprehensive patch semantics test")]
-async fn test_update_patch_semantics() {
-    let db_url = std::env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "postgres://user:password@127.0.0.1:5432/haven_rust".to_string());
-
-    let pool = match PgPool::connect(&db_url).await {
-        Ok(p) => p,
-        Err(_) => return, // Skip if DB is not available
-    };
-
-    sqlx::migrate!("../../migrations").run(&pool).await.unwrap();
-    sqlx::query("TRUNCATE TABLE offer_image, offer, \"user\", account CASCADE")
-        .execute(&pool)
-        .await
-        .unwrap();
-
+async fn test_update_patch_semantics(pool: PgPool) {
     let repo = PostgresOfferRepository::new(pool.clone());
     let img_repo = images::PostgresOfferImageRepository::new(pool.clone());
     let dims = haven_domain::image::ImageDimensions::new(800, 600).unwrap();
@@ -49,16 +35,21 @@ async fn test_update_patch_semantics() {
     .unwrap();
 
     // 2. Create an offer
+    let key = IdempotencyKey::new(Uuid::new_v4());
     let co = CreateOffer {
         title: "Original Title".to_string(),
         description: "Original Description".to_string(),
         price: Price::new(100).unwrap(),
         currency: CurrencyCode::parse("USD").unwrap(),
     };
-    let offer = repo
-        .create(user_id, IdempotencyKey::new(Uuid::new_v4()), &co)
-        .await
-        .unwrap();
+    let status = repo.create(user_id, key, &co).await.unwrap();
+    assert!(status.is_new());
+    let offer = status.into_inner();
+
+    // Verify idempotent replay
+    let replay_status = repo.create(user_id, key, &co).await.unwrap();
+    assert!(!replay_status.is_new());
+    assert_eq!(replay_status.into_inner().id, offer.id);
 
     assert_eq!(offer.price.as_i32(), 100);
     assert_eq!(offer.currency.as_str(), "USD");
@@ -121,7 +112,8 @@ async fn test_update_patch_semantics() {
         let created = repo
             .create(user_id, IdempotencyKey::new(Uuid::new_v4()), &req)
             .await
-            .unwrap();
+            .unwrap()
+            .into_inner();
         let item_pub_id = haven_domain::image::ImagePublicId::parse(format!(
             "v12345/haven/offers/test_img_{i}_{}",
             Uuid::new_v4().simple()
@@ -209,4 +201,22 @@ async fn test_update_patch_semantics() {
     assert_eq!(remaining.len(), 1);
     assert_eq!(remaining[0].id, img1.id);
     assert_eq!(remaining[0].position.as_u8(), 1);
+
+    // Verify outbox trigger captured the deleted image public ID
+    let outbox_rows = sqlx::query("SELECT public_id FROM image_purge_outbox WHERE public_id = $1")
+        .bind(removed_pub_id.as_str())
+        .fetch_all(&pool)
+        .await
+        .unwrap();
+    assert_eq!(outbox_rows.len(), 1);
+
+    // Verify minimum image invariant: cannot remove the last image
+    let conflict_err = img_repo.remove_image(offer.id, user_id, img1.id).await;
+    assert!(
+        matches!(
+            conflict_err,
+            Err(haven_domain::ports::RepoError::Conflict { .. })
+        ),
+        "Deleting the last image must return Conflict"
+    );
 }

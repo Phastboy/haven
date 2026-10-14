@@ -6,12 +6,7 @@ use topcoat::{Result as TopcoatResult, context::Cx, router::error::see_other};
 pub async fn delete_avatar(cx: &Cx) -> TopcoatResult<()> {
     let user = crate::app::auth::guard::require_owner_auth(cx).await?;
 
-    if let Some(old_avatar) = user.avatar_public_id.as_ref() {
-        let storage = crate::app::state::image_storage(cx);
-        match storage.delete(old_avatar.as_str()).await {
-            Ok(()) | Err(_) => {}
-        }
-
+    if user.avatar_public_id.is_some() {
         let registry = crate::app::state::registry(cx);
         registry
             .users()

@@ -19,6 +19,10 @@ use topcoat::{
 };
 
 #[tokio::main]
+#[allow(
+    clippy::too_many_lines,
+    reason = "application composition root and service initialization"
+)]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv().ok();
     let database_url = env::var("DATABASE_URL").map_err(|_| "DATABASE_URL must be set")?;
@@ -98,6 +102,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cloudinary_config = storage::CloudinaryConfig::from_env()?;
     let cloudinary_cloud_name = cloudinary_config.as_ref().map(|c| c.cloud_name.clone());
     let image_storage = init_image_storage(cloudinary_config, &http_client);
+
+    let _outbox_worker = storage::spawn_outbox_worker(
+        pool.clone(),
+        image_storage.clone(),
+        storage::OutboxWorkerConfig::default(),
+    );
 
     let registry = Arc::new(PostgresRegistry::new(&pool));
     let state = app::state::AppState {

@@ -20,7 +20,7 @@ use haven_domain::offer::{
     CreateOffer, Offer, OfferCursor, OfferId, OfferPage, OfferSlug, PublicOfferPage, UpdateOffer,
     UserId,
 };
-use haven_domain::ports::{IdempotencyKey, OfferRepository, RepoError};
+use haven_domain::ports::{CreationStatus, IdempotencyKey, OfferRepository, RepoError};
 
 /// PostgreSQL-backed repository for offers.
 pub(crate) struct PostgresOfferRepository {
@@ -81,7 +81,7 @@ impl OfferRepository for PostgresOfferRepository {
         user_id: UserId,
         key: IdempotencyKey,
         create_offer: &CreateOffer,
-    ) -> Result<Offer, RepoError> {
+    ) -> Result<CreationStatus<Offer>, RepoError> {
         queries::create(&self.pool, user_id, key, create_offer).await
     }
 

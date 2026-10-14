@@ -247,7 +247,7 @@ pub async fn create_offer(
 
     let key_uuid = uuid::Uuid::parse_str(&raw_key).unwrap_or_else(|_| uuid::Uuid::new_v4());
 
-    let offer = crate::app::state::registry(cx)
+    let status = crate::app::state::registry(cx)
         .offers()
         .create(
             user.id,
@@ -257,7 +257,10 @@ pub async fn create_offer(
         .await
         .map_err(crate::app::state::map_repo_err)?;
 
-    if let Some(bytes) = photo_bytes.as_ref() {
+    let is_new = status.is_new();
+    let offer = status.into_inner();
+
+    if let (true, Some(bytes)) = (is_new, photo_bytes.as_ref()) {
         let storage = crate::app::state::image_storage(cx);
         let folder = format!("offers/{}", offer.id);
         let suffix = uuid::Uuid::new_v4().to_string();

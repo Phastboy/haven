@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        WITH claimed AS (\n            SELECT id\n            FROM image_purge_outbox\n            WHERE attempts < 5\n              AND (last_attempt_at IS NULL OR last_attempt_at < NOW() - (INTERVAL '10 seconds' * POWER(2, LEAST(attempts, 4))))\n            ORDER BY created_at ASC\n            LIMIT $1\n            FOR UPDATE SKIP LOCKED\n        )\n        UPDATE image_purge_outbox\n        SET attempts = attempts + 1, last_attempt_at = NOW()\n        FROM claimed\n        WHERE image_purge_outbox.id = claimed.id\n        RETURNING image_purge_outbox.id, image_purge_outbox.public_id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "image_purge_outbox",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "public_id",
+        "type_info": "Varchar",
+        "origin": {
+          "Table": {
+            "table": "image_purge_outbox",
+            "name": "public_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "dc11eb4ccf3420081ed63d01630e50a54ae34a819ef34bba3c93948588a8f372"
+}

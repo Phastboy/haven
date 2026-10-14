@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, user_id, slug, title, description, price, currency, image_count, created_at, updated_at\n            FROM offer\n            WHERE user_id = $1 AND (created_at, id) < ($2, $3)\n            ORDER BY created_at DESC, id DESC\n            LIMIT $4\n            ",
+  "query": "\n            SELECT id, user_id, slug, title, description, price, currency, image_count, created_at, updated_at\n            FROM offer\n            WHERE user_id = $1 AND image_count >= 1 AND (created_at, id) < ($2, $3)\n            ORDER BY created_at DESC, id DESC\n            LIMIT $4\n            ",
   "describe": {
     "columns": [
       {
@@ -135,5 +135,5 @@
       false
     ]
   },
-  "hash": "7282f90dafefd4c0d04a5c44599d18886de5d7f29364500f7ebf9ec62581feb6"
+  "hash": "79e58770cd4ed4d8e06b9407e8cc44a4ca05d961f91532e3376c0d97fce97550"
 }

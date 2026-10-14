@@ -219,7 +219,7 @@ pub(super) async fn list_by_user(
             r#"
             SELECT id, user_id, slug, title, description, price, currency, image_count, created_at, updated_at
             FROM offer
-            WHERE user_id = $1 AND (created_at, id) < ($2, $3)
+            WHERE user_id = $1 AND image_count >= 1 AND (created_at, id) < ($2, $3)
             ORDER BY created_at DESC, id DESC
             LIMIT $4
             "#,
@@ -237,7 +237,7 @@ pub(super) async fn list_by_user(
             r#"
             SELECT id, user_id, slug, title, description, price, currency, image_count, created_at, updated_at
             FROM offer
-            WHERE user_id = $1
+            WHERE user_id = $1 AND image_count >= 1
             ORDER BY created_at DESC, id DESC
             LIMIT $2
             "#,
