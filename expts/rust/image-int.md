@@ -138,12 +138,12 @@ CREATE INDEX idx_offer_feed_visible ON offer (created_at DESC, id DESC)
 - [x] Render avatar in `IdentityBlock` when `avatar_public_id` is present; fall back cleanly to initial placeholder.
 
 ### Phase 4: Offer Images & Management UI
-- [ ] Add image upload dropzone / input to `/profile/offers/new` and `/profile/offers/{id}`.
-- [ ] Implement image deletion and reordering on `/profile/offers/{id}`.
-- [ ] Update `offer_card` to render 4:3 cover thumbnail in the leading slot.
-- [ ] Update `/offers/{slug}` public detail view to render the photo stack with proper alt text (`"Title, photo N of M"`).
+- [x] Add image upload dropzone / input to `/profile/offers/new` and `/profile/offers/{id}`.
+- [x] Implement image deletion and reordering on `/profile/offers/{id}`.
+- [x] Update `offer_card` to render 4:3 cover thumbnail in the leading slot.
+- [x] Update `/offers/{slug}` public detail view to render the photo stack with proper alt text (`"Title, photo N of M"`).
 
 ### Phase 5: Verification, Load Testing & Hardening
-- [ ] Unit and integration tests for upload validations, magic byte detection, SVG rejection, and EXIF stripping.
-- [ ] Integration tests verifying offer visibility rules (hidden from feed and 404 on slug route when `image_count == 0`).
-- [ ] k6 steady-state verification confirming image uploads do not degrade core 1,000 RPS SLA.
+- [x] Unit and integration tests for upload validations, magic byte detection, SVG rejection, and EXIF stripping.
+- [x] Integration tests verifying offer visibility rules (hidden from feed and 404 on slug route when `image_count == 0`).
+- [x] k6 steady-state verification confirming image uploads do not degrade core 1,000 RPS SLA.

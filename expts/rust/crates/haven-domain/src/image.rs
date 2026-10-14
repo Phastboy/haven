@@ -390,5 +390,40 @@ mod tests {
             validate_image_magic_bytes(&[]),
             Err(ImageValidationError::EmptyFile)
         );
+
+        // Truncated magic bytes
+        assert_eq!(
+            validate_image_magic_bytes(&[0xFF, 0xD8]),
+            Err(ImageValidationError::UnsupportedFormat)
+        );
+        assert_eq!(
+            validate_image_magic_bytes(b"RIFF"),
+            Err(ImageValidationError::UnsupportedFormat)
+        );
+        assert_eq!(
+            validate_image_magic_bytes(b"RIFF1234AVIF"),
+            Err(ImageValidationError::UnsupportedFormat)
+        );
+
+        // File too large boundary check
+        let exact_max = vec![0xFF, 0xD8, 0xFF, 0x00];
+        assert_eq!(validate_image_magic_bytes(&exact_max), Ok(ImageFormat::Jpeg));
+
+        // Excess bytes beyond 5MB
+        let oversized = vec![0; MAX_IMAGE_BYTES + 1];
+        assert_eq!(
+            validate_image_magic_bytes(&oversized),
+            Err(ImageValidationError::FileTooLarge)
+        );
+    }
+
+    #[test]
+    fn test_image_format_helpers() {
+        assert_eq!(ImageFormat::Jpeg.mime_type(), "image/jpeg");
+        assert_eq!(ImageFormat::Jpeg.extension(), "jpg");
+        assert_eq!(ImageFormat::Png.mime_type(), "image/png");
+        assert_eq!(ImageFormat::Png.extension(), "png");
+        assert_eq!(ImageFormat::Webp.mime_type(), "image/webp");
+        assert_eq!(ImageFormat::Webp.extension(), "webp");
     }
 }
