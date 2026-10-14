@@ -33,7 +33,54 @@ sequenceDiagram
   Note over R,H: 0.3.x handoff: knowing who is behind an offer
   R->>H: visit maker's public profile (/profiles/{handle})
   H-->>R: show maker profile & all their offers
+  R->>H: express willingness / commit to offer
+  Note over R,H,O: 0.4.x handoff: commitment & communication
+  H-->>O: notify maker of interest with responder identity
+  R->>H: post clarification message
+  O->>H: reply to message
 ```
+
+## Stage 0.4.x: Can someone act on it? (current)
+
+### Untangled items
+
+**A person can express their willingness to take on an offer.**
+- A person viewing another person's offer at `/offers/{slug}` sees an action to express willingness to take on the offer.
+- If unauthenticated, they are guided through authentication (preserving return intent).
+- If authenticated as the maker of the offer, the action is disabled (self-commitment is rejected).
+- When submitted, a commitment record is created linking the offer and responder.
+- A responder who has already committed cannot commit again (idempotent, redirecting to the existing commitment thread).
+
+**The person who made the offer can know about that expression of interest, and who it came from.**
+- When a commitment is created, the offer maker is alerted.
+- The maker sees the responder's verified public identity (display name, `@handle`, avatar, optional bio).
+- The maker can review all incoming expressions of interest on their offer without exposing responders' private contact details.
+
+**People can communicate when communication is necessary to understand or progress that commitment.**
+- A lightweight, asynchronous message thread is established between the Offerer and Responder scoped to the commitment.
+- Accessible only by the two parties involved (strict IDOR isolation; third parties receive 404).
+- Both parties can post messages to clarify terms, logistics, or details.
+
+### Decided
+- None yet (proposals pending user confirmation; see `docs/V0.4_UNTANGLING_AND_PLANNING.md`).
+
+### Open questions
+- **Blocking:**
+  - Whether an offer allows multiple concurrent expressions of interest (pool) or whether commitment exclusively reserves/locks the offer.
+  - Whether expressing interest is a single-click action or accepts an optional opening note.
+  - Whether notifications are in-app only or dual (in-app + email alert).
+  - Whether communication is an in-app server-rendered chronological thread or external contact reveal.
+- **Non-blocking:**
+  - Commitment status lifecycle transitions (e.g. `Pending`, `Accepted`, `Declined`, `Withdrawn`).
+  - Maximum message length (e.g. 2,000 characters).
+
+### Deferred dependencies
+- Formal contract closing and mutual agreement. Belongs to 1.0.x. Current behaviour until then: informal communication and status progression only.
+- Payment processing and escrow. Belongs to 2.0.x. Current behaviour until then: no money handling.
+- Search by offer name and price filters. Belongs to 0.5.x.
+
+### Done when (from the roadmap)
+An offer can receive a meaningful response from another person, and the system meets its load-testing target.
 
 ## Stage 0.3.x: Can I know who is behind an offer? (completed)
 
