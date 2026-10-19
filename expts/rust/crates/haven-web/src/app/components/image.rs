@@ -1,7 +1,7 @@
 //! Centralized Cloudinary image URL and srcset builder.
 //!
 //! Generates CDN delivery URLs with Cloudinary named transformations adhering
-//! to the strict transformations budget defense in `haven-ui-images`.
+//! to the strict transformations budget defense in `haven-ui`.
 
 /// Image transformation variants supported by Haven.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
