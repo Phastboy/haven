@@ -1,67 +1,58 @@
 ---
 name: haven-product
 description: >-
-  Keeps work on Haven aligned with its product roadmap (ROADMAP.md): what stage
-  the product is in, what is in or out of scope, and what the product words mean.
-  Use this skill before planning, designing, or implementing any feature, route,
-  schema change, or UI for Haven; when asked "should we build X", "what's next",
-  or "is this in scope"; and when a task touches offers, commitment, discovery,
-  search, saved items, following, agreement, or payment. Do not use it to decide
-  how code is written (see ENGINEERING.md) or for dependency lookups.
+  Aligns Haven work with ROADMAP.md and docs/JOURNEY.md. Use before planning,
+  designing, or implementing features to check current stage scope, untangle
+  roadmap items into two-lane journeys (Offerer & Responder), and resolve product questions.
 ---
 
-# Haven product alignment
+# Haven product & journey alignment
 
 ## Source of truth
 
-`ROADMAP.md` at the repository root (find it with `git rev-parse --show-toplevel`). **Read it fresh every time.** This skill deliberately does not copy its contents, so there is nothing here that can go stale. The checkboxes in the file are the current state of the product.
+- **`ROADMAP.md`** at the repository root (`git rev-parse --show-toplevel`). Read it fresh. The checkboxes in the file are the current state of the product.
+- **`docs/JOURNEY.md`**: The whole start-to-end journey permitted by the product told as one continuous story with two lanes (**Offerer** and **Responder**). Handoffs occur where their paths meet.
 
-If `ROADMAP.md` and the code disagree (a checked item that does not work, or a working feature that is unchecked), report the mismatch to the user. Do not decide which one is right.
+If `ROADMAP.md` or `docs/JOURNEY.md` disagree with the code, report the mismatch to the user rather than guessing which is right.
 
-## How the roadmap works (rules to apply)
+## How the roadmap works
 
-1. **Each version answers one question.** Work should be the smallest thing that can answer the current version's question, not a collection of features.
-2. **Two gates per version:** the product question is answered, **and** the system meets its load-testing target. A feature is not "done" for a version until both hold. Do not mark a roadmap item complete from a passing build alone; check the "Done when" line and the load-test status (`PERFORMANCE_CONTRACT.md`).
-3. **The roadmap describes what a person can accomplish, not how.** Implementation (tables, queues, search engine, messages, payments) is deliberately left open. Do not treat any implementation detail as decided because the roadmap hints at it.
-4. **Undefined means undefined.** Versions marked TBD (0.7 to 0.9 and 1.x) must not be filled in. Commitment in 0.3.x is explicitly "to be discovered and defined during this version". Agreement and closing in 1.0.x are likewise to be defined from what is learned earlier.
-5. **Go deeper, not wider.** Work belongs to the **current version** (the earliest version with either unchecked items or an unmet load-test gate) unless the user explicitly says otherwise. If item completion and load-test status disagree, ask before advancing to another version. Inside that version, depth is welcome; hopping to another version's question is not. A request or a dependency that belongs to a later version (for example search during 0.1.x, or what happens to a committed offer when it is deleted) is recorded as a deferred dependency and flagged, never silently built or answered.
-6. **A checkbox is never atomic.** Each roadmap item hides a sub-journey that must be untangled before it is designed or built. Use `haven-journey` for this. Detail is added just in time, only for the stage being worked on.
+1. **Each version answers one question.** Work is the smallest thing that answers the current question.
+2. **Two gates per version:** The product question is answered, **and** the load-test gate passes (`PERFORMANCE_CONTRACT.md`). Both must hold before marking an item complete.
+3. **Go deeper, not wider.** Work strictly in the earliest version with unchecked items or unmet gates.
+4. **Undefined means undefined.** TBD versions (0.7–0.9, 1.x) and unreached milestones must not be pre-built or guessed.
+5. **No atomic checkboxes.** Every checkbox abstracts a sub-journey. Untangle it before writing code.
+6. **No invented behavior.** If a task needs a product decision the roadmap leaves open (commitment rules, closing, categories), stop and ask the user.
 
-## Before starting any task
+## Journey untangling procedure (JIT)
 
-1. Read `ROADMAP.md`, then run the untangle step from `haven-journey` for the roadmap item (it reads and updates `docs/JOURNEY.md`).
-2. State which version and which roadmap item the task serves. If it serves none, say so and ask whether it is intended (a prerequisite, a fix, infrastructure) or scope creep.
-3. If the task needs a product decision the roadmap leaves open (what "commitment" means, what happens after interest, what "closing" requires, what a category is), **stop and ask the user.** Do not invent the product behaviour and do not bake an invented answer into schema or routes, since those are costly to change.
-4. Prefer the smallest implementation that answers the version's question. Name what you are deliberately leaving out.
+When starting a roadmap item:
+1. Identify the sub-steps for each active lane (**Offerer** vs **Responder**) and any handoffs between them. In 0.1.x only Offerer exists; Responder begins when the roadmap introduces visibility.
+2. Ask three questions of current code/schema: what exists, what is missing, and what breaks if repeated or interrupted?
+3. Identify edge states (empty, partial, interrupted, back/refresh).
+4. Sort unanswered questions:
+   - **Blocking:** Required for "Done when". Ask user before building.
+   - **Non-blocking:** Record as assumptions; use the minimal sensible default.
+   - **Deferred dependencies:** Belongs to a later stage. Flag with owning stage; do not build or design around it now.
+5. Update `docs/JOURNEY.md` alongside code/schema changes for the current stage.
 
-## Language
+## Product vocabulary
 
-Use the roadmap's own words in code, docs, UI copy, and commit messages: **person** (not "user", where the product is meant), **offer**, **commitment**, **interest**. Do not introduce synonyms (listing, post, item, order, deal) for the same concept. If a new product term is needed, propose it to the user and record it once agreed; do not coin it unilaterally.
+Use the roadmap's precise terms in code, docs, UI, and commits:
+- **person** (not "user" when product actor is meant)
+- **offer** (not "listing", "post", "item")
+- **commitment** (not "order", "deal")
+- **interest**
 
-## What each stage implies for review
+Do not invent synonyms.
 
-When work reaches these stages, also load `rust-security-review` and check the matching concerns:
-
-| Roadmap stage | Concerns that become real |
-|---|---|
-| 0.1.x create/edit/delete offer | Ownership on every write (IDOR), CSRF on state changes, input validation |
-| 0.2.x seeing offers | What is public vs private, list pagination, N+1 on feeds |
-| 0.3.x commitment and communication | Authorization between two parties, who can see what, abuse and rate limits |
-| 0.4.x and 0.6.x find and narrow | SQL injection through filters and sort fields, index and query performance |
-| 0.5.x save and follow | Per-person scoping, unbounded lists |
-| 1.0.x and 2.0.x agreement and payment | State machine integrity, idempotency, money handling, auditability |
-
-## Proposing changes to the roadmap
-
-The roadmap changes by what is learned, not by what is convenient. If work reveals the next question (especially for TBD versions) or shows an item is wrong, **propose** the edit to the user with the evidence. Do not edit `ROADMAP.md` on your own, and do not tick a box unless the user confirms the version's "Done when" condition is met and its load-test gate has passed.
-
-## Report format for scope checks
+## Scope check report format
 
 ```
 Task: <what was asked>
-Serves: <version and roadmap item, or "none">
-In scope for current version: yes / no / unclear
-Open product decisions: <what the roadmap leaves undefined that this touches>
-Smallest thing that answers the question: <proposal>
+Serves: <version and roadmap item>
+In scope: yes / no / unclear
+Open product decisions: <what is undefined>
+Smallest answer: <proposal>
 Deliberately left out: <list>
 ```
