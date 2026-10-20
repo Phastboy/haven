@@ -134,4 +134,9 @@ pub enum DomainError {
 
     #[error(transparent)]
     Image(#[from] ImageValidationError),
+
+    #[error(transparent)]
+    Conversation(#[from] crate::conversation::ConversationDomainError),
 }
+
+pub use crate::conversation::{ConversationDomainError, MessageValidationError, SelfConversation};

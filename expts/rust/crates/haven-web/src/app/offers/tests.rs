@@ -124,9 +124,11 @@ fn mock_user(id: UserId, account_id: AccountId, handle_str: &str) -> User {
     }
 }
 
+#[allow(clippy::struct_field_names, reason = "Test registry mock fields")]
 pub struct TestRegistry {
     pub offers_repo: FakeOfferRepository,
     pub users_repo: TestUserRepository,
+    pub convs_repo: haven_domain::fakes::FakeConversationRepository,
 }
 
 impl Registry for TestRegistry {
@@ -148,24 +150,30 @@ impl Registry for TestRegistry {
     fn sessions(&self) -> &(dyn SessionRepository + 'static) {
         unimplemented!()
     }
+    fn conversations(&self) -> &(dyn haven_domain::ports::ConversationRepository + 'static) {
+        &self.convs_repo
+    }
 }
 
 fn setup_test_app() -> (topcoat::router::Router, TestRegistry) {
     let registry = TestRegistry {
         offers_repo: FakeOfferRepository::default(),
         users_repo: TestUserRepository::default(),
+        convs_repo: haven_domain::fakes::FakeConversationRepository::default(),
     };
 
     let state = crate::app::state::AppState {
         registry: Arc::new(TestRegistry {
             offers_repo: registry.offers_repo.clone(),
             users_repo: registry.users_repo.clone(),
+            convs_repo: registry.convs_repo.clone(),
         }),
         google_oauth: None,
         http_client: reqwest::Client::new(),
         email_delivery_enabled: Some(false),
         image_storage: Arc::new(crate::storage::MockImageStorage::new()),
         cloudinary_cloud_name: None,
+        broadcaster: Arc::new(crate::app::broadcaster::InProcessBroadcaster::new()),
     };
 
     let origins = crate::app::origin::compute_trusted_origins("3000", None, None);

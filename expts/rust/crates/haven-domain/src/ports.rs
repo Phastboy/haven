@@ -1,4 +1,8 @@
 use crate::account::{Account, AccountId, Email};
+use crate::conversation::{
+    Conversation, ConversationId, ConversationInboxPage, ConversationPair, Message, MessagePage,
+    NewMessage, OfferInquirersPage,
+};
 use crate::image::{ImageDimensions, ImageId, ImagePublicId, OfferImage};
 use crate::magic_link::MagicLink;
 use crate::offer::{
@@ -289,6 +293,62 @@ pub trait OfferImageRepository: Send + Sync {
     ) -> Result<Vec<OfferImage>, RepoError>;
 }
 
+/// Repository port for conversations and messages.
+#[async_trait]
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Repository port methods take &self alongside query and pagination parameters"
+)]
+pub trait ConversationRepository: Send + Sync {
+    /// Gets an existing conversation for the canonical pair or creates a new one.
+    async fn get_or_create(&self, pair: ConversationPair) -> Result<Conversation, RepoError>;
+
+    /// Finds a conversation by its unique ID.
+    async fn find_by_id(&self, id: ConversationId) -> Result<Option<Conversation>, RepoError>;
+
+    /// Appends a new message to a conversation and updates conversation's `last_message_at`
+    /// as well as the sender's participant `last_read_at`.
+    async fn append(
+        &self,
+        conversation_id: ConversationId,
+        new_message: NewMessage,
+    ) -> Result<Message, RepoError>;
+
+    /// Lists conversations for a user, sorted by `last_message_at DESC` with keyset pagination.
+    async fn list_for_user(
+        &self,
+        user_id: UserId,
+        cursor: Option<&str>,
+        limit: usize,
+    ) -> Result<ConversationInboxPage, RepoError>;
+
+    /// Fetches messages in a conversation with keyset pagination.
+    async fn messages(
+        &self,
+        conversation_id: ConversationId,
+        cursor: Option<&str>,
+        limit: usize,
+    ) -> Result<MessagePage, RepoError>;
+
+    /// Updates the participant's `last_read_at` to the current timestamp.
+    async fn mark_read(
+        &self,
+        conversation_id: ConversationId,
+        user_id: UserId,
+    ) -> Result<(), RepoError>;
+
+    /// Checks if any unread messages exist across all conversations for a user.
+    async fn unread_exists(&self, user_id: UserId) -> Result<bool, RepoError>;
+
+    /// Lists inquirers who messaged about a specific offer (v0.4.1).
+    async fn list_offer_inquirers(
+        &self,
+        offer_id: OfferId,
+        cursor: Option<&str>,
+        limit: usize,
+    ) -> Result<OfferInquirersPage, RepoError>;
+}
+
 /// A single composition root.
 pub trait Registry: Send + Sync {
     fn offers(&self) -> &(dyn OfferRepository + 'static);
@@ -297,4 +357,5 @@ pub trait Registry: Send + Sync {
     fn magic_links(&self) -> &(dyn MagicLinkRepository + 'static);
     fn sessions(&self) -> &(dyn SessionRepository + 'static);
     fn offer_images(&self) -> &(dyn OfferImageRepository + 'static);
+    fn conversations(&self) -> &(dyn ConversationRepository + 'static);
 }

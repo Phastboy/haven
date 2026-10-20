@@ -1,0 +1,77 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, user_low, user_high, created_at, last_message_at\n        FROM conversation\n        WHERE id = $1 AND (user_low = $2 OR user_high = $2)\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "conversation",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "user_low",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "conversation",
+            "name": "user_low"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "user_high",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "conversation",
+            "name": "user_high"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "created_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "conversation",
+            "name": "created_at"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "last_message_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "conversation",
+            "name": "last_message_at"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "60ca51bc1db17e7d593a365ab7d5b4005bb7e1082f04f3aaf8a485273f87d194"
+}

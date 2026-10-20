@@ -200,6 +200,9 @@ fn test_router(oauth_config: Option<GoogleOAuthConfig>) -> topcoat::router::Rout
         fn sessions(&self) -> &(dyn haven_domain::ports::SessionRepository + 'static) {
             unimplemented!()
         }
+        fn conversations(&self) -> &(dyn haven_domain::ports::ConversationRepository + 'static) {
+            unimplemented!()
+        }
     }
 
     let state = crate::app::state::AppState {
@@ -209,6 +212,7 @@ fn test_router(oauth_config: Option<GoogleOAuthConfig>) -> topcoat::router::Rout
         email_delivery_enabled: None,
         image_storage: std::sync::Arc::new(crate::storage::MockImageStorage::new()),
         cloudinary_cloud_name: None,
+        broadcaster: std::sync::Arc::new(crate::app::broadcaster::InProcessBroadcaster::new()),
     };
 
     crate::app::router()

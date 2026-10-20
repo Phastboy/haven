@@ -95,8 +95,8 @@ Status key: **decided** (owner confirmed), **default** (assistant's choice becau
 
 ### 18. Navigation layout rule: Main vs Child layout (decided, 2026-10-12)
 - **What:** Exactly two layouts govern all navigation chrome across the application:
-  1. **Main Layout (`NavigationLayout::Main`):** Used exclusively by top-level routes (`/offers`, `/profile`, and `/`). Shows the primary site navigation (`.site-header`) on all screen sizes. Never shows a back button header.
-  2. **Child Layout (`NavigationLayout::Child`):** Used by every other route (e.g. `/offers/{slug}`, `/profiles/{handle}`, `/profile/edit`, `/profile/offers`, `/profile/offers/new`, `/profile/offers/{id}`, `/profile/offers/{id}/edit`, `/profile/account`, `/auth/*`).
+  1. **Main Layout (`NavigationLayout::Main`):** Used exclusively by top-level routes (`/offers`, `/profile`, `/conversations`, and `/`). Shows the primary site navigation (`.site-header` on desktop, `.bottom-nav` on mobile) on all screen sizes. Never shows a back button header.
+  2. **Child Layout (`NavigationLayout::Child`):** Used by every other route (e.g. `/offers/{slug}`, `/profiles/{handle}`, `/conversations/{id}`, `/profile/edit`, `/profile/offers`, `/profile/offers/new`, `/profile/offers/{id}`, `/profile/offers/{id}/edit`, `/profile/account`, `/auth/*`).
      - **On mobile (`<= 640px`):** Primary navigation is completely hidden (`.site-header.desktop-only`). The header contains only a clean back button (`.child-header` with an explicit SVG back icon and "Back" label, meeting the 44px touch target).
      - **On large screens (`> 640px`):** Primary navigation stays visible because wide screens have ample room and hiding it saves no space. The back header stays visible underneath primary navigation, preserving consistent back-navigation affordance across devices.
   3. **Back Navigation Resolution ("Where you came from" default, Parent fallback):**

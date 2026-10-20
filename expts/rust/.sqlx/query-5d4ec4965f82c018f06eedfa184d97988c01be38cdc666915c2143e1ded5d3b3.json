@@ -1,0 +1,100 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT \n                    c.id AS conversation_id,\n                    (CASE WHEN c.user_low = $1 THEN c.user_high ELSE c.user_low END) AS \"other_user_id!\",\n                    u.display_name AS other_display_name,\n                    u.handle AS other_handle,\n                    u.avatar_public_id AS other_avatar_public_id,\n                    (SELECT m.body FROM message m WHERE m.conversation_id = c.id ORDER BY m.created_at DESC, m.id DESC LIMIT 1) AS last_message_body,\n                    c.last_message_at,\n                    (\n                        cp.last_read_at < c.last_message_at\n                        AND EXISTS (\n                            SELECT 1 FROM message lm \n                            WHERE lm.conversation_id = c.id \n                            ORDER BY lm.created_at DESC, lm.id DESC \n                            LIMIT 1\n                        )\n                        AND (\n                            SELECT lm.sender_id FROM message lm \n                            WHERE lm.conversation_id = c.id \n                            ORDER BY lm.created_at DESC, lm.id DESC \n                            LIMIT 1\n                        ) != $1\n                    ) AS \"is_unread!\"\n                FROM conversation_participant cp\n                JOIN conversation c ON c.id = cp.conversation_id\n                JOIN \"user\" u ON u.id = CASE WHEN c.user_low = $1 THEN c.user_high ELSE c.user_low END\n                WHERE cp.user_id = $1\n                  AND (c.last_message_at < $2 OR (c.last_message_at = $2 AND c.id < $3))\n                ORDER BY c.last_message_at DESC, c.id DESC\n                LIMIT $4\n                ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "conversation_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "conversation",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "other_user_id!",
+        "type_info": "Uuid",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 2,
+        "name": "other_display_name",
+        "type_info": "Varchar",
+        "origin": {
+          "Table": {
+            "table": "\"user\"",
+            "name": "display_name"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "other_handle",
+        "type_info": "Varchar",
+        "origin": {
+          "Table": {
+            "table": "\"user\"",
+            "name": "handle"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "other_avatar_public_id",
+        "type_info": "Varchar",
+        "origin": {
+          "Table": {
+            "table": "\"user\"",
+            "name": "avatar_public_id"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "last_message_body",
+        "type_info": "Varchar",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 6,
+        "name": "last_message_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "conversation",
+            "name": "last_message_at"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "is_unread!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz",
+        "Uuid",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      null,
+      false,
+      false,
+      true,
+      null,
+      false,
+      null
+    ]
+  },
+  "hash": "5d4ec4965f82c018f06eedfa184d97988c01be38cdc666915c2143e1ded5d3b3"
+}

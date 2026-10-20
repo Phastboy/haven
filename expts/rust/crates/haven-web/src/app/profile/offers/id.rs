@@ -77,6 +77,14 @@ pub async fn view_offer(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
     let delete_action_href_base = format!("/profile/offers/{}/images/delete", offer.id);
     let reorder_action_href = format!("/profile/offers/{}/images/reorder", offer.id);
 
+    let inquirers_page = crate::app::state::registry(cx)
+        .conversations()
+        .list_offer_inquirers(offer.id, None, 50)
+        .await
+        .ok();
+    let inquirers = inquirers_page.map(|p| p.items).unwrap_or_default();
+    let inquirers_count = inquirers.len();
+
     Ok(view! {
         <div class="offer-detail">
             <meta name="robots" content="noindex" />
@@ -263,6 +271,27 @@ pub async fn view_offer(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
                         </div>
                         <button type="submit" class="btn btn-secondary">"Upload photo"</button>
                     </form>
+                }
+            </section>
+
+            <section class="offer-inquirers-section">
+                <h3>"Inquiries"</h3>
+                if inquirers_count == 0 {
+                    <p class="text-muted">"No one has asked about this offer yet."</p>
+                } else {
+                    <p class="text-muted">(format!("{inquirers_count} person(s) asked about this offer:"))</p>
+                    <ul class="inquirers-list">
+                        for inq in inquirers {
+                            let conv_link = format!("/conversations/{}", inq.conversation_id);
+                            let time_text = inq.last_inquiry_at.format("%b %d, %H:%M").to_string();
+                            <li class="inquirer-item">
+                                <a href=(conv_link) class="inquirer-link">
+                                    <span>"Conversation with inquirer"</span>
+                                    <span class="text-muted">(format!(" — Last active: {time_text}"))</span>
+                                </a>
+                            </li>
+                        }
+                    </ul>
                 }
             </section>
         </div>

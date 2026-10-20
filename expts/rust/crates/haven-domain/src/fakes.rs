@@ -9,11 +9,16 @@ use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use crate::conversation::{
+    Conversation, ConversationCursor, ConversationId, ConversationInboxItem, ConversationInboxPage,
+    ConversationPair, Message, MessageCursor, MessageId, MessagePage, NewMessage, OfferInquirer,
+    OfferInquirersPage,
+};
 use crate::image::{ImageDimensions, ImageId, ImagePosition, ImagePublicId, OfferImage};
 use crate::offer::{CreateOffer, Offer, OfferId, UpdateOffer, UserId};
 use crate::ports::{
-    AccountRepository, CreationStatus, IdempotencyKey, MagicLinkRepository, OfferImageRepository,
-    OfferRepository, Registry, RepoError, SessionRepository, UserRepository,
+    AccountRepository, ConversationRepository, CreationStatus, IdempotencyKey, MagicLinkRepository,
+    OfferImageRepository, OfferRepository, Registry, RepoError, SessionRepository, UserRepository,
 };
 use chrono::Utc;
 
@@ -389,6 +394,301 @@ impl FakeRegistry {
     }
 }
 
+pub type ConversationParticipantMap = HashMap<(ConversationId, UserId), chrono::DateTime<Utc>>;
+pub type UserInfoMap = HashMap<
+    UserId,
+    (
+        crate::user::DisplayName,
+        crate::user::ProfileHandle,
+        Option<String>,
+    ),
+>;
+
+#[derive(Default, Clone)]
+pub struct FakeConversationRepository {
+    pub conversations: Arc<Mutex<Vec<Conversation>>>,
+    pub messages: Arc<Mutex<Vec<Message>>>,
+    pub participants: Arc<Mutex<ConversationParticipantMap>>,
+    pub users_info: Arc<Mutex<UserInfoMap>>,
+}
+
+#[async_trait]
+impl ConversationRepository for FakeConversationRepository {
+    async fn get_or_create(&self, pair: ConversationPair) -> Result<Conversation, RepoError> {
+        let mut convs = self.conversations.lock().unwrap();
+        if let Some(c) = convs.iter().find(|c| c.pair == pair) {
+            return Ok(c.clone());
+        }
+        let now = Utc::now();
+        let conv = Conversation {
+            id: ConversationId::generate(),
+            pair,
+            created_at: now,
+            last_message_at: now,
+        };
+        convs.push(conv.clone());
+        let mut parts = self.participants.lock().unwrap();
+        parts.insert((conv.id, pair.low()), now);
+        parts.insert((conv.id, pair.high()), now);
+        Ok(conv)
+    }
+
+    async fn find_by_id(&self, id: ConversationId) -> Result<Option<Conversation>, RepoError> {
+        let convs = self.conversations.lock().unwrap();
+        Ok(convs.iter().find(|c| c.id == id).cloned())
+    }
+
+    async fn append(
+        &self,
+        conversation_id: ConversationId,
+        new_message: NewMessage,
+    ) -> Result<Message, RepoError> {
+        let mut convs = self.conversations.lock().unwrap();
+        let conv = convs
+            .iter_mut()
+            .find(|c| c.id == conversation_id)
+            .ok_or_else(|| RepoError::NotFound {
+                entity: "conversation",
+                id: conversation_id.to_string(),
+            })?;
+
+        if !conv.pair.contains(new_message.sender_id) {
+            return Err(RepoError::NotFound {
+                entity: "conversation",
+                id: conversation_id.to_string(),
+            });
+        }
+
+        let now = Utc::now();
+        conv.last_message_at = now;
+
+        let message = Message {
+            id: MessageId::generate(),
+            conversation_id,
+            sender_id: new_message.sender_id,
+            body: new_message.body,
+            offer_id: new_message.offer_id,
+            created_at: now,
+        };
+
+        let mut msgs = self.messages.lock().unwrap();
+        msgs.push(message.clone());
+
+        let mut parts = self.participants.lock().unwrap();
+        parts.insert((conversation_id, new_message.sender_id), now);
+
+        Ok(message)
+    }
+
+    async fn list_for_user(
+        &self,
+        user_id: UserId,
+        cursor: Option<&str>,
+        limit: usize,
+    ) -> Result<ConversationInboxPage, RepoError> {
+        let parsed_cursor = match cursor {
+            Some(c) => Some(
+                ConversationCursor::decode(c)
+                    .map_err(|_| RepoError::Corrupt("invalid cursor".into()))?,
+            ),
+            None => None,
+        };
+
+        let convs = self.conversations.lock().unwrap();
+        let msgs = self.messages.lock().unwrap();
+        let parts = self.participants.lock().unwrap();
+        let users_info = self.users_info.lock().unwrap();
+
+        let mut user_convs: Vec<Conversation> = convs
+            .iter()
+            .filter(|c| c.pair.contains(user_id))
+            .cloned()
+            .collect();
+
+        user_convs.sort_by(|a, b| {
+            b.last_message_at
+                .cmp(&a.last_message_at)
+                .then_with(|| b.id.as_uuid().cmp(&a.id.as_uuid()))
+        });
+
+        if let Some(cur) = parsed_cursor {
+            user_convs.retain(|c| {
+                c.last_message_at < cur.last_message_at
+                    || (c.last_message_at == cur.last_message_at
+                        && c.id.as_uuid() < cur.id.as_uuid())
+            });
+        }
+
+        let has_more = user_convs.len() > limit;
+        let paged: Vec<Conversation> = user_convs.into_iter().take(limit).collect();
+
+        let mut items = Vec::new();
+        for conv in &paged {
+            let other_id = conv.pair.other(user_id).unwrap();
+            let last_msg = msgs.iter().rfind(|m| m.conversation_id == conv.id);
+
+            let last_read = parts
+                .get(&(conv.id, user_id))
+                .copied()
+                .unwrap_or(conv.created_at);
+
+            let is_unread = match last_msg {
+                Some(m) => m.sender_id != user_id && m.created_at > last_read,
+                None => false,
+            };
+
+            let default_name = crate::user::DisplayName::parse("User").unwrap();
+            let default_handle = crate::user::ProfileHandle::parse("user").unwrap();
+            let (name, handle, avatar) =
+                users_info
+                    .get(&other_id)
+                    .cloned()
+                    .unwrap_or((default_name, default_handle, None));
+
+            items.push(ConversationInboxItem {
+                id: conv.id,
+                other_user_id: other_id,
+                other_display_name: name,
+                other_handle: handle,
+                other_avatar_public_id: avatar,
+                last_message_body: last_msg
+                    .map(|m| m.body.as_str().to_string())
+                    .unwrap_or_default(),
+                last_message_at: conv.last_message_at,
+                is_unread,
+            });
+        }
+
+        let next_cursor = if has_more {
+            items
+                .last()
+                .map(|it| ConversationCursor::new(it.last_message_at, it.id).encode())
+        } else {
+            None
+        };
+
+        Ok(ConversationInboxPage { items, next_cursor })
+    }
+
+    async fn messages(
+        &self,
+        conversation_id: ConversationId,
+        cursor: Option<&str>,
+        limit: usize,
+    ) -> Result<MessagePage, RepoError> {
+        let parsed_cursor = match cursor {
+            Some(c) => Some(
+                MessageCursor::decode(c)
+                    .map_err(|_| RepoError::Corrupt("invalid cursor".into()))?,
+            ),
+            None => None,
+        };
+
+        let msgs = self.messages.lock().unwrap();
+        let mut conv_msgs: Vec<Message> = msgs
+            .iter()
+            .filter(|m| m.conversation_id == conversation_id)
+            .cloned()
+            .collect();
+
+        conv_msgs.sort_by(|a, b| {
+            a.created_at
+                .cmp(&b.created_at)
+                .then_with(|| a.id.as_uuid().cmp(&b.id.as_uuid()))
+        });
+
+        if let Some(cur) = parsed_cursor {
+            conv_msgs.retain(|m| {
+                m.created_at > cur.created_at
+                    || (m.created_at == cur.created_at && m.id.as_uuid() > cur.id.as_uuid())
+            });
+        }
+
+        let has_more = conv_msgs.len() > limit;
+        let items: Vec<Message> = conv_msgs.into_iter().take(limit).collect();
+        let next_cursor = if has_more {
+            items
+                .last()
+                .map(|m| MessageCursor::new(m.created_at, m.id).encode())
+        } else {
+            None
+        };
+
+        Ok(MessagePage { items, next_cursor })
+    }
+
+    async fn mark_read(
+        &self,
+        conversation_id: ConversationId,
+        user_id: UserId,
+    ) -> Result<(), RepoError> {
+        let mut parts = self.participants.lock().unwrap();
+        parts.insert((conversation_id, user_id), Utc::now());
+        Ok(())
+    }
+
+    async fn unread_exists(&self, user_id: UserId) -> Result<bool, RepoError> {
+        let convs = self.conversations.lock().unwrap();
+        let msgs = self.messages.lock().unwrap();
+        let parts = self.participants.lock().unwrap();
+
+        for conv in convs.iter().filter(|c| c.pair.contains(user_id)) {
+            let last_read = parts
+                .get(&(conv.id, user_id))
+                .copied()
+                .unwrap_or(conv.created_at);
+
+            let last_msg = msgs.iter().rfind(|m| m.conversation_id == conv.id);
+
+            if let Some(m) = last_msg
+                && m.sender_id != user_id
+                && m.created_at > last_read
+            {
+                return Ok(true);
+            }
+        }
+
+        Ok(false)
+    }
+
+    async fn list_offer_inquirers(
+        &self,
+        offer_id: OfferId,
+        _cursor: Option<&str>,
+        _limit: usize,
+    ) -> Result<OfferInquirersPage, RepoError> {
+        let msgs = self.messages.lock().unwrap();
+        let mut map: HashMap<UserId, (ConversationId, chrono::DateTime<Utc>, u64)> = HashMap::new();
+
+        for m in msgs.iter().filter(|m| m.offer_id == Some(offer_id)) {
+            let entry = map
+                .entry(m.sender_id)
+                .or_insert((m.conversation_id, m.created_at, 0));
+            entry.2 = entry.2.saturating_add(1);
+            if m.created_at > entry.1 {
+                entry.1 = m.created_at;
+            }
+        }
+
+        let items = map
+            .into_iter()
+            .map(
+                |(user_id, (conversation_id, last_inquiry_at, message_count))| OfferInquirer {
+                    user_id,
+                    conversation_id,
+                    last_inquiry_at,
+                    message_count,
+                },
+            )
+            .collect();
+
+        Ok(OfferInquirersPage {
+            items,
+            next_cursor: None,
+        })
+    }
+}
+
 impl Registry for FakeRegistry {
     fn offers(&self) -> &(dyn OfferRepository + 'static) {
         self.offers.as_ref()
@@ -407,6 +707,9 @@ impl Registry for FakeRegistry {
     }
     fn offer_images(&self) -> &(dyn OfferImageRepository + 'static) {
         self.offers.as_ref()
+    }
+    fn conversations(&self) -> &(dyn ConversationRepository + 'static) {
+        unimplemented!()
     }
 }
 

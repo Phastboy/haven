@@ -45,24 +45,29 @@ sequenceDiagram
 ### Untangled items
 
 **A person can express their willingness to take on an offer.**
-- A person viewing another person's offer at `/offers/{slug}` sees an action to express willingness to take on the offer.
-- If unauthenticated, they are guided through authentication (preserving return intent).
-- If authenticated as the maker of the offer, the action is disabled (self-commitment is rejected).
-- When submitted, a commitment record is created linking the offer and responder.
-- A responder who has already committed cannot commit again (idempotent, redirecting to the existing commitment thread).
+- A person viewing another person's offer at `/offers/{slug}` sees a direct message form to express interest.
+- If unauthenticated, submitting redirects to authentication and preserves return intent.
+- If authenticated as the maker of the offer, the action is rejected (self-inquiry is invalid).
+- When submitted, a message is appended to the 1:1 conversation between the two people, tagged with `offer_id`.
+- The responder is redirected directly to the conversation thread at `/conversations/{id}`.
 
 **The person who made the offer can know about that expression of interest, and who it came from.**
-- When a commitment is created, the offer maker is alerted.
-- The maker sees the responder's verified public identity (display name, `@handle`, avatar, optional bio).
-- The maker can review all incoming expressions of interest on their offer without exposing responders' private contact details.
+- The offer maker sees an unread notification indicator (`●`) on "Messages" in both desktop and mobile navigation shells whenever new messages arrive.
+- On the owner's offer management view (`/profile/offers/{id}`), an "Inquiries" section displays everyone who has inquired about that specific offer, their last inquiry time, and direct links to their conversation threads.
 
-**People can communicate when communication is necessary to understand or progress that commitment.**
-- A lightweight, asynchronous message thread is established between the Offerer and Responder scoped to the commitment.
-- Accessible only by the two parties involved (strict IDOR isolation; third parties receive 404).
-- Both parties can post messages to clarify terms, logistics, or details.
+**People can communicate when communication is necessary to understand or progress that inquiry.**
+- Conversations are top-level destinations available at `/conversations` (keyset-paginated inbox).
+- Each thread at `/conversations/{id}` is strictly 1:1 between the two participants (IDOR isolation; unauthorized participants receive 404).
+- Messages display sender attribution, timestamp, message body, and optional tagged offer card.
+- Open threads receive live incoming messages via Server-Sent Events (`/conversations/{id}/events`), while sending remains a resilient standard POST (`/conversations/{id}/messages`).
 
 ### Decided
-- None yet (proposals pending user confirmation; see `docs/V0.4_UNTANGLING_AND_PLANNING.md`).
+- **Inquiry, not commitment:** Nothing is legally or contractually binding in 0.4.x. Binding agreements belong to 1.0.x.
+- **One 1:1 conversation per pair of people:** The relationship outlives any single offer. Messages are tagged with `offer_id` when initiated from or referencing an offer.
+- **No artificial status or reservation locks:** Offers are never locked by inquiries; tracking states belong to the 1.0.x agreement phase.
+- **Top-level Conversations navigation:** `/conversations` is a top-level route with full primary navigation (site header on desktop, bottom navigation on mobile). Individual threads `/conversations/{id}` are child views with safe back navigation to `/conversations`.
+- **Real-time delivery:** Server-Sent Events push new messages to an actively open thread; standard HTML form POST handles message submissions without requiring full-page reloads for active readers.
+- **Attribution & privacy:** Inquiries list on the owner's offer page links directly to conversations with verified responders without exposing private email addresses.
 
 ### Open questions
 - **Blocking:**

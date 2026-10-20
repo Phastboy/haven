@@ -1,4 +1,5 @@
 pub mod accounts;
+pub mod conversations;
 pub mod magic_links;
 pub mod offers;
 pub mod outbox;
@@ -6,8 +7,8 @@ pub mod sessions;
 pub mod users;
 
 use haven_domain::ports::{
-    AccountRepository, MagicLinkRepository, OfferImageRepository, OfferRepository, Registry,
-    SessionRepository, UserRepository,
+    AccountRepository, ConversationRepository, MagicLinkRepository, OfferImageRepository,
+    OfferRepository, Registry, SessionRepository, UserRepository,
 };
 use sqlx::PgPool;
 
@@ -20,6 +21,7 @@ pub struct PostgresRegistry {
     users: Box<dyn UserRepository>,
     magic_links: Box<dyn MagicLinkRepository>,
     sessions: Box<dyn SessionRepository>,
+    conversations: Box<dyn ConversationRepository>,
 }
 
 impl PostgresRegistry {
@@ -33,6 +35,9 @@ impl PostgresRegistry {
             users: Box::new(users::PostgresUserRepository::new(pool.clone())),
             magic_links: Box::new(magic_links::PostgresMagicLinkRepository::new(pool.clone())),
             sessions: Box::new(sessions::PostgresSessionRepository::new(pool.clone())),
+            conversations: Box::new(conversations::PostgresConversationRepository::new(
+                pool.clone(),
+            )),
         }
     }
 }
@@ -55,6 +60,9 @@ impl Registry for PostgresRegistry {
     }
     fn sessions(&self) -> &(dyn SessionRepository + 'static) {
         self.sessions.as_ref()
+    }
+    fn conversations(&self) -> &(dyn ConversationRepository + 'static) {
+        self.conversations.as_ref()
     }
 }
 
