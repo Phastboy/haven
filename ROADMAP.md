@@ -59,11 +59,11 @@ An offer is made by someone. Haven is not a marketplace of anonymous listings co
 
 Seeing an offer should be capable of leading to a meaningful response.
 
-The first form of action we are exploring is **commitment**: expressing that you are willing to take on the offer. What exactly that commitment means, and what should happen after it, will be discovered and defined during this version.
+The first form of action we are exploring is **inquiry**: expressing that you are willing to take on the offer. What exactly that inquiry means, and what should happen after it, has been defined during this version as non-binding private communication between people.
 
-* [ ] A person can express their willingness to take on an offer.
-* [ ] The person who made the offer can know about that expression of interest, and who it came from.
-* [ ] People can communicate when communication is necessary to understand or progress that commitment.
+* [x] A person can express their willingness to take on an offer.
+* [x] The person who made the offer can know about that expression of interest, and who it came from.
+* [x] People can communicate when communication is necessary to understand or progress that inquiry.
 
 **The question:**
 

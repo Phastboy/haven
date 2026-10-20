@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO conversation_participant (conversation_id, user_id, last_read_at)\n        VALUES ($1, $2, $3)\n        ON CONFLICT (conversation_id, user_id)\n        DO UPDATE SET last_read_at = EXCLUDED.last_read_at\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "60ec9e2ef0f57dbc173a267b01a13df9b0837155e526e6f650580d20b3b8556a"
+}

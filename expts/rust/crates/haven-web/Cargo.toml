@@ -6,7 +6,7 @@ publish.workspace = true
 
 [dependencies]
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time", "sync"] }
-topcoat = { version = "0.10.0", features = ["router", "view", "discover", "session", "mail", "cookie", "mail-smtp", "multipart"] }
+topcoat = { version = "0.10.0", features = ["router", "view", "discover", "session", "mail", "cookie", "mail-smtp", "multipart", "sse"] }
 haven-domain = { path = "../haven-domain" }
 haven-db = { path = "../haven-db" }
 uuid = { workspace = true, features = ["v4", "serde"] }
@@ -21,6 +21,9 @@ reqwest = { workspace = true }
 thiserror = { workspace = true }
 sha1 = { workspace = true }
 hex = { workspace = true }
+async-stream = "0.3.6"
+html-escape = "0.3.0"
+futures-core = "0.3.34"
 
 [lints]
 workspace=true

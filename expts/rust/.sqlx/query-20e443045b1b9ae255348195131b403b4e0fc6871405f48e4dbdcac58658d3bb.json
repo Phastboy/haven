@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT EXISTS (\n            SELECT 1\n            FROM conversation_participant cp\n            JOIN conversation c ON c.id = cp.conversation_id\n            WHERE cp.user_id = $1\n              AND cp.last_read_at < c.last_message_at\n              AND (\n                  SELECT m.sender_id\n                  FROM message m\n                  WHERE m.conversation_id = c.id\n                  ORDER BY m.created_at DESC, m.id DESC\n                  LIMIT 1\n              ) != $1\n        ) AS \"exists!\"\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "exists!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "20e443045b1b9ae255348195131b403b4e0fc6871405f48e4dbdcac58658d3bb"
+}

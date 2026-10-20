@@ -1,3 +1,8 @@
+#![allow(
+    clippy::too_many_lines,
+    reason = "Root layout with desktop and mobile nav shells and unread badge"
+)]
+
 use topcoat::{
     Result as TopcoatResult,
     context::Cx,
@@ -6,7 +11,9 @@ use topcoat::{
 };
 
 pub mod auth;
+pub mod broadcaster;
 pub mod components;
+pub mod conversations;
 pub mod health;
 pub mod navigation;
 pub mod offers;
@@ -61,8 +68,19 @@ pub async fn root_layout(
         ("/auth/sign-in", "Sign In")
     };
 
+    let has_unread = if let Some(ref u) = user {
+        crate::app::state::registry(cx)
+            .conversations()
+            .unread_exists(u.id)
+            .await
+            .unwrap_or(false)
+    } else {
+        false
+    };
+
     let is_offers_active = path == "/" || path == "/offers";
     let is_profile_active = path == "/profile";
+    let is_messages_active = path.starts_with("/conversations");
 
     let (is_child, back_url) = match nav_layout {
         NavigationLayout::Main => (false, String::new()),
@@ -88,6 +106,16 @@ pub async fn root_layout(
                             <a href=(site_logo_href) class="site-logo">"Haven"</a>
                             <ul class="nav-links">
                                 <li><a href="/offers">"Offers"</a></li>
+                                if user.is_some() {
+                                    <li>
+                                        <a href="/conversations">
+                                            "Messages"
+                                            if has_unread {
+                                                <span class="unread-badge" aria-label="Unread messages">"●"</span>
+                                            }
+                                        </a>
+                                    </li>
+                                }
                                 <li><a href=(auth_link_href)>(auth_link_text)</a></li>
                             </ul>
                         </nav>
@@ -109,6 +137,16 @@ pub async fn root_layout(
                             <a href=(site_logo_href) class="site-logo">"Haven"</a>
                             <ul class="nav-links">
                                 <li><a href="/offers">"Offers"</a></li>
+                                if user.is_some() {
+                                    <li>
+                                        <a href="/conversations">
+                                            "Messages"
+                                            if has_unread {
+                                                <span class="unread-badge" aria-label="Unread messages">"●"</span>
+                                            }
+                                        </a>
+                                    </li>
+                                }
                                 <li><a href=(auth_link_href)>(auth_link_text)</a></li>
                             </ul>
                         </nav>
@@ -133,6 +171,23 @@ pub async fn root_layout(
                                 </svg>
                                 <span class="bottom-nav-text">"Offers"</span>
                             </a>
+                            if user.is_some() {
+                                <a
+                                    href="/conversations"
+                                    class=(if is_messages_active { "bottom-nav-link active" } else { "bottom-nav-link" })
+                                    aria-current=(if is_messages_active { Some("page") } else { None })
+                                >
+                                    <svg class="bottom-nav-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                    </svg>
+                                    <span class="bottom-nav-text">
+                                        "Messages"
+                                        if has_unread {
+                                            <span class="unread-badge" aria-label="Unread messages">"●"</span>
+                                        }
+                                    </span>
+                                </a>
+                            }
                             <a
                                 href=(auth_link_href)
                                 class=(if is_profile_active { "bottom-nav-link active" } else { "bottom-nav-link" })

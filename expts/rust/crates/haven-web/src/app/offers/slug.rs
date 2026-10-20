@@ -9,6 +9,8 @@ use topcoat::{
     view::{View, view},
 };
 
+pub mod message;
+
 topcoat::router::module_param!(slug);
 
 const BUILD_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -146,6 +148,18 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
                 <div class="offer-detail-body">
                     <p>(offer.description)</p>
                 </div>
+
+                if !is_owner {
+                    <div class="offer-inquiry-action">
+                        <h3>"Message about this offer"</h3>
+                        <form action=(format!("/offers/{}/message", offer.slug.as_str())) method="post" class="offer-message-form">
+                            <textarea name="body" placeholder="Ask a question or express your interest..." rows="3" required="required" maxlength="2000"></textarea>
+                            <div>
+                                <button type="submit" class="btn btn-primary">"Send Message"</button>
+                            </div>
+                        </form>
+                    </div>
+                }
             </div>
         }
     })

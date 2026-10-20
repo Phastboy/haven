@@ -29,7 +29,10 @@ pub fn classify_route(path: &str, current_user_handle: Option<&str>) -> Navigati
     };
 
     match clean_path {
-        "/" | "/offers" | "/profile" => NavigationLayout::Main,
+        "/" | "/offers" | "/profile" | "/conversations" => NavigationLayout::Main,
+        p if p.starts_with("/conversations/") => NavigationLayout::Child {
+            fallback_parent: "/conversations",
+        },
         "/profile/offers/new" => NavigationLayout::Child {
             fallback_parent: "/profile/offers",
         },
@@ -233,8 +236,22 @@ mod tests {
         assert_eq!(classify_route("/offers/", None), NavigationLayout::Main);
         assert_eq!(classify_route("/profile", None), NavigationLayout::Main);
         assert_eq!(classify_route("/profile/", None), NavigationLayout::Main);
+        assert_eq!(
+            classify_route("/conversations", None),
+            NavigationLayout::Main
+        );
+        assert_eq!(
+            classify_route("/conversations/", None),
+            NavigationLayout::Main
+        );
 
         // Child routes
+        assert_eq!(
+            classify_route("/conversations/3f2504e0-4f89-11d3-9a0c-0305e82c3301", None),
+            NavigationLayout::Child {
+                fallback_parent: "/conversations"
+            }
+        );
         assert_eq!(
             classify_route("/offers/rustic-table-123", None),
             NavigationLayout::Child {

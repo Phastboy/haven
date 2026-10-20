@@ -14,6 +14,11 @@ pub struct AppState {
     pub email_delivery_enabled: Option<bool>,
     pub image_storage: std::sync::Arc<dyn haven_domain::ports::ImageStorage>,
     pub cloudinary_cloud_name: Option<String>,
+    pub broadcaster: std::sync::Arc<dyn crate::app::broadcaster::MessageBroadcaster>,
+}
+
+pub fn broadcaster(cx: &Cx) -> &dyn crate::app::broadcaster::MessageBroadcaster {
+    &*app_context::<AppState>(cx).broadcaster
 }
 
 pub fn registry(cx: &Cx) -> &dyn Registry {

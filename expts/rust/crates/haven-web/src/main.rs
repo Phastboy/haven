@@ -110,6 +110,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let registry = Arc::new(PostgresRegistry::new(&pool));
+    let broadcaster = Arc::new(app::broadcaster::InProcessBroadcaster::new());
     let state = app::state::AppState {
         registry,
         google_oauth,
@@ -117,6 +118,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         email_delivery_enabled: None,
         image_storage,
         cloudinary_cloud_name,
+        broadcaster,
     };
 
     let router = app::router()

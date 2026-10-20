@@ -41,7 +41,8 @@ When starting a roadmap item:
 Use the roadmap's precise terms in code, docs, UI, and commits:
 - **person** (not "user" when product actor is meant)
 - **offer** (not "listing", "post", "item")
-- **commitment** (not "order", "deal")
+- **inquiry** (0.4.x — the act of reaching out about an offer; nothing is binding)
+- **commitment** (1.0.x and later — a binding agreement; do not use this word in 0.4.x code, UI, or docs)
 - **interest**
 
 Do not invent synonyms.

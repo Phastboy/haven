@@ -8,10 +8,10 @@ This document catalogs every route currently available in Haven, its HTTP method
 
 Haven enforces a strict two-layout rule across all routes:
 
-1. **Top-Level Routes (`NavigationLayout::Main`):** `/offers`, `/profile`, and `/`.
-   - **Mobile (`<= 640px`):** Main layout renders primary navigation (`.site-header`). No back button is shown.
-   - **Desktop (`> 640px`):** Main layout renders primary navigation.
-2. **Child Routes (`NavigationLayout::Child`):** Every other route (e.g. `/offers/{slug}`, `/profiles/{handle}`, `/profile/edit`, `/profile/offers`, `/profile/offers/new`, `/profile/offers/{id}`, `/profile/offers/{id}/edit`, `/profile/account`, `/auth/*`).
+1. **Top-Level Routes (`NavigationLayout::Main`):** `/offers`, `/profile`, `/conversations`, and `/`.
+   - **Mobile (`<= 640px`):** Main layout renders primary navigation (`.site-header` on desktop, `.bottom-nav` on mobile). No back button is shown.
+   - **Desktop (`> 640px`):** Main layout renders primary navigation (`.site-header`).
+2. **Child Routes (`NavigationLayout::Child`):** Every other route (e.g. `/offers/{slug}`, `/profiles/{handle}`, `/conversations/{id}`, `/profile/edit`, `/profile/offers`, `/profile/offers/new`, `/profile/offers/{id}`, `/profile/offers/{id}/edit`, `/profile/account`, `/auth/*`).
    - **Mobile (`<= 640px`):** Primary navigation is completely hidden (`.site-header.desktop-only`). The header contains only a clean back button (`.child-header` with an explicit SVG arrow-left icon and "Back" label).
    - **Desktop (`> 640px`):** Primary navigation remains visible (wide screens have room for it and hiding it saves no space). The back header remains visible below the primary navigation for consistent back-navigation affordance across devices.
 3. **Safe Back URL Resolution:**
@@ -28,7 +28,12 @@ Haven enforces a strict two-layout rule across all routes:
 | `/` | `GET` | Public | Main | — | Landing page | "Browse Offers" / "Sign In" (redirects authed to `/offers`) |
 | `/offers` | `GET` | Public | Main | — | Available offers feed | Keyset pagination, offer cards, maker links |
 | `/offers/{slug}` | `GET` | Public | Child | `/offers` | Single offer detail | View full offer description, maker link |
+| `/offers/{slug}/message` | `POST` | Authenticated | Child | `/offers/{slug}` | Send inquiry from offer | Starts/continues conversation tagged with offer |
 | `/profiles/{handle}` | `GET` | Public | Child | `/profile` (owner) / `/offers` | Public maker profile | Maker bio, catalog of maker's offers |
+| `/conversations` | `GET` | Authenticated | Main | — | Conversations inbox | Keyset pagination, inbox rows, unread status |
+| `/conversations/{id}` | `GET` | Authenticated | Child | `/conversations` | 1:1 conversation thread | View messages, send reply, real-time updates |
+| `/conversations/{id}/messages` | `POST` | Authenticated | Child | `/conversations` | Post message | Submit message, redirect to thread |
+| `/conversations/{id}/events` | `GET` | Authenticated | Child | `/conversations` | Server-sent events stream | Real-time message streaming for thread |
 | `/auth/sign-in` | `GET`, `POST` | Public / Guest | Child | `/` | Sign-in portal | Email magic link, Google OAuth CTA (redirects authed to `/offers`) |
 | `/auth/sent` | `GET` | Public | Child | `/` | Confirmation notice | Notice to check email inbox |
 | `/auth/verify` | `GET`, `POST` | Public (token) | Child | `/` | Magic link verification | "Confirm and Sign In" token exchange (redirects to `/offers`) |
