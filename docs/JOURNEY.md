@@ -33,8 +33,8 @@ sequenceDiagram
   Note over R,H: 0.3.x handoff: knowing who is behind an offer
   R->>H: visit maker's public profile (/profiles/{handle})
   H-->>R: show maker profile & all their offers
-  R->>H: express willingness / commit to offer
-  Note over R,H,O: 0.4.x handoff: commitment & communication
+  R->>H: send inquiry regarding offer
+  Note over R,H,O: 0.4.x handoff: inquiry & communication
   H-->>O: notify maker of interest with responder identity
   R->>H: post clarification message
   O->>H: reply to message
@@ -70,14 +70,9 @@ sequenceDiagram
 - **Attribution & privacy:** Inquiries list on the owner's offer page links directly to conversations with verified responders without exposing private email addresses.
 
 ### Open questions
-- **Blocking:**
-  - Whether an offer allows multiple concurrent expressions of interest (pool) or whether commitment exclusively reserves/locks the offer.
-  - Whether expressing interest is a single-click action or accepts an optional opening note.
-  - Whether notifications are in-app only or dual (in-app + email alert).
-  - Whether communication is an in-app server-rendered chronological thread or external contact reveal.
 - **Non-blocking:**
-  - Commitment status lifecycle transitions (e.g. `Pending`, `Accepted`, `Declined`, `Withdrawn`).
-  - Maximum message length (e.g. 2,000 characters).
+  - Whether concurrent inquiries trigger additional email alerts or stay purely in-app.
+  - Whether opening inquiry notes support preset template prompts.
 
 ### Deferred dependencies
 - Formal contract closing and mutual agreement. Belongs to 1.0.x. Current behaviour until then: informal communication and status progression only.

@@ -57,4 +57,4 @@ Exactly two layouts exist across the application (managed via `app::navigation`)
 - Contrast >= 4.5:1 (3:1 for large text / focus rings).
 - Visible focus indicator on all interactive controls.
 - Explicit `<label>` for every input (no placeholder-as-label).
-- Minimum 16px body font size to prevent iOS Safari auto-zoom.
+- Minimum 16px font size on editable form controls (`input`, `select`, `textarea`) and body text to prevent iOS Safari auto-zoom.
