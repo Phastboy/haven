@@ -65,12 +65,25 @@ for item in "${TRANSFORMS[@]}"; do
     create_body=$(echo "${create_response}" | grep -v "HTTP_STATUS:")
 
     if [ "${create_status}" -ge 200 ] && [ "${create_status}" -lt 300 ]; then
-        echo "    SUCCESS (HTTP ${create_status}): Transformation '$name' created/updated."
+        echo "    SUCCESS (HTTP ${create_status}): Transformation '$name' created."
         echo "    Response: ${create_body}"
     else
-        echo "    ERROR (HTTP ${create_status}): Failed to create transformation '$name'."
-        echo "    Response: ${create_body}"
-        exit 1
+        echo "    Transformation '$name' returned HTTP ${create_status}. Attempting update via PUT..."
+        update_response=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X PUT \
+            -u "${AUTH}" \
+            -d "transformation=${transform}" \
+            "${BASE_URL}/${name}")
+        update_status=$(echo "${update_response}" | grep "HTTP_STATUS:" | cut -d':' -f2)
+        update_body=$(echo "${update_response}" | grep -v "HTTP_STATUS:")
+
+        if [ "${update_status}" -ge 200 ] && [ "${update_status}" -lt 300 ]; then
+            echo "    SUCCESS (HTTP ${update_status}): Transformation '$name' updated."
+            echo "    Response: ${update_body}"
+        else
+            echo "    ERROR (HTTP ${update_status}): Failed to create or update transformation '$name'."
+            echo "    Response: ${update_body}"
+            exit 1
+        fi
     fi
 
     # 2. Flag as allowed for strict transformations
@@ -95,10 +108,21 @@ done
 
 echo ""
 echo "========================================================"
-echo " Verification: Testing live delivery of offer detail image"
+echo " Account Security Requirement Notice"
+echo "========================================================"
+echo "Note: Named transformations are whitelisted for strict mode."
+echo "Ensure 'Strict Transformations' is toggled ON under:"
+echo "Cloudinary Console -> Settings -> Security -> Strict Transformations"
 echo "========================================================"
 
-TEST_URL="https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/private/t_detail/offers/623b2271-63f2-45e9-ba78-2d25ef40a50e/a06e5c7f-e37a-4c58-820a-a51fe72f05e3"
+echo ""
+echo "========================================================"
+echo " Verification: Testing live delivery of named transformation"
+echo "========================================================"
+
+# Allow passing an asset public_id to test, or fallback to Cloudinary sample
+TEST_ASSET_ID="${1:-sample}"
+TEST_URL="https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/t_detail/${TEST_ASSET_ID}.jpg"
 echo "Testing GET request against:"
 echo "  ${TEST_URL}"
 
@@ -108,8 +132,9 @@ echo "${test_headers}"
 if echo "${test_headers}" | grep -qE "HTTP/[12](\.[0-9])? 200"; then
     echo ""
     echo "==> ALL CHECKS PASSED! HTTP 200 received from Cloudinary."
-    echo "    Named transformation 't_detail' is active and working."
+    echo "    Named transformation 'detail' is active and working."
 else
     echo ""
-    echo "==> WARNING: Test URL did not return HTTP 200 OK. Please inspect the headers above."
+    echo "==> Note: Test URL did not return HTTP 200. If '${TEST_ASSET_ID}' does not exist"
+    echo "    in your account, test with an existing asset: ./setup_cloudinary.sh <public_id>"
 fi

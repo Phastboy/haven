@@ -39,7 +39,7 @@ Every finding must cite evidence (file, line number, or crate doc). Never assume
 ### Data access & SQL
 - **SQL injection:** Use SQLx parameterized queries exclusively. Never interpolate strings into SQL.
 - **N+1 queries:** Prohibit executing queries inside loops over result sets. Use `JOIN` or batched `WHERE id = ANY(...)`.
-- **IDOR (Ownership scoping):** Every read/write to non-public records must verify that the requesting session owns the record (`WHERE id = $1 AND owner_id = $2`).
+- **IDOR (Authorization scoping):** Every read/write to non-public records must verify authorization per the record's access policy: resource ownership for user data/offers (`WHERE id = $1 AND user_id = $2`) or participant membership for conversations (`WHERE cp.user_id = $1` / pair containment).
 
 ### Auth, sessions, and forms
 - **Broken authentication:** Verify session token validity and expiration on every protected route. Use constant-time comparisons for tokens/hashes.
