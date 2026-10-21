@@ -410,6 +410,7 @@ pub struct FakeConversationRepository {
     pub messages: Arc<Mutex<Vec<Message>>>,
     pub participants: Arc<Mutex<ConversationParticipantMap>>,
     pub users_info: Arc<Mutex<UserInfoMap>>,
+    pub offer_owners: Arc<Mutex<HashMap<OfferId, UserId>>>,
 }
 
 #[async_trait]
@@ -487,10 +488,7 @@ impl ConversationRepository for FakeConversationRepository {
         limit: usize,
     ) -> Result<ConversationInboxPage, RepoError> {
         let parsed_cursor = match cursor {
-            Some(c) => Some(
-                ConversationCursor::decode(c)
-                    .map_err(|_| RepoError::Corrupt("invalid cursor".into()))?,
-            ),
+            Some(c) => ConversationCursor::decode(c).ok(),
             None => None,
         };
 
@@ -577,10 +575,7 @@ impl ConversationRepository for FakeConversationRepository {
         limit: usize,
     ) -> Result<MessagePage, RepoError> {
         let parsed_cursor = match cursor {
-            Some(c) => Some(
-                MessageCursor::decode(c)
-                    .map_err(|_| RepoError::Corrupt("invalid cursor".into()))?,
-            ),
+            Some(c) => MessageCursor::decode(c).ok(),
             None => None,
         };
 
@@ -592,23 +587,25 @@ impl ConversationRepository for FakeConversationRepository {
             .collect();
 
         conv_msgs.sort_by(|a, b| {
-            a.created_at
-                .cmp(&b.created_at)
-                .then_with(|| a.id.as_uuid().cmp(&b.id.as_uuid()))
+            b.created_at
+                .cmp(&a.created_at)
+                .then_with(|| b.id.as_uuid().cmp(&a.id.as_uuid()))
         });
 
         if let Some(cur) = parsed_cursor {
             conv_msgs.retain(|m| {
-                m.created_at > cur.created_at
-                    || (m.created_at == cur.created_at && m.id.as_uuid() > cur.id.as_uuid())
+                m.created_at < cur.created_at
+                    || (m.created_at == cur.created_at && m.id.as_uuid() < cur.id.as_uuid())
             });
         }
 
         let has_more = conv_msgs.len() > limit;
-        let items: Vec<Message> = conv_msgs.into_iter().take(limit).collect();
+        let mut items: Vec<Message> = conv_msgs.into_iter().take(limit).collect();
+        items.reverse();
+
         let next_cursor = if has_more {
             items
-                .last()
+                .first()
                 .map(|m| MessageCursor::new(m.created_at, m.id).encode())
         } else {
             None
@@ -658,9 +655,14 @@ impl ConversationRepository for FakeConversationRepository {
         _limit: usize,
     ) -> Result<OfferInquirersPage, RepoError> {
         let msgs = self.messages.lock().unwrap();
+        let owners = self.offer_owners.lock().unwrap();
+        let maybe_owner = owners.get(&offer_id).copied();
         let mut map: HashMap<UserId, (ConversationId, chrono::DateTime<Utc>, u64)> = HashMap::new();
 
         for m in msgs.iter().filter(|m| m.offer_id == Some(offer_id)) {
+            if Some(m.sender_id) == maybe_owner {
+                continue;
+            }
             let entry = map
                 .entry(m.sender_id)
                 .or_insert((m.conversation_id, m.created_at, 0));
