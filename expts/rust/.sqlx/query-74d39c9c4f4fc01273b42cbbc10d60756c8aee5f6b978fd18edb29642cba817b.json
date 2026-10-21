@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n                SELECT id, conversation_id, sender_id, body, offer_id, created_at\n                FROM message\n                WHERE conversation_id = $1\n                  AND (created_at > $2 OR (created_at = $2 AND id > $3))\n                ORDER BY created_at ASC, id ASC\n                LIMIT $4\n                ",
+  "query": "\n                SELECT id, conversation_id, sender_id, body, offer_id, created_at\n                FROM message\n                WHERE conversation_id = $1\n                ORDER BY created_at DESC, id DESC\n                LIMIT $2\n                ",
   "describe": {
     "columns": [
       {
@@ -73,8 +73,6 @@
     "parameters": {
       "Left": [
         "Uuid",
-        "Timestamptz",
-        "Uuid",
         "Int8"
       ]
     },
@@ -87,5 +85,5 @@
       false
     ]
   },
-  "hash": "cc25449185cce8b8c2a71d2b25d293430def6ae5feb5fc2d2f03de66be98ec34"
+  "hash": "74d39c9c4f4fc01273b42cbbc10d60756c8aee5f6b978fd18edb29642cba817b"
 }
