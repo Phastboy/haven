@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT \n            m.sender_id,\n            m.conversation_id,\n            MAX(m.created_at) AS \"last_inquiry_at!\",\n            COUNT(m.id) AS message_count\n        FROM message m\n        WHERE m.offer_id = $1\n        GROUP BY m.sender_id, m.conversation_id\n        ORDER BY MAX(m.created_at) DESC\n        LIMIT $2\n        ",
+  "query": "\n        SELECT \n            m.sender_id,\n            m.conversation_id,\n            MAX(m.created_at) AS \"last_inquiry_at!\",\n            COUNT(m.id) AS message_count\n        FROM message m\n        JOIN offer o ON o.id = m.offer_id\n        WHERE m.offer_id = $1\n          AND m.sender_id <> o.user_id\n        GROUP BY m.sender_id, m.conversation_id\n        ORDER BY MAX(m.created_at) DESC\n        LIMIT $2\n        ",
   "describe": {
     "columns": [
       {
@@ -51,5 +51,5 @@
       null
     ]
   },
-  "hash": "80c8c33bce9a6d394fa55499eae3a7ee0355d698a4c448e60e39b70e950d1da9"
+  "hash": "85691937fe7d5db7f5822bfc5d39f7bee7e0567b49274f4d5a5ad4b4d4bbf617"
 }

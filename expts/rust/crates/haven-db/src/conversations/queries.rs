@@ -210,10 +210,7 @@ pub async fn list_for_user(
 ) -> Result<ConversationInboxPage, RepoError> {
     let u_id = user_id.as_uuid();
     let parsed_cursor = match cursor {
-        Some(c) => Some(
-            ConversationCursor::decode(c)
-                .map_err(|_| RepoError::Corrupt("invalid cursor".into()))?,
-        ),
+        Some(c) => ConversationCursor::decode(c).ok(),
         None => None,
     };
 
@@ -336,9 +333,7 @@ pub async fn messages(
 ) -> Result<MessagePage, RepoError> {
     let c_id = conversation_id.as_uuid();
     let parsed_cursor = match cursor {
-        Some(c) => Some(
-            MessageCursor::decode(c).map_err(|_| RepoError::Corrupt("invalid cursor".into()))?,
-        ),
+        Some(c) => MessageCursor::decode(c).ok(),
         None => None,
     };
 
@@ -354,8 +349,8 @@ pub async fn messages(
                 SELECT id, conversation_id, sender_id, body, offer_id, created_at
                 FROM message
                 WHERE conversation_id = $1
-                  AND (created_at > $2 OR (created_at = $2 AND id > $3))
-                ORDER BY created_at ASC, id ASC
+                  AND (created_at < $2 OR (created_at = $2 AND id < $3))
+                ORDER BY created_at DESC, id DESC
                 LIMIT $4
                 "#,
                 c_id,
@@ -373,7 +368,7 @@ pub async fn messages(
                 SELECT id, conversation_id, sender_id, body, offer_id, created_at
                 FROM message
                 WHERE conversation_id = $1
-                ORDER BY created_at ASC, id ASC
+                ORDER BY created_at DESC, id DESC
                 LIMIT $2
                 "#,
             c_id,
@@ -385,7 +380,8 @@ pub async fn messages(
     };
 
     let has_more = query.len() > limit;
-    let rows: Vec<MessageRow> = query.into_iter().take(limit).collect();
+    let mut rows: Vec<MessageRow> = query.into_iter().take(limit).collect();
+    rows.reverse();
 
     let mut items = Vec::with_capacity(rows.len());
     for row in rows {
@@ -394,7 +390,7 @@ pub async fn messages(
 
     let next_cursor = if has_more {
         items
-            .last()
+            .first()
             .map(|it| MessageCursor::new(it.created_at, it.id).encode())
     } else {
         None
@@ -484,7 +480,9 @@ pub async fn list_offer_inquirers(
             MAX(m.created_at) AS "last_inquiry_at!",
             COUNT(m.id) AS message_count
         FROM message m
+        JOIN offer o ON o.id = m.offer_id
         WHERE m.offer_id = $1
+          AND m.sender_id <> o.user_id
         GROUP BY m.sender_id, m.conversation_id
         ORDER BY MAX(m.created_at) DESC
         LIMIT $2
