@@ -18,7 +18,6 @@ use uuid::Uuid;
 
 use crate::app::auth::guard::require_auth;
 use crate::app::components::message_item::message_item;
-use crate::app::components::pagination::pagination_nav;
 use crate::app::state::{map_repo_err, registry};
 use haven_domain::conversation::ConversationId;
 
@@ -62,7 +61,14 @@ pub async fn thread_page(cx: &Cx) -> TopcoatResult<impl View> {
         .ok_or_else(topcoat::router::error::not_found)?;
 
     let query = topcoat::router::query_params::<ThreadQuery>(cx).ok();
-    let cursor_param = query.as_ref().and_then(|q| q.cursor.as_deref());
+    let cursor_param = match query.as_ref().and_then(|q| q.cursor.as_deref()) {
+        Some(c) => {
+            haven_domain::conversation::MessageCursor::decode(c)
+                .map_err(|_| topcoat::router::error::bad_request("invalid cursor"))?;
+            Some(c)
+        }
+        None => None,
+    };
 
     let msgs_page = reg
         .conversations()
@@ -74,6 +80,10 @@ pub async fn thread_page(cx: &Cx) -> TopcoatResult<impl View> {
 
     let cloud_name = crate::app::state::cloudinary_cloud_name(cx);
 
+    let mut offer_cache: std::collections::HashMap<
+        haven_domain::offer::OfferId,
+        Option<OfferTagData>,
+    > = std::collections::HashMap::new();
     let mut message_items = Vec::with_capacity(msgs_page.items.len());
     for m in &msgs_page.items {
         let is_own = m.sender_id == user.id;
@@ -84,29 +94,44 @@ pub async fn thread_page(cx: &Cx) -> TopcoatResult<impl View> {
         };
 
         let offer_tag = if let Some(oid) = m.offer_id {
-            // Try finding offer
-            let maybe_off = reg
-                .offers()
-                .find_owned(oid, m.sender_id)
-                .await
-                .unwrap_or(None);
-            if let Some(off) = maybe_off {
-                let cover = off.images.first().map(|img| {
-                    crate::app::components::image::thumb_url(cloud_name, img.public_id.as_str())
-                });
-                Some(OfferTagData {
-                    title: off.title,
-                    slug: off.slug.as_str().to_string(),
-                    cover_url: cover,
-                    is_available: true,
-                })
+            if let Some(cached) = offer_cache.get(&oid) {
+                cached.clone()
             } else {
-                Some(OfferTagData {
-                    title: String::new(),
-                    slug: String::new(),
-                    cover_url: None,
-                    is_available: false,
-                })
+                let maybe_off = if let Some(off) = reg
+                    .offers()
+                    .find_owned(oid, m.sender_id)
+                    .await
+                    .unwrap_or(None)
+                {
+                    Some(off)
+                } else {
+                    let other_id = if m.sender_id == user.id {
+                        other_user_id
+                    } else {
+                        user.id
+                    };
+                    reg.offers().find_owned(oid, other_id).await.unwrap_or(None)
+                };
+                let tag = if let Some(off) = maybe_off {
+                    let cover = off.images.first().map(|img| {
+                        crate::app::components::image::thumb_url(cloud_name, img.public_id.as_str())
+                    });
+                    Some(OfferTagData {
+                        title: off.title,
+                        slug: off.slug.as_str().to_string(),
+                        cover_url: cover,
+                        is_available: true,
+                    })
+                } else {
+                    Some(OfferTagData {
+                        title: String::new(),
+                        slug: String::new(),
+                        cover_url: None,
+                        is_available: false,
+                    })
+                };
+                offer_cache.insert(oid, tag.clone());
+                tag
             }
         } else {
             None
@@ -142,6 +167,11 @@ pub async fn thread_page(cx: &Cx) -> TopcoatResult<impl View> {
             </header>
 
             <div class="thread-messages" id="thread-messages">
+                if let Some(next) = &msgs_page.next_cursor {
+                    <div class="thread-pagination">
+                        <a href=(format!("/conversations/{conv_id_str}?cursor={next}")) class="btn btn-secondary">"← Earlier messages"</a>
+                    </div>
+                }
                 for item in message_items {
                     message_item(
                         id: item.id,
@@ -156,10 +186,6 @@ pub async fn thread_page(cx: &Cx) -> TopcoatResult<impl View> {
                     )
                 }
             </div>
-
-            if let Some(next) = msgs_page.next_cursor {
-                pagination_nav(next_href: Some(format!("/conversations/{conv_id_str}?cursor={next}")))
-            }
 
             <form action=(format!("/conversations/{conv_id_str}/messages")) method="post" class="thread-composer">
                 if !user_offers.is_empty() {
@@ -225,6 +251,7 @@ struct MessageItemData {
     pub offer_tag: Option<OfferTagData>,
 }
 
+#[derive(Clone)]
 struct OfferTagData {
     pub title: String,
     pub slug: String,

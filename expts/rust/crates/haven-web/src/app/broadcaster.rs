@@ -32,10 +32,12 @@ impl InProcessBroadcaster {
 
 impl MessageBroadcaster for InProcessBroadcaster {
     fn broadcast(&self, message: &Message) {
-        let channels = self.channels.lock().unwrap();
-        if let Some(tx) = channels.get(&message.conversation_id) {
-            // Ignore Err if no active receivers currently listening
-            let _ = tx.send(message.clone());
+        let mut channels = self.channels.lock().unwrap();
+        if let Some(tx) = channels.get(&message.conversation_id)
+            && tx.send(message.clone()).is_err()
+        {
+            // No live receivers: drop the channel.
+            channels.remove(&message.conversation_id);
         }
     }
 

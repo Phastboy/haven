@@ -29,6 +29,10 @@ pub async fn send_offer_inquiry(cx: &Cx, form: Form<OfferInquiryForm>) -> Topcoa
         .map_err(map_repo_err)?
         .ok_or_else(topcoat::router::error::not_found)?;
 
+    if !offer.is_public() {
+        return Err(topcoat::router::error::not_found().into());
+    }
+
     // Reject self-messaging
     if offer.user_id == user.id {
         return Err(topcoat::router::error::bad_request("cannot message your own offer").into());

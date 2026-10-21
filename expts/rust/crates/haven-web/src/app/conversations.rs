@@ -36,7 +36,14 @@ pub struct InboxQuery {
 pub async fn inbox_page(cx: &Cx) -> TopcoatResult<impl View> {
     let user = require_auth(cx).await?;
     let query = topcoat::router::query_params::<InboxQuery>(cx).ok();
-    let cursor_param = query.as_ref().and_then(|q| q.cursor.as_deref());
+    let cursor_param = match query.as_ref().and_then(|q| q.cursor.as_deref()) {
+        Some(c) => {
+            haven_domain::conversation::ConversationCursor::decode(c)
+                .map_err(|_| topcoat::router::error::bad_request("invalid cursor"))?;
+            Some(c)
+        }
+        None => None,
+    };
 
     let page = registry(cx)
         .conversations()
