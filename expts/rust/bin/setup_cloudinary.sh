@@ -135,6 +135,11 @@ if echo "${test_headers}" | grep -qE "HTTP/[12](\.[0-9])? 200"; then
     echo "    Named transformation 'detail' is active and working."
 else
     echo ""
-    echo "==> Note: Test URL did not return HTTP 200. If '${TEST_ASSET_ID}' does not exist"
-    echo "    in your account, test with an existing asset: ./setup_cloudinary.sh <public_id>"
+    if [ -n "${1:-}" ]; then
+        echo "==> ERROR: Verification failed for supplied asset '${TEST_ASSET_ID}'."
+        exit 1
+    else
+        echo "==> Note: Test URL did not return HTTP 200. If '${TEST_ASSET_ID}' does not exist"
+        echo "    in your account, test with an existing asset: ./setup_cloudinary.sh <public_id>"
+    fi
 fi
