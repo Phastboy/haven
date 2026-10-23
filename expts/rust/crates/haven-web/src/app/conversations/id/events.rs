@@ -88,7 +88,7 @@ pub async fn conversation_events(
                     let title_esc = html_escape::encode_text(off.title.as_str());
                     let slug_esc = html_escape::encode_text(off.slug.as_str());
                     let thumb_html = if let Some(cover_url) = cover {
-                        let cover_esc = html_escape::encode_text(&cover_url);
+                        let cover_esc = html_escape::encode_double_quoted_attribute(&cover_url);
                         format!(r#"<img src="{cover_esc}" alt="" class="offer-tag-thumb" width="48" height="48" />"#)
                     } else {
                         String::new()
