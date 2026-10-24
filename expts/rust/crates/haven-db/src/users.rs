@@ -11,15 +11,15 @@ pub(crate) struct PostgresUserRepository {
     pool: DbPool,
 }
 
-struct UserDbRow {
-    id: Uuid,
-    account_id: Uuid,
-    handle: String,
-    display_name: String,
-    bio: Option<String>,
-    avatar_public_id: Option<String>,
-    created_at: chrono::DateTime<chrono::Utc>,
-    updated_at: chrono::DateTime<chrono::Utc>,
+pub(crate) struct UserDbRow {
+    pub(crate) id: Uuid,
+    pub(crate) account_id: Uuid,
+    pub(crate) handle: String,
+    pub(crate) display_name: String,
+    pub(crate) bio: Option<String>,
+    pub(crate) avatar_public_id: Option<String>,
+    pub(crate) created_at: chrono::DateTime<chrono::Utc>,
+    pub(crate) updated_at: chrono::DateTime<chrono::Utc>,
 }
 
 impl PostgresUserRepository {
@@ -27,7 +27,7 @@ impl PostgresUserRepository {
         Self { pool }
     }
 
-    fn map_row(row: UserDbRow) -> Result<User, RepoError> {
+    pub(crate) fn map_row(row: UserDbRow) -> Result<User, RepoError> {
         let handle = ProfileHandle::parse(&row.handle)
             .map_err(|_| RepoError::Corrupt("Invalid handle in database".into()))?;
         let display_name = DisplayName::parse(&row.display_name)

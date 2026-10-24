@@ -99,6 +99,12 @@ impl Registry for TestRegistry {
     fn conversations(&self) -> &(dyn ConversationRepository + 'static) {
         &self.conversations
     }
+    fn saved_offers(&self) -> &(dyn haven_domain::ports::SavedOfferRepository + 'static) {
+        unimplemented!()
+    }
+    fn follows(&self) -> &(dyn haven_domain::ports::FollowRepository + 'static) {
+        unimplemented!()
+    }
 }
 
 fn create_auth_session(users_repo: &TestUserRepository, user: User) -> String {

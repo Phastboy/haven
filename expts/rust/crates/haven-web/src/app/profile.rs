@@ -3,7 +3,9 @@
 pub mod account;
 pub mod avatar;
 pub mod edit;
+pub mod following;
 pub mod offers;
+pub mod saved;
 
 use crate::app::components::{
     confirm_dialog::confirm_dialog,
@@ -75,6 +77,22 @@ pub async fn profile_overview(cx: &Cx) -> TopcoatResult<impl View> {
                 title: "My offers".to_string(),
                 description: None,
                 href: "/profile/offers".to_string(),
+                is_post: false,
+                popovertarget: None,
+            },
+            ProfileRowData {
+                icon: RowIcon::Offers,
+                title: "Saved offers".to_string(),
+                description: None,
+                href: "/profile/saved".to_string(),
+                is_post: false,
+                popovertarget: None,
+            },
+            ProfileRowData {
+                icon: RowIcon::PublicProfile,
+                title: "Following".to_string(),
+                description: None,
+                href: "/profile/following".to_string(),
                 is_post: false,
                 popovertarget: None,
             },

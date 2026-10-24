@@ -20,6 +20,7 @@ use crate::ports::{
     AccountRepository, ConversationRepository, CreationStatus, IdempotencyKey, MagicLinkRepository,
     OfferImageRepository, OfferRepository, Registry, RepoError, SessionRepository, UserRepository,
 };
+use crate::saved::{CollectionCursor, FollowPage, SavedOffer, SavedOfferPage};
 use chrono::Utc;
 
 #[derive(Default, Clone)]
@@ -254,13 +255,181 @@ impl OfferRepository for FakeOfferRepository {
 
 pub struct FakeRegistry {
     offers: Box<FakeOfferRepository>,
+    saved_offers: Box<FakeSavedOfferRepository>,
+    follows: Box<FakeFollowRepository>,
 }
 
 impl Default for FakeRegistry {
     fn default() -> Self {
+        let offers = Box::new(FakeOfferRepository::default());
         Self {
-            offers: Box::new(FakeOfferRepository::default()),
+            saved_offers: Box::new(FakeSavedOfferRepository {
+                pairs: Arc::new(Mutex::new(HashMap::new())),
+                offers: offers.offers.clone(),
+            }),
+            offers,
+            follows: Box::new(FakeFollowRepository::default()),
         }
+    }
+}
+
+pub type SavedOfferMap = HashMap<(UserId, OfferId), chrono::DateTime<Utc>>;
+pub type FollowMap = HashMap<(UserId, UserId), chrono::DateTime<Utc>>;
+
+#[derive(Default)]
+pub struct FakeSavedOfferRepository {
+    pub pairs: Arc<Mutex<SavedOfferMap>>,
+    offers: Arc<Mutex<Vec<Offer>>>,
+}
+#[async_trait]
+impl crate::ports::SavedOfferRepository for FakeSavedOfferRepository {
+    async fn is_saved(&self, user_id: UserId, offer_id: OfferId) -> Result<bool, RepoError> {
+        Ok(self
+            .pairs
+            .lock()
+            .unwrap()
+            .contains_key(&(user_id, offer_id)))
+    }
+    async fn save(&self, user_id: UserId, offer_id: OfferId) -> Result<(), RepoError> {
+        self.pairs
+            .lock()
+            .unwrap()
+            .entry((user_id, offer_id))
+            .or_insert_with(Utc::now);
+        Ok(())
+    }
+    async fn unsave(&self, user_id: UserId, offer_id: OfferId) -> Result<(), RepoError> {
+        self.pairs.lock().unwrap().remove(&(user_id, offer_id));
+        Ok(())
+    }
+    async fn list(
+        &self,
+        user_id: UserId,
+        cursor: Option<CollectionCursor>,
+        limit: usize,
+    ) -> Result<SavedOfferPage, RepoError> {
+        let pairs = self.pairs.lock().unwrap();
+        let offers = self.offers.lock().unwrap();
+        let mut entries = pairs
+            .iter()
+            .filter(|((owner, _), _)| *owner == user_id)
+            .filter(|((_, id), time)| {
+                cursor.is_none_or(|c| (**time, id.as_uuid()) < (c.created_at, c.id))
+            })
+            .map(|((_, id), time)| (*id, *time))
+            .collect::<Vec<_>>();
+        entries.sort_by(|a, b| {
+            b.1.cmp(&a.1)
+                .then_with(|| b.0.as_uuid().cmp(&a.0.as_uuid()))
+        });
+        let page_size = limit.clamp(1, 50);
+        let has_more = entries.len() > page_size;
+        let items = entries
+            .into_iter()
+            .take(page_size)
+            .map(|(offer_id, created_at)| SavedOffer {
+                offer_id,
+                offer: offers
+                    .iter()
+                    .find(|o| o.id == offer_id && o.is_public())
+                    .cloned(),
+                created_at,
+                id: offer_id.as_uuid(),
+            })
+            .collect::<Vec<_>>();
+        let next_cursor = if has_more {
+            items
+                .last()
+                .map(|item| CollectionCursor::new(item.created_at, item.id).encode())
+        } else {
+            None
+        };
+        Ok(SavedOfferPage { items, next_cursor })
+    }
+}
+
+#[derive(Default)]
+pub struct FakeFollowRepository {
+    pub pairs: Arc<Mutex<FollowMap>>,
+    pub people: Arc<Mutex<HashMap<UserId, crate::user::User>>>,
+}
+impl FakeFollowRepository {
+    /// Adds identity data for a followed person in repository tests.
+    pub fn add_person(&self, person: crate::user::User) {
+        self.people.lock().unwrap().insert(person.id, person);
+    }
+}
+#[async_trait]
+impl crate::ports::FollowRepository for FakeFollowRepository {
+    async fn is_following(&self, user_id: UserId, followed_id: UserId) -> Result<bool, RepoError> {
+        Ok(self
+            .pairs
+            .lock()
+            .unwrap()
+            .contains_key(&(user_id, followed_id)))
+    }
+    async fn follow(&self, user_id: UserId, followed_id: UserId) -> Result<(), RepoError> {
+        if user_id == followed_id {
+            return Err(RepoError::Conflict {
+                entity: "follow",
+                key: "cannot follow yourself".into(),
+            });
+        }
+        self.pairs
+            .lock()
+            .unwrap()
+            .entry((user_id, followed_id))
+            .or_insert_with(Utc::now);
+        Ok(())
+    }
+    async fn unfollow(&self, user_id: UserId, followed_id: UserId) -> Result<(), RepoError> {
+        self.pairs.lock().unwrap().remove(&(user_id, followed_id));
+        Ok(())
+    }
+    async fn list(
+        &self,
+        user_id: UserId,
+        cursor: Option<CollectionCursor>,
+        limit: usize,
+    ) -> Result<FollowPage, RepoError> {
+        let pairs = self.pairs.lock().unwrap();
+        let people = self.people.lock().unwrap();
+        let mut entries = pairs
+            .iter()
+            .filter(|((owner, person), _)| *owner == user_id && people.contains_key(person))
+            .filter(|((_, person), time)| {
+                cursor.is_none_or(|c| (**time, person.as_uuid()) < (c.created_at, c.id))
+            })
+            .map(|((_, person), time)| (*person, *time))
+            .collect::<Vec<_>>();
+        entries.sort_by(|a, b| {
+            b.1.cmp(&a.1)
+                .then_with(|| b.0.as_uuid().cmp(&a.0.as_uuid()))
+        });
+        let page_size = limit.clamp(1, 50);
+        let has_more = entries.len() > page_size;
+        let items = entries
+            .into_iter()
+            .take(page_size)
+            .filter_map(|(id, created_at)| {
+                people
+                    .get(&id)
+                    .cloned()
+                    .map(|person| crate::saved::FollowedPerson {
+                        person,
+                        created_at,
+                        id: id.as_uuid(),
+                    })
+            })
+            .collect::<Vec<_>>();
+        let next_cursor = if has_more {
+            items
+                .last()
+                .map(|item| CollectionCursor::new(item.created_at, item.id).encode())
+        } else {
+            None
+        };
+        Ok(FollowPage { items, next_cursor })
     }
 }
 
@@ -734,6 +903,12 @@ impl Registry for FakeRegistry {
     fn conversations(&self) -> &(dyn ConversationRepository + 'static) {
         unimplemented!()
     }
+    fn saved_offers(&self) -> &(dyn crate::ports::SavedOfferRepository + 'static) {
+        self.saved_offers.as_ref()
+    }
+    fn follows(&self) -> &(dyn crate::ports::FollowRepository + 'static) {
+        self.follows.as_ref()
+    }
 }
 
 #[cfg(test)]
@@ -744,7 +919,33 @@ impl Registry for FakeRegistry {
 )]
 mod tests {
     use super::*;
+    use crate::ports::{FollowRepository, SavedOfferRepository};
     use futures::future::join_all;
+
+    #[tokio::test]
+    async fn saved_and_follow_toggles_are_idempotent_and_reject_self_follow() {
+        let user = UserId::generate();
+        let offer = OfferId::generate();
+        let saved = FakeSavedOfferRepository::default();
+        saved.save(user, offer).await.unwrap();
+        let first_time = saved.pairs.lock().unwrap()[&(user, offer)];
+        saved.save(user, offer).await.unwrap();
+        assert_eq!(saved.pairs.lock().unwrap().len(), 1);
+        assert_eq!(saved.pairs.lock().unwrap()[&(user, offer)], first_time);
+        saved.unsave(user, offer).await.unwrap();
+        saved.unsave(user, offer).await.unwrap();
+        assert!(saved.pairs.lock().unwrap().is_empty());
+
+        let follows = FakeFollowRepository::default();
+        assert!(follows.follow(user, user).await.is_err());
+        let other = UserId::generate();
+        follows.follow(user, other).await.unwrap();
+        follows.follow(user, other).await.unwrap();
+        assert_eq!(follows.pairs.lock().unwrap().len(), 1);
+        follows.unfollow(user, other).await.unwrap();
+        follows.unfollow(user, other).await.unwrap();
+        assert!(follows.pairs.lock().unwrap().is_empty());
+    }
 
     #[tokio::test]
     async fn test_fake_offer_repository_idempotency_concurrent() {

@@ -153,6 +153,12 @@ impl Registry for TestRegistry {
     fn conversations(&self) -> &(dyn haven_domain::ports::ConversationRepository + 'static) {
         &self.convs_repo
     }
+    fn saved_offers(&self) -> &(dyn haven_domain::ports::SavedOfferRepository + 'static) {
+        unimplemented!()
+    }
+    fn follows(&self) -> &(dyn haven_domain::ports::FollowRepository + 'static) {
+        unimplemented!()
+    }
 }
 
 fn setup_test_app() -> (topcoat::router::Router, TestRegistry) {

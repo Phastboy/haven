@@ -2,7 +2,7 @@
 
 One story, two lanes. Lanes are roles, not people: the **Offerer** (the person making an offer) and the **Responder** (the person responding to it). One person can play both. Stages follow `ROADMAP.md`; only the current stage is detailed.
 
-Status: draft. Only entries under **Decided** were confirmed by the owner. Everything else is open or an observation from the code.
+Status: draft. Only entries under **Decided** were confirmed by the owner. Everything else is open or an observation from the code. Stage 0.5 is being implemented in a separate worktree; this worktree handles 0.6 in parallel as requested.
 
 ## The story at a glance
 
@@ -81,6 +81,34 @@ sequenceDiagram
 
 ### Done when (from the roadmap)
 An offer can receive a meaningful response from another person, and the system meets its load-testing target.
+
+## Stage 0.6.x: Can I come back to what I care about? (implemented in parallel)
+
+Stage 0.5 is being developed in a separate worktree. This 0.6 journey is scoped independently at the owner's request.
+
+### Untangled items
+
+- A signed-in responder saves an available offer from `/offers/{slug}` and can remove it with the same control.
+- The owner returns to saved offers at `/profile/saved`; entries are ordered by save time with keyset pagination.
+- A signed-in visitor follows another person from `/profiles/{handle}` and can unfollow from the same control.
+- The owner returns to followed people at `/profile/following`; entries are ordered by follow time with keyset pagination.
+- Both owner pages require authentication and carry `noindex` metadata.
+
+### Decided
+
+- Repeating save/follow is idempotent. Repeating unsave/unfollow is also successful.
+- Following oneself is rejected by the repository and database constraint.
+- A saved offer that loses its final image remains as an **Offer no longer available** entry without a link or offer details. Deleting an offer cascades to its saved record. See `docs/0.6-saved-offers.md`.
+- Public offer/profile views keep public cache behavior for guests; personalized signed-in views use private, no-store caching.
+
+### Deferred dependencies
+
+- Searching and narrowing offers remain owned by 0.5.x and later stages.
+- Filtering the public offer feed by saved state belongs to 0.7.x.
+
+### Done when (from the roadmap)
+
+A person's interests can persist beyond a single visit.
 
 ## Stage 0.3.x: Can I know who is behind an offer? (completed)
 
