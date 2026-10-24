@@ -6,6 +6,7 @@ pub mod image;
 pub mod magic_link;
 pub mod offer;
 pub mod ports;
+pub mod saved;
 pub mod session;
 pub mod user;
 

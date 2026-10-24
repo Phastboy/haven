@@ -11,6 +11,7 @@ use topcoat::{
 };
 
 topcoat::router::module_param!(handle);
+pub mod follow;
 
 /// Keyset pagination query parameter for a person's public offers list.
 #[topcoat::router::query_params]
@@ -74,10 +75,32 @@ pub async fn view_profile(cx: &Cx) -> TopcoatResult<impl View> {
         avatar_srcset,
         bio: bio_text,
     };
+    let viewer = crate::app::auth::guard::current_user(cx).await?;
+    if viewer.is_some() {
+        topcoat::router::response::response_headers(cx).append(
+            topcoat::router::header::HeaderName::from_static("cache-control"),
+            topcoat::router::header::HeaderValue::from_static("private, no-store"),
+        );
+    }
+    let is_following = if let Some(person) = viewer.as_ref().filter(|person| person.id != user.id) {
+        registry
+            .follows()
+            .is_following(person.id, user.id)
+            .await
+            .map_err(crate::app::state::map_repo_err)?
+    } else {
+        false
+    };
 
     Ok(view! {
         <div class="profile-page">
             identity_block(data: identity_data)
+            if viewer.as_ref().is_some_and(|person| person.id != user.id) {
+                <form action=(format!("/profiles/{}/follow", user.handle.as_str())) method="post">
+                    <input type="hidden" name="action" value=(if is_following { "unfollow" } else { "follow" }) />
+                    <button type="submit" class="btn btn-secondary">(if is_following { "Unfollow" } else { "Follow" })</button>
+                </form>
+            }
 
             <section class="profile-offers">
                 <h2 class="section-title">(offers_heading)</h2>
