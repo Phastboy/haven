@@ -23,7 +23,7 @@ impl SearchQuery {
     /// # Errors
     ///
     /// Returns [`FilterValidationError::BlankSearchQuery`] if `raw` is empty after trimming,
-    /// or [`FilterValidationError::SearchQueryTooLong`] if it exceeds [`MAX_CHARS`].
+    /// or [`FilterValidationError::SearchQueryTooLong`] if it exceeds [`Self::MAX_CHARS`].
     pub fn parse(raw: impl AsRef<str>) -> Result<Self, FilterValidationError> {
         let trimmed = raw.as_ref().trim();
         if trimmed.is_empty() {
