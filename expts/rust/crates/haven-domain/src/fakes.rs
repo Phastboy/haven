@@ -58,8 +58,7 @@ impl OfferRepository for FakeOfferRepository {
 
     async fn list_public(
         &self,
-        cursor: Option<&crate::offer::OfferCursor>,
-        limit: usize,
+        query: &crate::offer::PublicFeedQuery,
     ) -> Result<crate::offer::PublicOfferPage, RepoError> {
         let lock = self.offers.lock().unwrap();
         let mut sorted = lock.clone();
@@ -69,21 +68,43 @@ impl OfferRepository for FakeOfferRepository {
                 .then_with(|| b.id.as_uuid().cmp(&a.id.as_uuid()))
         });
 
-        let capped_limit = limit.clamp(1, 50);
+        let capped_limit = query.limit.clamp(1, 50);
 
-        let filtered: Vec<Offer> = if let Some(c) = cursor {
-            sorted
-                .into_iter()
-                .filter(|o| {
-                    o.is_public() && (o.created_at, o.id.as_uuid()) < (c.created_at, c.id.as_uuid())
-                })
-                .collect()
-        } else {
-            sorted
-                .into_iter()
-                .filter(super::offer::Offer::is_public)
-                .collect()
-        };
+        let filtered: Vec<Offer> = sorted
+            .into_iter()
+            .filter(|o| {
+                if !o.is_public() {
+                    return false;
+                }
+                if let Some(ref title_q) = query.filter.title {
+                    let needle = title_q.as_str().to_lowercase();
+                    if !o.title.to_lowercase().contains(&needle) {
+                        return false;
+                    }
+                }
+                if let Some(ref pf) = query.filter.price {
+                    if o.currency != pf.currency {
+                        return false;
+                    }
+                    if let Some(min_p) = pf.min
+                        && o.price.as_i32() < min_p.as_i32()
+                    {
+                        return false;
+                    }
+                    if let Some(max_p) = pf.max
+                        && o.price.as_i32() > max_p.as_i32()
+                    {
+                        return false;
+                    }
+                }
+                if let Some(ref c) = query.cursor
+                    && (o.created_at, o.id.as_uuid()) >= (c.created_at, c.id.as_uuid())
+                {
+                    return false;
+                }
+                true
+            })
+            .collect();
 
         let has_more = filtered.len() > capped_limit;
         let items: Vec<Offer> = filtered.into_iter().take(capped_limit).collect();
