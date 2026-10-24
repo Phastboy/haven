@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Haven — Offers Feed Responsive</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0" rel="stylesheet"/>
+<style>
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: #F3F4F6;
+    color: #111827;
+    padding: 40px 24px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    display: inline-block;
+    vertical-align: middle;
+    line-height: 1;
+  }
+  .material-symbols-outlined.fill {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+
+  /* Presentation Board Styling */
+  .viewport-board {
+    display: flex;
+    flex-direction: column;
+    gap: 56px;
+    max-width: 1560px;
+    margin: 0 auto;
+  }
+
+  .board-section-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+  .board-section-subtitle {
+    font-size: 14px;
+    color: #6B7280;
+    margin-bottom: 24px;
+  }
+
+  .screen-frame {
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    position: relative;
+    box-sizing: border-box;
+  }
+
+  /* Responsive Frames Container */
+  .screens-row {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  /* Form Elements Common */
+  .haven-input {
+    height: 40px;
+    border: 1px solid #E5E7EB;
+    border-radius: 4px;
+    padding: 0 12px;
+    font-size: 14px;
+    color: #111827;
+    background: #FFFFFF;
+    outline: none;
+    font-family: inherit;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .haven-input:focus {
+    border-color: #111827;
+  }
+  .haven-input::placeholder {
+    color: #9CA3AF;
+  }
+
+  .haven-select {
+    height: 40px;
+    border: 1px solid #E5E7EB;
+    border-radius: 4px;
+    padding: 0 12px;
+    font-size: 14px;
+    color: #111827;
+    background: #FFFFFF;
+    outline: none;
+    font-family: inherit;
+    cursor: pointer;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .haven-select:focus {
+    border-color: #111827;
+  }
+
+  .haven-btn-primary {
+    height: 40px;
+    background: #111827;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 0 20px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-family: inherit;
+    white-space: nowrap;
+    box-sizing: border-box;
+  }
+  .haven-btn-primary:hover {
+    background: #000000;
+  }
+
+  .haven-btn-text {
+    font-size: 14px;
+    font-weight: 500;
+    color: #111827;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    padding: 0 8px;
+  }
+
+  /* Card Standard Structure - STRICT MIN-W-0 TO AVOID OVERFLOW */
+  .offer-card {
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    background: transparent;
+    user-select: none;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .offer-card-media {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 12px;
+    overflow: hidden;
+    background-color: #F9FAFB;
+    margin-bottom: 8px;
+  }
+
+  .offer-card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .save-heart-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #FFFFFF;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+    z-index: 2;
+    padding: 0;
+  }
+  .save-heart-btn .material-symbols-outlined {
+    font-size: 18px;
+    color: #111827;
+  }
+
+  .offer-meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .offer-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #111827;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 20px;
+    height: 20px;
+    width: 100%;
+  }
+
+  .offer-maker {
+    font-size: 13px;
+    font-weight: 400;
+    color: #6B7280;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 18px;
+    height: 18px;
+    margin-top: 1px;
+    width: 100%;
+  }
+
+  .offer-price {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+    white-space: nowrap;
+    line-height: 20px;
+    height: 20px;
+    margin-top: 2px;
+  }
+
+  /* Unread dot */
+  .unread-dot {
+    width: 6px;
+    height: 6px;
+    background: #111827;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* ------------------------------------------------------------- */
+  /* SCREEN 1: DESKTOP (1440px wide)                               */
+  /* ------------------------------------------------------------- */
+  .frame-1440 {
+    width: 1440px;
+    min-height: 980px;
+    display: flex;
+    box-sizing: border-box;
+  }
+
+  .desktop-rail {
+    width: 240px;
+    min-width: 240px;
+    background: #FFFFFF;
+    border-right: 1px solid #E5E7EB;
+    display: flex;
+    flex-direction: column;
+    padding: 32px 16px;
+  }
+
+  .desktop-wordmark {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #111827;
+    padding: 0 16px;
+    margin-bottom: 32px;
+  }
+
+  .rail-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    list-style: none;
+  }
+
+  .rail-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border-radius: 9999px;
+    font-size: 14px;
+    color: #6B7280;
+    text-decoration: none;
+    font-weight: 400;
+    position: relative;
+  }
+  .rail-item.active {
+    background-color: #F3F4F6;
+    color: #111827;
+    font-weight: 600;
+  }
+  .rail-item .material-symbols-outlined {
+    font-size: 20px;
+  }
+
+  .desktop-main {
+    flex: 1;
+    min-width: 0;
+    background: #FFFFFF;
+    padding: 32px 32px 48px 32px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .desktop-filter-bar {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid #F3F4F6;
+    margin-bottom: 28px;
+    flex-wrap: nowrap;
+    width: 100%;
+  }
+
+  .filter-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .filter-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #6B7280;
+    white-space: nowrap;
+  }
+
+  /* 4 Strictly Equal Columns */
+  .desktop-grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 24px;
+    width: 100%;
+  }
+
+  .pagination-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 36px;
+    padding-top: 20px;
+  }
+  .btn-next {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: inherit;
+  }
+
+  /* ------------------------------------------------------------- */
+  /* SCREEN 2: TABLET - SMALL DESKTOP (1024px wide)               */
+  /* ------------------------------------------------------------- */
+  .frame-1024 {
+    width: 1024px;
+    min-height: 980px;
+    display: flex;
+    box-sizing: border-box;
+  }
+
+  .collapsed-rail {
+    width: 72px;
+    min-width: 72px;
+    background: #FFFFFF;
+    border-right: 1px solid #E5E7EB;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 0;
+  }
+
+  .collapsed-monogram {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+    letter-spacing: -0.02em;
+    margin-bottom: 28px;
+  }
+
+  .collapsed-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    list-style: none;
+    width: 100%;
+    align-items: center;
+  }
+
+  .collapsed-item {
+    width: 44px;
+    height: 44px;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6B7280;
+    text-decoration: none;
+    position: relative;
+  }
+  .collapsed-item.active {
+    background-color: #F3F4F6;
+    color: #111827;
+  }
+  .collapsed-item .unread-dot-badge {
+    position: absolute;
+    top: 9px;
+    right: 9px;
+    width: 6px;
+    height: 6px;
+    background: #111827;
+    border-radius: 50%;
+  }
+
+  .tablet-main {
+    flex: 1;
+    min-width: 0;
+    background: #FFFFFF;
+    padding: 32px 32px 48px 32px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* 3 Strictly Equal Columns */
+  .tablet-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+    width: 100%;
+  }
+
+  /* ------------------------------------------------------------- */
+  /* SCREEN 3: MOBILE (390px wide)                                 */
+  /* ------------------------------------------------------------- */
+  .frame-390 {
+    width: 390px;
+    min-width: 390px;
+    max-width: 390px;
+    min-height: 844px;
+    background: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    padding-bottom: 64px; /* Tab bar space */
+    box-sizing: border-box;
+  }
+
+  .mobile-content {
+    padding: 20px 16px 24px 16px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .mobile-filter-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 24px;
+    min-width: 0;
+  }
+
+  .mobile-search-row {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+  .mobile-search-row .haven-input {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mobile-disclosure-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: #F9FAFB;
+    border: 1px solid #E5E7EB;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #111827;
+    cursor: pointer;
+  }
+
+  /* 2 Strictly Equal Columns */
+  .mobile-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    width: 100%;
+  }
+
+  .mobile-tab-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 56px;
+    background: #FFFFFF;
+    border-top: 1px solid #E5E7EB;
+    display: flex;
+    z-index: 10;
+  }
+
+  .mobile-tab-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    text-decoration: none;
+    color: #6B7280;
+    position: relative;
+    min-height: 44px;
+  }
+  .mobile-tab-item.active {
+    color: #111827;
+    font-weight: 600;
+  }
+  .mobile-tab-item .material-symbols-outlined {
+    font-size: 22px;
+  }
+  .mobile-tab-label {
+    font-size: 11px;
+    line-height: 1;
+  }
+  .mobile-tab-item .tab-unread-dot {
+    position: absolute;
+    top: 6px;
+    right: calc(50% - 14px);
+    width: 5px;
+    height: 5px;
+    background: #111827;
+    border-radius: 50%;
+  }
+
+  /* Inline mobile expanded panel */
+  .mobile-expanded-panel {
+    border: 1px solid #E5E7EB;
+    border-radius: 4px;
+    padding: 12px;
+    background: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .mobile-validation-alert {
+    border-left: 2px solid #111827;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #111827;
+    background: #F9FAFB;
+  }
+
+  /* ------------------------------------------------------------- */
+  /* SECTION: AUXILIARY STATE VARIATIONS                           */
+  /* ------------------------------------------------------------- */
+  .states-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    gap: 24px;
+  }
+
+  .state-card {
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    min-width: 0;
+  }
+
+  .state-badge {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6B7280;
+    margin-bottom: 12px;
+  }
+
+  /* Validation banner */
+  .validation-error-box {
+    border-left: 2px solid #111827;
+    padding: 8px 12px;
+    background: #F9FAFB;
+    font-size: 13px;
+    font-weight: 600;
+    color: #111827;
+    margin-top: 8px;
+  }
+
+  /* Empty state box */
+  .state-empty-content {
+    padding: 32px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .state-empty-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+    letter-spacing: -0.01em;
+  }
+  .state-empty-text {
+    font-size: 14px;
+    color: #6B7280;
+    max-width: 360px;
+  }
+
+  /* Save Heart Close-up */
+  .heart-test-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 12px;
+  }
+  .heart-sample-tile {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 8px;
+  }
+  .heart-sample-tile.light-photo {
+    background: #F3F4F6 url('https://lh3.googleusercontent.com/aida/AEtjO1XrKE0NfeYMw6O0thYPYzgmXEt9iguK-82oo61_CPJ7Jt_hSs0R-Bl8dfiXHAYYGVaod2QccJeAm_W5N8A_qHtH0iLIUplZI1Vb_9X5A5TVdYR6MXZ5NRv1ZKO5zFsTTeOSh66fdKSey3vMRb5JdMTrQ6s9aqZp9VH_hV7E_b6pJ8-2-KjQ1CyHwbNBbVDSugkpg0U9OROp_dI0BF0C5-11JLnpBOpz5Eh92WeAlHDdnAGxUwOsuW_5oCar') center/cover no-repeat;
+  }
+  .heart-sample-tile.dark-photo {
+    background: #2D2D2D url('https://lh3.googleusercontent.com/aida/AEtjO1VZqRFitvxnL2auISCL-Tkz824VJ5dzimpZh-2mvz06qqgtVrZAsdUGxVGXctWpn5u2qD_hWTzYRXmJNka9yqsFLWGy3qNyRgeJBAkTz9Sz0qo76I8gIxpCYKYS4IacRs6IcexoscvPUJiQEU2WLfrp5vtraA8CxtNHKlFEOwcAVDgpRk_IEJQHjVvi2lN92azZURS8taI7DQJF72HI4YSxRuZ4UwbLfuFeAk9RfBxML94TM1SX5KhC-YqY') center/cover no-repeat;
+  }
+  .heart-tile-caption {
+    background: rgba(255,255,255,0.92);
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #111827;
+    padding: 2px 6px;
+    display: inline-block;
+    align-self: flex-start;
+  }
+
+  /* Side-by-side long text mobile card comparison */
+  .long-text-cards-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 180px));
+    gap: 12px;
+    margin-top: 12px;
+    background: #FAFAFA;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #E5E7EB;
+  }
+</style>
+</head>
+<body>
+<div class="viewport-board">
+<!-- ============================================================ -->
+<!-- 1. FULL-WIDTH DESKTOP (1440px)                               -->
+<!-- ============================================================ -->
+<div>
+<h2 class="board-section-title">1. Desktop Viewport (1440px wide)</h2>
+<p class="board-section-subtitle">240px fixed left rail, outline chat-bubble Messages icon, direct filter bar (no "Offers" heading), 4 strictly equal columns (`repeat(4, minmax(0, 1fr))`), 24px gap, 32px side padding</p>
+<div class="screen-frame frame-1440">
+<!-- 240px Fixed Left Rail -->
+<aside class="desktop-rail">
+<div class="desktop-wordmark">Haven</div>
+<ul class="rail-nav">
+<li>
+<a class="rail-item active" href="#">
+<span class="material-symbols-outlined">grid_view</span>
+<span>Offers</span>
+</a>
+</li>
+<li>
+<a class="rail-item" href="#">
+<span class="material-symbols-outlined">chat_bubble_outline</span>
+<span>Messages</span>
+<span class="unread-dot" style="margin-left:auto;"></span>
+</a>
+</li>
+<li>
+<a class="rail-item" href="#">
+<span class="material-symbols-outlined">person</span>
+<span>Profile</span>
+</a>
+</li>
+</ul>
+</aside>
+<!-- Content Area: NO "Offers" heading, starts directly with filter bar -->
+<main class="desktop-main">
+<!-- Filter Bar: Search, Currency, Min, Max, Filter CTA -->
+<div class="desktop-filter-bar">
+<div class="filter-field-group" style="flex: 1; min-width: 220px;">
+<label class="filter-label" for="d-search">Find by title</label>
+<input class="haven-input" id="d-search" placeholder="Search offers by name..." type="text"/>
+</div>
+<div class="filter-field-group" style="width: 120px; flex-shrink: 0;">
+<label class="filter-label" for="d-curr">Currency</label>
+<select class="haven-select" id="d-curr">
+<option>Any</option>
+<option>NGN</option>
+<option>USD</option>
+<option>EUR</option>
+<option>GBP</option>
+<option>CAD</option>
+<option>AUD</option>
+<option>KES</option>
+<option>GHS</option>
+</select>
+</div>
+<div class="filter-field-group" style="width: 120px; flex-shrink: 0;">
+<label class="filter-label" for="d-min">Min price</label>
+<input class="haven-input" id="d-min" placeholder="0" type="number"/>
+</div>
+<div class="filter-field-group" style="width: 160px; flex-shrink: 0;">
+<label class="filter-label" for="d-max">Max price (0 for Free)</label>
+<input class="haven-input" id="d-max" placeholder="No limit" type="number"/>
+</div>
+<div style="display:flex; align-items:center; flex-shrink: 0;">
+<button class="haven-btn-primary">Filter</button>
+</div>
+</div>
+<!-- 4-Column Grid: 8 Realistic sample offers with fixed aligned row heights & truncate -->
+<div class="desktop-grid-4">
+<!-- Card 1 (Saved state) -->
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Hand-woven Aso Oke fabric" src="https://lh3.googleusercontent.com/aida/AEtjO1VRikXfaKCu4CGKwXbkzmtCG7lNNsxOdMWXPdVVdGrplJRwQLTMOdHgHLknJZzsrlq2ik4MpPQG3s6MG6Bpw4aMfJH6R4Mt1owLcYnsU7EEID_F6N8z-7qBkwBPvpg2GN3BpqyvTVymy5b9RU3SDC7Uij4DYvBIXEQMy627PT4GzoPwGXwxsfz2XxisQPGtNsgrt6dl1_DPmaz_UHv9fRNoDixIlcNuU22GtZ7uLJpGA2KBlZ_S2cb3zENG"/>
+<button aria-label="Toggle save" class="save-heart-btn">
+<span class="material-symbols-outlined fill">favorite</span>
+</button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Hand-woven Aso Oke fabric, 6 yards">Hand-woven Aso Oke fabric, 6 yards</div>
+<div class="offer-maker" title="Adaeze Obi">Adaeze Obi</div>
+<div class="offer-price">45,000 NGN</div>
+</div>
+</article>
+<!-- Card 2 (Unsaved state) -->
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Logo and brand identity" src="https://lh3.googleusercontent.com/aida/AEtjO1XrKE0NfeYMw6O0thYPYzgmXEt9iguK-82oo61_CPJ7Jt_hSs0R-Bl8dfiXHAYYGVaod2QccJeAm_W5N8A_qHtH0iLIUplZI1Vb_9X5A5TVdYR6MXZ5NRv1ZKO5zFsTTeOSh66fdKSey3vMRb5JdMTrQ6s9aqZp9VH_hV7E_b6pJ8-2-KjQ1CyHwbNBbVDSugkpg0U9OROp_dI0BF0C5-11JLnpBOpz5Eh92WeAlHDdnAGxUwOsuW_5oCar"/>
+<button aria-label="Toggle save" class="save-heart-btn">
+<span class="material-symbols-outlined">favorite</span>
+</button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Logo and brand identity for small businesses">Logo and brand identity for small businesses</div>
+<div class="offer-maker" title="Tunde Bakare">Tunde Bakare</div>
+<div class="offer-price">120,000 NGN</div>
+</div>
+</article>
+<!-- Card 3 (Unsaved state) -->
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Weekly vegetable box" src="https://lh3.googleusercontent.com/aida/AEtjO1Ua0BPUwAyue-PT1W8iPWi1VvPRakloMVMRytFz8-bKWFRHQ7Rprh3Uf7nRdIJItYVgISsQYd7QIUZrDeXxr8dreiUQge4tOaUiT2CWaI7xmbWoF5h3ZS4T9rop_Tast398NDfAw-hUq3MDv8Kykkm41EJj7-x8exR-zzQGqh9He2QBR_R8yDNjlSTMC4mBCf0-32QskFOIixYKCe1kMIg1Ns5iXhQOcbnNaUtWjmmn01sl9ihe6BnmSjA"/>
+<button aria-label="Toggle save" class="save-heart-btn">
+<span class="material-symbols-outlined">favorite</span>
+</button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Weekly vegetable box from my farm">Weekly vegetable box from my farm</div>
+<div class="offer-maker" title="Musa Danjuma">Musa Danjuma</div>
+<div class="offer-price">12,000 NGN</div>
+</div>
+</article>
+<!-- Card 4 (Unsaved state) -->
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Handmade ceramic mugs" src="https://lh3.googleusercontent.com/aida/AEtjO1XntquNWYRuLu4FhEzrKUM2r-OxAuz1JMtGLbFxmbMMlCeAOXz-lRnyrshtX-8HDOsVbrkCvm7Xzin3TSVK4-iZCDmiK7f2hNAFOICQPNPJdo4zm3ZOaCRejOpc0t2IZEvYlbCMuoECeFWvi1I12CSLVxLEcPVL7_OAmLTWq5DFKxofah0CImON3aOB5eEEkuqErItiGUjO9S8NUYowWi1izg6QlmzzbanYSQCziHGTAodSGAbV5DQf5S8T"/>
+<button aria-label="Toggle save" class="save-heart-btn">
+<span class="material-symbols-outlined">favorite</span>
+</button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Handmade ceramic mugs, set of 4">Handmade ceramic mugs, set of 4</div>
+<div class="offer-maker" title="Ife Adeyemi">Ife Adeyemi</div>
+<div class="offer-price">18 USD</div>
+</div>
+</article>
+<!-- Card 5 (Unsaved state) -->
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Beginner guitar lessons" src="https://lh3.googleusercontent.com/aida/AEtjO1XoGeTZyzOUUoH92T2T5W2L6L8ceHh8Wo03ZRxPfMfsbeTudoqnBDvm32J5hNwunMJ0M27jDu6TZ7TDsO1_3EWop6qhGpsbbncQ8KgE3B52yifgxXmn0lVhHDJC_IFCuNfiPwsvu3RT1onauQVkxcvf9bqv-NqBbMjdi0LNstomw3Qt_ZBzrk0j5PT4JYfGTPg1GUE76ZbOAueXm25YH2S_J8SwF7m0d0iC0OGEUZlqnQ4KU4iYQydUwoJE"/>
+<button aria-label="Toggle save" class="save-heart-btn">
+<span class="material-symbols-outlined">favorite</span>
+</button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Beginner guitar lessons, online">Beginner guitar lessons, online</div>
+<div class="offer-maker" title="Kofi Mensah">Kofi Mensah</div>
+<div class="offer-price">25 USD</div>
+</div>
+</article>
+<!-- Card 6 (Unsaved state) -->
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Used textbooks, engineering year 1" src="https://lh3.googleusercontent.com/aida/AEtjO1WbI4UllEXTYvvlgVP8fm-mTmrIR2_9bQmZJr8oCCVGzQpCSY0H2ljT_8_MAJnQj8vuZazlg1NeiTF96PKjOOwtbE4Jttb8gr5Xh0CGX8gauLKvQn5Bn_N0QFbXhafaGzYTxo-1hM56-wkm5yejarZxb9YFtjiMjdS8_Pk8GlT5cdRILFVLBUhnG8y4BtaKnn9Nj9s6Ks98Xn6cShEYHI2UV8ZmBE48x6FC_Pu_xNwwhXx9mxUZjAL1qYfG"/>
+<button aria-label="Toggle save" class="save-heart-btn">
+<span class="material-symbols-outlined">favorite</span>
+</button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Used textbooks, engineering year 1">Used textbooks, engineering year 1</div>
+<div class="offer-maker" title="Chidi Eze">Chidi Eze</div>
+<div class="offer-price">Free</div>
+</div>
+</article>
+<!-- Card 7 (Saved state - Long title & Long maker) -->
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Wedding and event photography package" src="https://lh3.googleusercontent.com/aida/AEtjO1VZqRFitvxnL2auISCL-Tkz824VJ5dzimpZh-2mvz06qqgtVrZAsdUGxVGXctWpn5u2qD_hWTzYRXmJNka9yqsFLWGy3qNyRgeJBAkTz9Sz0qo76I8gIxpCYKYS4IacRs6IcexoscvPUJiQEU2WLfrp5vtraA8CxtNHKlFEOwcAVDgpRk_IEJQHjVvi2lN92azZURS8taI7DQJF72HI4YSxRuZ4UwbLfuFeAk9RfBxML94TM1SX5KhC-YqY"/>
+<button aria-label="Toggle save" class="save-heart-btn">
+<span class="material-symbols-outlined fill">favorite</span>
+</button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Professional wedding and event photography package">Professional wedding and event photography package</div>
+<div class="offer-maker" title="Oluwadamilola Adebayo-Johnson">Oluwadamilola Adebayo-Johnson</div>
+<div class="offer-price">60,000 NGN</div>
+</div>
+</article>
+<!-- Card 8 (Unsaved state) -->
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Reclaimed wood side table" src="https://lh3.googleusercontent.com/aida/AEtjO1XQNMFBc5RmIGiI_Q7Y3ZDf_y1UJNA2TOELJDQuQrNpsp7AeB8Zxu7y8lhIF_s5-J4bLdpqsUNcy99k5ydfqSdR8iZVUXeRZeeAjSug64GF43maZXDeNsXdAAh3mvrNqAhriALI7JsRfzKWhBu2uhWX6ZLioZh4tIfq2QACF3mPSoZv2jG-5Hv8eGtu72hxixBSrAmu0ecuBPalFtimnkAgmVy7hRAVH5LwuKdw7K4nW5Bx9t0qX3Dq7lsR"/>
+<button aria-label="Toggle save" class="save-heart-btn">
+<span class="material-symbols-outlined">favorite</span>
+</button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Reclaimed wood side table">Reclaimed wood side table</div>
+<div class="offer-maker" title="Peter Njoroge">Peter Njoroge</div>
+<div class="offer-price">8,500 KES</div>
+</div>
+</article>
+</div>
+<!-- Next Pagination Text Button -->
+<div class="pagination-row">
+<button class="btn-next">
+<span>Next</span>
+<span class="material-symbols-outlined" style="font-size: 16px;">arrow_forward</span>
+</button>
+</div>
+</main>
+</div>
+</div>
+<!-- ============================================================ -->
+<!-- 2. TABLET / SMALL DESKTOP (1024px)                          -->
+<!-- ============================================================ -->
+<div>
+<h2 class="board-section-title">2. Tablet - Small Desktop Viewport (1024px wide)</h2>
+<p class="board-section-subtitle">72px collapsed left rail with "H" monogram, outline chat-bubble Messages icon, 9 currency options in dropdown, "Max price (0 for Free)", 3 strictly equal columns (`repeat(3, minmax(0, 1fr))`), 20px gap, 32px padding</p>
+<div class="screen-frame frame-1024">
+<!-- 72px Collapsed Rail -->
+<aside class="collapsed-rail">
+<div class="collapsed-monogram">H</div>
+<ul class="collapsed-nav">
+<li>
+<a class="collapsed-item active" href="#" title="Offers">
+<span class="material-symbols-outlined">grid_view</span>
+</a>
+</li>
+<li>
+<a class="collapsed-item" href="#" title="Messages">
+<span class="material-symbols-outlined">chat_bubble_outline</span>
+<span class="unread-dot-badge"></span>
+</a>
+</li>
+<li>
+<a class="collapsed-item" href="#" title="Profile">
+<span class="material-symbols-outlined">person</span>
+</a>
+</li>
+</ul>
+</aside>
+<!-- Main Tablet Content: NO "Offers" heading -->
+<main class="tablet-main">
+<!-- Tablet Filter Bar with all 9 currencies and Max price (0 for Free) -->
+<div class="desktop-filter-bar">
+<div class="filter-field-group" style="flex: 1; min-width: 170px;">
+<label class="filter-label">Find by title</label>
+<input class="haven-input" placeholder="Search offers by name..." type="text"/>
+</div>
+<div class="filter-field-group" style="width: 105px; flex-shrink: 0;">
+<label class="filter-label">Currency</label>
+<select class="haven-select">
+<option>Any</option>
+<option>NGN</option>
+<option>USD</option>
+<option>EUR</option>
+<option>GBP</option>
+<option>CAD</option>
+<option>AUD</option>
+<option>KES</option>
+<option>GHS</option>
+</select>
+</div>
+<div class="filter-field-group" style="width: 105px; flex-shrink: 0;">
+<label class="filter-label">Min price</label>
+<input class="haven-input" placeholder="0" type="number"/>
+</div>
+<div class="filter-field-group" style="width: 155px; flex-shrink: 0;">
+<label class="filter-label">Max price (0 for Free)</label>
+<input class="haven-input" placeholder="No limit" type="number"/>
+</div>
+<button class="haven-btn-primary" style="flex-shrink: 0;">Filter</button>
+</div>
+<!-- 3 Strictly Equal Columns for 1024px -->
+<div class="tablet-grid-3">
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Aso Oke fabric" src="https://lh3.googleusercontent.com/aida/AEtjO1VRikXfaKCu4CGKwXbkzmtCG7lNNsxOdMWXPdVVdGrplJRwQLTMOdHgHLknJZzsrlq2ik4MpPQG3s6MG6Bpw4aMfJH6R4Mt1owLcYnsU7EEID_F6N8z-7qBkwBPvpg2GN3BpqyvTVymy5b9RU3SDC7Uij4DYvBIXEQMy627PT4GzoPwGXwxsfz2XxisQPGtNsgrt6dl1_DPmaz_UHv9fRNoDixIlcNuU22GtZ7uLJpGA2KBlZ_S2cb3zENG"/>
+<button class="save-heart-btn"><span class="material-symbols-outlined fill">favorite</span></button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Hand-woven Aso Oke fabric, 6 yards">Hand-woven Aso Oke fabric, 6 yards</div>
+<div class="offer-maker" title="Adaeze Obi">Adaeze Obi</div>
+<div class="offer-price">45,000 NGN</div>
+</div>
+</article>
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Logo and brand identity" src="https://lh3.googleusercontent.com/aida/AEtjO1XrKE0NfeYMw6O0thYPYzgmXEt9iguK-82oo61_CPJ7Jt_hSs0R-Bl8dfiXHAYYGVaod2QccJeAm_W5N8A_qHtH0iLIUplZI1Vb_9X5A5TVdYR6MXZ5NRv1ZKO5zFsTTeOSh66fdKSey3vMRb5JdMTrQ6s9aqZp9VH_hV7E_b6pJ8-2-KjQ1CyHwbNBbVDSugkpg0U9OROp_dI0BF0C5-11JLnpBOpz5Eh92WeAlHDdnAGxUwOsuW_5oCar"/>
+<button class="save-heart-btn"><span class="material-symbols-outlined">favorite</span></button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Logo and brand identity for small businesses">Logo and brand identity for small businesses</div>
+<div class="offer-maker" title="Tunde Bakare">Tunde Bakare</div>
+<div class="offer-price">120,000 NGN</div>
+</div>
+</article>
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Vegetable box" src="https://lh3.googleusercontent.com/aida/AEtjO1Ua0BPUwAyue-PT1W8iPWi1VvPRakloMVMRytFz8-bKWFRHQ7Rprh3Uf7nRdIJItYVgISsQYd7QIUZrDeXxr8dreiUQge4tOaUiT2CWaI7xmbWoF5h3ZS4T9rop_Tast398NDfAw-hUq3MDv8Kykkm41EJj7-x8exR-zzQGqh9He2QBR_R8yDNjlSTMC4mBCf0-32QskFOIixYKCe1kMIg1Ns5iXhQOcbnNaUtWjmmn01sl9ihe6BnmSjA"/>
+<button class="save-heart-btn"><span class="material-symbols-outlined">favorite</span></button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Weekly vegetable box from my farm">Weekly vegetable box from my farm</div>
+<div class="offer-maker" title="Musa Danjuma">Musa Danjuma</div>
+<div class="offer-price">12,000 NGN</div>
+</div>
+</article>
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Ceramic mugs" src="https://lh3.googleusercontent.com/aida/AEtjO1XntquNWYRuLu4FhEzrKUM2r-OxAuz1JMtGLbFxmbMMlCeAOXz-lRnyrshtX-8HDOsVbrkCvm7Xzin3TSVK4-iZCDmiK7f2hNAFOICQPNPJdo4zm3ZOaCRejOpc0t2IZEvYlbCMuoECeFWvi1I12CSLVxLEcPVL7_OAmLTWq5DFKxofah0CImON3aOB5eEEkuqErItiGUjO9S8NUYowWi1izg6QlmzzbanYSQCziHGTAodSGAbV5DQf5S8T"/>
+<button class="save-heart-btn"><span class="material-symbols-outlined">favorite</span></button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Handmade ceramic mugs, set of 4">Handmade ceramic mugs, set of 4</div>
+<div class="offer-maker" title="Ife Adeyemi">Ife Adeyemi</div>
+<div class="offer-price">18 USD</div>
+</div>
+</article>
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Guitar lessons" src="https://lh3.googleusercontent.com/aida/AEtjO1XoGeTZyzOUUoH92T2T5W2L6L8ceHh8Wo03ZRxPfMfsbeTudoqnBDvm32J5hNwunMJ0M27jDu6TZ7TDsO1_3EWop6qhGpsbbncQ8KgE3B52yifgxXmn0lVhHDJC_IFCuNfiPwsvu3RT1onauQVkxcvf9bqv-NqBbMjdi0LNstomw3Qt_ZBzrk0j5PT4JYfGTPg1GUE76ZbOAueXm25YH2S_J8SwF7m0d0iC0OGEUZlqnQ4KU4iYQydUwoJE"/>
+<button class="save-heart-btn"><span class="material-symbols-outlined">favorite</span></button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Beginner guitar lessons, online">Beginner guitar lessons, online</div>
+<div class="offer-maker" title="Kofi Mensah">Kofi Mensah</div>
+<div class="offer-price">25 USD</div>
+</div>
+</article>
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Engineering textbooks" src="https://lh3.googleusercontent.com/aida/AEtjO1WbI4UllEXTYvvlgVP8fm-mTmrIR2_9bQmZJr8oCCVGzQpCSY0H2ljT_8_MAJnQj8vuZazlg1NeiTF96PKjOOwtbE4Jttb8gr5Xh0CGX8gauLKvQn5Bn_N0QFbXhafaGzYTxo-1hM56-wkm5yejarZxb9YFtjiMjdS8_Pk8GlT5cdRILFVLBUhnG8y4BtaKnn9Nj9s6Ks98Xn6cShEYHI2UV8ZmBE48x6FC_Pu_xNwwhXx9mxUZjAL1qYfG"/>
+<button class="save-heart-btn"><span class="material-symbols-outlined">favorite</span></button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Used textbooks, engineering year 1">Used textbooks, engineering year 1</div>
+<div class="offer-maker" title="Chidi Eze">Chidi Eze</div>
+<div class="offer-price">Free</div>
+</div>
+</article>
+</div>
+<!-- Pagination -->
+<div class="pagination-row">
+<button class="btn-next">
+<span>Next</span>
+<span class="material-symbols-outlined" style="font-size: 16px;">arrow_forward</span>
+</button>
+</div>
+</main>
+</div>
+</div>
+<!-- ============================================================ -->
+<!-- 3. MOBILE VIEWPORT FRAMES (390px wide)                        -->
+<!-- ============================================================ -->
+<div>
+<h2 class="board-section-title">3. Mobile Viewport Variants (390px wide)</h2>
+<p class="board-section-subtitle">No "Offers" heading, 2 strictly equal columns (`repeat(2, minmax(0, 1fr))`), 12px gap, 16px side margins, outline chat-bubble Messages tab icon, single-line truncation</p>
+<div class="screens-row">
+<!-- Variant 3A: Collapsed Price Disclosure ("Price") -->
+<div>
+<div class="state-badge" style="margin-bottom: 8px;">3A. Mobile — Price Collapsed</div>
+<div class="screen-frame frame-390">
+<main class="mobile-content">
+<!-- Mobile Filter Section: NO "Offers" heading -->
+<div class="mobile-filter-section">
+<div class="mobile-search-row">
+<input class="haven-input" placeholder="Search offers by name..." type="text"/>
+<button class="haven-btn-primary" style="padding: 0 16px;">Filter</button>
+</div>
+<!-- Collapsed Price Disclosure Row explicitly reading "Price" -->
+<div class="mobile-disclosure-row">
+<span>Price</span>
+<span class="material-symbols-outlined" style="font-size: 18px; color: #6B7280;">expand_more</span>
+</div>
+</div>
+<!-- 2 Strictly Equal Mobile Columns -->
+<div class="mobile-grid-2">
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Aso Oke fabric" src="https://lh3.googleusercontent.com/aida/AEtjO1VRikXfaKCu4CGKwXbkzmtCG7lNNsxOdMWXPdVVdGrplJRwQLTMOdHgHLknJZzsrlq2ik4MpPQG3s6MG6Bpw4aMfJH6R4Mt1owLcYnsU7EEID_F6N8z-7qBkwBPvpg2GN3BpqyvTVymy5b9RU3SDC7Uij4DYvBIXEQMy627PT4GzoPwGXwxsfz2XxisQPGtNsgrt6dl1_DPmaz_UHv9fRNoDixIlcNuU22GtZ7uLJpGA2KBlZ_S2cb3zENG"/>
+<button class="save-heart-btn"><span class="material-symbols-outlined fill">favorite</span></button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Hand-woven Aso Oke fabric, 6 yards">Hand-woven Aso Oke fabric, 6 yards</div>
+<div class="offer-maker" title="Adaeze Obi">Adaeze Obi</div>
+<div class="offer-price">45,000 NGN</div>
+</div>
+</article>
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Brand identity" src="https://lh3.googleusercontent.com/aida/AEtjO1XrKE0NfeYMw6O0thYPYzgmXEt9iguK-82oo61_CPJ7Jt_hSs0R-Bl8dfiXHAYYGVaod2QccJeAm_W5N8A_qHtH0iLIUplZI1Vb_9X5A5TVdYR6MXZ5NRv1ZKO5zFsTTeOSh66fdKSey3vMRb5JdMTrQ6s9aqZp9VH_hV7E_b6pJ8-2-KjQ1CyHwbNBbVDSugkpg0U9OROp_dI0BF0C5-11JLnpBOpz5Eh92WeAlHDdnAGxUwOsuW_5oCar"/>
+<button class="save-heart-btn"><span class="material-symbols-outlined">favorite</span></button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Logo and brand identity for small businesses">Logo and brand identity for small businesses</div>
+<div class="offer-maker" title="Tunde Bakare">Tunde Bakare</div>
+<div class="offer-price">120,000 NGN</div>
+</div>
+</article>
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Vegetable box" src="https://lh3.googleusercontent.com/aida/AEtjO1Ua0BPUwAyue-PT1W8iPWi1VvPRakloMVMRytFz8-bKWFRHQ7Rprh3Uf7nRdIJItYVgISsQYd7QIUZrDeXxr8dreiUQge4tOaUiT2CWaI7xmbWoF5h3ZS4T9rop_Tast398NDfAw-hUq3MDv8Kykkm41EJj7-x8exR-zzQGqh9He2QBR_R8yDNjlSTMC4mBCf0-32QskFOIixYKCe1kMIg1Ns5iXhQOcbnNaUtWjmmn01sl9ihe6BnmSjA"/>
+<button class="save-heart-btn"><span class="material-symbols-outlined">favorite</span></button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Weekly vegetable box from my farm">Weekly vegetable box from my farm</div>
+<div class="offer-maker" title="Musa Danjuma">Musa Danjuma</div>
+<div class="offer-price">12,000 NGN</div>
+</div>
+</article>
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Ceramic mugs" src="https://lh3.googleusercontent.com/aida/AEtjO1XntquNWYRuLu4FhEzrKUM2r-OxAuz1JMtGLbFxmbMMlCeAOXz-lRnyrshtX-8HDOsVbrkCvm7Xzin3TSVK4-iZCDmiK7f2hNAFOICQPNPJdo4zm3ZOaCRejOpc0t2IZEvYlbCMuoECeFWvi1I12CSLVxLEcPVL7_OAmLTWq5DFKxofah0CImON3aOB5eEEkuqErItiGUjO9S8NUYowWi1izg6QlmzzbanYSQCziHGTAodSGAbV5DQf5S8T"/>
+<button class="save-heart-btn"><span class="material-symbols-outlined">favorite</span></button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Handmade ceramic mugs, set of 4">Handmade ceramic mugs, set of 4</div>
+<div class="offer-maker" title="Ife Adeyemi">Ife Adeyemi</div>
+<div class="offer-price">18 USD</div>
+</div>
+</article>
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Guitar lessons" src="https://lh3.googleusercontent.com/aida/AEtjO1XoGeTZyzOUUoH92T2T5W2L6L8ceHh8Wo03ZRxPfMfsbeTudoqnBDvm32J5hNwunMJ0M27jDu6TZ7TDsO1_3EWop6qhGpsbbncQ8KgE3B52yifgxXmn0lVhHDJC_IFCuNfiPwsvu3RT1onauQVkxcvf9bqv-NqBbMjdi0LNstomw3Qt_ZBzrk0j5PT4JYfGTPg1GUE76ZbOAueXm25YH2S_J8SwF7m0d0iC0OGEUZlqnQ4KU4iYQydUwoJE"/>
+<button class="save-heart-btn"><span class="material-symbols-outlined">favorite</span></button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Beginner guitar lessons, online">Beginner guitar lessons, online</div>
+<div class="offer-maker" title="Kofi Mensah">Kofi Mensah</div>
+<div class="offer-price">25 USD</div>
+</div>
+</article>
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Engineering textbooks" src="https://lh3.googleusercontent.com/aida/AEtjO1WbI4UllEXTYvvlgVP8fm-mTmrIR2_9bQmZJr8oCCVGzQpCSY0H2ljT_8_MAJnQj8vuZazlg1NeiTF96PKjOOwtbE4Jttb8gr5Xh0CGX8gauLKvQn5Bn_N0QFbXhafaGzYTxo-1hM56-wkm5yejarZxb9YFtjiMjdS8_Pk8GlT5cdRILFVLBUhnG8y4BtaKnn9Nj9s6Ks98Xn6cShEYHI2UV8ZmBE48x6FC_Pu_xNwwhXx9mxUZjAL1qYfG"/>
+<button class="save-heart-btn"><span class="material-symbols-outlined">favorite</span></button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Used textbooks, engineering year 1">Used textbooks, engineering year 1</div>
+<div class="offer-maker" title="Chidi Eze">Chidi Eze</div>
+<div class="offer-price">Free</div>
+</div>
+</article>
+</div>
+<!-- Mobile Next Pagination -->
+<div class="pagination-row" style="margin-top: 24px;">
+<button class="btn-next">
+<span>Next</span>
+<span class="material-symbols-outlined" style="font-size: 16px;">arrow_forward</span>
+</button>
+</div>
+</main>
+<!-- Fixed Bottom Tab Bar with outline chat bubble -->
+<nav class="mobile-tab-bar">
+<a class="mobile-tab-item active" href="#">
+<span class="material-symbols-outlined">grid_view</span>
+<span class="mobile-tab-label">Offers</span>
+</a>
+<a class="mobile-tab-item" href="#">
+<span class="material-symbols-outlined">chat_bubble_outline</span>
+<span class="mobile-tab-label">Messages</span>
+<span class="tab-unread-dot"></span>
+</a>
+<a class="mobile-tab-item" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="mobile-tab-label">Profile</span>
+</a>
+</nav>
+</div>
+</div>
+<!-- Variant 3B: Expanded Price Row in place with 9 currencies, min, max, filter -->
+<div>
+<div class="state-badge" style="margin-bottom: 8px;">3B. Mobile — Price Expanded In-Place</div>
+<div class="screen-frame frame-390">
+<main class="mobile-content">
+<div class="mobile-filter-section">
+<div class="mobile-search-row">
+<input class="haven-input" placeholder="Search offers by name..." type="text"/>
+</div>
+<!-- Expanded Price Disclosure Row -->
+<div class="mobile-disclosure-row" style="background:#F3F4F6;">
+<span style="font-weight: 600;">Price</span>
+<span class="material-symbols-outlined" style="font-size: 18px; color: #111827;">expand_less</span>
+</div>
+<!-- Expanded Fields Panel -->
+<div class="mobile-expanded-panel">
+<div class="filter-field-group">
+<label class="filter-label">Currency</label>
+<select class="haven-select">
+<option>Any</option>
+<option>NGN</option>
+<option selected="">USD</option>
+<option>EUR</option>
+<option>GBP</option>
+<option>CAD</option>
+<option>AUD</option>
+<option>KES</option>
+<option>GHS</option>
+</select>
+</div>
+<div style="display: flex; gap: 8px;">
+<div class="filter-field-group" style="flex: 1;">
+<label class="filter-label">Min price</label>
+<input class="haven-input" placeholder="0" type="number" value="10"/>
+</div>
+<div class="filter-field-group" style="flex: 1;">
+<label class="filter-label">Max price (0 for Free)</label>
+<input class="haven-input" placeholder="No limit" type="number" value="50"/>
+</div>
+</div>
+<button class="haven-btn-primary" style="width: 100%; margin-top: 4px;">Filter</button>
+</div>
+</div>
+<!-- 2 Strictly Equal Mobile Columns -->
+<div class="mobile-grid-2">
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Ceramic mugs" src="https://lh3.googleusercontent.com/aida/AEtjO1XntquNWYRuLu4FhEzrKUM2r-OxAuz1JMtGLbFxmbMMlCeAOXz-lRnyrshtX-8HDOsVbrkCvm7Xzin3TSVK4-iZCDmiK7f2hNAFOICQPNPJdo4zm3ZOaCRejOpc0t2IZEvYlbCMuoECeFWvi1I12CSLVxLEcPVL7_OAmLTWq5DFKxofah0CImON3aOB5eEEkuqErItiGUjO9S8NUYowWi1izg6QlmzzbanYSQCziHGTAodSGAbV5DQf5S8T"/>
+<button class="save-heart-btn"><span class="material-symbols-outlined">favorite</span></button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Handmade ceramic mugs, set of 4">Handmade ceramic mugs, set of 4</div>
+<div class="offer-maker" title="Ife Adeyemi">Ife Adeyemi</div>
+<div class="offer-price">18 USD</div>
+</div>
+</article>
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Guitar lessons" src="https://lh3.googleusercontent.com/aida/AEtjO1XoGeTZyzOUUoH92T2T5W2L6L8ceHh8Wo03ZRxPfMfsbeTudoqnBDvm32J5hNwunMJ0M27jDu6TZ7TDsO1_3EWop6qhGpsbbncQ8KgE3B52yifgxXmn0lVhHDJC_IFCuNfiPwsvu3RT1onauQVkxcvf9bqv-NqBbMjdi0LNstomw3Qt_ZBzrk0j5PT4JYfGTPg1GUE76ZbOAueXm25YH2S_J8SwF7m0d0iC0OGEUZlqnQ4KU4iYQydUwoJE"/>
+<button class="save-heart-btn"><span class="material-symbols-outlined">favorite</span></button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Beginner guitar lessons, online">Beginner guitar lessons, online</div>
+<div class="offer-maker" title="Kofi Mensah">Kofi Mensah</div>
+<div class="offer-price">25 USD</div>
+</div>
+</article>
+</div>
+</main>
+<nav class="mobile-tab-bar">
+<a class="mobile-tab-item active" href="#">
+<span class="material-symbols-outlined">grid_view</span>
+<span class="mobile-tab-label">Offers</span>
+</a>
+<a class="mobile-tab-item" href="#">
+<span class="material-symbols-outlined">chat_bubble_outline</span>
+<span class="mobile-tab-label">Messages</span>
+<span class="tab-unread-dot"></span>
+</a>
+<a class="mobile-tab-item" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="mobile-tab-label">Profile</span>
+</a>
+</nav>
+</div>
+</div>
+<!-- Variant 3C: Expanded Price Row with Validation Error -->
+<div>
+<div class="state-badge" style="margin-bottom: 8px;">3C. Mobile — Price Validation Error</div>
+<div class="screen-frame frame-390">
+<main class="mobile-content">
+<div class="mobile-filter-section">
+<div class="mobile-search-row">
+<input class="haven-input" placeholder="Search offers by name..." type="text"/>
+</div>
+<!-- Expanded Price Disclosure Row -->
+<div class="mobile-disclosure-row" style="background:#F3F4F6;">
+<span style="font-weight: 600;">Price</span>
+<span class="material-symbols-outlined" style="font-size: 18px; color: #111827;">expand_less</span>
+</div>
+<!-- Expanded Fields Panel with Validation Alert -->
+<div class="mobile-expanded-panel">
+<div class="filter-field-group">
+<label class="filter-label">Currency</label>
+<select class="haven-select" style="border-color: #111827;">
+<option selected="">Any</option>
+<option>NGN</option>
+<option>USD</option>
+<option>EUR</option>
+<option>GBP</option>
+<option>CAD</option>
+<option>AUD</option>
+<option>KES</option>
+<option>GHS</option>
+</select>
+</div>
+<div style="display: flex; gap: 8px;">
+<div class="filter-field-group" style="flex: 1;">
+<label class="filter-label">Min price</label>
+<input class="haven-input" placeholder="0" type="number" value="20"/>
+</div>
+<div class="filter-field-group" style="flex: 1;">
+<label class="filter-label">Max price (0 for Free)</label>
+<input class="haven-input" placeholder="No limit" type="number" value="100"/>
+</div>
+</div>
+<!-- Validation Error: thin near-black left rule, bold near-black text -->
+<div class="mobile-validation-alert">
+                  Currency is required when filtering by price.
+                </div>
+<button class="haven-btn-primary" style="width: 100%; margin-top: 4px;">Filter</button>
+</div>
+</div>
+<!-- 2 Strictly Equal Mobile Columns -->
+<div class="mobile-grid-2">
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Aso Oke fabric" src="https://lh3.googleusercontent.com/aida/AEtjO1VRikXfaKCu4CGKwXbkzmtCG7lNNsxOdMWXPdVVdGrplJRwQLTMOdHgHLknJZzsrlq2ik4MpPQG3s6MG6Bpw4aMfJH6R4Mt1owLcYnsU7EEID_F6N8z-7qBkwBPvpg2GN3BpqyvTVymy5b9RU3SDC7Uij4DYvBIXEQMy627PT4GzoPwGXwxsfz2XxisQPGtNsgrt6dl1_DPmaz_UHv9fRNoDixIlcNuU22GtZ7uLJpGA2KBlZ_S2cb3zENG"/>
+<button class="save-heart-btn"><span class="material-symbols-outlined fill">favorite</span></button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Hand-woven Aso Oke fabric, 6 yards">Hand-woven Aso Oke fabric, 6 yards</div>
+<div class="offer-maker" title="Adaeze Obi">Adaeze Obi</div>
+<div class="offer-price">45,000 NGN</div>
+</div>
+</article>
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Brand identity" src="https://lh3.googleusercontent.com/aida/AEtjO1XrKE0NfeYMw6O0thYPYzgmXEt9iguK-82oo61_CPJ7Jt_hSs0R-Bl8dfiXHAYYGVaod2QccJeAm_W5N8A_qHtH0iLIUplZI1Vb_9X5A5TVdYR6MXZ5NRv1ZKO5zFsTTeOSh66fdKSey3vMRb5JdMTrQ6s9aqZp9VH_hV7E_b6pJ8-2-KjQ1CyHwbNBbVDSugkpg0U9OROp_dI0BF0C5-11JLnpBOpz5Eh92WeAlHDdnAGxUwOsuW_5oCar"/>
+<button class="save-heart-btn"><span class="material-symbols-outlined">favorite</span></button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Logo and brand identity for small businesses">Logo and brand identity for small businesses</div>
+<div class="offer-maker" title="Tunde Bakare">Tunde Bakare</div>
+<div class="offer-price">120,000 NGN</div>
+</div>
+</article>
+</div>
+</main>
+<nav class="mobile-tab-bar">
+<a class="mobile-tab-item active" href="#">
+<span class="material-symbols-outlined">grid_view</span>
+<span class="mobile-tab-label">Offers</span>
+</a>
+<a class="mobile-tab-item" href="#">
+<span class="material-symbols-outlined">chat_bubble_outline</span>
+<span class="mobile-tab-label">Messages</span>
+<span class="tab-unread-dot"></span>
+</a>
+<a class="mobile-tab-item" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="mobile-tab-label">Profile</span>
+</a>
+</nav>
+</div>
+</div>
+</div>
+</div>
+<!-- ============================================================ -->
+<!-- 4. COMPREHENSIVE INTERACTIVE STATES & VARIATIONS            -->
+<!-- ============================================================ -->
+<div>
+<h2 class="board-section-title">4. Auxiliary State Frames &amp; Variations</h2>
+<p class="board-section-subtitle">Side-by-side states required by the Haven system specifications</p>
+<div class="states-grid">
+<!-- State A: Filters Applied -->
+<div class="state-card">
+<div class="state-badge">State: Filters Applied</div>
+<div style="font-size: 13px; color: #111827; margin-bottom: 12px; display:flex; justify-content:space-between; align-items:center;">
+<span>Search: <strong>"mug"</strong> • USD • Max $30</span>
+<button class="haven-btn-text">Clear filters</button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Ceramic mugs" src="https://lh3.googleusercontent.com/aida/AEtjO1XntquNWYRuLu4FhEzrKUM2r-OxAuz1JMtGLbFxmbMMlCeAOXz-lRnyrshtX-8HDOsVbrkCvm7Xzin3TSVK4-iZCDmiK7f2hNAFOICQPNPJdo4zm3ZOaCRejOpc0t2IZEvYlbCMuoECeFWvi1I12CSLVxLEcPVL7_OAmLTWq5DFKxofah0CImON3aOB5eEEkuqErItiGUjO9S8NUYowWi1izg6QlmzzbanYSQCziHGTAodSGAbV5DQf5S8T"/>
+<button class="save-heart-btn"><span class="material-symbols-outlined">favorite</span></button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Handmade ceramic mugs, set of 4">Handmade ceramic mugs, set of 4</div>
+<div class="offer-maker" title="Ife Adeyemi">Ife Adeyemi</div>
+<div class="offer-price">18 USD</div>
+</div>
+</article>
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Side table mug setting" src="https://lh3.googleusercontent.com/aida/AEtjO1XQNMFBc5RmIGiI_Q7Y3ZDf_y1UJNA2TOELJDQuQrNpsp7AeB8Zxu7y8lhIF_s5-J4bLdpqsUNcy99k5ydfqSdR8iZVUXeRZeeAjSug64GF43maZXDeNsXdAAh3mvrNqAhriALI7JsRfzKWhBu2uhWX6ZLioZh4tIfq2QACF3mPSoZv2jG-5Hv8eGtu72hxixBSrAmu0ecuBPalFtimnkAgmVy7hRAVH5LwuKdw7K4nW5Bx9t0qX3Dq7lsR"/>
+<button class="save-heart-btn"><span class="material-symbols-outlined fill">favorite</span></button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Hand-painted rustic coffee mug">Hand-painted rustic coffee mug</div>
+<div class="offer-maker" title="Kofi Mensah">Kofi Mensah</div>
+<div class="offer-price">22 USD</div>
+</div>
+</article>
+</div>
+</div>
+<!-- State B: No Matches Found -->
+<div class="state-card">
+<div class="state-badge">State: No Matches Found</div>
+<div class="state-empty-content" style="padding: 20px 0;">
+<h3 class="state-empty-title">No offers match your filters</h3>
+<p class="state-empty-text">Try clearing your filters or broadening your search parameters.</p>
+<button class="haven-btn-primary" style="margin-top: 8px;">Clear all filters</button>
+</div>
+</div>
+<!-- State C: Empty Marketplace -->
+<div class="state-card">
+<div class="state-badge">State: Empty Marketplace</div>
+<div class="state-empty-content" style="padding: 20px 0;">
+<h3 class="state-empty-title">No offers available yet</h3>
+<p class="state-empty-text">There are no offers posted on Haven right now. Check back soon or create the first one.</p>
+<button class="haven-btn-primary" style="margin-top: 8px;">Create an Offer</button>
+</div>
+</div>
+<!-- State D: Price Filter Validation Error -->
+<div class="state-card">
+<div class="state-badge">State: Validation Error</div>
+<div style="font-size: 13px; color: #6B7280; margin-bottom: 6px;">Price filter submitted without currency:</div>
+<div class="validation-error-box">
+          Currency is required when filtering by price.
+        </div>
+</div>
+<!-- State E: Save Heart Close-up (Contrast Test) -->
+<div class="state-card">
+<div class="state-badge">Save Heart Close-up (Contrast Verification)</div>
+<p style="font-size: 12px; color: #6B7280; margin-bottom: 8px;">Tested over light and dark photography backgrounds to guarantee visibility:</p>
+<div class="heart-test-grid">
+<div class="heart-sample-tile light-photo">
+<button class="save-heart-btn" style="position:static; margin:auto;"><span class="material-symbols-outlined">favorite</span></button>
+<span class="heart-tile-caption">Light • Unsaved</span>
+</div>
+<div class="heart-sample-tile light-photo">
+<button class="save-heart-btn" style="position:static; margin:auto;"><span class="material-symbols-outlined fill">favorite</span></button>
+<span class="heart-tile-caption">Light • Saved</span>
+</div>
+<div class="heart-sample-tile dark-photo">
+<button class="save-heart-btn" style="position:static; margin:auto;"><span class="material-symbols-outlined">favorite</span></button>
+<span class="heart-tile-caption">Dark • Unsaved</span>
+</div>
+<div class="heart-sample-tile dark-photo">
+<button class="save-heart-btn" style="position:static; margin:auto;"><span class="material-symbols-outlined fill">favorite</span></button>
+<span class="heart-tile-caption">Dark • Saved</span>
+</div>
+</div>
+</div>
+<!-- State F: Long Text Single-Line Ellipsis Comparison -->
+<div class="state-card">
+<div class="state-badge">Edge Case: Long Text Alignment &amp; Ellipsis</div>
+<p style="font-size: 12px; color: #6B7280;">Both cards maintain strictly identical widths and heights; titles and maker names end in ellipses without widening the column:</p>
+<div class="long-text-cards-row">
+<!-- Long Title & Long Maker -->
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Photography package" src="https://lh3.googleusercontent.com/aida/AEtjO1VZqRFitvxnL2auISCL-Tkz824VJ5dzimpZh-2mvz06qqgtVrZAsdUGxVGXctWpn5u2qD_hWTzYRXmJNka9yqsFLWGy3qNyRgeJBAkTz9Sz0qo76I8gIxpCYKYS4IacRs6IcexoscvPUJiQEU2WLfrp5vtraA8CxtNHKlFEOwcAVDgpRk_IEJQHjVvi2lN92azZURS8taI7DQJF72HI4YSxRuZ4UwbLfuFeAk9RfBxML94TM1SX5KhC-YqY"/>
+<button class="save-heart-btn"><span class="material-symbols-outlined fill">favorite</span></button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Professional wedding and event photography package">Professional wedding and event photography package</div>
+<div class="offer-maker" title="Oluwadamilola Adebayo-Johnson">Oluwadamilola Adebayo-Johnson</div>
+<div class="offer-price">60,000 NGN</div>
+</div>
+</article>
+<!-- Short Text Baseline Card -->
+<article class="offer-card">
+<div class="offer-card-media">
+<img alt="Textbooks" src="https://lh3.googleusercontent.com/aida/AEtjO1WbI4UllEXTYvvlgVP8fm-mTmrIR2_9bQmZJr8oCCVGzQpCSY0H2ljT_8_MAJnQj8vuZazlg1NeiTF96PKjOOwtbE4Jttb8gr5Xh0CGX8gauLKvQn5Bn_N0QFbXhafaGzYTxo-1hM56-wkm5yejarZxb9YFtjiMjdS8_Pk8GlT5cdRILFVLBUhnG8y4BtaKnn9Nj9s6Ks98Xn6cShEYHI2UV8ZmBE48x6FC_Pu_xNwwhXx9mxUZjAL1qYfG"/>
+<button class="save-heart-btn"><span class="material-symbols-outlined">favorite</span></button>
+</div>
+<div class="offer-meta">
+<div class="offer-title" title="Used textbooks">Used textbooks</div>
+<div class="offer-maker" title="Chidi Eze">Chidi Eze</div>
+<div class="offer-price">Free</div>
+</div>
+</article>
+</div>
+</div>
+</div>
+</div>
+</div>
+</body></html>
