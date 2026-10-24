@@ -203,6 +203,12 @@ fn test_router(oauth_config: Option<GoogleOAuthConfig>) -> topcoat::router::Rout
         fn conversations(&self) -> &(dyn haven_domain::ports::ConversationRepository + 'static) {
             unimplemented!()
         }
+        fn saved_offers(&self) -> &(dyn haven_domain::ports::SavedOfferRepository + 'static) {
+            unimplemented!()
+        }
+        fn follows(&self) -> &(dyn haven_domain::ports::FollowRepository + 'static) {
+            unimplemented!()
+        }
     }
 
     let state = crate::app::state::AppState {

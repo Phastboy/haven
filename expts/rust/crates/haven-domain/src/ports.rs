@@ -9,6 +9,7 @@ use crate::offer::{
     CreateOffer, Offer, OfferCursor, OfferId, OfferPage, OfferSlug, PublicOfferPage, UpdateOffer,
     UserId,
 };
+use crate::saved::{CollectionCursor, FollowPage, SavedOfferPage};
 use crate::session::{HashedToken, Session, SessionId};
 use crate::user::{ProfileHandle, User, UserProfileUpdate};
 pub use async_trait::async_trait;
@@ -349,6 +350,51 @@ pub trait ConversationRepository: Send + Sync {
     ) -> Result<OfferInquirersPage, RepoError>;
 }
 
+/// Persistence boundary for saving offers and following people.
+#[async_trait]
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Repository signatures accept entity identifiers and a pagination cursor"
+)]
+pub trait SavedOfferRepository: Send + Sync {
+    /// Checks whether an offer is currently saved.
+    async fn is_saved(&self, user_id: UserId, offer_id: OfferId) -> Result<bool, RepoError>;
+    /// Saves an offer; repeated saves are successful and leave the original timestamp.
+    async fn save(&self, user_id: UserId, offer_id: OfferId) -> Result<(), RepoError>;
+    /// Removes a saved offer; repeated removals are successful.
+    async fn unsave(&self, user_id: UserId, offer_id: OfferId) -> Result<(), RepoError>;
+    /// Lists saved offers by reverse creation time. Missing or private offers remain in the list
+    /// with `offer` set to `None`.
+    async fn list(
+        &self,
+        user_id: UserId,
+        cursor: Option<CollectionCursor>,
+        limit: usize,
+    ) -> Result<SavedOfferPage, RepoError>;
+}
+
+/// Persistence boundary for following people.
+#[async_trait]
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Repository signatures accept entity identifiers and a pagination cursor"
+)]
+pub trait FollowRepository: Send + Sync {
+    /// Checks whether a person is currently followed.
+    async fn is_following(&self, user_id: UserId, followed_id: UserId) -> Result<bool, RepoError>;
+    /// Follows a person idempotently; rejects self-follow.
+    async fn follow(&self, user_id: UserId, followed_id: UserId) -> Result<(), RepoError>;
+    /// Unfollows a person idempotently.
+    async fn unfollow(&self, user_id: UserId, followed_id: UserId) -> Result<(), RepoError>;
+    /// Lists followed people by reverse creation time.
+    async fn list(
+        &self,
+        user_id: UserId,
+        cursor: Option<CollectionCursor>,
+        limit: usize,
+    ) -> Result<FollowPage, RepoError>;
+}
+
 /// A single composition root.
 pub trait Registry: Send + Sync {
     fn offers(&self) -> &(dyn OfferRepository + 'static);
@@ -358,4 +404,6 @@ pub trait Registry: Send + Sync {
     fn sessions(&self) -> &(dyn SessionRepository + 'static);
     fn offer_images(&self) -> &(dyn OfferImageRepository + 'static);
     fn conversations(&self) -> &(dyn ConversationRepository + 'static);
+    fn saved_offers(&self) -> &(dyn SavedOfferRepository + 'static);
+    fn follows(&self) -> &(dyn FollowRepository + 'static);
 }

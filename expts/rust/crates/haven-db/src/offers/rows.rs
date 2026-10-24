@@ -9,7 +9,7 @@ use uuid::Uuid;
     clippy::needless_pass_by_value,
     reason = "Internal DB mapping function"
 )]
-pub(super) fn map_row(
+pub(crate) fn map_row(
     id: Uuid,
     user_id: Uuid,
     slug: String,

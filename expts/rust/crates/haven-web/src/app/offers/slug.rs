@@ -10,6 +10,7 @@ use topcoat::{
 };
 
 pub mod message;
+pub mod save;
 
 topcoat::router::module_param!(slug);
 
@@ -48,14 +49,26 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
         .map_err(crate::app::state::map_repo_err)?
         .ok_or_else(topcoat::router::error::not_found)?;
 
-    let is_owner = match crate::app::auth::guard::current_user(cx).await {
-        Ok(Some(u)) => u.id == offer.user_id,
-        _ => false,
-    };
+    let viewer = crate::app::auth::guard::current_user(cx).await?;
+    let is_owner = viewer.as_ref().is_some_and(|u| u.id == offer.user_id);
 
     if !offer.is_public() && !is_owner {
         return Err(topcoat::router::error::not_found().into());
     }
+
+    let is_saved = if offer.is_public() {
+        if let Some(user) = viewer.as_ref().filter(|user| user.id != offer.user_id) {
+            registry
+                .saved_offers()
+                .is_saved(user.id, offer.id)
+                .await
+                .map_err(crate::app::state::map_repo_err)?
+        } else {
+            false
+        }
+    } else {
+        false
+    };
 
     let maker = registry
         .users()
@@ -72,10 +85,10 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
     );
 
     let headers = topcoat::router::response::response_headers(cx);
-    if is_owner {
+    if viewer.is_some() {
         headers.append(
             topcoat::router::header::HeaderName::from_static("cache-control"),
-            topcoat::router::header::HeaderValue::from_static("private, no-cache"),
+            topcoat::router::header::HeaderValue::from_static("private, no-store"),
         );
     } else {
         headers.append(
@@ -90,13 +103,14 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
         }
     }
 
-    let not_modified = topcoat::router::request::headers(cx)
-        .get_all(http::header::IF_NONE_MATCH)
-        .iter()
-        .any(|val| {
-            val.to_str()
-                .is_ok_and(|header_str| matches_if_none_match(header_str, &etag))
-        });
+    let not_modified = viewer.is_none()
+        && topcoat::router::request::headers(cx)
+            .get_all(http::header::IF_NONE_MATCH)
+            .iter()
+            .any(|val| {
+                val.to_str()
+                    .is_ok_and(|header_str| matches_if_none_match(header_str, &etag))
+            });
 
     let price_text = if offer.price.as_i32() == 0 {
         "Free".to_string()
@@ -149,6 +163,12 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
                     <p>(offer.description)</p>
                 </div>
 
+                if viewer.is_some() && !is_owner {
+                    <form action=(format!("/offers/{}/save", offer.slug.as_str())) method="post">
+                        <input type="hidden" name="action" value=(if is_saved { "unsave" } else { "save" }) />
+                        <button type="submit" class="btn btn-secondary">(if is_saved { "Remove from saved offers" } else { "Save offer" })</button>
+                    </form>
+                }
                 if !is_owner {
                     <div class="offer-inquiry-action">
                         <h3>"Message about this offer"</h3>

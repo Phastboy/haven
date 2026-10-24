@@ -3,12 +3,14 @@ pub mod conversations;
 pub mod magic_links;
 pub mod offers;
 pub mod outbox;
+pub mod saved;
 pub mod sessions;
 pub mod users;
 
 use haven_domain::ports::{
-    AccountRepository, ConversationRepository, MagicLinkRepository, OfferImageRepository,
-    OfferRepository, Registry, SessionRepository, UserRepository,
+    AccountRepository, ConversationRepository, FollowRepository, MagicLinkRepository,
+    OfferImageRepository, OfferRepository, Registry, SavedOfferRepository, SessionRepository,
+    UserRepository,
 };
 use sqlx::PgPool;
 
@@ -22,6 +24,8 @@ pub struct PostgresRegistry {
     magic_links: Box<dyn MagicLinkRepository>,
     sessions: Box<dyn SessionRepository>,
     conversations: Box<dyn ConversationRepository>,
+    saved_offers: Box<dyn SavedOfferRepository>,
+    follows: Box<dyn FollowRepository>,
 }
 
 impl PostgresRegistry {
@@ -38,6 +42,8 @@ impl PostgresRegistry {
             conversations: Box::new(conversations::PostgresConversationRepository::new(
                 pool.clone(),
             )),
+            saved_offers: Box::new(saved::PostgresSavedOfferRepository::new(pool.clone())),
+            follows: Box::new(saved::PostgresFollowRepository::new(pool.clone())),
         }
     }
 }
@@ -63,6 +69,12 @@ impl Registry for PostgresRegistry {
     }
     fn conversations(&self) -> &(dyn ConversationRepository + 'static) {
         self.conversations.as_ref()
+    }
+    fn saved_offers(&self) -> &(dyn SavedOfferRepository + 'static) {
+        self.saved_offers.as_ref()
+    }
+    fn follows(&self) -> &(dyn FollowRepository + 'static) {
+        self.follows.as_ref()
     }
 }
 
