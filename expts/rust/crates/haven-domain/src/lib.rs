@@ -10,6 +10,7 @@ pub mod session;
 pub mod user;
 
 pub use error::{
-    AccountError, ConversationDomainError, CursorError, DomainError, ImageValidationError,
-    MessageValidationError, OfferValidationError, ProfileError, SelfConversation, SessionError,
+    AccountError, ConversationDomainError, CursorError, DomainError, FilterValidationError,
+    ImageValidationError, MessageValidationError, OfferValidationError, ProfileError,
+    SelfConversation, SessionError,
 };

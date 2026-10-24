@@ -123,52 +123,60 @@ async fn fetch_cover_images_for_offers(
 
 pub(super) async fn list_public(
     pool: &DbPool,
-    cursor: Option<&OfferCursor>,
-    limit: usize,
+    query: &haven_domain::offer::PublicFeedQuery,
 ) -> Result<PublicOfferPage, RepoError> {
-    let capped_limit = limit.clamp(1, 50);
+    let capped_limit = query.limit.clamp(1, 50);
     let fetch_limit = match i64::try_from(capped_limit) {
         Ok(l) => l.saturating_add(1),
         Err(_) => 21,
     };
 
-    let rs = if let Some(c) = cursor {
-        sqlx::query_as!(
-            PublicOfferDbRow,
-            r#"
-            SELECT o.id, o.user_id, o.slug, o.title, o.description, o.price, o.currency, o.image_count, o.created_at, o.updated_at,
-                   u.display_name, u.handle
-            FROM offer o
-            JOIN "user" u ON o.user_id = u.id
-            WHERE o.image_count >= 1 AND (o.created_at, o.id) < ($1, $2)
-            ORDER BY o.created_at DESC, o.id DESC
-            LIMIT $3
-            "#,
-            c.created_at,
-            c.id.as_uuid(),
-            fetch_limit
-        )
-        .fetch_all(pool)
-        .await
-        .map_err(crate::map_sqlx_err)?
-    } else {
-        sqlx::query_as!(
-            PublicOfferDbRow,
-            r#"
-            SELECT o.id, o.user_id, o.slug, o.title, o.description, o.price, o.currency, o.image_count, o.created_at, o.updated_at,
-                   u.display_name, u.handle
-            FROM offer o
-            JOIN "user" u ON o.user_id = u.id
-            WHERE o.image_count >= 1
-            ORDER BY o.created_at DESC, o.id DESC
-            LIMIT $1
-            "#,
-            fetch_limit
-        )
-        .fetch_all(pool)
-        .await
-        .map_err(crate::map_sqlx_err)?
-    };
+    let title_param = query
+        .filter
+        .title
+        .as_ref()
+        .map(haven_domain::offer::SearchQuery::as_str);
+    let currency_param = query.filter.price.as_ref().map(|pf| pf.currency.as_str());
+    let min_price_param = query
+        .filter
+        .price
+        .as_ref()
+        .and_then(|pf| pf.min.as_ref().map(haven_domain::offer::Price::as_i32));
+    let max_price_param = query
+        .filter
+        .price
+        .as_ref()
+        .and_then(|pf| pf.max.as_ref().map(haven_domain::offer::Price::as_i32));
+    let cursor_created_at = query.cursor.as_ref().map(|c| c.created_at);
+    let cursor_id = query.cursor.as_ref().map(|c| c.id.as_uuid());
+
+    let rs = sqlx::query_as!(
+        PublicOfferDbRow,
+        r#"
+        SELECT o.id, o.user_id, o.slug, o.title, o.description, o.price, o.currency, o.image_count, o.created_at, o.updated_at,
+               u.display_name, u.handle
+        FROM offer o
+        JOIN "user" u ON o.user_id = u.id
+        WHERE o.image_count >= 1
+          AND ($1::text IS NULL OR o.title_search @@ plainto_tsquery('english', $1))
+          AND ($2::text IS NULL OR o.currency = $2)
+          AND ($3::int IS NULL OR o.price >= $3)
+          AND ($4::int IS NULL OR o.price <= $4)
+          AND ($5::timestamptz IS NULL OR (o.created_at, o.id) < ($5, $6))
+        ORDER BY o.created_at DESC, o.id DESC
+        LIMIT $7
+        "#,
+        title_param,
+        currency_param,
+        min_price_param,
+        max_price_param,
+        cursor_created_at,
+        cursor_id,
+        fetch_limit
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(crate::map_sqlx_err)?;
 
     let offer_ids: Vec<uuid::Uuid> = rs.iter().map(|r| r.id).collect();
     let mut covers = fetch_cover_images_for_offers(pool, &offer_ids).await?;

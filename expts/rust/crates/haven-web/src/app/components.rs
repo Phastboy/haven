@@ -6,6 +6,7 @@
 pub mod button;
 pub mod confirm_dialog;
 pub mod empty_state;
+pub mod feed_filters;
 pub mod field;
 pub mod form_error;
 pub mod identity_block;

@@ -2,6 +2,7 @@
 
 pub mod currency;
 pub mod cursor;
+pub mod filter;
 pub mod price;
 pub mod slug;
 pub mod validation;
@@ -16,6 +17,7 @@ use uuid::Uuid;
 
 pub use currency::{CurrencyCode, SUPPORTED_CURRENCIES};
 pub use cursor::{OfferCursor, OfferPage};
+pub use filter::{OfferFilter, PriceFilter, SearchQuery};
 pub use price::Price;
 pub use slug::{MAX_SLUG_CHARS, MIN_SLUG_CHARS, OfferSlug, RESERVED_SLUGS};
 pub use validation::{
@@ -25,6 +27,29 @@ pub use validation::{
 
 use crate::error::OfferValidationError;
 pub use crate::user::{DisplayName, ProfileHandle, UserId};
+
+/// Query parameters for listing public offers on the feed.
+#[derive(Debug, Clone, Default)]
+pub struct PublicFeedQuery {
+    /// Criteria for filtering offers by title, price, and currency.
+    pub filter: OfferFilter,
+    /// Optional keyset cursor to paginate after.
+    pub cursor: Option<OfferCursor>,
+    /// Maximum number of items to return in a single page.
+    pub limit: usize,
+}
+
+impl PublicFeedQuery {
+    /// Constructs a new public feed query.
+    #[must_use]
+    pub fn new(filter: OfferFilter, cursor: Option<OfferCursor>, limit: usize) -> Self {
+        Self {
+            filter,
+            cursor,
+            limit,
+        }
+    }
+}
 
 /// Public offer presentation containing core offer details and maker identity.
 #[derive(Debug, Clone, Serialize, Deserialize)]

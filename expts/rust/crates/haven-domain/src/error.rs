@@ -114,6 +114,25 @@ pub enum ImageValidationError {
     MinImagesRequired,
 }
 
+/// Filter validation and format errors.
+#[derive(Debug, Error, PartialEq, Eq, Clone)]
+pub enum FilterValidationError {
+    #[error("search query must not be blank")]
+    BlankSearchQuery,
+
+    #[error("search query must not exceed 100 characters")]
+    SearchQueryTooLong,
+
+    #[error("at least one of minimum price or maximum price must be specified")]
+    EmptyPriceFilter,
+
+    #[error("minimum price cannot be greater than maximum price")]
+    InvalidPriceRange,
+
+    #[error("currency is required when filtering by price")]
+    CurrencyRequired,
+}
+
 /// Unified domain error type composed from concern-specific error enums.
 #[derive(Debug, Error, PartialEq, Eq, Clone)]
 pub enum DomainError {
@@ -122,6 +141,9 @@ pub enum DomainError {
 
     #[error(transparent)]
     Offer(#[from] OfferValidationError),
+
+    #[error(transparent)]
+    Filter(#[from] FilterValidationError),
 
     #[error(transparent)]
     Session(#[from] SessionError),

@@ -1,15 +1,27 @@
 //! Public offers feed page and query parameters.
 
 use crate::app::components::empty_state::empty_state;
+use crate::app::components::feed_filters::feed_filters;
 use crate::app::components::offer_card::offer_card;
 use crate::app::components::pagination::pagination_nav;
+use haven_domain::offer::{
+    CurrencyCode, OfferCursor, OfferFilter, Price, PriceFilter, PublicFeedQuery, SearchQuery,
+};
 use topcoat::{Result as TopcoatResult, context::Cx, view::view};
 
-/// Keyset pagination query parameter for the public offers feed.
+/// Keyset pagination and filter query parameters for the public offers feed.
 #[topcoat::router::query_params]
 pub struct FeedQuery {
     /// Opaque cursor string marking the offer to list after.
     pub after: Option<String>,
+    /// Search query string matching offer title.
+    pub q: Option<String>,
+    /// ISO 4217 currency code.
+    pub currency: Option<String>,
+    /// Minimum price in minor units.
+    pub min_price: Option<i32>,
+    /// Maximum price in minor units (0 means Free).
+    pub max_price: Option<i32>,
 }
 
 /// Serves the public offers feed page at `/offers`.
@@ -17,28 +29,129 @@ pub struct FeedQuery {
 pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
     let query = topcoat::router::query_params::<FeedQuery>(cx).ok();
     let after_cursor = query
+        .as_ref()
         .and_then(|q| q.after.as_deref())
-        .and_then(|raw| haven_domain::offer::OfferCursor::decode(raw).ok());
+        .and_then(|raw| OfferCursor::decode(raw).ok());
+
+    let raw_q = query
+        .as_ref()
+        .and_then(|q| q.q.as_deref())
+        .unwrap_or_default()
+        .trim();
+    let raw_currency = query
+        .as_ref()
+        .and_then(|q| q.currency.as_deref())
+        .unwrap_or_default()
+        .trim();
+    let raw_min_price = query.as_ref().and_then(|q| q.min_price);
+    let raw_max_price = query.as_ref().and_then(|q| q.max_price);
+
+    let mut title_error = None;
+    let title_query = if raw_q.is_empty() {
+        None
+    } else {
+        match SearchQuery::parse(raw_q) {
+            Ok(sq) => Some(sq),
+            Err(e) => {
+                title_error = Some(e.to_string());
+                None
+            }
+        }
+    };
+
+    let mut price_error = None;
+    let price_filter = if raw_min_price.is_some() || raw_max_price.is_some() {
+        if raw_currency.is_empty() {
+            price_error = Some("Currency is required when filtering by price.".to_string());
+            None
+        } else if let Ok(curr) = CurrencyCode::parse(raw_currency) {
+            let min_p = raw_min_price.map(Price::new).transpose();
+            let max_p = raw_max_price.map(Price::new).transpose();
+
+            match (min_p, max_p) {
+                (Err(_), _) | (_, Err(_)) => {
+                    price_error = Some("Price must be non-negative.".to_string());
+                    None
+                }
+                (Ok(min_opt), Ok(max_opt)) => match PriceFilter::new(curr, min_opt, max_opt) {
+                    Ok(pf) => Some(pf),
+                    Err(e) => {
+                        price_error = Some(e.to_string());
+                        None
+                    }
+                },
+            }
+        } else {
+            price_error = Some("Invalid currency code.".to_string());
+            None
+        }
+    } else {
+        None
+    };
+
+    let filter = OfferFilter {
+        title: title_query,
+        price: price_filter,
+    };
+
+    let active_filters_count =
+        usize::from(filter.title.is_some()).saturating_add(usize::from(filter.price.is_some()));
+
+    let feed_query = PublicFeedQuery::new(filter, after_cursor, 20);
 
     let repo = crate::app::state::registry(cx).offers();
     let page = repo
-        .list_public(after_cursor.as_ref(), 20)
+        .list_public(&feed_query)
         .await
         .map_err(crate::app::state::map_repo_err)?;
 
-    let next_href = page.next_cursor.map(|c| format!("/offers?after={c}"));
+    let next_href = page.next_cursor.map(|c| {
+        let mut serializer = url::form_urlencoded::Serializer::new(String::new());
+        if !raw_q.is_empty() {
+            serializer.append_pair("q", raw_q);
+        }
+        if !raw_currency.is_empty() {
+            serializer.append_pair("currency", raw_currency);
+        }
+        if let Some(min) = raw_min_price {
+            serializer.append_pair("min_price", &min.to_string());
+        }
+        if let Some(max) = raw_max_price {
+            serializer.append_pair("max_price", &max.to_string());
+        }
+        serializer.append_pair("after", &c);
+        format!("/offers?{}", serializer.finish())
+    });
 
     let cloud_name = crate::app::state::cloudinary_cloud_name(cx);
 
     Ok(view! {
         <div class="offers-feed">
+            feed_filters(
+                title_query: raw_q.to_string(),
+                currency: raw_currency.to_string(),
+                min_price: raw_min_price,
+                max_price: raw_max_price,
+                title_error: title_error,
+                price_error: price_error,
+                active_filters_count: active_filters_count,
+            )
             if page.items.is_empty() {
-                empty_state(
-                    title: "No offers available yet",
-                    message: "There are no offers posted on Haven right now. Check back soon or create the first one.",
-                    action_href: Some("/profile/offers/new".to_string()),
-                    action_label: Some("Create an Offer".to_string()),
-                )
+                if active_filters_count > 0 {
+                    empty_state(
+                        title: "No offers match your filters",
+                        message: "Try clearing your filters or broadening your search parameters.",
+                        action_href: Some("/offers".to_string()),
+                        action_label: Some("Clear all filters".to_string()),
+                    )
+                } else {
+                    empty_state(
+                        title: "No offers available yet",
+                        message: "There are no offers posted on Haven right now. Check back soon or create the first one.",
+                        action_href: Some("/profile/offers/new".to_string()),
+                        action_label: Some("Create an Offer".to_string()),
+                    )
+                }
             } else {
                 <ul class="offer-list" role="list">
                     for (idx, item) in page.items.iter().enumerate() {

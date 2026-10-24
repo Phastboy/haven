@@ -2135,3 +2135,230 @@ async fn test_offer_images_security_and_authorization() {
     let res_csrf = router.handle(req_csrf).await;
     assert_eq!(res_csrf.status(), http::StatusCode::FORBIDDEN);
 }
+
+#[tokio::test]
+async fn test_feed_search_and_price_filtering_and_empty_states() {
+    let (router, registry) = setup_test_app();
+
+    let user = mock_user(UserId::generate(), AccountId::generate(), "artisan-search");
+    let _ = create_auth_session(&registry.users_repo, user.clone());
+
+    // Create 3 offers:
+    // 1. Handmade Oak Desk - NGN 5,000
+    // 2. Vintage Glass Table - NGN 15,000
+    // 3. Free Wooden Chair - NGN 0 (Free)
+    // 4. US Designer Lamp - USD 5,000
+    let o1 = registry
+        .offers_repo
+        .create(
+            user.id,
+            IdempotencyKey::new(Uuid::new_v4()),
+            &CreateOffer {
+                title: "Handmade Oak Desk".to_string(),
+                description: "Sturdy solid oak desk handcrafted with love.".to_string(),
+                price: Price::new(5000).unwrap(),
+                currency: CurrencyCode::Ngn,
+            },
+        )
+        .await
+        .unwrap()
+        .into_inner();
+
+    let o2 = registry
+        .offers_repo
+        .create(
+            user.id,
+            IdempotencyKey::new(Uuid::new_v4()),
+            &CreateOffer {
+                title: "Vintage Glass Table".to_string(),
+                description: "Mid-century round glass coffee table.".to_string(),
+                price: Price::new(15000).unwrap(),
+                currency: CurrencyCode::Ngn,
+            },
+        )
+        .await
+        .unwrap()
+        .into_inner();
+
+    let o3 = registry
+        .offers_repo
+        .create(
+            user.id,
+            IdempotencyKey::new(Uuid::new_v4()),
+            &CreateOffer {
+                title: "Free Wooden Chair".to_string(),
+                description: "Good wooden chair ready for porch or patio.".to_string(),
+                price: Price::ZERO,
+                currency: CurrencyCode::Ngn,
+            },
+        )
+        .await
+        .unwrap()
+        .into_inner();
+
+    let o4 = registry
+        .offers_repo
+        .create(
+            user.id,
+            IdempotencyKey::new(Uuid::new_v4()),
+            &CreateOffer {
+                title: "US Designer Lamp".to_string(),
+                description: "Modern brass desk lamp priced in USD.".to_string(),
+                price: Price::new(5000).unwrap(),
+                currency: CurrencyCode::Usd,
+            },
+        )
+        .await
+        .unwrap()
+        .into_inner();
+
+    // Attach cover images so all offers are public
+    let dims = haven_domain::image::ImageDimensions::new(640, 480).unwrap();
+    for off in [&o1, &o2, &o3, &o4] {
+        let pub_id = haven_domain::image::ImagePublicId::parse(format!(
+            "offers/search/{}",
+            Uuid::new_v4().simple()
+        ))
+        .unwrap();
+        registry
+            .offers_repo
+            .add_image(off.id, user.id, &pub_id, dims)
+            .await
+            .unwrap();
+    }
+
+    // 1. Unfiltered feed shows all offers
+    let req_all = Request::builder()
+        .method("GET")
+        .uri("/offers")
+        .body(Body::empty())
+        .unwrap();
+    let res_all = router.handle(req_all).await;
+    assert_eq!(res_all.status(), http::StatusCode::OK);
+    let body_all = body_to_string(res_all.into_body()).await;
+    assert!(body_all.contains("Handmade Oak Desk"));
+    assert!(body_all.contains("Vintage Glass Table"));
+    assert!(body_all.contains("Free Wooden Chair"));
+    assert!(body_all.contains("US Designer Lamp"));
+
+    // 2. Title search for "Oak" returns only Oak Desk
+    let req_oak = Request::builder()
+        .method("GET")
+        .uri("/offers?q=Oak")
+        .body(Body::empty())
+        .unwrap();
+    let res_oak = router.handle(req_oak).await;
+    assert_eq!(res_oak.status(), http::StatusCode::OK);
+    let body_oak = body_to_string(res_oak.into_body()).await;
+    assert!(body_oak.contains("Handmade Oak Desk"));
+    assert!(!body_oak.contains("Vintage Glass Table"));
+    assert!(!body_oak.contains("US Designer Lamp"));
+    assert!(body_oak.contains("value=\"Oak\""));
+
+    // 3. Price filter: NGN 1,000 to 10,000 returns only Oak Desk
+    let req_price = Request::builder()
+        .method("GET")
+        .uri("/offers?currency=NGN&min_price=1000&max_price=10000")
+        .body(Body::empty())
+        .unwrap();
+    let res_price = router.handle(req_price).await;
+    assert_eq!(res_price.status(), http::StatusCode::OK);
+    let body_price = body_to_string(res_price.into_body()).await;
+    assert!(body_price.contains("Handmade Oak Desk"));
+    assert!(!body_price.contains("Vintage Glass Table")); // 15000 > 10000
+    assert!(!body_price.contains("Free Wooden Chair")); // 0 < 1000
+    assert!(!body_price.contains("US Designer Lamp")); // Currency is USD
+
+    // 4. Free filter: NGN with max_price=0 returns only Free Wooden Chair
+    let req_free = Request::builder()
+        .method("GET")
+        .uri("/offers?currency=NGN&max_price=0")
+        .body(Body::empty())
+        .unwrap();
+    let res_free = router.handle(req_free).await;
+    assert_eq!(res_free.status(), http::StatusCode::OK);
+    let body_free = body_to_string(res_free.into_body()).await;
+    assert!(body_free.contains("Free Wooden Chair"));
+    assert!(!body_free.contains("Handmade Oak Desk"));
+    assert!(!body_free.contains("Vintage Glass Table"));
+
+    // 5. Validation error: price filter without currency
+    let req_no_curr = Request::builder()
+        .method("GET")
+        .uri("/offers?min_price=1000")
+        .body(Body::empty())
+        .unwrap();
+    let res_no_curr = router.handle(req_no_curr).await;
+    assert_eq!(res_no_curr.status(), http::StatusCode::OK);
+    let body_no_curr = body_to_string(res_no_curr.into_body()).await;
+    assert!(body_no_curr.contains("Currency is required when filtering by price."));
+
+    // 6. Empty state: no matching offers
+    let req_nomatch = Request::builder()
+        .method("GET")
+        .uri("/offers?q=NonExistentItem999")
+        .body(Body::empty())
+        .unwrap();
+    let res_nomatch = router.handle(req_nomatch).await;
+    assert_eq!(res_nomatch.status(), http::StatusCode::OK);
+    let body_nomatch = body_to_string(res_nomatch.into_body()).await;
+    assert!(body_nomatch.contains("No offers match your filters"));
+    assert!(body_nomatch.contains("href=\"/offers\""));
+    assert!(body_nomatch.contains("Clear all filters"));
+}
+
+#[tokio::test]
+async fn test_feed_pagination_survives_filter_params() {
+    let (router, registry) = setup_test_app();
+
+    let user = mock_user(UserId::generate(), AccountId::generate(), "artisan-pages");
+    let _ = create_auth_session(&registry.users_repo, user.clone());
+
+    // Create 25 matching offers (feed page size is 20)
+    let dims = haven_domain::image::ImageDimensions::new(640, 480).unwrap();
+    for i in 1..=25 {
+        let offer = registry
+            .offers_repo
+            .create(
+                user.id,
+                IdempotencyKey::new(Uuid::new_v4()),
+                &CreateOffer {
+                    title: format!("Filterable Ceramic Pot #{i:02}"),
+                    description: "Hand-thrown stoneware ceramic plant pot.".to_string(),
+                    price: Price::new(2500).unwrap(),
+                    currency: CurrencyCode::Ngn,
+                },
+            )
+            .await
+            .unwrap()
+            .into_inner();
+
+        let pub_id = haven_domain::image::ImagePublicId::parse(format!(
+            "offers/pot/{}",
+            Uuid::new_v4().simple()
+        ))
+        .unwrap();
+        registry
+            .offers_repo
+            .add_image(offer.id, user.id, &pub_id, dims)
+            .await
+            .unwrap();
+    }
+
+    // Request page 1 with search and price filters
+    let req_p1 = Request::builder()
+        .method("GET")
+        .uri("/offers?q=Ceramic&currency=NGN&min_price=2000&max_price=3000")
+        .body(Body::empty())
+        .unwrap();
+    let res_p1 = router.handle(req_p1).await;
+    assert_eq!(res_p1.status(), http::StatusCode::OK);
+    let body_p1 = body_to_string(res_p1.into_body()).await;
+
+    // Check that the pagination next link contains all filter params preserved
+    assert!(body_p1.contains("q=Ceramic"));
+    assert!(body_p1.contains("currency=NGN"));
+    assert!(body_p1.contains("min_price=2000"));
+    assert!(body_p1.contains("max_price=3000"));
+    assert!(body_p1.contains("after="));
+}
