@@ -53,10 +53,9 @@ impl OfferRepository for PostgresOfferRepository {
 
     async fn list_public(
         &self,
-        cursor: Option<&OfferCursor>,
-        limit: usize,
+        query: &haven_domain::offer::PublicFeedQuery,
     ) -> Result<PublicOfferPage, RepoError> {
-        feed::list_public(&self.pool, cursor, limit).await
+        feed::list_public(&self.pool, query).await
     }
 
     async fn list_by_user(

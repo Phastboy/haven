@@ -109,8 +109,7 @@ pub trait OfferRepository: Send + Sync {
 
     async fn list_public(
         &self,
-        cursor: Option<&OfferCursor>,
-        limit: usize,
+        query: &crate::offer::PublicFeedQuery,
     ) -> Result<PublicOfferPage, RepoError>;
 
     async fn list_by_user(

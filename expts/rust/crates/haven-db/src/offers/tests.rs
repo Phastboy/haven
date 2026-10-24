@@ -126,14 +126,28 @@ async fn test_update_patch_semantics(pool: PgPool) {
     }
 
     // Fetch first page of 3 items
-    let page1 = repo.list_public(None, 3).await.unwrap();
+    let page1 = repo
+        .list_public(&haven_domain::offer::PublicFeedQuery::new(
+            haven_domain::offer::OfferFilter::default(),
+            None,
+            3,
+        ))
+        .await
+        .unwrap();
     assert_eq!(page1.items.len(), 3);
     assert!(page1.next_cursor.is_some());
 
     // Fetch second page using cursor
     let cursor_str = page1.next_cursor.unwrap();
     let cursor = haven_domain::offer::OfferCursor::decode(&cursor_str).unwrap();
-    let page2 = repo.list_public(Some(&cursor), 3).await.unwrap();
+    let page2 = repo
+        .list_public(&haven_domain::offer::PublicFeedQuery::new(
+            haven_domain::offer::OfferFilter::default(),
+            Some(cursor),
+            3,
+        ))
+        .await
+        .unwrap();
     assert!(!page2.items.is_empty());
 
     // Ensure no overlap between page 1 and page 2
@@ -219,4 +233,166 @@ async fn test_update_patch_semantics(pool: PgPool) {
         ),
         "Deleting the last image must return Conflict"
     );
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn test_offers_search_and_price_filtering(pool: PgPool) {
+    let repo = PostgresOfferRepository::new(pool.clone());
+    let img_repo = images::PostgresOfferImageRepository::new(pool.clone());
+
+    let account_id = Uuid::new_v4();
+    let email = format!("{account_id}@example.com");
+    sqlx::query("INSERT INTO account (id, email) VALUES ($1, $2)")
+        .bind(account_id)
+        .bind(&email)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+    let user_id = UserId::from_uuid(Uuid::new_v4());
+    let handle = format!("user-{}", &user_id.as_uuid().to_string()[..6]);
+    sqlx::query(
+        "INSERT INTO \"user\" (id, account_id, display_name, handle) VALUES ($1, $2, $3, $4)",
+    )
+    .bind(user_id.as_uuid())
+    .bind(account_id)
+    .bind("Test User")
+    .bind(&handle)
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    // Create 3 offers with distinct titles, prices, and currencies
+    let o1 = repo
+        .create(
+            user_id,
+            IdempotencyKey::new(Uuid::new_v4()),
+            &CreateOffer {
+                title: "Vintage Wooden Lamp".to_string(),
+                description: "Handcrafted wooden desk lamp in great condition.".to_string(),
+                price: Price::new(5000).unwrap(),
+                currency: CurrencyCode::Ngn,
+            },
+        )
+        .await
+        .unwrap()
+        .into_inner();
+
+    let o2 = repo
+        .create(
+            user_id,
+            IdempotencyKey::new(Uuid::new_v4()),
+            &CreateOffer {
+                title: "Free Wooden Chair".to_string(),
+                description: "Sturdy wooden dining chair, free for pickup.".to_string(),
+                price: Price::ZERO,
+                currency: CurrencyCode::Ngn,
+            },
+        )
+        .await
+        .unwrap()
+        .into_inner();
+
+    let o3 = repo
+        .create(
+            user_id,
+            IdempotencyKey::new(Uuid::new_v4()),
+            &CreateOffer {
+                title: "Modern Glass Desk".to_string(),
+                description: "Sleek glass computer desk in pristine shape.".to_string(),
+                price: Price::new(15000).unwrap(),
+                currency: CurrencyCode::Usd,
+            },
+        )
+        .await
+        .unwrap()
+        .into_inner();
+
+    // Attach cover images so all 3 offers are public (image_count >= 1)
+    let dims = haven_domain::image::ImageDimensions::new(800, 600).unwrap();
+    for off in [&o1, &o2, &o3] {
+        let pub_id = haven_domain::image::ImagePublicId::parse(format!(
+            "v12345/haven/offers/test_search_{}",
+            Uuid::new_v4().simple()
+        ))
+        .unwrap();
+        img_repo
+            .add_image(off.id, user_id, &pub_id, dims)
+            .await
+            .unwrap();
+    }
+
+    // 1. Title search matching "Wooden" -> should return o1 and o2, but not o3
+    let search_title = haven_domain::offer::SearchQuery::parse("Wooden").unwrap();
+    let res_title = repo
+        .list_public(&haven_domain::offer::PublicFeedQuery::new(
+            haven_domain::offer::OfferFilter {
+                title: Some(search_title),
+                price: None,
+            },
+            None,
+            10,
+        ))
+        .await
+        .unwrap();
+    let title_ids: Vec<_> = res_title.items.iter().map(|i| i.offer.id).collect();
+    assert!(title_ids.contains(&o1.id));
+    assert!(title_ids.contains(&o2.id));
+    assert!(!title_ids.contains(&o3.id));
+
+    // 2. Free price filter (price = 0, currency = NGN) -> should return o2 only
+    let free_filter = haven_domain::offer::PriceFilter::free(CurrencyCode::Ngn);
+    let res_free = repo
+        .list_public(&haven_domain::offer::PublicFeedQuery::new(
+            haven_domain::offer::OfferFilter {
+                title: None,
+                price: Some(free_filter),
+            },
+            None,
+            10,
+        ))
+        .await
+        .unwrap();
+    let free_ids: Vec<_> = res_free.items.iter().map(|i| i.offer.id).collect();
+    assert!(free_ids.contains(&o2.id));
+    assert!(!free_ids.contains(&o1.id));
+    assert!(!free_ids.contains(&o3.id));
+
+    // 3. Price range filter (NGN 1000 to 10000) -> should return o1 only
+    let range_filter = haven_domain::offer::PriceFilter::new(
+        CurrencyCode::Ngn,
+        Some(Price::new(1000).unwrap()),
+        Some(Price::new(10000).unwrap()),
+    )
+    .unwrap();
+    let res_range = repo
+        .list_public(&haven_domain::offer::PublicFeedQuery::new(
+            haven_domain::offer::OfferFilter {
+                title: None,
+                price: Some(range_filter),
+            },
+            None,
+            10,
+        ))
+        .await
+        .unwrap();
+    let range_ids: Vec<_> = res_range.items.iter().map(|i| i.offer.id).collect();
+    assert!(range_ids.contains(&o1.id));
+    assert!(!range_ids.contains(&o2.id));
+    assert!(!range_ids.contains(&o3.id));
+
+    // 4. Combined title search ("Wooden") + Free filter -> should return o2 only
+    let res_combined = repo
+        .list_public(&haven_domain::offer::PublicFeedQuery::new(
+            haven_domain::offer::OfferFilter {
+                title: Some(haven_domain::offer::SearchQuery::parse("Wooden").unwrap()),
+                price: Some(free_filter),
+            },
+            None,
+            10,
+        ))
+        .await
+        .unwrap();
+    let combined_ids: Vec<_> = res_combined.items.iter().map(|i| i.offer.id).collect();
+    assert_eq!(combined_ids, vec![o2.id]);
 }

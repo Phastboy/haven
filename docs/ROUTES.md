@@ -67,16 +67,37 @@ Haven enforces a strict two-layout rule across all routes:
   - Secondary button: "Sign In" (`/auth/sign-in`).
 
 #### `GET /offers` — Public Offers Feed
-- **Access Tier:** Public.
+- **Access Tier:** Public (all visitors).
+- **Query Parameters:**
+  - `q` *(optional string)*: Title search query string (1 to 100 characters, trimmed). Uses PostgreSQL stored full-text `tsvector` with `plainto_tsquery('english', q)`.
+  - `currency` *(optional string)*: ISO 4217 currency code (`NGN`, `USD`, `EUR`, `GBP`, `CAD`, `AUD`, `KES`, `GHS`). Required when `min_price` or `max_price` is specified.
+  - `min_price` *(optional integer)*: Minimum price in minor currency units (e.g. kobo/cents). Must be non-negative.
+  - `max_price` *(optional integer)*: Maximum price in minor currency units (`0` denotes Free offers). Must be non-negative and `>= min_price`.
+  - `after` *(optional string)*: Keyset pagination cursor encoded from `(created_at, id)`.
 - **Behavior:**
-  - Lists published offers in reverse-chronological order using stable keyset cursor pagination on `(created_at, id)`.
-  - Executes in $O(1)$ database query count joining maker identity.
+  - Lists public offers (`image_count >= 1`) matching all provided search and price filter constraints.
+  - Uses static, compile-time checked SQL with partial GIN and B-tree indexes matching `image_count >= 1`.
+  - Evaluates in $O(1)$ database query count with maker identity joined.
+  - Form query parameters (`q`, `currency`, `min_price`, `max_price`) are strictly preserved across keyset pagination links (`/offers?q=...&currency=...&after=...`).
 - **Affordances:**
-  - **Offer Card Title:** Clickable headline linking to `/offers/{slug}`.
-  - **Maker Attribution Slot:** Text "by" followed by `<a href="/profiles/{handle}">Maker Name</a>`.
-  - **Price / Value Badge:** Formatted price and currency (e.g. `50 USD`) or "Free" (for 0-price offers).
-  - **Pagination Controls:** "Next →" and "← Previous" links preserving cursor position without drift.
-  - **Empty State:** Calm message ("No offers available yet") when zero offers are listed.
+  - **Feed Filter Form (`.feed-filters`):**
+    - Search text field (`#filter-q`) for title search with placeholder and max-length restriction.
+    - Currency selector (`#filter-currency`) with options for supported currencies.
+    - Minimum price input (`#filter-min-price`).
+    - Maximum price input (`#filter-max-price`, labelled "Max price (0 for Free)").
+    - Submit button ("Filter", `.filter-submit-btn`).
+  - **Validation & Error Displays:**
+    - Inline alert banner when price filtering is attempted without selecting a currency.
+    - Inline alert banner for unsupported currencies or invalid/inverted price ranges.
+    - Inline alert banner for search queries exceeding character bounds.
+  - **Offer Card Items (`.offer-card`):**
+    - Clickable title headline linking to `/offers/{slug}`.
+    - Maker attribution slot: "by" followed by `<a href="/profiles/{handle}">Maker Name</a>`.
+    - Price/value badge: formatted price and currency (e.g. `50 USD`) or "Free" (for 0-price offers).
+  - **Pagination Controls:** "Next →" and "← Previous" links preserving active filter parameters without cursor drift.
+  - **Empty States:**
+    - *Unfiltered feed:* "No offers available yet" with "Create an Offer" action button (`/profile/offers/new`).
+    - *Filtered feed (active search/price criteria):* "No offers match your filters" with calm explanation and a "Clear all filters" link resetting to `/offers`.
 
 #### `GET /offers/{slug}` — Public Offer Detail
 - **Access Tier:** Public.
