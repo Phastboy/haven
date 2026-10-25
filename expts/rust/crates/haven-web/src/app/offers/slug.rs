@@ -11,6 +11,9 @@ use topcoat::{
 
 pub mod message;
 pub mod save;
+pub mod viewer;
+
+use viewer::{OfferViewer, OfferViewerInput, offer_viewer};
 
 topcoat::router::module_param!(slug);
 
@@ -70,6 +73,12 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
         false
     };
 
+    let role = offer_viewer(OfferViewerInput {
+        viewer_id: viewer.as_ref().map(|u| u.id),
+        owner_id: offer.user_id,
+        saved: is_saved,
+    });
+
     let maker = registry
         .users()
         .find_by_id(offer.user_id)
@@ -122,12 +131,13 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
     let cloud_name = crate::app::state::cloudinary_cloud_name(cx);
     let total_images = offer.images.len();
     let offer_title = offer.title.clone();
+    let slug_str = offer.slug.as_str().to_string();
 
     Ok(view! {
         if not_modified {
             (http::StatusCode::NOT_MODIFIED)
         } else {
-            <div class="offer-detail">
+            <div id=(format!("offer-{}", offer.slug.as_str())) class="offer-detail">
                 <link rel="canonical" href=(canonical_url) />
                 <div class="page-header">
                     <div class="offer-detail-header">
@@ -163,22 +173,35 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
                     <p>(offer.description)</p>
                 </div>
 
-                if viewer.is_some() && !is_owner {
-                    <form action=(format!("/offers/{}/save", offer.slug.as_str())) method="post">
-                        <input type="hidden" name="action" value=(if is_saved { "unsave" } else { "save" }) />
-                        <button type="submit" class="btn btn-secondary">(if is_saved { "Remove from saved offers" } else { "Save offer" })</button>
-                    </form>
-                }
-                if !is_owner {
-                    <div class="offer-inquiry-action">
-                        <h3>"Message about this offer"</h3>
-                        <form action=(format!("/offers/{}/message", offer.slug.as_str())) method="post" class="offer-message-form">
-                            <textarea name="body" placeholder="Ask a question or express your interest..." rows="3" required="required" maxlength="2000"></textarea>
-                            <div>
-                                <button type="submit" class="btn btn-primary">"Send Message"</button>
-                            </div>
+                match role {
+                    OfferViewer::Visitor { saved } => {
+                        <form action=(format!("/offers/{}/save", slug_str)) method="post">
+                            <input type="hidden" name="action" value=(if saved { "unsave" } else { "save" }) />
+                            <input type="hidden" name="return_to" value=(format!("/offers/{slug_str}")) />
+                            <button type="submit" class="btn btn-secondary">(if saved { "Remove from saved offers" } else { "Save offer" })</button>
                         </form>
-                    </div>
+                        <div class="offer-inquiry-action">
+                            <h3>"Message about this offer"</h3>
+                            <form action=(format!("/offers/{slug_str}/message")) method="post" class="offer-message-form">
+                                <textarea name="body" placeholder="Ask a question or express your interest..." rows="3" required="required" maxlength="2000"></textarea>
+                                <div>
+                                    <button type="submit" class="btn btn-primary">"Send Message"</button>
+                                </div>
+                            </form>
+                        </div>
+                    }
+                    OfferViewer::Anonymous => {
+                        <div class="offer-inquiry-action">
+                            <h3>"Message about this offer"</h3>
+                            <form action=(format!("/offers/{slug_str}/message")) method="post" class="offer-message-form">
+                                <textarea name="body" placeholder="Ask a question or express your interest..." rows="3" required="required" maxlength="2000"></textarea>
+                                <div>
+                                    <button type="submit" class="btn btn-primary">"Send Message"</button>
+                                </div>
+                            </form>
+                        </div>
+                    }
+                    OfferViewer::Owner => {}
                 }
             </div>
         }
