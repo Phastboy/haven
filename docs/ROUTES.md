@@ -6,18 +6,16 @@ This document catalogs every route currently available in Haven, its HTTP method
 
 ## Navigation Layout Rule
 
-Haven enforces a strict two-layout rule across all routes:
+One shared `app_shell` wraps every page. The shell receives the viewer, current route, and whether the route is a main or child page; page templates do not build navigation.
 
-1. **Top-Level Routes (`NavigationLayout::Main`):** `/offers`, `/profile`, `/conversations`, and `/`.
-   - **Mobile (`<= 640px`):** Main layout renders primary navigation (`.site-header` on desktop, `.bottom-nav` on mobile). No back button is shown.
-   - **Desktop (`> 640px`):** Main layout renders primary navigation (`.site-header`).
-2. **Child Routes (`NavigationLayout::Child`):** Every other route (e.g. `/offers/{slug}`, `/profiles/{handle}`, `/conversations/{id}`, `/profile/edit`, `/profile/offers`, `/profile/offers/new`, `/profile/offers/{id}`, `/profile/offers/{id}/edit`, `/profile/account`, `/auth/*`).
-   - **Mobile (`<= 640px`):** Primary navigation is completely hidden (`.site-header.desktop-only`). The header contains only a clean back button (`.child-header` with an explicit SVG arrow-left icon and "Back" label).
-   - **Desktop (`> 640px`):** Primary navigation remains visible (wide screens have room for it and hiding it saves no space). The back header remains visible below the primary navigation for consistent back-navigation affordance across devices.
-3. **Safe Back URL Resolution:**
-   - The default destination is always the page the user came from using the validated same-site `Referer` request header (`Referrer-Policy: same-origin` is enforced).
-   - If `Referer` is absent, cross-site, protocol-relative (`//`), or matches the current URL (browser refresh loop guard), it falls back safely to the child's configured parent route (`/offers`, `/profile`, etc.).
-   - Individual page templates never construct their own header or ad-hoc back link. Route classification occurs centrally in `crates/haven-web/src/app/navigation.rs`.
+- **1280px and wider:** 240px full rail.
+- **641px to 1279px:** 72px collapsed rail with the H mark, icon links, tooltips and accessible labels. Visitor Sign in is a person icon; signed-in Messages retains its unread dot.
+- **640px and below:** main pages show bottom tabs; child pages show a 56px back-only top bar. Child pages have no bottom tabs.
+- Navigation breakpoints are independent of page-content breakpoints. The 900px breakpoint is for page layouts only.
+- Signed-in rail items are Offers, Messages and Profile. Visitors see Offers and Sign in. Auth pages show Haven and inactive Offers only, with no Sign in action.
+- Main pages include `/`, `/offers`, `/profile` and `/conversations`. All other routes are child pages. Child pages show a Back link beside the rail at 641px and wider.
+
+Safe Back URL resolution remains centralized in `crates/haven-web/src/app/navigation.rs`: accept a validated same-site Referer, otherwise fall back to the configured parent route. Sign-in falls back to `/`.
 
 ---
 

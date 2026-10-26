@@ -2,7 +2,7 @@
 
 One story, two lanes. Lanes are roles, not people: the **Offerer** (the person making an offer) and the **Responder** (the person responding to it). One person can play both. Stages follow `ROADMAP.md`; only the current stage is detailed.
 
-Status: draft. Only entries under **Decided** were confirmed by the owner. Everything else is open or an observation from the code. Stage 0.5 is being implemented in a separate worktree; this worktree handles 0.6 in parallel as requested.
+Status: draft. Only entries under **Decided** were confirmed by the owner. Haven is on v0.6.x; stages 0.5 and 0.6 are complete, and 0.7 is next.
 
 ## The story at a glance
 
@@ -11,9 +11,9 @@ Status: draft. Only entries under **Decided** were confirmed by the owner. Every
 | 0.1.x | Can I offer something? | create account, sign in, create / see own / edit / delete an offer | none yet | none | completed | met historical baseline (see PERFORMANCE_CONTRACT.md) |
 | 0.2.x | Can someone see it? | offer becomes public on create (generates slug); manage own via `/offers/manage/{id}` | see available offers (public feed), see another person's offer (`/offers/{slug}`) | an offer becomes visible to others | completed | met ≥ 1,200 iters/s host direct |
 | 0.3.x | Can I know who is behind an offer? | has profile, edits profile; profile shell wraps identity overview, offers management, and account | sees who made an offer, visits public profile, sees maker's offers | knowing who is behind an offer | completed | met target; keyset pagination |
-| 0.4.x | Can someone act on it? | know about expressed interest | express willingness to take on an offer | commitment | current | |
-| 0.5.x | Can someone find it? | | find an offer by name, narrow by price | | not reached | |
-| 0.6.x | Can I come back to what I care about? | | save an offer, follow a person, return to both | | not reached | |
+| 0.4.x | Can someone act on it? | know about expressed interest | express willingness to take on an offer | commitment | completed | |
+| 0.5.x | Can someone find it? | | find an offer by name, narrow by price | | completed | not checked in this update |
+| 0.6.x | Can I come back to what I care about? | | save an offer, follow a person, return to both | | completed | not checked in this update |
 | 0.7.x | Can I narrow it down? | | narrow by category, tags, saved, committed | | not reached | |
 | 0.8.x to 0.9.x | TBD | | | | not reached | |
 | 1.0.x | Can two people close an offer? | | | agreement, closing | not reached | |
@@ -40,7 +40,7 @@ sequenceDiagram
   O->>H: reply to message
 ```
 
-## Stage 0.4.x: Can someone act on it? (current)
+## Stage 0.4.x: Can someone act on it? (completed)
 
 ### Untangled items
 
@@ -77,14 +77,14 @@ sequenceDiagram
 ### Deferred dependencies
 - Formal contract closing and mutual agreement. Belongs to 1.0.x. Current behaviour until then: informal communication and status progression only.
 - Payment processing and escrow. Belongs to 2.0.x. Current behaviour until then: no money handling.
-- Search by offer name and price filters. Belongs to 0.5.x.
+- Category, tag, saved, and committed-offer filters. Belong to 0.7.x.
 
 ### Done when (from the roadmap)
 An offer can receive a meaningful response from another person, and the system meets its load-testing target.
 
-## Stage 0.6.x: Can I come back to what I care about? (implemented in parallel)
+## Stage 0.6.x: Can I come back to what I care about? (completed)
 
-Stage 0.5 is being developed in a separate worktree. This 0.6 journey is scoped independently at the owner's request.
+Stages 0.5 and 0.6 are complete. The current roadmap stage is 0.7.x.
 
 ### Untangled items
 
