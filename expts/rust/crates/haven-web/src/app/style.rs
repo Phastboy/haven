@@ -3,7 +3,25 @@ use topcoat::{
     router::{content::Css, route},
 };
 
-const STYLESHEET: &str = include_str!("../../static/style.css");
+const STYLESHEET: &str = concat!(
+    include_str!("../../static/style.css"),
+    "\n",
+    include_str!("../../static/css/tokens.css"),
+    "\n",
+    include_str!("../../static/css/components/nav/app_shell.css"),
+    "\n",
+    include_str!("../../static/css/components/nav/rail.css"),
+    "\n",
+    include_str!("../../static/css/components/nav/bottom_tabs.css"),
+    "\n",
+    include_str!("../../static/css/components/nav/mobile_back_bar.css"),
+    "\n",
+    include_str!("../../static/css/components/nav/navigation_breakpoints.css"),
+    "\n",
+    include_str!("../../static/css/pages/landing.css"),
+    "\n",
+    include_str!("../../static/css/pages/landing-responsive.css"),
+);
 
 /// Serves the central Haven stylesheet with strict CSP compliance.
 #[route(GET "/style.css")]
