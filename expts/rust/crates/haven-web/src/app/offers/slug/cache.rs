@@ -27,8 +27,8 @@ pub fn matches_if_none_match(inm_header: &str, current_etag: &str) -> bool {
 
 /// Builds the weak-comparable `ETag` for a public offer detail response.
 #[must_use]
-pub fn offer_etag(offer_id: u128, updated_at_micros: i64) -> String {
-    format!("\"{offer_id:x}-{updated_at_micros:x}-v{BUILD_VERSION}\"")
+pub fn offer_etag(offer_id: u128, updated_at_micros: i64, maker_updated_at_micros: i64) -> String {
+    format!("\"{offer_id:x}-{updated_at_micros:x}-{maker_updated_at_micros:x}-v{BUILD_VERSION}\"")
 }
 
 #[cfg(test)]
@@ -65,9 +65,14 @@ mod tests {
 
     #[test]
     fn offer_etag_includes_build_version() {
-        let tag = offer_etag(1, 2);
+        let tag = offer_etag(1, 2, 3);
         assert!(tag.contains(BUILD_VERSION));
         assert!(tag.starts_with('"'));
         assert!(tag.ends_with('"'));
+    }
+
+    #[test]
+    fn offer_etag_changes_when_maker_changes() {
+        assert_ne!(offer_etag(1, 2, 3), offer_etag(1, 2, 4));
     }
 }
