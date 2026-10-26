@@ -1,3 +1,5 @@
+#![allow(clippy::expect_used, reason = "test router setup")]
+
 use super::*;
 use url::Url;
 
@@ -177,7 +179,7 @@ fn deserializes_callback_query_parameters() {
 fn test_router(oauth_config: Option<GoogleOAuthConfig>) -> topcoat::router::Router {
     use topcoat::{
         cookie::RouterBuilderCookieExt, router::RouterBuilderDiscoverExt,
-        session::RouterBuilderSessionExt,
+        runtime::RouterBuilderRuntimeExt, session::RouterBuilderSessionExt,
     };
 
     struct DummyRegistry;
@@ -222,6 +224,7 @@ fn test_router(oauth_config: Option<GoogleOAuthConfig>) -> topcoat::router::Rout
     };
 
     crate::app::router()
+        .expect("Topcoat test asset bundle")
         .cookies()
         .sessions(
             topcoat::session::SessionConfig::builder()
@@ -232,6 +235,7 @@ fn test_router(oauth_config: Option<GoogleOAuthConfig>) -> topcoat::router::Rout
         .app_context(crate::rate_limit::SignInLimiter::new())
         .app_context(crate::rate_limit::CreateOfferLimiter::new())
         .discover()
+        .runtime()
         .build()
 }
 
