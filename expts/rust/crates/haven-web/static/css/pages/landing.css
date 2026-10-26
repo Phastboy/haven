@@ -1,0 +1,99 @@
+.app-shell-content:has(.landing-page) {
+  max-width: none;
+  padding: 0;
+}
+
+.landing-page {
+  width: 100%;
+  max-width: 1200px;
+  min-width: 0;
+  margin: 0 auto;
+  padding: 0 32px 64px;
+}
+
+.landing-hero {
+  padding: 80px 0 64px;
+}
+
+.landing-hero-title {
+  margin: 0 0 16px;
+  color: var(--color-text);
+  font-size: 48px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.landing-hero-lead {
+  max-width: 640px;
+  margin: 0 0 32px;
+  color: var(--color-text-muted);
+  font-size: 20px;
+  line-height: 1.5;
+}
+
+.landing-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.landing-hero-actions .btn {
+  min-height: 48px;
+  padding: 0 24px;
+  font-size: 16px;
+}
+
+.landing-recent {
+  min-width: 0;
+}
+
+.landing-recent-heading {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.landing-recent-heading h2 {
+  min-width: 0;
+  margin: 0;
+  color: var(--color-text);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.landing-browse-all {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.landing-browse-all svg {
+  width: 18px;
+  height: 18px;
+}
+
+.landing-browse-all-mobile { display: none; }
+
+.landing-offers-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 20px;
+  min-width: 0;
+  list-style: none;
+}
+
+.landing-offers-grid > li {
+  min-width: 0;
+  height: 100%;
+}

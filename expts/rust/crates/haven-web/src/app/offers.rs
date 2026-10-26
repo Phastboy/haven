@@ -5,4 +5,4 @@ pub mod fields;
 pub mod slug;
 
 #[cfg(test)]
-mod tests;
+pub(crate) mod tests;

@@ -1,0 +1,31 @@
+@media (min-width: 900px) {
+  .landing-offers-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .landing-offers-grid > li:nth-child(n + 7) { display: none; }
+}
+
+@media (min-width: 900px) and (max-width: 1279px) {
+  .landing-hero { padding-top: 64px; padding-bottom: 48px; }
+  .landing-hero-title { font-size: 40px; letter-spacing: -0.025em; }
+  .landing-hero-lead { max-width: 580px; font-size: 18px; margin-bottom: 28px; }
+}
+
+@media (min-width: 1280px) {
+  .landing-offers-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
+  .landing-offers-grid > li:nth-child(n + 7) { display: block; }
+}
+
+@media (max-width: 899px) {
+  .landing-page { padding: 0 16px 48px; }
+  .landing-hero { padding: 24px 0 32px; }
+  .landing-hero-title { margin-bottom: 16px; font-size: 34px; letter-spacing: -0.025em; }
+  .landing-hero-lead { margin-bottom: 32px; font-size: 16px; }
+  .landing-hero-actions { flex-direction: column; align-items: stretch; gap: 12px; }
+  .landing-hero-actions .btn { width: 100%; font-size: 15px; }
+  .landing-recent-heading { margin-bottom: 16px; }
+  .landing-recent-heading h2 { font-size: 18px; }
+  .landing-browse-all { font-size: 13px; }
+  .landing-browse-all-desktop { display: none; }
+  .landing-browse-all-mobile { display: inline; }
+  .landing-offers-grid { gap: 12px; }
+  .landing-offers-grid > li:nth-child(n + 7) { display: none; }
+}

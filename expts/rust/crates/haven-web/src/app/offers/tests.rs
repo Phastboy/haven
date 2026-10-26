@@ -162,7 +162,7 @@ impl Registry for TestRegistry {
     }
 }
 
-fn setup_test_app() -> (topcoat::router::Router, TestRegistry) {
+pub(crate) fn setup_test_app() -> (topcoat::router::Router, TestRegistry) {
     let registry = TestRegistry {
         offers_repo: FakeOfferRepository::default(),
         users_repo: TestUserRepository::default(),
@@ -633,10 +633,10 @@ async fn test_landing_page_renders_with_components() {
     assert!(body.contains("Exchange offers directly"));
     assert!(body.contains("href=\"/offers\""));
     assert!(body.contains("class=\"btn btn-primary\""));
-    assert!(body.contains("Browse Offers"));
+    assert!(body.contains("Browse offers"));
     assert!(body.contains("href=\"/auth/sign-in\""));
     assert!(body.contains("class=\"btn btn-secondary\""));
-    assert!(body.contains("Sign In"));
+    assert!(body.contains("Sign in"));
 }
 
 #[tokio::test]
@@ -907,8 +907,9 @@ async fn test_owner_profile_route_requires_auth_and_allows_editing() {
     assert!(body_get.contains("href=\"/profile/offers\""));
     assert!(body_get.contains("Sign out"));
     assert!(body_get.contains("id=\"signout-dialog\""));
-    // Header has clean nav
-    assert!(body_get.contains("<a href=\"/profile\">Profile</a>"));
+    // The application rail has the active Profile item.
+    assert!(body_get.contains("href=\"/profile\""));
+    assert!(body_get.contains("app-rail-label\">Profile</span>"));
 
     // 2b. Authenticated GET /profile/account renders account section with sign out
     let req_account = Request::builder()
@@ -1089,10 +1090,10 @@ async fn test_navigation_layout_rule_main_vs_child() {
     let res_main = router.handle(req_main).await;
     assert_eq!(res_main.status(), http::StatusCode::OK);
     let body_main = body_to_string(res_main.into_body()).await;
-    assert!(body_main.contains("layout-main"));
-    assert!(!body_main.contains("layout-child"));
-    assert!(!body_main.contains("child-header"));
-    assert!(body_main.contains("bottom-nav"));
+    assert!(body_main.contains("app-shell-main-page"));
+    assert!(!body_main.contains("app-shell-child"));
+    assert!(!body_main.contains("app-mobile-back-bar"));
+    assert!(body_main.contains("app-bottom-tabs"));
 
     // 2. Child route /offers/{slug} with no Referer uses Child layout with fallback parent
     let req_child_no_ref = Request::builder()
@@ -1103,11 +1104,11 @@ async fn test_navigation_layout_rule_main_vs_child() {
     let res_child_no_ref = router.handle(req_child_no_ref).await;
     assert_eq!(res_child_no_ref.status(), http::StatusCode::OK);
     let body_child_no_ref = body_to_string(res_child_no_ref.into_body()).await;
-    assert!(body_child_no_ref.contains("layout-child"));
-    assert!(body_child_no_ref.contains("site-header desktop-only"));
-    assert!(body_child_no_ref.contains("child-header"));
+    assert!(body_child_no_ref.contains("app-shell-child"));
+    assert!(body_child_no_ref.contains("app-rail"));
+    assert!(body_child_no_ref.contains("app-mobile-back-bar"));
     assert!(body_child_no_ref.contains("href=\"/offers\""));
-    assert!(!body_child_no_ref.contains("bottom-nav"));
+    assert!(!body_child_no_ref.contains("app-bottom-tabs"));
 
     // 3. Child route with same-site Referer returns previous page
     let req_child_with_ref = Request::builder()
@@ -1139,7 +1140,7 @@ async fn test_navigation_layout_rule_main_vs_child() {
     assert!(body_child_refresh.contains("href=\"/offers\""));
 
     // 5. Back button uses an explicit SVG icon, not a unicode text sign
-    assert!(body_child_refresh.contains("back-icon-svg"));
+    assert!(body_child_refresh.contains("app-mobile-back-link"));
     assert!(body_child_refresh.contains("<svg"));
 
     // 6. Public profile navigated from /profile returns to /profile via Referer
@@ -1231,9 +1232,12 @@ async fn test_public_offer_back_returns_to_owner_offer_page() {
     let res_owner = router.handle(req_owner).await;
     assert_eq!(res_owner.status(), http::StatusCode::OK);
     let body_owner = body_to_string(res_owner.into_body()).await;
-    let back_btn_expected = "href=\"/profile/offers\" class=\"child-back-btn\"";
+    let back_btn_expected = "class=\"app-shell-back-link\" href=\"/profile/offers\"";
     assert!(body_owner.contains(back_btn_expected));
-    let back_btn_loop = format!("href=\"/offers/{}\" class=\"child-back-btn\"", offer.slug);
+    let back_btn_loop = format!(
+        "class=\"app-shell-back-link\" href=\"/offers/{}\"",
+        offer.slug
+    );
     assert!(!body_owner.contains(&back_btn_loop));
 }
 
