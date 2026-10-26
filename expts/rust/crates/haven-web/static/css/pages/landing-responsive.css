@@ -15,7 +15,7 @@
 }
 
 @media (max-width: 899px) {
-  .landing-page { padding: 0 16px 48px; }
+  .landing-page { padding: 0 16px 0; }
   .landing-hero { padding: 24px 0 32px; }
   .landing-hero-title { margin-bottom: 16px; font-size: 34px; letter-spacing: -0.025em; }
   .landing-hero-lead { margin-bottom: 32px; font-size: 16px; }
