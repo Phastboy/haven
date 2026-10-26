@@ -225,3 +225,8 @@ For each screen, add: purpose (stage and lane), content used (from the schema), 
 - Whether any status or accent need appears as stages are built (the rule in decision 1 applies: color only when a named job cannot be done by weight, position, or spacing).
 - Typeface revisit when brand identity work begins (decision 3: self-hosted font swap at `--font-sans`).
 - Component stylesheet refactoring: aligning existing `style.css` rules (e.g. `--color-danger`, `--color-focus`) to pure greyscale tokens.
+
+### 13. Public offer detail page redesign (decided, 2026-10-26)
+- **What:** `/offers/{slug}` uses a single responsive gallery, linked maker row and role-specific message actions. Mobile uses horizontal 4:3 slides and a fixed message bar; desktop uses a photo mosaic and sticky action card.
+- **Why:** Keeps offer information central while making the next action easy to find at each viewport size.
+- **Constraints:** Anonymous HTML is person-independent for public ETag caching. Signed-in responses use private, no-store caching.
