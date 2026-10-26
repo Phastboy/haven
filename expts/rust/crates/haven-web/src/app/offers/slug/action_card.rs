@@ -39,7 +39,7 @@ pub async fn action_card(data: ActionCardData) -> TopcoatResult<impl View> {
                     <p class="offer-action-note">"You need an account to message "(data.maker_name)"."</p>
                 }
                 OfferViewer::Owner => {
-                    <p class="offer-action-note">"This is how your offer appears to everyone."</p>
+                    <p class="offer-action-note">"This is your offer preview."</p>
                 }
             }
         </section>
@@ -62,10 +62,7 @@ mod tests {
         for (role, expected) in [
             (OfferViewer::Anonymous, "Sign in to message"),
             (OfferViewer::Visitor { saved: false }, "Send message"),
-            (
-                OfferViewer::Owner,
-                "This is how your offer appears to everyone.",
-            ),
+            (OfferViewer::Owner, "This is your offer preview."),
         ] {
             let component = view! { action_card(data: ActionCardData {
                 slug: "offer-slug".into(), price: "25 NGN".into(), maker_name: "Maker".into(), role,
