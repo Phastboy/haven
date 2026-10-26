@@ -1,8 +1,8 @@
 //! Public offers feed page and query parameters.
 
 use crate::app::components::empty_state::empty_state;
-use crate::app::components::feed_filters::feed_filters;
-use crate::app::components::offer_card::offer_card;
+use crate::app::components::feed_filters::{FeedFiltersData, clear_price_href, feed_filters};
+use crate::app::components::listing_card::{ListingCardData, listing_card};
 use crate::app::components::pagination::pagination_nav;
 use haven_domain::offer::{
     CurrencyCode, OfferCursor, OfferFilter, Price, PriceFilter, PublicFeedQuery, SearchQuery,
@@ -97,6 +97,22 @@ pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
     let active_filters_count =
         usize::from(filter.title.is_some()).saturating_add(usize::from(filter.price.is_some()));
 
+    let mut summary_parts = Vec::new();
+    if let Some(title) = filter.title.as_ref() {
+        summary_parts.push(format!("Search: {}", title.as_str()));
+    }
+    if let Some(price) = filter.price {
+        summary_parts.push(price.currency.as_str().to_string());
+        if let Some(min) = price.min {
+            summary_parts.push(format!("Min {}", min.as_i32()));
+        }
+        if let Some(max) = price.max {
+            summary_parts.push(format!("Max {}", max.as_i32()));
+        }
+    }
+    let filter_summary = (!summary_parts.is_empty()).then(|| summary_parts.join(" · "));
+    let price_filter_count = u32::from(filter.price.is_some());
+
     let feed_query = PublicFeedQuery::new(filter, after_cursor, 20);
 
     let repo = crate::app::state::registry(cx).offers();
@@ -124,18 +140,60 @@ pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
     });
 
     let cloud_name = crate::app::state::cloudinary_cloud_name(cx);
+    let viewer = crate::app::auth::guard::current_user(cx).await?;
+    if viewer.is_some() {
+        let headers = topcoat::router::response::response_headers(cx);
+        headers.append(
+            topcoat::router::header::HeaderName::from_static("cache-control"),
+            topcoat::router::header::HeaderValue::from_static("private, no-store"),
+        );
+    }
+    let saved_ids = if let Some(person) = viewer.as_ref() {
+        let ids: Vec<_> = page.items.iter().map(|item| item.offer.id).collect();
+        crate::app::state::registry(cx)
+            .saved_offers()
+            .saved_among(person.id, &ids)
+            .await
+            .map_err(crate::app::state::map_repo_err)?
+    } else {
+        std::collections::HashSet::new()
+    };
+    let mut return_serializer = url::form_urlencoded::Serializer::new(String::new());
+    if !raw_q.is_empty() {
+        return_serializer.append_pair("q", raw_q);
+    }
+    if !raw_currency.is_empty() {
+        return_serializer.append_pair("currency", raw_currency);
+    }
+    if let Some(min) = raw_min_price {
+        return_serializer.append_pair("min_price", &min.to_string());
+    }
+    if let Some(max) = raw_max_price {
+        return_serializer.append_pair("max_price", &max.to_string());
+    }
+    let return_query = return_serializer.finish();
+    let return_to = format!(
+        "/offers{}",
+        if return_query.is_empty() {
+            String::new()
+        } else {
+            format!("?{return_query}")
+        }
+    );
 
     Ok(view! {
         <div class="offers-feed">
-            feed_filters(
+            feed_filters(data: FeedFiltersData {
                 title_query: raw_q.to_string(),
                 currency: raw_currency.to_string(),
                 min_price: raw_min_price,
                 max_price: raw_max_price,
-                title_error: title_error,
-                price_error: price_error,
-                active_filters_count: active_filters_count,
-            )
+                title_error,
+                price_error,
+                price_filter_count,
+                summary: filter_summary,
+                clear_price_href: clear_price_href(raw_q),
+            })
             if page.items.is_empty() {
                 if active_filters_count > 0 {
                     empty_state(
@@ -153,12 +211,12 @@ pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
                     )
                 }
             } else {
-                <ul class="offer-list" role="list">
+                <ul class="listing-grid" role="list">
                     for (idx, item) in page.items.iter().enumerate() {
                         let cover = item.offer.cover_image();
-                        let cover_url = cover.map(|img| crate::app::components::image::card_url(cloud_name, img.public_id.as_str()));
-                        let cover_srcset = cover.map(|img| crate::app::components::image::card_srcset(cloud_name, img.public_id.as_str()));
-                        offer_card(
+                        let cover_url = cover.map(|img| crate::app::components::image::card_sq_url(cloud_name, img.public_id.as_str()));
+                        let cover_srcset = cover.map(|img| crate::app::components::image::card_sq_srcset(cloud_name, img.public_id.as_str()));
+                        listing_card(props: ListingCardData {
                             title: item.offer.title.clone(),
                             href: format!("/offers/{}", item.offer.slug),
                             price_text: if item.offer.price.as_i32() == 0 {
@@ -166,13 +224,16 @@ pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
                             } else {
                                 format!("{} {}", item.offer.price.as_i32(), item.offer.currency.as_str())
                             },
-                            description: item.offer.description.clone(),
-                            maker_name: Some(item.maker_display_name.as_str().to_string()),
-                            maker_href: Some(format!("/profiles/{}", item.maker_handle.as_str())),
-                            cover_image_url: cover_url,
-                            cover_image_srcset: cover_srcset,
+                            maker_name: item.maker_display_name.as_str().to_string(),
+                            maker_href: format!("/profiles/{}", item.maker_handle.as_str()),
+                            cover_url,
+                            cover_srcset,
                             is_above_fold: idx < 2,
-                        )
+                            is_saved: saved_ids.contains(&item.offer.id),
+                            return_to: return_to.clone(),
+                            is_authenticated: viewer.is_some(),
+                            slug: item.offer.slug.clone(),
+                        })
                     }
                 </ul>
                 if next_href.is_some() {

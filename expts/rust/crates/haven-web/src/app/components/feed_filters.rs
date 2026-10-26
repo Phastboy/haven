@@ -1,114 +1,106 @@
-//! Filter form component for searching by title and narrowing offers by price.
+//! Responsive search and price-filter form assembly for the public offers feed.
 
+mod sheet;
+mod summary;
+
+use sheet::{FeedFilterSheetData, feed_filter_sheet};
+use summary::filter_summary;
 use topcoat::{
     Result as TopcoatResult,
     view::{View, component, view},
 };
 
-/// A search and price-narrowing filter form component for the public offers feed.
+/// Validated and display-ready values used to render the offers filter form.
+pub struct FeedFiltersData {
+    /// Current search field value, retained even when invalid.
+    pub title_query: String,
+    /// Current currency field value, retained even when invalid.
+    pub currency: String,
+    /// Current minimum price field value.
+    pub min_price: Option<i32>,
+    /// Current maximum price field value.
+    pub max_price: Option<i32>,
+    /// Search validation error, if any.
+    pub title_error: Option<String>,
+    /// Price validation error, if any.
+    pub price_error: Option<String>,
+    /// Number of active price filters to show in the trigger badge.
+    pub price_filter_count: u32,
+    /// Summary of accepted filters, if any.
+    pub summary: Option<String>,
+    /// Encoded URL that clears price fields while retaining the search query.
+    pub clear_price_href: String,
+}
+
+/// Renders the one-form responsive filters control and its native popover sheet.
 #[component]
-pub async fn feed_filters(
-    #[default] title_query: String,
-    #[default] currency: String,
-    #[default] min_price: Option<i32>,
-    #[default] max_price: Option<i32>,
-    #[default] title_error: Option<String>,
-    #[default] price_error: Option<String>,
-    #[default] active_filters_count: usize,
-) -> TopcoatResult<impl View> {
-    let min_str = min_price.map(|p| p.to_string()).unwrap_or_default();
-    let max_str = max_price.map(|p| p.to_string()).unwrap_or_default();
+pub async fn feed_filters(data: FeedFiltersData) -> TopcoatResult<impl View> {
+    let sheet_data = FeedFilterSheetData {
+        currency: data.currency.clone(),
+        min_price: data.min_price,
+        max_price: data.max_price,
+        clear_price_href: data.clear_price_href,
+    };
 
     Ok(view! {
-        <form action="/offers" method="GET" class="feed-filters" role="search" aria-label="Filter offers">
-            <div class="filters-layout">
+        <form action="/offers" method="get" class="feed-filters" role="search" aria-label="Filter offers">
+            <div class="filter-header-row">
                 <div class="filter-field filter-field-title">
-                    <label for="filter-q" class="field-label">
-                        "Find by title"
-                    </label>
+                    <label for="filter-q" class="field-label">"Find by title"</label>
                     <input
                         id="filter-q"
                         class="field-input"
                         type="search"
                         name="q"
-                        value=(title_query)
+                        value=(data.title_query)
                         placeholder="Search offers by name..."
                         maxlength="100"
                         autocomplete="off"
+                        enterkeyhint="search"
                     />
-                    if let Some(err) = title_error {
-                        <p class="field-error" role="alert">(err)</p>
+                </div>
+                <button
+                    type="button"
+                    class="filter-trigger"
+                    popovertarget="feed-filter-sheet"
+                    aria-label=(if data.price_filter_count > 0 { format!("Filters, {} price filter active", data.price_filter_count) } else { "Filters".to_string() })
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M7 12h10m-7 5h4"/><circle cx="8" cy="7" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/></svg>
+                    <span>"Filters"</span>
+                    if data.price_filter_count > 0 {
+                        <span class="filter-count-badge" aria-label=(format!("{} active price filters", data.price_filter_count))>(data.price_filter_count)</span>
                     }
-                </div>
-
-                <div class="filters-price-group">
-                    <div class="filter-field filter-field-currency">
-                        <label for="filter-currency" class="field-label">
-                            "Currency"
-                        </label>
-                        <select id="filter-currency" name="currency" class="field-input field-select">
-                            <option value="" selected=(currency.is_empty().then_some("selected"))>
-                                "Any"
-                            </option>
-                            for &curr in haven_domain::offer::SUPPORTED_CURRENCIES {
-                                <option value=(curr) selected=((currency == curr).then_some("selected"))>
-                                    (curr)
-                                </option>
-                            }
-                        </select>
-                    </div>
-
-                    <div class="filter-field filter-field-price">
-                        <label for="filter-min-price" class="field-label">
-                            "Min price"
-                        </label>
-                        <input
-                            id="filter-min-price"
-                            class="field-input"
-                            type="number"
-                            name="min_price"
-                            value=(min_str)
-                            min="0"
-                            placeholder="0"
-                        />
-                    </div>
-
-                    <div class="filter-field filter-field-price">
-                        <label for="filter-max-price" class="field-label">
-                            "Max price (0 for Free)"
-                        </label>
-                        <input
-                            id="filter-max-price"
-                            class="field-input"
-                            type="number"
-                            name="max_price"
-                            value=(max_str)
-                            min="0"
-                            placeholder="Max"
-                        />
-                    </div>
-                </div>
+                </button>
             </div>
 
-            if let Some(err) = price_error {
-                <p class="field-error" role="alert">(err)</p>
+            if let Some(error) = data.title_error {
+                <p class="feed-filter-error" role="alert">(error)</p>
+            }
+            if let Some(error) = data.price_error {
+                <p class="feed-filter-error" role="alert">(error)</p>
+            }
+            if let Some(summary) = data.summary {
+                filter_summary(summary: summary)
             }
 
-            <div class="filter-actions">
-                <button type="submit" class="button button-primary filter-submit-btn">
-                    "Filter"
-                </button>
-                if active_filters_count > 0 {
-                    <a href="/offers" class="filter-clear-link">
-                        "Clear filters"
-                    </a>
-                }
-            </div>
+            feed_filter_sheet(data: sheet_data)
         </form>
     })
 }
 
+/// Encodes the query retained by the sheet's price-only clear link.
+#[must_use]
+pub fn clear_price_href(query: &str) -> String {
+    if query.is_empty() {
+        return "/offers".to_string();
+    }
+    let mut serializer = url::form_urlencoded::Serializer::new(String::new());
+    serializer.append_pair("q", query);
+    format!("/offers?{}", serializer.finish())
+}
+
 #[cfg(test)]
+#[allow(clippy::unwrap_used, reason = "component assertions")]
 mod tests {
     use super::*;
     use topcoat::{
@@ -116,27 +108,44 @@ mod tests {
         view::{ViewExt, view},
     };
 
+    fn data(count: u32, summary: Option<&str>) -> FeedFiltersData {
+        FeedFiltersData {
+            title_query: "mug & bowl".to_string(),
+            currency: "USD".to_string(),
+            min_price: None,
+            max_price: Some(30),
+            title_error: None,
+            price_error: None,
+            price_filter_count: count,
+            summary: summary.map(str::to_string),
+            clear_price_href: clear_price_href("mug & bowl"),
+        }
+    }
+
     #[tokio::test]
-    #[allow(clippy::unwrap_used, reason = "test assertions")]
-    async fn feed_filters_renders_inputs_and_values() {
+    async fn renders_one_form_one_copy_of_each_field_and_price_count() {
         let cx = Cx::default();
         let __cx = &cx;
-        let el = view! {
-            feed_filters(
-                title_query: "lamp".to_string(),
-                currency: "NGN".to_string(),
-                min_price: Some(100),
-                max_price: Some(500),
-                title_error: None,
-                price_error: None,
-                active_filters_count: 2,
-            )
-        };
+        let rendered = view! { feed_filters(data: data(1, Some("Search: mug · USD · Max 30"))) };
+        let html = rendered.single().await.unwrap().render(__cx);
+        assert!(html.contains("method=\"get\""));
+        assert!(html.contains("id=\"feed-filter-sheet\" popover=\"auto\""));
+        assert!(html.contains("popovertarget=\"feed-filter-sheet\""));
+        for field in ["q", "currency", "min_price", "max_price"] {
+            assert_eq!(html.matches(&format!("name=\"{field}\"")).count(), 1);
+        }
+        assert!(html.contains("class=\"filter-count-badge\""));
+        assert!(html.contains("Search: mug · USD · Max 30"));
+        assert!(html.contains("/offers?q=mug+%26+bowl"));
+    }
 
-        let html = el.single().await.unwrap().render(__cx);
-        assert!(html.contains("value=\"lamp\""));
-        assert!(html.contains("value=\"100\""));
-        assert!(html.contains("value=\"500\""));
-        assert!(html.contains("Clear filters"));
+    #[tokio::test]
+    async fn omits_count_badge_without_active_price_filter() {
+        let cx = Cx::default();
+        let __cx = &cx;
+        let rendered = view! { feed_filters(data: data(0, None)) };
+        let html = rendered.single().await.unwrap().render(__cx);
+        assert!(!html.contains("filter-count-badge"));
+        assert!(!html.contains("filter-summary"));
     }
 }

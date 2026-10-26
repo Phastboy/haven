@@ -43,7 +43,7 @@ fn render_edit_offer_form(cx: &Cx, view_data: EditOfferFormView) -> impl topcoat
                     value: fields.title,
                     required: true,
                     minlength: Some(3),
-                    maxlength: Some(100),
+                    maxlength: Some(50),
                 )
                 textarea_field(
                     label: "Description",

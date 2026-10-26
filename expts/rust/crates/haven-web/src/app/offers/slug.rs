@@ -1,69 +1,49 @@
-#![allow(
-    clippy::too_many_lines,
-    reason = "Offer detail view with photo stack, maker attribution, and ETag caching"
-)]
+//! Public offer detail route: `/offers/{slug}`.
 
+pub mod action_card;
+pub mod cache;
+pub mod gallery;
+pub mod maker_row;
+pub mod message;
+pub mod save;
+pub mod viewer;
+
+use action_card::{ActionCardData, action_card as render_action_card};
+use cache::{matches_if_none_match, offer_etag};
+use gallery::{GalleryPhoto, OfferGalleryData, offer_gallery as render_offer_gallery};
+use maker_row::{MakerRowData, maker_row as render_maker_row};
 use topcoat::{
     Result as TopcoatResult,
     context::Cx,
     view::{View, view},
 };
-
-pub mod message;
-pub mod save;
-pub mod viewer;
-
 use viewer::{OfferViewer, OfferViewerInput, offer_viewer};
 
 topcoat::router::module_param!(slug);
 
-const BUILD_VERSION: &str = env!("CARGO_PKG_VERSION");
-
-fn weak_etag_match(header_tag: &str, current_etag: &str) -> bool {
-    let current_opaque = current_etag.strip_prefix("W/").unwrap_or(current_etag);
-    let header_opaque = header_tag.strip_prefix("W/").unwrap_or(header_tag);
-    current_opaque == header_opaque
-}
-
-fn matches_if_none_match(inm_header: &str, current_etag: &str) -> bool {
-    for raw_tag in inm_header.split(',') {
-        let tag = raw_tag.trim();
-        if tag.is_empty() {
-            continue;
-        }
-        if tag == "*" || weak_etag_match(tag, current_etag) {
-            return true;
-        }
-    }
-    false
-}
-
 #[topcoat::router::page]
 pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
     let slug_raw: &str = topcoat::router::path_param::<Slug>(cx);
-    let offer_slug = haven_domain::offer::OfferSlug::parse(slug_raw)
+    let slug = haven_domain::offer::OfferSlug::parse(slug_raw)
         .map_err(|_| topcoat::router::error::not_found())?;
-
     let registry = crate::app::state::registry(cx);
     let offer = registry
         .offers()
-        .find_by_slug(&offer_slug)
+        .find_by_slug(&slug)
         .await
         .map_err(crate::app::state::map_repo_err)?
         .ok_or_else(topcoat::router::error::not_found)?;
-
-    let viewer = crate::app::auth::guard::current_user(cx).await?;
-    let is_owner = viewer.as_ref().is_some_and(|u| u.id == offer.user_id);
-
+    let person = crate::app::auth::guard::current_user(cx).await?;
+    let is_owner = person.as_ref().is_some_and(|p| p.id == offer.user_id);
     if !offer.is_public() && !is_owner {
         return Err(topcoat::router::error::not_found().into());
     }
 
-    let is_saved = if offer.is_public() {
-        if let Some(user) = viewer.as_ref().filter(|user| user.id != offer.user_id) {
+    let saved = if offer.is_public() {
+        if let Some(visitor) = person.as_ref().filter(|p| p.id != offer.user_id) {
             registry
                 .saved_offers()
-                .is_saved(user.id, offer.id)
+                .is_saved(visitor.id, offer.id)
                 .await
                 .map_err(crate::app::state::map_repo_err)?
         } else {
@@ -72,11 +52,10 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
     } else {
         false
     };
-
     let role = offer_viewer(OfferViewerInput {
-        viewer_id: viewer.as_ref().map(|u| u.id),
+        viewer_id: person.as_ref().map(|p| p.id),
         owner_id: offer.user_id,
-        saved: is_saved,
+        saved,
     });
 
     let maker = registry
@@ -84,17 +63,51 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
         .find_by_id(offer.user_id)
         .await
         .map_err(crate::app::state::map_repo_err)?;
-
-    // Shared caching policy with ETag (only for public views)
-    let etag = format!(
-        "\"{:x}-{:x}-v{}\"",
-        offer.id.as_uuid().as_u128(),
-        offer.updated_at.timestamp_micros(),
-        BUILD_VERSION
+    let maker_name = maker.as_ref().map_or_else(
+        || "Maker".to_string(),
+        |m| m.display_name.as_str().to_string(),
+    );
+    let maker_row_data = maker.map_or(
+        MakerRowData {
+            display_name: "Maker".to_string(),
+            profile_href: "/offers".to_string(),
+            joined_date: String::new(),
+            avatar_url: None,
+            avatar_srcset: None,
+            initial: "M".to_string(),
+        },
+        |user| {
+            let cloud_name = crate::app::state::cloudinary_cloud_name(cx);
+            let avatar = user.avatar_public_id.as_ref().map(|id| {
+                (
+                    crate::app::components::image::avatar_url(cloud_name, id.as_str()),
+                    crate::app::components::image::avatar_srcset(cloud_name, id.as_str()),
+                )
+            });
+            MakerRowData {
+                display_name: user.display_name.as_str().to_string(),
+                profile_href: format!("/profiles/{}", user.handle.as_str()),
+                joined_date: crate::app::components::date::joined_date(&user.created_at),
+                avatar_url: avatar.as_ref().map(|a| a.0.clone()),
+                avatar_srcset: avatar.map(|a| a.1),
+                initial: user
+                    .display_name
+                    .as_str()
+                    .chars()
+                    .next()
+                    .unwrap_or('M')
+                    .to_uppercase()
+                    .to_string(),
+            }
+        },
     );
 
+    let etag = offer_etag(
+        offer.id.as_uuid().as_u128(),
+        offer.updated_at.timestamp_micros(),
+    );
     let headers = topcoat::router::response::response_headers(cx);
-    if viewer.is_some() {
+    if person.is_some() {
         headers.append(
             topcoat::router::header::HeaderName::from_static("cache-control"),
             topcoat::router::header::HeaderValue::from_static("private, no-store"),
@@ -104,139 +117,106 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
             topcoat::router::header::HeaderName::from_static("cache-control"),
             topcoat::router::header::HeaderValue::from_static("public, max-age=60, s-maxage=300"),
         );
-        if let Ok(etag_val) = topcoat::router::header::HeaderValue::from_str(&etag) {
+        if let Ok(value) = topcoat::router::header::HeaderValue::from_str(&etag) {
             headers.append(
                 topcoat::router::header::HeaderName::from_static("etag"),
-                etag_val,
+                value,
             );
         }
     }
-
-    let not_modified = viewer.is_none()
+    let not_modified = person.is_none()
         && topcoat::router::request::headers(cx)
             .get_all(http::header::IF_NONE_MATCH)
             .iter()
-            .any(|val| {
-                val.to_str()
-                    .is_ok_and(|header_str| matches_if_none_match(header_str, &etag))
+            .any(|header| {
+                header
+                    .to_str()
+                    .is_ok_and(|tag| matches_if_none_match(tag, &etag))
             });
 
-    let price_text = if offer.price.as_i32() == 0 {
+    let price = if offer.price.as_i32() == 0 {
         "Free".to_string()
     } else {
         format!("{} {}", offer.price.as_i32(), offer.currency.as_str())
     };
-
-    let canonical_url = format!("/offers/{}", offer.slug);
+    let title = offer.title.clone();
+    let slug_text = offer.slug.as_str().to_string();
     let cloud_name = crate::app::state::cloudinary_cloud_name(cx);
-    let total_images = offer.images.len();
-    let offer_title = offer.title.clone();
-    let slug_str = offer.slug.as_str().to_string();
+    let photos = offer
+        .images
+        .iter()
+        .enumerate()
+        .map(|(index, image)| GalleryPhoto {
+            src: crate::app::components::image::detail_url(cloud_name, image.public_id.as_str()),
+            srcset: crate::app::components::image::detail_srcset(
+                cloud_name,
+                image.public_id.as_str(),
+            ),
+            tile_srcset: crate::app::components::image::card_sq_srcset(
+                cloud_name,
+                image.public_id.as_str(),
+            ),
+            alt: format!(
+                "{}, photo {} of {}",
+                offer.title,
+                index.saturating_add(1),
+                offer.images.len()
+            ),
+            loading: if index == 0 { "eager" } else { "lazy" },
+        })
+        .collect();
+    let gallery_save =
+        matches!(role, OfferViewer::Visitor { .. } | OfferViewer::Anonymous).then(|| {
+            crate::app::components::save_heart::SaveHeartData {
+                slug: slug.clone(),
+                is_saved: matches!(role, OfferViewer::Visitor { saved: true }),
+                return_to: None,
+                show_label: false,
+                is_authenticated: !matches!(role, OfferViewer::Anonymous),
+            }
+        });
+    let gallery_data = OfferGalleryData {
+        photos,
+        save: gallery_save,
+    };
+    let action_data = ActionCardData {
+        slug: slug_text.clone(),
+        price: price.clone(),
+        maker_name,
+        role,
+    };
+    let save_slug = slug.clone();
 
     Ok(view! {
-        if not_modified {
-            (http::StatusCode::NOT_MODIFIED)
-        } else {
-            <div id=(format!("offer-{}", offer.slug.as_str())) class="offer-detail">
-                <link rel="canonical" href=(canonical_url) />
-                <div class="page-header">
-                    <div class="offer-detail-header">
-                        <h1 class="offer-detail-title">(offer_title.clone())</h1>
-                        <div class="offer-detail-price">(price_text)</div>
-                    </div>
-                    if let Some(user) = maker {
-                        <div class="offer-detail-maker">
-                            <span class="text-muted">"Offered by "</span>
-                            <a href=(format!("/profiles/{}", user.handle.as_str())) class="maker-link">(user.display_name.as_str())</a>
-                        </div>
+        if not_modified { (http::StatusCode::NOT_MODIFIED) } else {
+            <div id=(format!("offer-{}", slug_text)) class="offer-detail">
+                <link rel="canonical" href=(format!("/offers/{slug_text}")) />
+                <div class="offer-detail-back-slot"></div>
+                <section class="offer-title-row">
+                    <h1 class="offer-detail-title">(title)</h1>
+                    if matches!(role, OfferViewer::Visitor { .. } | OfferViewer::Anonymous) {
+                        <div class="offer-title-save"><div class="save-heart-desktop">
+                            crate::app::components::save_heart::save_heart(props: crate::app::components::save_heart::SaveHeartData {
+                                slug: save_slug.clone(), is_saved: matches!(role, OfferViewer::Visitor { saved: true }), return_to: None, show_label: true, is_authenticated: !matches!(role, OfferViewer::Anonymous),
+                            })
+                        </div></div>
                     }
-                </div>
-                if total_images > 0 {
-                    <div class="offer-photo-stack">
-                        for (idx, img) in offer.images.iter().enumerate() {
-                            let alt_text = format!("{}, photo {} of {}", offer_title, idx + 1, total_images);
-                            <div class="offer-photo-item">
-                                <img
-                                    src=(crate::app::components::image::detail_url(cloud_name, img.public_id.as_str()))
-                                    srcset=(crate::app::components::image::detail_srcset(cloud_name, img.public_id.as_str()))
-                                    alt=(alt_text)
-                                    class="offer-detail-image"
-                                    width="640"
-                                    height="480"
-                                    loading=(if idx == 0 { "eager" } else { "lazy" })
-                                />
-                            </div>
-                        }
+                </section>
+                <div class="offer-detail-price">(price)</div>
+                render_offer_gallery(data: gallery_data)
+                <div class="offer-detail-columns">
+                    <div class="offer-detail-copy">
+                        render_maker_row(data: maker_row_data)
+                        <div class="offer-detail-body">(offer.description)</div>
                     </div>
-                }
-                <div class="offer-detail-body">
-                    <p>(offer.description)</p>
+                    <aside class="offer-action-column">render_action_card(data: action_data)</aside>
                 </div>
-
                 match role {
-                    OfferViewer::Visitor { saved } => {
-                        <form action=(format!("/offers/{}/save", slug_str)) method="post">
-                            <input type="hidden" name="action" value=(if saved { "unsave" } else { "save" }) />
-                            <input type="hidden" name="return_to" value=(format!("/offers/{slug_str}")) />
-                            <button type="submit" class="btn btn-secondary">(if saved { "Remove from saved offers" } else { "Save offer" })</button>
-                        </form>
-                        <div class="offer-inquiry-action">
-                            <h3>"Message about this offer"</h3>
-                            <form action=(format!("/offers/{slug_str}/message")) method="post" class="offer-message-form">
-                                <textarea name="body" placeholder="Ask a question or express your interest..." rows="3" required="required" maxlength="2000"></textarea>
-                                <div>
-                                    <button type="submit" class="btn btn-primary">"Send Message"</button>
-                                </div>
-                            </form>
-                        </div>
-                    }
-                    OfferViewer::Anonymous => {
-                        <div class="offer-inquiry-action">
-                            <h3>"Message about this offer"</h3>
-                            <form action=(format!("/offers/{slug_str}/message")) method="post" class="offer-message-form">
-                                <textarea name="body" placeholder="Ask a question or express your interest..." rows="3" required="required" maxlength="2000"></textarea>
-                                <div>
-                                    <button type="submit" class="btn btn-primary">"Send Message"</button>
-                                </div>
-                            </form>
-                        </div>
-                    }
-                    OfferViewer::Owner => {}
+                    OfferViewer::Visitor { .. } => <div class="offer-mobile-bar"><a class="offer-primary-button" href="#message">"Message"</a></div>,
+                    OfferViewer::Anonymous => <div class="offer-mobile-bar"><a class="offer-primary-button" href="/auth/sign-in">"Sign in to message"</a></div>,
+                    OfferViewer::Owner => {},
                 }
             </div>
         }
     })
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_weak_etag_match() {
-        assert!(weak_etag_match("\"tag\"", "\"tag\""));
-        assert!(weak_etag_match("W/\"tag\"", "\"tag\""));
-        assert!(weak_etag_match("\"tag\"", "W/\"tag\""));
-        assert!(weak_etag_match("W/\"tag\"", "W/\"tag\""));
-        assert!(!weak_etag_match("\"other\"", "\"tag\""));
-    }
-
-    #[test]
-    fn test_matches_if_none_match() {
-        let current = "\"123-456-v0.1.0\"";
-        assert!(matches_if_none_match("*", current));
-        assert!(matches_if_none_match("\"123-456-v0.1.0\"", current));
-        assert!(matches_if_none_match("W/\"123-456-v0.1.0\"", current));
-        assert!(matches_if_none_match(
-            "\"other\", W/\"123-456-v0.1.0\"",
-            current
-        ));
-        assert!(matches_if_none_match(
-            " \"other\" ,  \"123-456-v0.1.0\" ",
-            current
-        ));
-        assert!(!matches_if_none_match("\"other\", \"second\"", current));
-        assert!(!matches_if_none_match("", current));
-        assert!(!matches_if_none_match(" , ", current));
-    }
 }

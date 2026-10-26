@@ -40,12 +40,13 @@ pub async fn offer_card(
     #[default] cover_image_srcset: Option<String>,
     #[default] is_above_fold: bool,
 ) -> TopcoatResult<impl View> {
+    let card_id = format!("offer-{}", href.rsplit('/').next().unwrap_or("unknown"));
     let dialog_id = delete_action
         .as_ref()
         .map(|act| format!("confirm-del-{}", act.trim_matches('/').replace('/', "-")));
 
     Ok(view! {
-        <li class="offer-card">
+        <li id=(card_id) class="offer-card">
             <div class="offer-card-media">
                 if let Some(src) = cover_image_url {
                     if is_above_fold {

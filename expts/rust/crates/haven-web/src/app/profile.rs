@@ -44,7 +44,7 @@ pub async fn profile_overview(cx: &Cx) -> TopcoatResult<impl View> {
     let query = topcoat::router::query_params::<ProfileQuery>(cx).ok();
     let is_updated = query.as_ref().and_then(|q| q.updated.as_deref()) == Some("1");
 
-    let joined_date = user.created_at.format("Joined %B %Y").to_string();
+    let joined_date = crate::app::components::date::joined_date(&user.created_at);
     let cloud_name = crate::app::state::cloudinary_cloud_name(cx);
     let (avatar_url, avatar_srcset) = match user.avatar_public_id.as_ref() {
         Some(public_id) => (
