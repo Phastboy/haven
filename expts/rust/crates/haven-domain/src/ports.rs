@@ -14,7 +14,7 @@ use crate::session::{HashedToken, Session, SessionId};
 use crate::user::{ProfileHandle, User, UserProfileUpdate};
 pub use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-use std::net::IpAddr;
+use std::{collections::HashSet, net::IpAddr};
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -358,6 +358,12 @@ pub trait ConversationRepository: Send + Sync {
 pub trait SavedOfferRepository: Send + Sync {
     /// Checks whether an offer is currently saved.
     async fn is_saved(&self, user_id: UserId, offer_id: OfferId) -> Result<bool, RepoError>;
+    /// Returns saved offer IDs from the supplied page in one repository operation.
+    async fn saved_among(
+        &self,
+        user_id: UserId,
+        offer_ids: &[OfferId],
+    ) -> Result<HashSet<OfferId>, RepoError>;
     /// Saves an offer; repeated saves are successful and leave the original timestamp.
     async fn save(&self, user_id: UserId, offer_id: OfferId) -> Result<(), RepoError>;
     /// Removes a saved offer; repeated removals are successful.

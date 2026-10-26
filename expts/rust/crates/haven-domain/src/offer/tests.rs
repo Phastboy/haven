@@ -49,10 +49,10 @@ fn validate_title_enforces_character_bounds() {
     ));
     assert!(validate_title("abc").is_ok());
 
-    let exactly_100_chars = "a".repeat(100);
-    assert!(validate_title(&exactly_100_chars).is_ok());
+    let exactly_50_chars = "a".repeat(50);
+    assert!(validate_title(&exactly_50_chars).is_ok());
 
-    let over_100_chars = "a".repeat(101);
+    let over_100_chars = "a".repeat(51);
     assert!(matches!(
         validate_title(&over_100_chars),
         Err(OfferValidationError::TitleTooLong)
@@ -155,7 +155,7 @@ fn update_offer_validates_partial_updates() {
     ));
 
     let uo_overlong_title = UpdateOffer {
-        title: Some("a".repeat(101)),
+        title: Some("a".repeat(51)),
         description: None,
         price: None,
         currency: None,
@@ -180,7 +180,7 @@ fn update_offer_validates_partial_updates() {
 #[test]
 fn create_offer_rejects_overlong_inputs() {
     let mut co = CreateOffer {
-        title: "a".repeat(101),
+        title: "a".repeat(51),
         description: "A valid description for testing.".into(),
         price: Price::ZERO,
         currency: CurrencyCode::default_code(),
@@ -212,14 +212,14 @@ fn all_supported_currencies_parse_and_roundtrip() {
 
 #[test]
 fn unicode_multibyte_characters_counted_by_chars_not_bytes() {
-    // 100 emoji characters = 400 bytes, but exactly 100 characters
-    let title_100_emojis = "🎉".repeat(100);
-    assert_eq!(title_100_emojis.chars().count(), 100);
-    assert_eq!(title_100_emojis.len(), 400);
+    // 50 emoji characters = 200 bytes, but exactly 50 characters
+    let title_100_emojis = "🎉".repeat(50);
+    assert_eq!(title_100_emojis.chars().count(), 50);
+    assert_eq!(title_100_emojis.len(), 200);
     assert!(validate_title(&title_100_emojis).is_ok());
 
-    // 101 emoji characters = 101 characters -> Too long
-    let title_101_emojis = "🎉".repeat(101);
+    // 51 emoji characters -> Too long
+    let title_101_emojis = "🎉".repeat(51);
     assert!(matches!(
         validate_title(&title_101_emojis),
         Err(OfferValidationError::TitleTooLong)

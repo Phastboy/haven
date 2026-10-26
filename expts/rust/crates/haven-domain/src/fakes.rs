@@ -290,6 +290,18 @@ impl crate::ports::SavedOfferRepository for FakeSavedOfferRepository {
             .unwrap()
             .contains_key(&(user_id, offer_id)))
     }
+    async fn saved_among(
+        &self,
+        user_id: UserId,
+        offer_ids: &[OfferId],
+    ) -> Result<std::collections::HashSet<OfferId>, RepoError> {
+        let pairs = self.pairs.lock().unwrap();
+        Ok(offer_ids
+            .iter()
+            .copied()
+            .filter(|id| pairs.contains_key(&(user_id, *id)))
+            .collect())
+    }
     async fn save(&self, user_id: UserId, offer_id: OfferId) -> Result<(), RepoError> {
         self.pairs
             .lock()
@@ -928,6 +940,15 @@ mod tests {
         let offer = OfferId::generate();
         let saved = FakeSavedOfferRepository::default();
         saved.save(user, offer).await.unwrap();
+        let other_offer = OfferId::generate();
+        assert_eq!(
+            saved
+                .saved_among(user, &[offer, other_offer])
+                .await
+                .unwrap(),
+            [offer].into_iter().collect()
+        );
+        assert!(saved.saved_among(user, &[]).await.unwrap().is_empty());
         let first_time = saved.pairs.lock().unwrap()[&(user, offer)];
         saved.save(user, offer).await.unwrap();
         assert_eq!(saved.pairs.lock().unwrap().len(), 1);

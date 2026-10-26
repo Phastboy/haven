@@ -28,7 +28,7 @@ pub enum OfferValidationError {
     #[error("title must be at least 3 characters")]
     TitleTooShort,
 
-    #[error("title must not exceed 100 characters")]
+    #[error("title must not exceed 50 characters")]
     TitleTooLong,
 
     #[error("description must not be blank")]
