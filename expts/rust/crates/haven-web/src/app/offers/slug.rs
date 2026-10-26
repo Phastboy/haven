@@ -67,6 +67,9 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
         || "Maker".to_string(),
         |m| m.display_name.as_str().to_string(),
     );
+    let maker_updated_at_micros = maker
+        .as_ref()
+        .map_or(0, |user| user.updated_at.timestamp_micros());
     let maker_row_data = maker.map_or(
         MakerRowData {
             display_name: "Maker".to_string(),
@@ -105,6 +108,7 @@ pub async fn view_slug(cx: &Cx) -> TopcoatResult<impl View> {
     let etag = offer_etag(
         offer.id.as_uuid().as_u128(),
         offer.updated_at.timestamp_micros(),
+        maker_updated_at_micros,
     );
     let headers = topcoat::router::response::response_headers(cx);
     if person.is_some() {
