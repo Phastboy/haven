@@ -1,0 +1,128 @@
+package main
+
+import (
+	"context"
+	"crypto/tls"
+	"errors"
+	"flag"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"time"
+)
+
+type session struct {
+	UserID     string   `json:"user_id"`
+	Handle     string   `json:"handle"`
+	Session    string   `json:"session_token"`
+	OfferIDs   []string `json:"offer_ids"`
+	OfferSlugs []string `json:"offer_slugs"`
+}
+
+type sample struct {
+	Route    string        `json:"route"`
+	Duration time.Duration `json:"duration_ns"`
+	Status   int           `json:"status"`
+	Err      string        `json:"error,omitempty"`
+}
+
+type job struct {
+	index int
+}
+
+type stats struct {
+	mu       sync.Mutex
+	samples  map[string][]time.Duration
+	requests atomic.Uint64
+	failures atomic.Uint64
+	checks   atomic.Uint64
+	passed   atomic.Uint64
+}
+
+func main() {
+	baseURL := flag.String("base-url", envOr("BASE_URL", "http://127.0.0.1:3000"), "Haven base URL")
+	scenario := flag.String("scenario", "smoke", "smoke, warmup, steady, authorization, v05, v06, spike, or capacity")
+	sessionsPath := flag.String("sessions", "../data/sessions.json", "load-test-support session JSON")
+	rate := flag.Int("rate", 1, "open arrival rate in journeys per second")
+	duration := flag.Duration("duration", time.Second, "test duration")
+	workers := flag.Int("workers", 32, "maximum concurrent journey workers")
+	maxIterations := flag.Int("iterations", 0, "stop after this many scheduled journeys (0 uses duration)")
+	summaryPath := flag.String("summary", "", "write machine-readable JSON summary")
+	skipTLSVerify := flag.Bool("insecure-skip-tls-verify", false, "skip TLS verification for isolated self-signed QEMU benchmarks")
+	flag.Parse()
+
+	if err := validate(*baseURL, *scenario, *rate, *duration, *workers); err != nil {
+		log.Fatal(err)
+	}
+	fixture, err := loadSessions(*sessionsPath)
+	if err != nil && needsSessions(*scenario) {
+		log.Fatal(err)
+	}
+	if err := validateSessions(*scenario, fixture); err != nil {
+		log.Fatal(err)
+	}
+	if *scenario == "v06" && len(fixture) < *workers*22 {
+		log.Fatalf("v06 needs %d seeded users for isolated pagination fixtures; found %d", *workers*22, len(fixture))
+	}
+
+	client := &http.Client{
+		Timeout: 15 * time.Second,
+		Transport: &http.Transport{
+			MaxIdleConns:        *workers * 2,
+			MaxIdleConnsPerHost: *workers,
+			MaxConnsPerHost:     *workers,
+			IdleConnTimeout:     90 * time.Second,
+			TLSClientConfig:     &tls.Config{InsecureSkipVerify: *skipTLSVerify}, // only for isolated QEMU's self-signed endpoint
+		},
+		CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse },
+	}
+	collector := &stats{samples: make(map[string][]time.Duration)}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	started := time.Now()
+	if *scenario == "spike" || *scenario == "capacity" {
+		summary := runProfile(ctx, client, *baseURL, *scenario, fixture, *workers, collector)
+		summary.Duration = time.Since(started)
+		if summary.Duration > 0 {
+			summary.RequestsPerSecond = float64(summary.Requests) / summary.Duration.Seconds()
+		}
+		printSummary(summary)
+		if *summaryPath != "" {
+			if err := writeSummary(*summaryPath, summary); err != nil {
+				log.Fatal(err)
+			}
+		}
+		if summary.Failed != 0 || summary.Dropped != 0 || summary.ProfileFailed {
+			os.Exit(1)
+		}
+		return
+	}
+	scheduled, startedCount, completed, dropped, failed := run(ctx, client, *baseURL, *scenario, fixture, *rate, *duration, *workers, *maxIterations, collector)
+	summary := makeSummary(*scenario, time.Since(started), *rate, scheduled, startedCount, completed, dropped, failed, collector)
+	printSummary(summary)
+	if *summaryPath != "" {
+		if err := writeSummary(*summaryPath, summary); err != nil {
+			log.Fatal(err)
+		}
+	}
+	if failed != 0 || dropped != 0 {
+		os.Exit(1)
+	}
+}
+
+func validate(baseURL, scenario string, rate int, duration time.Duration, workers int) error {
+	if !strings.HasPrefix(baseURL, "http://") && !strings.HasPrefix(baseURL, "https://") {
+		return errors.New("base-url must use http or https")
+	}
+	if scenario != "smoke" && scenario != "warmup" && scenario != "steady" && scenario != "authorization" && scenario != "v05" && scenario != "v06" && scenario != "spike" && scenario != "capacity" {
+		return fmt.Errorf("unknown scenario %q", scenario)
+	}
+	if rate < 1 || workers < 1 || duration <= 0 {
+		return errors.New("rate, workers, and duration must be positive")
+	}
+	return nil
+}
