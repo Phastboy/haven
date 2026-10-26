@@ -119,7 +119,7 @@
 @media (max-width: 640px) {
   .app-shell { grid-template-columns: minmax(0, 1fr); }
   .app-shell-main { min-height: 100vh; }
-  .app-shell-content { padding-bottom: 64px; }
+  .app-shell-content { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
   .app-shell-child .app-shell-content { padding-bottom: 0; }
   .app-bottom-tabs {
     position: fixed;

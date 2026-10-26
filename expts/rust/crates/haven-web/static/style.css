@@ -1429,7 +1429,7 @@ dialog[popover],
 .save-heart:hover { background: #f3f4f6; }
 .save-heart:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 2px; }
 .offers-feed .feed-filters { padding: 0; background: transparent; border: 0; border-radius: 0; }
-.app-shell-content:has(.offers-feed) { max-width: none; width: min(100%, 1600px); padding: 28px 32px; }
+.app-shell-content:has(.offers-feed) { max-width: none; width: min(100%, 1600px); padding-top: 28px; padding-inline: 32px; }
 .offers-feed .field-error { border-left: 2px solid #111827; padding-left: 10px; }
 
 /* Public offer detail */
@@ -1535,7 +1535,7 @@ body:has(.offer-detail) .app-shell-content { padding-top: var(--space-4); paddin
 @media (max-width: 640px) {
   .listing-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   .filters-price-group { grid-template-columns: 1fr; }
-  .app-shell-content:has(.offers-feed) { padding: 16px 12px; }
+  .app-shell-content:has(.offers-feed) { padding-top: 16px; padding-inline: 12px; }
 }
 
 
