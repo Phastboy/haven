@@ -39,7 +39,7 @@ pub async fn offer_gallery(data: OfferGalleryData) -> TopcoatResult<impl View> {
                         <picture>
                             <source media="(min-width: 641px)" srcset=(if index == 0 { photo.srcset.clone() } else { photo.tile_srcset.clone() }) />
                             <img src=(photo.src)
-                                srcset=(if index == 0 { photo.srcset } else { photo.tile_srcset })
+                                srcset=(photo.srcset)
                                 alt=(photo.alt) class="offer-detail-image" width="640" height="480" loading=(photo.loading) />
                         </picture>
                         if index == 0 && count > 1 {
@@ -85,6 +85,11 @@ mod tests {
             assert!(html.contains(&format!("gallery-n{count}")));
             assert_eq!(html.matches("<img").count(), count);
             assert_eq!(html.contains(&format!("{count} photos")), count > 1);
+            for index in 0..count {
+                assert!(html.contains(&format!(
+                    "src=\"/detail-{index}.webp\" srcset=\"/detail-{index}.webp 1x, /detail-{index}-2x.webp 2x\""
+                )));
+            }
         }
     }
 }
