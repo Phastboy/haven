@@ -73,12 +73,12 @@ The first form of action we are exploring is **inquiry**: expressing that you ar
 
 ---
 
-## 0.5.x — Can someone find it?
+## 0.5.x — Can someone find it? (completed)
 
 As the number of offers grows, people should be able to find an offer they are looking for without already knowing where it is.
 
-* [ ] A person can find an offer by its name.
-* [ ] A person can narrow offers down by price.
+* [x] A person can find an offer by its name.
+* [x] A person can narrow offers down by price.
 
 **The question:**
 
@@ -88,14 +88,14 @@ As the number of offers grows, people should be able to find an offer they are l
 
 ---
 
-## 0.6.x — Can I come back to what I care about?
+## 0.6.x — Can I come back to what I care about? (completed)
 
 People should be able to keep track of things and people they care about instead of having to find them again.
 
-* [ ] A person can save an offer.
-* [ ] A person can follow another person.
-* [ ] A person can return to their saved offers.
-* [ ] A person can return to the people they follow.
+* [x] A person can save an offer.
+* [x] A person can follow another person.
+* [x] A person can return to their saved offers.
+* [x] A person can return to the people they follow.
 
 **The question:**
 
@@ -104,6 +104,8 @@ People should be able to keep track of things and people they care about instead
 **Done when:** A person's interests can persist beyond a single visit.
 
 ---
+
+**Stage complete:** The 0.5.x and 0.6.x capabilities are implemented. Haven is now on **v0.6.x**.
 
 ## 0.7.x — Can I narrow it down?
 
