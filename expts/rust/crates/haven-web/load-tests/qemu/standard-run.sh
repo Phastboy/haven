@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # standard-run.sh — Haven load-test orchestrator
-# Usage: ./standard-run.sh --scenario 02-steady-state --pool 16 --rate 1000 \
+# Usage: ./standard-run.sh --scenario steady --pool 16 --rate 1000 \
 #                          --target https://10.10.0.2 --label calib-1
 # Requires: sudo pin.sh apply run before this. Run this as the normal user.
 set -euo pipefail
@@ -8,13 +8,13 @@ set -euo pipefail
 # ── Constants ────────────────────────────────────────────────────────────────
 GUEST_HOST="10.10.0.2"
 GUEST="root@$GUEST_HOST"
-K6_CORE=2 # CPU for k6
+LOAD_CORE=2 # CPU for the Go load generator
 X=1       # Guest vCPU pinned core
 Y=0       # QEMU helper / host core
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 SESSIONS_JSON="$SCRIPT_DIR/../data/sessions.json"
-K6_SCENARIOS="$SCRIPT_DIR/../k6/scenarios"
+LOAD_RUNNER=""
 WARM_UP_MAX=180        # seconds to wait for warm-up stability
 WARM_UP_STABLE=30      # seconds stability must hold
 WARM_UP_RATE_DIVISOR=5 # warm-up rate = RATE / 5
@@ -74,12 +74,18 @@ RESULTS_DIR="$SCRIPT_DIR/results/${LABEL}_pool${POOL}_${TS}"
   exit 1
 }
 mkdir -p "$RESULTS_DIR"
+if ! command -v go >/dev/null 2>&1; then
+  echo "FATAL: Go is required on the host to build the load runner"
+  exit 1
+fi
+LOAD_RUNNER="$RESULTS_DIR/haven-load"
+(cd "$SCRIPT_DIR/../go" && go build -o "$LOAD_RUNNER" ./cmd/haven-load)
 
 # ── State flags ───────────────────────────────────────────────────────────────
 START_SNAPSHOTS_DONE=0
 TELEMETRY_STARTED=0
 CLEANUP_DONE=0
-K6_RC=0
+LOAD_RC=0
 ORIGINAL_EXIT=0
 
 # ── Cleanup trap ──────────────────────────────────────────────────────────────
@@ -91,7 +97,7 @@ cleanup() {
   [[ $ORIGINAL_EXIT -ne 0 ]] && exit_code=$ORIGINAL_EXIT
 
   echo ""
-  echo "[CLEANUP] Running cleanup (exit=$exit_code, K6_RC=$K6_RC)..."
+  echo "[CLEANUP] Running cleanup (exit=$exit_code, LOAD_RC=$LOAD_RC)..."
 
   # Stop telemetry first (time-sensitive)
   if [[ $TELEMETRY_STARTED -eq 1 ]]; then
@@ -112,13 +118,12 @@ cleanup() {
     cp /proc/softirqs "$RESULTS_DIR/softirqs_end.txt" 2>/dev/null || true
   fi
 
-  # Write k6 exit code
-  echo "$K6_RC" >"$RESULTS_DIR/k6_exit_code"
+  echo "$LOAD_RC" >"$RESULTS_DIR/load_runner_exit_code"
 
   # Determine run status
   local status="ABORTED"
   if [[ $START_SNAPSHOTS_DONE -eq 1 ]]; then
-    if [[ $K6_RC -eq 0 ]]; then
+    if [[ $LOAD_RC -eq 0 ]]; then
       status="PASS" # tentative; analyze-run.py may downgrade
     else
       status="FAIL"
@@ -360,9 +365,10 @@ echo "[6] Warm-up (windowed stability: hit_ratio>=99%, disk_reads<=100/s for ${W
 WARM_RATE=$((RATE / WARM_UP_RATE_DIVISOR))
 [[ "$WARM_RATE" -ge 1 ]] || WARM_RATE=1
 
-taskset -c "$K6_CORE" k6 run --insecure-skip-tls-verify \
-  -e BASE_URL="$TARGET" -e TARGET="$TARGET" -e RATE="$WARM_RATE" -e DURATION="600s" \
-  "$K6_SCENARIOS/warm-up.js" >"$RESULTS_DIR/warmup.log" 2>&1 &
+taskset -c "$LOAD_CORE" "$LOAD_RUNNER" \
+  --base-url "$TARGET" --scenario warmup --sessions "$SESSIONS_JSON" \
+  --rate "$WARM_RATE" --duration 600s --workers 100 --insecure-skip-tls-verify \
+  >"$RESULTS_DIR/warmup.log" 2>&1 &
 WARM_PID=$!
 
 # Establish the initial cumulative PostgreSQL counters.
@@ -450,7 +456,7 @@ done
 
 echo "  Warm-up done in ${elapsed}s"
 
-# SIGTERM the warm-up k6; non-zero exit from it is normal.
+# SIGTERM the warm-up runner; its intentional cancellation is normal.
 kill "$WARM_PID" 2>/dev/null || true
 wait "$WARM_PID" 2>/dev/null || true
 
@@ -477,21 +483,21 @@ _clock_offset pre
 
 # ── [11] Start telemetry ──────────────────────────────────────────────────────
 echo "[11] Starting telemetry..."
-"$SCRIPT_DIR/telemetry.sh" start "$RESULTS_DIR" "$QPID" "$X" "$Y" "$K6_CORE"
+"$SCRIPT_DIR/telemetry.sh" start "$RESULTS_DIR" "$QPID" "$X" "$Y" "$LOAD_CORE"
 TELEMETRY_STARTED=1
-date +%s.%N >"$RESULTS_DIR/k6_start_time"
+date +%s.%N >"$RESULTS_DIR/load_start_time"
 
 # ── [12] Run load test ────────────────────────────────────────────────────────
-echo "[12] Running load test (taskset -c $K6_CORE k6)..."
+echo "[12] Running load test (taskset -c $LOAD_CORE Go runner)..."
 set +e
-taskset -c "$K6_CORE" k6 run --insecure-skip-tls-verify \
-  --summary-export "$RESULTS_DIR/k6_summary.json" \
-  -e BASE_URL="$TARGET" -e TARGET="$TARGET" -e RATE="$RATE" \
-  "$K6_SCENARIOS/$SCENARIO.js" \
-  2>&1 | tee "$RESULTS_DIR/k6_output.log"
-K6_RC=${PIPESTATUS[0]}
+taskset -c "$LOAD_CORE" "$LOAD_RUNNER" \
+  --base-url "$TARGET" --scenario "$SCENARIO" --sessions "$SESSIONS_JSON" \
+  --rate "$RATE" --duration "${DURATION:-5m}" --workers "$POOL" \
+  --summary "$RESULTS_DIR/load_summary.json" --insecure-skip-tls-verify \
+  2>&1 | tee "$RESULTS_DIR/load_output.log"
+LOAD_RC=${PIPESTATUS[0]}
 set -e
-date +%s.%N >"$RESULTS_DIR/k6_end_time"
-echo "K6 exit code: $K6_RC"
+date +%s.%N >"$RESULTS_DIR/load_end_time"
+echo "Go load runner exit code: $LOAD_RC"
 
 # cleanup trap fires here and handles everything else

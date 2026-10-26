@@ -201,15 +201,19 @@ Format: `date · git sha · pass/fail per tier`
 
 ---
 
-### Contract Compliance (arrival-rate suite — not yet run)
+### Contract Compliance (Go open-arrival suite — pending measurements)
 
 | Tier | Scenario | Status | Notes |
 |------|----------|--------|-------|
-| Normal (500 RPS) | `02-normal.js` | ⏳ Not yet run | |
-| High Load (1,000 RPS) | `03-high-load.js` | ⏳ Not yet run | |
-| Spike (2,000 RPS burst) | `04-spike.js` | ⏳ Not yet run | |
-| Soak (500 RPS × 30 min) | `05-soak.js` | ⏳ Not yet run | |
-| Capacity (find ceiling) | `06-capacity.js` | ⏳ Not yet run | |
+| Normal (1,000 RPS) | Go `steady`, `--rate 1000` | ⏳ Not yet run | |
+| High Load (≥1,500 RPS) | Go `steady`, `--rate 1500` or higher | ⏳ Not yet run | |
+| Spike (100 → 2,000 → 100 RPS) | Go `spike` profile | ⏳ Not yet run | 60 seconds per stage |
+| Soak (1,000 RPS × 30 min) | Go `steady`, `--rate 1000 --duration 30m` | ⏳ Not yet run | |
+| Capacity (find ceiling) | Go `capacity` profile | ⏳ Not yet run | 2 minutes per contract ladder stage |
+
+The v0.5.x and v0.6.x functional workloads are `v05` and `v06` in the Go runner. They
+remain distinct from the normal/high-load contract tiers and must each have a recorded
+result before their roadmap gates can close.
 
 ---
 
@@ -218,39 +222,53 @@ Format: `date · git sha · pass/fail per tier`
 ### Prerequisites
 
 ```bash
-# k6
-which k6        # should resolve — installed at /usr/local/bin/k6
+go version
+psql --version
+```
 
-# oha (for raw RPS ceiling tests)
-which oha       # should resolve — installed at ~/.cargo/bin/oha
+Generate an isolated fixture using `load-test-support` as described in
+[`README.md`](README.md). Keep the session file private.
 
-# Postgres client (for system-watch.sh DB metrics)
-which psql
+### Build the Go runner
+
+```bash
+mkdir -p crates/haven-web/load-tests/results
+(cd crates/haven-web/load-tests/go && go build -o ../results/haven-load ./cmd/haven-load)
 ```
 
 ### Individual scenarios
 
 ```bash
-# Smoke — always run first to confirm the API is up
-k6 run crates/haven-web/load-tests/k6/scenarios/01-smoke.js
+# The command paths below are relative to crates/haven-web/load-tests.
+./results/haven-load --base-url "$BASE_URL" --scenario smoke --iterations 1
+./results/haven-load --base-url "$BASE_URL" --scenario steady --rate 1000 --duration 5m \
+  --workers 100 --sessions data/sessions.json --summary results/normal.json
+./results/haven-load --base-url "$BASE_URL" --scenario steady --rate 1500 --duration 5m \
+  --workers 100 --sessions data/sessions.json --summary results/high-load.json
 
-# Normal contract (500 RPS, 5 min)
-k6 run crates/haven-web/load-tests/k6/scenarios/02-normal.js
+# Soak (1,000 RPS × 30 min) — start the system monitor first
+./monitor/system-watch.sh &
+./results/haven-load --base-url "$BASE_URL" --scenario steady --rate 1000 --duration 30m \
+  --workers 100 --sessions data/sessions.json --summary results/soak.json
 
-# High-load contract (1,000 RPS, 5 min)
-k6 run crates/haven-web/load-tests/k6/scenarios/03-high-load.js
+# Spike (three 60-second stages) and capacity (two minutes per ladder step)
+./results/haven-load --base-url "$BASE_URL" --scenario spike --workers 100 \
+  --sessions data/sessions.json --summary results/spike.json
+./results/haven-load --base-url "$BASE_URL" --scenario capacity --workers 200 \
+  --sessions data/sessions.json --summary results/capacity.json
 
-# Spike + recovery
-k6 run crates/haven-web/load-tests/k6/scenarios/04-spike.js
-
-# Soak (500 RPS × 30 min) — start system monitor first
-./crates/haven-web/load-tests/monitor/system-watch.sh &
-k6 run crates/haven-web/load-tests/k6/scenarios/05-soak.js
-
-# Capacity — find the ceiling
-./crates/haven-web/load-tests/monitor/system-watch.sh &
-k6 run crates/haven-web/load-tests/k6/scenarios/06-capacity.js
+# Pending feature gates
+./results/haven-load --base-url "$BASE_URL" --scenario v05 --rate 10 --duration 60s \
+  --workers 16 --summary results/v05.json
+./results/haven-load --base-url "$BASE_URL" --scenario v06 --rate 1 --duration 60s \
+  --workers 16 --sessions data/sessions.json --summary results/v06.json
 ```
+
+The stage profiles are available in Go, but their performance still requires isolated
+measurements. Capacity automatically stops after a stage breaches p95 > 250 ms or error rate
+> 1%; resource exhaustion still requires stopping the run from the system monitor. The
+runner's `--rate` is scheduled journeys per second; the JSON summary also reports actual
+HTTP requests per second. For `steady`, one journey issues one request.
 
 ### Full suite
 
@@ -264,11 +282,10 @@ Results are written to `crates/haven-web/load-tests/results/` (git-ignored).
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `BASE_URL` | `http://localhost:8080` | Application base URL |
-| `TOKEN` | (see `config.js`) | Auth token for authenticated scenarios |
-| `TEST_USER_ID` | (see `config.js`) | User ID for offer listing tests |
-| `TEST_OFFER_ID` | (see `config.js`) | Offer ID for single-offer GET tests |
-| `DB_POOL_MAX` | `20` | Postgres connection pool size |
+| `BASE_URL` | `http://127.0.0.1:3000` | Application base URL |
+| `SESSIONS_FILE` | `data/sessions.json` | Seeded credentials/offer fixture for `run-all.sh` |
+| `RATE` | `50` | Steady-state journeys per second in `run-all.sh` |
+| `WORKERS` | `16` | Bounded Go runner concurrency |
 
 ---
 
