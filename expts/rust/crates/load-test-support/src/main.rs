@@ -36,8 +36,10 @@ struct Args {
 #[derive(Serialize)]
 struct SessionOutput {
     user_id: String,
+    handle: String,
     session_token: String,
     offer_ids: Vec<String>,
+    offer_slugs: Vec<String>,
 }
 
 fn validate_local_database_url(database_url: &str) {
@@ -105,13 +107,19 @@ async fn seed_user(registry: &dyn Registry, i: usize) -> SessionOutput {
     // Seed offers to make the database realistically populated.
     // Mostly 10 per user, but every 100th user gets 200 offers to test unpaginated tails.
     let mut user_offer_ids = Vec::new();
-    let num_offers = if i.is_multiple_of(100) { 200 } else { 10 };
+    let mut user_offer_slugs = Vec::new();
+    let num_offers: usize = if i.is_multiple_of(100) { 200 } else { 10 };
 
     for j in 0..num_offers {
+        let price = if j.is_multiple_of(20) {
+            0
+        } else {
+            1000 + i32::try_from(j).expect("seeded offer index fits in i32")
+        };
         let create_req = haven_domain::offer::CreateOffer {
             title: format!("Test Offer {j} from User {i}"),
             description: "This is a seeded offer to fill the database.".to_string(),
-            price: haven_domain::offer::Price::new(1000 + j).unwrap(),
+            price: haven_domain::offer::Price::new(price).unwrap(),
             currency: haven_domain::offer::CurrencyCode::parse("NGN").unwrap(),
         };
         let offer = registry
@@ -140,12 +148,15 @@ async fn seed_user(registry: &dyn Registry, i: usize) -> SessionOutput {
             .expect("add seeded image");
 
         user_offer_ids.push(offer.id.to_string());
+        user_offer_slugs.push(offer.slug.as_str().to_string());
     }
 
     SessionOutput {
         user_id: user.id.to_string(),
+        handle: user.handle.as_str().to_string(),
         session_token: raw_token.as_str().to_string(),
         offer_ids: user_offer_ids,
+        offer_slugs: user_offer_slugs,
     }
 }
 
