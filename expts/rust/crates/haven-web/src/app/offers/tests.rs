@@ -21,6 +21,7 @@ use haven_domain::user::*;
 use http::Request;
 use topcoat::cookie::RouterBuilderCookieExt;
 use topcoat::router::{Body, RouterBuilderDiscoverExt, to_bytes};
+use topcoat::runtime::RouterBuilderRuntimeExt;
 use topcoat::session::{RouterBuilderSessionExt, SessionConfig, Token};
 use uuid::Uuid;
 
@@ -185,6 +186,7 @@ fn setup_test_app() -> (topcoat::router::Router, TestRegistry) {
     let origins = crate::app::origin::compute_trusted_origins("3000", None, None);
     let origin_policy = topcoat::router::OriginPolicy::new().trust_origins(origins);
     let router = crate::app::router()
+        .expect("Topcoat test asset bundle")
         .origin_policy(origin_policy)
         .layer(topcoat::router::BodyLimit::max(6 * 1024 * 1024))
         .cookies()
@@ -197,6 +199,7 @@ fn setup_test_app() -> (topcoat::router::Router, TestRegistry) {
         .app_context(crate::rate_limit::SignInLimiter::new())
         .app_context(crate::rate_limit::CreateOfferLimiter::new())
         .discover()
+        .runtime()
         .build();
 
     (router, registry)
@@ -343,6 +346,10 @@ async fn test_public_slug_route_caching_and_headers() {
     assert!(body.contains("250 USD"));
     assert!(body.contains("A beautifully restored vintage oak dining table."));
     assert!(body.contains(&format!("href=\"/offers/{}\"", offer.slug)));
+    assert!(body.contains("offer-gallery gallery-n1"));
+    assert!(body.contains("class=\"save-heart\" href=\"/auth/sign-in\""));
+    assert!(!body.contains("name=\"return_to\""));
+    assert!(!body.contains("<script"));
     assert!(!body.contains("action=\"/offers/manage"));
     assert!(!body.contains("Edit"));
     assert!(!body.contains("Delete"));
@@ -1645,7 +1652,7 @@ async fn test_offer_visibility_rules_and_slug_404() {
     let res_anon_after = router.handle(req_anon_after).await;
     assert_eq!(res_anon_after.status(), http::StatusCode::OK);
     let body_anon_after = body_to_string(res_anon_after.into_body()).await;
-    assert!(body_anon_after.contains("offer-photo-stack"));
+    assert!(body_anon_after.contains("offer-gallery gallery-n1"));
     assert!(body_anon_after.contains("Invisible Without Photo, photo 1 of 1"));
     assert!(body_anon_after.contains("t_detail"));
 
@@ -1659,8 +1666,8 @@ async fn test_offer_visibility_rules_and_slug_404() {
     assert_eq!(res_feed_after.status(), http::StatusCode::OK);
     let body_feed_after = body_to_string(res_feed_after.into_body()).await;
     assert!(body_feed_after.contains("Invisible Without Photo"));
-    assert!(body_feed_after.contains("offer-card-image"));
-    assert!(body_feed_after.contains("t_card"));
+    assert!(body_feed_after.contains("listing-card-image"));
+    assert!(body_feed_after.contains("t_card_sq"));
 }
 
 #[tokio::test]

@@ -57,7 +57,7 @@ fn render_new_offer_form(cx: &Cx, view_data: NewOfferFormView) -> impl topcoat::
                     value: fields.title,
                     required: true,
                     minlength: Some(3),
-                    maxlength: Some(100),
+                    maxlength: Some(50),
                 )
                 textarea_field(
                     label: "Description",

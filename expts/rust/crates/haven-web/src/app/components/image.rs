@@ -12,6 +12,8 @@ pub enum ImageVariant {
     Thumb,
     /// Public discovery card cover: 4:3 aspect ratio (320x240 at 1x, 640x480 at 2x).
     Card,
+    /// Square public discovery card cover.
+    CardSquare,
     /// Public offer detail photo view: 4:3 aspect ratio (640x480 at 1x, 960x720 at 2x).
     Detail,
 }
@@ -36,6 +38,8 @@ impl ImageVariant {
             (Self::Thumb, ImageDpr::Dpr2x) => "t_thumb_2x",
             (Self::Card, ImageDpr::Dpr1x) => "t_card",
             (Self::Card, ImageDpr::Dpr2x) => "t_card_2x",
+            (Self::CardSquare, ImageDpr::Dpr1x) => "t_card_sq",
+            (Self::CardSquare, ImageDpr::Dpr2x) => "t_card_sq_2x",
             (Self::Detail, ImageDpr::Dpr1x) => "t_detail",
             (Self::Detail, ImageDpr::Dpr2x) => "t_detail_2x",
         }
@@ -50,6 +54,8 @@ impl ImageVariant {
             (Self::Thumb, ImageDpr::Dpr1x) => (120, 90),
             (Self::Thumb, ImageDpr::Dpr2x) => (240, 180),
             (Self::Card, ImageDpr::Dpr1x) => (320, 240),
+            (Self::CardSquare, ImageDpr::Dpr1x) => (320, 320),
+            (Self::CardSquare, ImageDpr::Dpr2x) => (640, 640),
             (Self::Card, ImageDpr::Dpr2x) | (Self::Detail, ImageDpr::Dpr1x) => (640, 480),
             (Self::Detail, ImageDpr::Dpr2x) => (960, 720),
         }
@@ -128,6 +134,23 @@ pub fn card_srcset(cloud_name: Option<&str>, public_id: &str) -> String {
     build_srcset(cloud_name, public_id, ImageVariant::Card)
 }
 
+/// Builds the 1x square discovery-card image URL.
+#[must_use]
+pub fn card_sq_url(cloud_name: Option<&str>, public_id: &str) -> String {
+    build_image_url(
+        cloud_name,
+        public_id,
+        ImageVariant::CardSquare,
+        ImageDpr::Dpr1x,
+    )
+}
+
+/// Builds the 1x and 2x square discovery-card image srcset.
+#[must_use]
+pub fn card_sq_srcset(cloud_name: Option<&str>, public_id: &str) -> String {
+    build_srcset(cloud_name, public_id, ImageVariant::CardSquare)
+}
+
 /// Convenience helper to generate the 1x URL for a detail image.
 #[must_use]
 pub fn detail_url(cloud_name: Option<&str>, public_id: &str) -> String {
@@ -178,6 +201,23 @@ mod tests {
         );
         assert_eq!(ImageVariant::Card.dimensions(ImageDpr::Dpr1x), (320, 240));
         assert_eq!(ImageVariant::Card.dimensions(ImageDpr::Dpr2x), (640, 480));
+
+        assert_eq!(
+            ImageVariant::CardSquare.transformation_name(ImageDpr::Dpr1x),
+            "t_card_sq"
+        );
+        assert_eq!(
+            ImageVariant::CardSquare.transformation_name(ImageDpr::Dpr2x),
+            "t_card_sq_2x"
+        );
+        assert_eq!(
+            ImageVariant::CardSquare.dimensions(ImageDpr::Dpr1x),
+            (320, 320)
+        );
+        assert_eq!(
+            ImageVariant::CardSquare.dimensions(ImageDpr::Dpr2x),
+            (640, 640)
+        );
 
         assert_eq!(
             ImageVariant::Detail.transformation_name(ImageDpr::Dpr1x),
