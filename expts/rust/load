@@ -1,0 +1,247 @@
+#!/usr/bin/env bash
+# run-load-test.sh - automate the Manual Go Load-Test Runbook
+#
+# Usage:
+#   ./run-load-test.sh setup            # create DB, run Haven migrations, generate fixture
+#   ./run-load-test.sh build            # build the haven-load binary
+#   ./run-load-test.sh smoke            # 1-iteration smoke check
+#   ./run-load-test.sh v05              # v0.5 journey (rate 10, 60s, 1 worker)
+#   ./run-load-test.sh v06              # v0.6 journey (rate 1, 60s, 16 workers)
+#   ./run-load-test.sh suite            # ./run-all.sh with the generated fixture
+#   ./run-load-test.sh report [file]    # print p95/p99 per route from a summary JSON
+#   ./run-load-test.sh all              # setup + build + smoke + v05 + v06
+#
+# Environment overrides:
+#   HAVEN_LOAD_TEST_DB  (default: haven_load_test)
+#   PG_HOST             (default: 127.0.0.1)
+#   PG_PORT             (default: 5432)
+#   PG_USER             (default: current OS user)
+#   PG_PASSWORD         (optional; used to build DATABASE_URL)
+#   HAVEN_URL           (default: http://127.0.0.1:3000)
+#   WORKERS             (default: 16)
+#   SESSIONS_FILE       (default: data/go-sessions.json)
+#   SKIP_HAVEN_START    (default: 0) - set to 1 if Haven is already running
+#
+# Requires: createdb, psql, cargo, go, jq, curl
+
+set -euo pipefail
+
+# ----- locate repo root (script assumes it lives at expts/rust or above) -----
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -d "$SCRIPT_DIR/crates/haven-web" ]]; then
+  RUST_DIR="$SCRIPT_DIR"
+elif [[ -d "$SCRIPT_DIR/../crates/haven-web" ]]; then
+  RUST_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+else
+  echo "ERROR: cannot find crates/haven-web from $SCRIPT_DIR" >&2
+  exit 1
+fi
+
+LOADTEST_DIR="$RUST_DIR/crates/haven-web/load-tests"
+RESULTS_DIR="$LOADTEST_DIR/results"
+SESSIONS_FILE="${SESSIONS_FILE:-$LOADTEST_DIR/data/go-sessions.json}"
+BINARY="$RESULTS_DIR/haven-load"
+
+# ----- config -----
+HAVEN_LOAD_TEST_DB="${HAVEN_LOAD_TEST_DB:-haven_load_test}"
+PG_HOST="${PG_HOST:-127.0.0.1}"
+PG_PORT="${PG_PORT:-5432}"
+PG_USER="${PG_USER:-$(id -un)}"
+PG_PASSWORD="${PG_PASSWORD:-}"
+HAVEN_URL="${HAVEN_URL:-http://127.0.0.1:3000}"
+WORKERS="${WORKERS:-16}"
+SKIP_HAVEN_START="${SKIP_HAVEN_START:-0}"
+
+# ----- guards -----
+case "$PG_HOST" in
+  localhost|127.0.0.1|::1) ;;
+  *) echo "ERROR: PG_HOST must be localhost/127.0.0.1/::1 (got: $PG_HOST)" >&2; exit 1 ;;
+esac
+
+if [[ "$HAVEN_LOAD_TEST_DB" != *load_test* ]]; then
+  echo "WARNING: database name '$HAVEN_LOAD_TEST_DB' does not contain 'load_test'." >&2
+  read -r -p "Continue? [y/N] " ans
+  [[ "${ans:-N}" =~ ^[Yy]$ ]] || exit 1
+fi
+
+# Build DATABASE_URL. URL-encode the password minimally (works for most passwords).
+urlencode() { python3 -c 'import sys,urllib.parse;print(urllib.parse.quote(sys.argv[1],safe=""))' "$1"; }
+
+build_database_url() {
+  local user_enc pw_part=""
+  user_enc="$(urlencode "$PG_USER")"
+  if [[ -n "$PG_PASSWORD" ]]; then
+    pw_part=":$(urlencode "$PG_PASSWORD")"
+  fi
+  echo "postgres://${user_enc}${pw_part}@${PG_HOST}:${PG_PORT}/${HAVEN_LOAD_TEST_DB}"
+}
+
+DATABASE_URL="$(build_database_url)"
+export DATABASE_URL HAVEN_LOAD_TEST_DB
+
+# ----- helpers -----
+log() { printf '\n==> %s\n' "$*"; }
+die() { echo "ERROR: $*" >&2; exit 1; }
+
+require_cmd() {
+  command -v "$1" >/dev/null 2>&1 || die "missing required command: $1"
+}
+
+check_tools() {
+  local missing=0
+  for c in createdb psql cargo go jq curl; do
+    command -v "$c" >/dev/null 2>&1 || { echo "missing: $c" >&2; missing=1; }
+  done
+  [[ $missing -eq 0 ]] || die "install missing tools above"
+}
+
+wait_for_haven() {
+  local url="$HAVEN_URL/"
+  for _ in $(seq 1 60); do
+    if curl -fsS -o /dev/null "$url"; then
+      return 0
+    fi
+    sleep 1
+  done
+  return 1
+}
+
+# ----- steps -----
+cmd_setup() {
+  check_tools
+  mkdir -p "$RESULTS_DIR"
+
+  log "creating disposable database: $HAVEN_LOAD_TEST_DB on $PG_HOST:$PG_PORT"
+  if psql "$DATABASE_URL" -c 'SELECT 1' >/dev/null 2>&1; then
+    echo "database already exists; dropping and recreating"
+    dropdb --if-exists -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" "$HAVEN_LOAD_TEST_DB"
+  fi
+  createdb -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" "$HAVEN_LOAD_TEST_DB"
+
+  log "starting Haven once to apply migrations"
+  if [[ "$SKIP_HAVEN_START" == "1" ]]; then
+    echo "SKIP_HAVEN_START=1; assuming Haven is already running against $DATABASE_URL"
+  else
+    (
+      cd "$RUST_DIR"
+      cargo run -p haven-web >"$RESULTS_DIR/haven.log" 2>&1 &
+      echo $! >"$RESULTS_DIR/haven.pid"
+    )
+    if ! wait_for_haven; then
+      die "Haven did not become ready; see $RESULTS_DIR/haven.log"
+    fi
+    echo "Haven is running (pid $(cat "$RESULTS_DIR/haven.pid"), log: $RESULTS_DIR/haven.log)"
+  fi
+
+  log "generating fixture: $SESSIONS_FILE (352 users, 16 workers)"
+  (
+    cd "$RUST_DIR"
+    cargo run -p load-test-support -- --users 352 \
+      --output "$SESSIONS_FILE"
+  )
+
+  chmod 600 "$SESSIONS_FILE" 2>/dev/null || true
+  echo "fixture written to $SESSIONS_FILE (owner-only)"
+}
+
+cmd_build() {
+  require_cmd go
+  mkdir -p "$RESULTS_DIR"
+  log "building haven-load"
+  (
+    cd "$LOADTEST_DIR/go"
+    go build -o "$BINARY" ./cmd/haven-load
+  )
+  echo "built: $BINARY"
+}
+
+cmd_smoke() {
+  [[ -x "$BINARY" ]] || die "binary missing; run: $0 build"
+  log "smoke (1 iteration)"
+  (
+    cd "$LOADTEST_DIR"
+    "$BINARY" --base-url "$HAVEN_URL" \
+      --scenario smoke --iterations 1 --summary results/smoke.json
+  )
+  jq -r '.routes[] | [.route, (.p95_ns/1000000), (.p99_ns/1000000)] | @tsv' \
+    "$RESULTS_DIR/smoke.json"
+}
+
+cmd_v05() {
+  [[ -x "$BINARY" ]] || die "binary missing; run: $0 build"
+  log "v0.5 journey (rate 10, 60s, 1 worker)"
+  (
+    cd "$LOADTEST_DIR"
+    "$BINARY" --base-url "$HAVEN_URL" \
+      --scenario v05 --rate 10 --duration 60s --workers 1 \
+      --summary results/v05.json
+  )
+  echo "summary: $RESULTS_DIR/v05.json"
+}
+
+cmd_v06() {
+  [[ -x "$BINARY" ]] || die "binary missing; run: $0 build"
+  [[ -f "$SESSIONS_FILE" ]] || die "fixture missing: $SESSIONS_FILE (run setup)"
+  log "v0.6 journey (rate 1, 60s, $WORKERS workers)"
+  (
+    cd "$LOADTEST_DIR"
+    "$BINARY" --base-url "$HAVEN_URL" \
+      --scenario v06 --rate 1 --duration 60s --workers "$WORKERS" \
+      --sessions "$SESSIONS_FILE" --summary results/v06.json
+  )
+  echo "summary: $RESULTS_DIR/v06.json"
+}
+
+cmd_suite() {
+  [[ -x "$LOADTEST_DIR/run-all.sh" ]] || die "run-all.sh not found"
+  log "full local suite"
+  (
+    cd "$LOADTEST_DIR"
+    SESSIONS_FILE="$SESSIONS_FILE" WORKERS="$WORKERS" ./run-all.sh
+  )
+}
+
+cmd_report() {
+  require_cmd jq
+  local file="${1:-$RESULTS_DIR/v06.json}"
+  [[ -f "$file" ]] || die "summary not found: $file"
+  log "per-route p95/p99 (ms): $file"
+  jq -r '.routes[] | [.route, (.p95_ns/1000000), (.p99_ns/1000000)] | @tsv' "$file"
+  if jq -e '.stages' "$file" >/dev/null 2>&1; then
+    log "per-stage p95/p99 (ms)"
+    jq -r '.stages[] | .journeys_per_second as $r |
+      .summary.routes[] | [$r, .route, (.p95_ns/1000000), (.p99_ns/1000000)] | @tsv' "$file"
+  fi
+}
+
+cmd_all() {
+  cmd_setup
+  cmd_build
+  cmd_smoke
+  cmd_v05
+  cmd_v06
+  cmd_report "$RESULTS_DIR/v06.json"
+  echo
+  echo "Reminder: manually record date, commit, throughput, p95, p99, errors,"
+  echo "and resource usage in SCORECARD.md. Summaries are in $RESULTS_DIR."
+}
+
+# ----- dispatch -----
+case "${1:-}" in
+  setup)  cmd_setup ;;
+  build)  cmd_build ;;
+  smoke)  cmd_smoke ;;
+  v05)    cmd_v05 ;;
+  v06)    cmd_v06 ;;
+  suite)  cmd_suite ;;
+  report) shift; cmd_report "${1:-}" ;;
+  all)    cmd_all ;;
+  ""|-h|--help|help)
+    sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'
+    ;;
+  *)
+    echo "unknown command: $1" >&2
+    echo "try: $0 help" >&2
+    exit 2
+    ;;
+esac
