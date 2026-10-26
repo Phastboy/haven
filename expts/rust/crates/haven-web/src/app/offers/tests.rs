@@ -1165,7 +1165,7 @@ async fn test_navigation_layout_rule_main_vs_child() {
     );
     let body_profile_pub_ref = body_to_string(res_profile_pub_ref.into_body()).await;
     assert!(body_profile_pub_ref.contains("href=\"/profile\""));
-    assert!(body_profile_pub_ref.contains("back-icon-svg"));
+    assert!(body_profile_pub_ref.contains("app-shell-back-link"));
 
     // 7. Public profile viewed directly by owner falls back to /profile (parent)
     let req_profile_pub_no_ref = Request::builder()
