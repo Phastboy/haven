@@ -103,12 +103,17 @@ Haven enforces a strict two-layout rule across all routes:
 - **Access Tier:** Public.
 - **Behavior:**
   - Resolves offer by unique URL slug.
-  - Zero authentication check; public and SEO-friendly with ETag caching support.
+  - Public offers are visible to everyone; non-public offers return 404 except to their owner.
+  - Anonymous requests use public Cache-Control, ETag and conditional 304 handling. Signed-in requests use `private, no-store`.
   - Preserves strict separation between public view and owner management: displays NO edit/delete buttons even if requested by the creator.
 - **Affordances:**
-  - **Headline & Price:** Full title and price badge.
-  - **Maker Attribution:** "Offered by <a href="/profiles/{handle}">Maker Name</a>".
-  - **Description Body:** Complete description rendered in comfortable 45–75 character measure.
+  - **Headline & Price:** Full wrapping title; price appears beneath it on narrow screens and in the message card on wide screens.
+  - **Photo Gallery:** One render per photo; horizontally scrolling 4:3 mobile slides and a responsive one-to-five-photo desktop mosaic.
+  - **Maker Attribution:** Avatar or initial, display name and joined-month label, linked to `/profiles/{handle}`.
+  - **Description Body:** Complete escaped description with authored line breaks preserved.
+  - **Visitor actions:** Save/unsave POST and message form POST to the existing offer routes; mobile has a fixed message bar.
+  - **Anonymous actions:** Save and message controls link to `/auth/sign-in`, with identical markup for every anonymous visitor.
+  - **Owner preview:** No save control or message form; explanatory message card only.
   - **Back Navigation:** Provided by child layout header (`← Back` returning to previous page or falling back to `/offers`).
 - **Failure States:**
   - Non-existent slug returns clean HTTP 404 Not Found page with link back to available offers.
