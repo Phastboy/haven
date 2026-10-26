@@ -66,6 +66,11 @@ async fn saved_offers_and_follows_are_idempotent_and_keyset_paginated(pool: PgPo
     let saved_at = first_save.items[0].created_at;
     saved.save(owner_id, offer.id).await.unwrap();
     assert!(saved.is_saved(owner_id, offer.id).await.unwrap());
+    assert_eq!(
+        saved.saved_among(owner_id, &[offer.id]).await.unwrap(),
+        [offer.id].into_iter().collect()
+    );
+    assert!(saved.saved_among(owner_id, &[]).await.unwrap().is_empty());
     let page = saved.list(owner_id, None, 1).await.unwrap();
     assert_eq!(page.items.len(), 1);
     assert_eq!(page.items[0].created_at, saved_at);

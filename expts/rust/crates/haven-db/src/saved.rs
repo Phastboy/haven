@@ -36,6 +36,28 @@ impl SavedOfferRepository for PostgresSavedOfferRepository {
         .map_err(crate::map_sqlx_err)?;
         Ok(sqlx::Row::get::<bool, _>(&row, 0))
     }
+    async fn saved_among(
+        &self,
+        user_id: UserId,
+        offer_ids: &[OfferId],
+    ) -> Result<std::collections::HashSet<OfferId>, RepoError> {
+        if offer_ids.is_empty() {
+            return Ok(std::collections::HashSet::new());
+        }
+        let ids: Vec<uuid::Uuid> = offer_ids.iter().map(OfferId::as_uuid).collect();
+        let rows = sqlx::query(
+            "SELECT offer_id FROM saved_offer WHERE user_id = $1 AND offer_id = ANY($2)",
+        )
+        .bind(user_id.as_uuid())
+        .bind(ids)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(crate::map_sqlx_err)?;
+        Ok(rows
+            .into_iter()
+            .map(|row| OfferId::from_uuid(sqlx::Row::get(&row, "offer_id")))
+            .collect())
+    }
     async fn save(&self, user_id: UserId, offer_id: OfferId) -> Result<(), RepoError> {
         sqlx::query("INSERT INTO saved_offer (user_id, offer_id) SELECT $1, id FROM offer WHERE id = $2 AND image_count >= 1 ON CONFLICT (user_id, offer_id) DO NOTHING")
             .bind(user_id.as_uuid()).bind(offer_id.as_uuid()).execute(&self.pool).await.map_err(crate::map_sqlx_err)?;

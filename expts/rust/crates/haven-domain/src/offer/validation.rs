@@ -7,7 +7,7 @@ use crate::error::OfferValidationError;
 pub const MIN_TITLE_CHARS: usize = 3;
 
 /// Maximum character count for an offer title.
-pub const MAX_TITLE_CHARS: usize = 100;
+pub const MAX_TITLE_CHARS: usize = 50;
 
 /// Minimum character count for an offer description.
 pub const MIN_DESCRIPTION_CHARS: usize = 10;
