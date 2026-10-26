@@ -75,6 +75,12 @@ jobs:
       - name: Build workspace
         run: cargo build --workspace --locked
 
+      - name: Install Topcoat CLI
+        run: cargo install topcoat-cli --version 0.11.0 --locked
+
+      - name: Bundle Topcoat assets
+        run: topcoat asset bundle --package haven-web
+
       - name: Run unit & integration tests
         run: cargo test --workspace --locked
 
