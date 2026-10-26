@@ -3,6 +3,7 @@
     reason = "Root layout with desktop and mobile nav shells and unread badge"
 )]
 
+use topcoat::asset::{AssetBundle, RouterBuilderAssetExt};
 use topcoat::{
     Result as TopcoatResult,
     context::Cx,
@@ -23,8 +24,31 @@ pub mod profiles;
 pub mod state;
 pub mod style;
 
-pub fn router() -> topcoat::router::RouterBuilder {
-    topcoat::router::module_router!()
+pub fn router() -> std::io::Result<topcoat::router::RouterBuilder> {
+    let assets = load_asset_bundle()?;
+    Ok(topcoat::router::module_router!().assets(assets))
+}
+
+fn load_asset_bundle() -> std::io::Result<AssetBundle> {
+    if let Ok(bundle) = AssetBundle::load() {
+        return Ok(bundle);
+    }
+
+    // Cargo test executables live in target/{profile}/deps, while Topcoat
+    // writes the shared bundle to target/{profile}/assets.
+    let executable = std::env::current_exe()?;
+    let executable_dir = executable
+        .parent()
+        .ok_or_else(|| std::io::Error::other("executable has no parent directory"))?;
+    let bundle_dir = if executable_dir
+        .file_name()
+        .is_some_and(|name| name == "deps")
+    {
+        executable_dir.parent().unwrap_or(executable_dir)
+    } else {
+        executable_dir
+    };
+    AssetBundle::load_dir(bundle_dir.join("assets"))
 }
 
 #[topcoat::router::route(GET "/robots.txt")]
@@ -58,6 +82,9 @@ pub async fn root_layout(
 ) -> TopcoatResult<impl topcoat::view::View> {
     let user = crate::app::auth::guard::current_user(cx).await?;
     let path = topcoat::router::request::uri(cx).path();
+    let is_offer_detail = path
+        .strip_prefix("/offers/")
+        .is_some_and(|tail| !tail.is_empty() && !tail.contains('/'));
     let user_handle = user.as_ref().map(|u| u.handle.as_str());
     let nav_layout = classify_route(path, user_handle);
 
@@ -78,7 +105,7 @@ pub async fn root_layout(
         false
     };
 
-    let is_offers_active = path == "/" || path == "/offers";
+    let is_offers_active = path == "/" || path == "/offers" || path.starts_with("/offers/");
     let is_profile_active = path == "/profile";
     let is_messages_active = path.starts_with("/conversations");
 
@@ -98,6 +125,9 @@ pub async fn root_layout(
                 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
                 <title>"Haven"</title>
                 <link rel="stylesheet" href="/style.css" />
+                if !is_offer_detail {
+                    topcoat::runtime::script()
+                }
             </head>
             <body class=(if is_child { "layout-child" } else { "layout-main" })>
                 if is_child {
@@ -132,23 +162,28 @@ pub async fn root_layout(
                         </div>
                     </header>
                 } else {
-                    <header class="site-header">
-                        <nav class="nav-container">
+                    <header class=(if is_offers_active { "site-header offers-rail" } else { "site-header" })>
+                        <nav class=(if is_offers_active { "nav-container offers-rail-container" } else { "nav-container" })>
                             <a href=(site_logo_href) class="site-logo">"Haven"</a>
-                            <ul class="nav-links">
-                                <li><a href="/offers">"Offers"</a></li>
-                                if user.is_some() {
-                                    <li>
-                                        <a href="/conversations">
-                                            "Messages"
-                                            if has_unread {
-                                                <span class="unread-badge" aria-label="Unread messages">"●"</span>
-                                            }
-                                        </a>
-                                    </li>
-                                }
-                                <li><a href=(auth_link_href)>(auth_link_text)</a></li>
-                            </ul>
+                            if is_offers_active {
+                                <ul class="nav-links offers-rail-links">
+                                    <li><a href="/offers" aria-label="Offers"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span class="offers-rail-label">"Offers"</span></a></li>
+                                    if user.is_some() {
+                                        <li><a href="/conversations" aria-label="Messages"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 8.7 3.9a8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/></svg><span class="offers-rail-label">"Messages"</span>
+                                            if has_unread { <span class="unread-badge" aria-label="Unread messages">"●"</span> }
+                                        </a></li>
+                                    }
+                                    <li><a href=(auth_link_href) aria-label=(auth_link_text)><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="offers-rail-label">(auth_link_text)</span></a></li>
+                                </ul>
+                            } else {
+                                <ul class="nav-links">
+                                    <li><a href="/offers">"Offers"</a></li>
+                                    if user.is_some() {
+                                        <li><a href="/conversations">"Messages" if has_unread { <span class="unread-badge" aria-label="Unread messages">"●"</span> }</a></li>
+                                    }
+                                    <li><a href=(auth_link_href)>(auth_link_text)</a></li>
+                                </ul>
+                            }
                         </nav>
                     </header>
                 }

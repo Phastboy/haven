@@ -8,10 +8,11 @@ pub async fn health() -> TopcoatResult<&'static str> {
 #[cfg(test)]
 mod tests {
     #![allow(clippy::unwrap_used, reason = "test suite assertions")]
+    use topcoat::runtime::RouterBuilderRuntimeExt;
 
     #[tokio::test]
     async fn test_health_route() {
-        let router = crate::app::router().build();
+        let router = crate::app::router().unwrap().runtime().build();
         let request = http::Request::builder()
             .method("GET")
             .uri("/health")

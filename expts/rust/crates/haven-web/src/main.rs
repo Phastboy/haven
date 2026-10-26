@@ -15,6 +15,7 @@ use topcoat::{
     cookie::RouterBuilderCookieExt,
     mail::{FileTransport, RouterBuilderMailExt},
     router::RouterBuilderDiscoverExt,
+    runtime::RouterBuilderRuntimeExt,
     session::{RouterBuilderSessionExt, SessionConfig},
 };
 
@@ -121,7 +122,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         broadcaster,
     };
 
-    let router = app::router()
+    let router = app::router()?
         .origin_policy(app::origin::build_origin_policy())
         .layer(topcoat::router::BodyLimit::max(6 * 1024 * 1024))
         .cookies()
@@ -139,6 +140,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .build(),
         )
         .discover()
+        .runtime()
         .build();
 
     topcoat::start(router).await?;

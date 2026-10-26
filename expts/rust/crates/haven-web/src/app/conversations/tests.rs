@@ -202,9 +202,10 @@ fn setup_conversation_app() -> (
 
     use topcoat::{
         cookie::RouterBuilderCookieExt, router::RouterBuilderDiscoverExt,
-        session::RouterBuilderSessionExt,
+        runtime::RouterBuilderRuntimeExt, session::RouterBuilderSessionExt,
     };
     let router = crate::app::router()
+        .unwrap()
         .cookies()
         .sessions(
             topcoat::session::SessionConfig::builder()
@@ -213,6 +214,7 @@ fn setup_conversation_app() -> (
         )
         .app_context(state)
         .discover()
+        .runtime()
         .build();
 
     (router, registry, u1, u2, offer, token1, token2)

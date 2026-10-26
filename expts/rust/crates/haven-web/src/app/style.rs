@@ -14,12 +14,15 @@ pub async fn stylesheet() -> TopcoatResult<Css<&'static str>> {
 #[cfg(test)]
 mod tests {
     use http::Request;
-    use topcoat::router::{Body, RouterBuilderDiscoverExt};
+    use topcoat::{
+        router::{Body, RouterBuilderDiscoverExt},
+        runtime::RouterBuilderRuntimeExt,
+    };
 
     #[tokio::test]
     #[allow(clippy::unwrap_used, reason = "test assertions")]
     async fn test_style_route_serves_css() {
-        let router = crate::app::router().discover().build();
+        let router = crate::app::router().unwrap().discover().runtime().build();
         let request = Request::builder()
             .method("GET")
             .uri("/style.css")
