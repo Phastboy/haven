@@ -73,12 +73,14 @@ The first form of action we are exploring is **inquiry**: expressing that you ar
 
 ---
 
-## 0.5.x — Can someone find it? (completed)
+## 0.5.x — Can someone find it? (feature work complete; load gate pending)
 
 As the number of offers grows, people should be able to find an offer they are looking for without already knowing where it is.
 
 * [x] A person can find an offer by its name.
 * [x] A person can narrow offers down by price.
+
+Feature work is implemented. The stage remains incomplete until its load-test criteria are recorded as met.
 
 **The question:**
 
@@ -88,7 +90,7 @@ As the number of offers grows, people should be able to find an offer they are l
 
 ---
 
-## 0.6.x — Can I come back to what I care about? (completed)
+## 0.6.x — Can I come back to what I care about? (feature work complete; load gate pending)
 
 People should be able to keep track of things and people they care about instead of having to find them again.
 
@@ -96,6 +98,8 @@ People should be able to keep track of things and people they care about instead
 * [x] A person can follow another person.
 * [x] A person can return to their saved offers.
 * [x] A person can return to the people they follow.
+
+Feature work is implemented. The stage remains incomplete until its load-test criteria are recorded as met.
 
 **The question:**
 
@@ -105,7 +109,7 @@ People should be able to keep track of things and people they care about instead
 
 ---
 
-**Stage complete:** The 0.5.x and 0.6.x capabilities are implemented. Haven is now on **v0.6.x**.
+The workspace package version is **0.6.0**. The 0.5.x and 0.6.x load-test gates remain open; 0.7.x has not started.
 
 ## 0.7.x — Can I narrow it down?
 
