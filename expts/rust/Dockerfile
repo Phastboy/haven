@@ -7,16 +7,22 @@ RUN cargo chef prepare --recipe-path recipe.json
 # 2. Builder stage
 FROM lukemathwalker/cargo-chef:latest-rust-1.99-bookworm AS builder
 WORKDIR /app
+ARG TOPCOAT_CLI_VERSION=0.11.0
+RUN cargo install topcoat-cli --version "${TOPCOAT_CLI_VERSION}" --locked
 COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
 ENV SQLX_OFFLINE=true
 RUN cargo build --release --locked -p haven-web
+# Topcoat resolves asset URLs from target/release/assets at startup; without the
+# bundle the router fails to build and the process exits.
+RUN topcoat asset bundle --release --package haven-web
 
 # 3. Runtime stage
 FROM gcr.io/distroless/cc-debian13:nonroot
 WORKDIR /app
 COPY --from=builder /app/target/release/haven-web /app/haven-web
+COPY --from=builder /app/target/release/assets /app/assets
 ENV HOST=0.0.0.0
 ENV PORT=8000
 EXPOSE 8000

@@ -130,17 +130,21 @@ Triggered on every PR and push affecting `expts/rust/**`.
    ```dockerfile
    FROM lukemathwalker/cargo-chef:latest-rust-1.99-bookworm AS builder
    WORKDIR /app
+   ARG TOPCOAT_CLI_VERSION=0.11.0
+   RUN cargo install topcoat-cli --version "${TOPCOAT_CLI_VERSION}" --locked
    COPY --from=planner /app/recipe.json recipe.json
    RUN cargo chef cook --release --recipe-path recipe.json
    COPY . .
    ENV SQLX_OFFLINE=true
    RUN cargo build --release --locked -p haven-web
+   RUN topcoat asset bundle --release --package haven-web
    ```
 3. **Runtime**:
    ```dockerfile
-   FROM gcr.io/distroless/cc-debian12:nonroot
+   FROM gcr.io/distroless/cc-debian13:nonroot
    WORKDIR /app
    COPY --from=builder /app/target/release/haven-web /app/haven-web
+   COPY --from=builder /app/target/release/assets /app/assets
    ENV HOST=0.0.0.0
    ENV PORT=8000
    EXPOSE 8000
@@ -150,6 +154,7 @@ Triggered on every PR and push affecting `expts/rust/**`.
 #### Application Runtime Constraints
 * **`HOST` Binding**: Topcoat defaults `HOST` to `127.0.0.1`. The container **must** set `ENV HOST=0.0.0.0` so container ingress traffic is accepted.
 * **`SQLX_OFFLINE=true`**: Because `haven-db` relies on `sqlx::query!`, the builder stage must copy `.sqlx/` and build with `SQLX_OFFLINE=true`.
+* **Topcoat assets**: `topcoat asset bundle --release --package haven-web` writes the bundle to `target/release/assets`. The runtime stage must copy that directory beside the binary (`/app/assets`); `AssetBundle::load()` looks there, and startup fails if it is missing.
 * **Release Profile**: Already tuned in `Cargo.toml` (`lto = "fat"`, `codegen-units = 1`, `strip = true`, `panic = "abort"`).
 
 ---
