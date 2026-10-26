@@ -35,18 +35,18 @@ def analyze_run(results_dir):
 
     invalid_reasons = []
 
-    # 1. K6 Dropped Iterations
-    k6_summary_file = os.path.join(results_dir, "k6_summary.json")
-    if os.path.exists(k6_summary_file):
-        with open(k6_summary_file, "r") as f:
-            k6 = json.load(f)
-            dropped = k6.get("metrics", {}).get("dropped_iterations", {}).get("values", {}).get("count", 0)
+    # 1. Go runner dropped journeys
+    load_summary_file = os.path.join(results_dir, "load_summary.json")
+    if os.path.exists(load_summary_file):
+        with open(load_summary_file, "r") as f:
+            summary = json.load(f)
+            dropped = summary.get("dropped", 0)
             if dropped > 0:
-                invalid_reasons.append(f"Dropped iterations: {dropped}")
+                invalid_reasons.append(f"Dropped journeys: {dropped}")
     else:
-        invalid_reasons.append("Missing k6_summary.json")
+        invalid_reasons.append("Missing load_summary.json")
 
-    # 2. Host Core & K6 Core Saturation
+    # 2. Host Core & Load Generator Core Saturation
     host_csv = os.path.join(results_dir, "host.csv")
     if os.path.exists(host_csv):
         with open(host_csv, "r") as f:
@@ -55,12 +55,12 @@ def analyze_run(results_dir):
                 start = reader[0]
                 end = reader[-1]
                 try:
-                    k6_busy_delta = int(end["coreK6_busy"]) - int(start["coreK6_busy"])
-                    k6_tot_delta = int(end["coreK6_total"]) - int(start["coreK6_total"])
-                    if k6_tot_delta > 0:
-                        k6_util = k6_busy_delta / k6_tot_delta
-                        if k6_util > 0.70:
-                            invalid_reasons.append(f"K6 core utilization too high: {k6_util:.1%}")
+                    load_busy_delta = int(end["coreLoad_busy"]) - int(start["coreLoad_busy"])
+                    load_tot_delta = int(end["coreLoad_total"]) - int(start["coreLoad_total"])
+                    if load_tot_delta > 0:
+                        load_util = load_busy_delta / load_tot_delta
+                        if load_util > 0.70:
+                            invalid_reasons.append(f"Load generator core utilization too high: {load_util:.1%}")
 
                     host_busy_delta = int(end["coreY_busy"]) - int(start["coreY_busy"])
                     host_tot_delta = int(end["coreY_total"]) - int(start["coreY_total"])
@@ -98,10 +98,10 @@ def analyze_run(results_dir):
                 f.write(f"- {r}\n")
         else:
             f.write("VALID RUN\n")
-            f.write("- K6 core utilization < 70%\n")
+            f.write("- Load generator core utilization < 70%\n")
             f.write("- Host core utilization < 90%\n")
             f.write("- CPU 1 device interrupts flat (< 5 per run)\n")
-            f.write("- No dropped iterations\n")
+            f.write("- No dropped journeys\n")
 
     if invalid_reasons:
         print("Run marked INVALID:")

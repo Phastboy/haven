@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ─── System Saturation Monitor ───────────────────────────────────────────────
 # Logs CPU, Memory, and Network connections to a CSV.
-# Run this in the background while k6 executes.
+# Run this in the background while the Go load runner executes.
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 

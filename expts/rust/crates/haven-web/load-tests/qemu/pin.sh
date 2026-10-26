@@ -34,7 +34,7 @@ check_pin() {
   done
 
   if [ "$fail" -eq 0 ]; then
-    echo "pinning OK: vcpu=$X helpers/vhost=$Y host=$HOST k6=${K6:-2}"
+    echo "pinning OK: vcpu=$X helpers/vhost=$Y host=$HOST loadgen=${LOAD_GEN_CORE:-2}"
   fi
   return $fail
 }

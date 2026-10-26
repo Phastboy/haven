@@ -7,8 +7,8 @@ g() { ssh "${SSH_OPTS[@]}" root@10.10.0.2 "$@"; }
 
 case $CMD in
 start)
-  QPID=$3 X=$4 Y=$5 K6_CORES=${6:?cores for k6}
-  # Pin the host sampler to the host CPU (0) so it doesn't compete with K6 on CPU 2.
+  QPID=$3 X=$4 Y=$5 LOAD_CORES=${6:?core for load generator}
+  # Pin the host sampler to CPU 0 so it doesn't compete with the load generator on CPU 2.
   HOST_SAMPLER_CORE=0
 
   g 'rm -rf /root/telemetry; mkdir -p /root/telemetry'
@@ -17,7 +17,7 @@ start)
   g -n 'nohup vmstat -t -n 1 >/root/telemetry/vmstat.log 2>&1 </dev/null & echo $! > /root/telemetry/vmstat.pid'
   sleep 2; g 'kill -0 $(cat /root/telemetry/sampler.pid)' || { echo "guest sampler died"; g cat /root/telemetry/sampler.log; exit 1; }
   
-  taskset -c "$HOST_SAMPLER_CORE" ./host-sampler.sh "$DIR/host.csv" "$QPID" "$X" "$Y" "$K6_CORES" & echo $! > "$DIR/host-sampler.pid"
+  taskset -c "$HOST_SAMPLER_CORE" ./host-sampler.sh "$DIR/host.csv" "$QPID" "$X" "$Y" "$LOAD_CORES" & echo $! > "$DIR/host-sampler.pid"
   date +%s.%N > "$DIR/telemetry_start"
   ;;
 stop)
