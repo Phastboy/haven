@@ -71,5 +71,9 @@ Summaries and logs are written to the ignored `results/` directory. Run against 
 database and never use production session fixtures. The TLS verification bypass option is
 reserved for the QEMU harness's self-signed endpoint.
 
+For a step-by-step database, fixture, and manual run procedure, see
+[`LOAD_TEST_RUNBOOK.md`](LOAD_TEST_RUNBOOK.md). The runner prints and writes per-route p95/p99
+automatically; updating the tracked scorecard remains a manual review step.
+
 Do not mark the v0.5.x or v0.6.x roadmap gates complete until the agreed performance
 criteria have recorded results in `SCORECARD.md`.
