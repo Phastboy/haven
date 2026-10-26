@@ -14,7 +14,7 @@ ENV SQLX_OFFLINE=true
 RUN cargo build --release --locked -p haven-web
 
 # 3. Runtime stage
-FROM gcr.io/distroless/cc-debian12:nonroot
+FROM gcr.io/distroless/cc-debian13:nonroot
 WORKDIR /app
 COPY --from=builder /app/target/release/haven-web /app/haven-web
 ENV HOST=0.0.0.0
