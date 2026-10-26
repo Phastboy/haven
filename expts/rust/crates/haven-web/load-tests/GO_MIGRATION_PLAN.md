@@ -1,13 +1,13 @@
 # Go Load-Test Migration and Pending Gates
 
-**Status:** Go runner and feature journeys implemented; workload measurements remain pending.
+**Status:** Go runner and feature journeys implemented. The v0.5.x and v0.6.x feature-gate runs are recorded in `SCORECARD.md`; sustained contract-tier measurements remain pending.
 
 **Branch:** `plan/go-load-tests-v05-v06-trivy`
 
 This work replaces executable JavaScript load scenarios with a Go-native runner and adds
-explicit end-to-end journeys for the v0.5.x and v0.6.x release gates. No load test has been
-run against a seeded Haven instance in this implementation session. Do not close either
-roadmap gate until an isolated run is recorded in `SCORECARD.md`.
+explicit end-to-end journeys for the v0.5.x and v0.6.x release gates. The `v05` and `v06`
+journeys have been run against an isolated seeded Haven instance and recorded in
+`SCORECARD.md`; the sustained contract tiers have not yet been measured.
 
 ## Implementation
 
@@ -38,8 +38,8 @@ the generated session file contains active credentials and must remain private.
 4. Run the approved normal, high-load, soak, spike, and capacity profiles in an isolated
    environment. Capture per-route p95/p99, throughput, errors, dropped journeys, CPU, RSS,
    and database connections in `SCORECARD.md`.
-5. Keep v0.5.x and v0.6.x load gates open until those feature workloads pass their agreed
-   criteria and have recorded measurements.
+5. v0.5.x and v0.6.x feature workloads passed their agreed criteria on 2026-10-26 and are
+   recorded in `SCORECARD.md`.
 
 ## Trivy finding
 

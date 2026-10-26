@@ -2,7 +2,7 @@
 
 One story, two lanes. Lanes are roles, not people: the **Offerer** (the person making an offer) and the **Responder** (the person responding to it). One person can play both. Stages follow `ROADMAP.md`; only the current stage is detailed.
 
-Status: draft. Only entries under **Decided** were confirmed by the owner. The workspace package version is 0.6.0. Feature work for 0.5.x and 0.6.x is implemented; both load-test gates remain pending, and 0.7.x has not started.
+Status: draft. Only entries under **Decided** were confirmed by the owner. The workspace package version is 0.6.0. Stages 0.1.x through 0.6.x are complete; 0.7.x has not started.
 
 ## The story at a glance
 
@@ -12,8 +12,8 @@ Status: draft. Only entries under **Decided** were confirmed by the owner. The w
 | 0.2.x | Can someone see it? | offer becomes public on create (generates slug); manage own via `/offers/manage/{id}` | see available offers (public feed), see another person's offer (`/offers/{slug}`) | an offer becomes visible to others | completed | met ≥ 1,200 iters/s host direct |
 | 0.3.x | Can I know who is behind an offer? | has profile, edits profile; profile shell wraps identity overview, offers management, and account | sees who made an offer, visits public profile, sees maker's offers | knowing who is behind an offer | completed | met target; keyset pagination |
 | 0.4.x | Can someone act on it? | know about expressed interest | express willingness to take on an offer | commitment | completed | |
-| 0.5.x | Can someone find it? | | find an offer by name, narrow by price | | load gate pending | not recorded |
-| 0.6.x | Can I come back to what I care about? | | save an offer, follow a person, return to both | | load gate pending | not recorded |
+| 0.5.x | Can someone find it? | | find an offer by name, narrow by price | | completed | met; aggregate p95 28.0ms / p99 31.4ms |
+| 0.6.x | Can I come back to what I care about? | | save an offer, follow a person, return to both | | completed | met; aggregate p95 17.8ms / p99 23.4ms |
 | 0.7.x | Can I narrow it down? | | narrow by category, tags, saved, committed | | not reached | |
 | 0.8.x to 0.9.x | TBD | | | | not reached | |
 | 1.0.x | Can two people close an offer? | | | agreement, closing | not reached | |
@@ -82,9 +82,9 @@ sequenceDiagram
 ### Done when (from the roadmap)
 An offer can receive a meaningful response from another person, and the system meets its load-testing target.
 
-## Stage 0.6.x: Can I come back to what I care about? (feature work complete; load gate pending)
+## Stage 0.6.x: Can I come back to what I care about? (completed)
 
-The feature checklist is implemented. This stage remains incomplete until its load-test criteria are recorded as met. Stage 0.7.x has not started.
+The feature checklist is implemented and the load-test gate is recorded as met in `crates/haven-web/load-tests/SCORECARD.md`. Stage 0.7.x has not started.
 
 ### Untangled items
 
