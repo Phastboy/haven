@@ -28,10 +28,8 @@ pub struct FeedQuery {
 #[topcoat::router::page("/offers")]
 pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
     let query = topcoat::router::query_params::<FeedQuery>(cx).ok();
-    let after_cursor = query
-        .as_ref()
-        .and_then(|q| q.after.as_deref())
-        .and_then(|raw| OfferCursor::decode(raw).ok());
+    let (after_cursor, return_after) =
+        parse_after_cursor(query.as_ref().and_then(|q| q.after.as_deref()));
 
     let raw_q = query
         .as_ref()
@@ -171,6 +169,9 @@ pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
     if let Some(max) = raw_max_price {
         return_serializer.append_pair("max_price", &max.to_string());
     }
+    if let Some(after) = return_after.as_deref() {
+        return_serializer.append_pair("after", after);
+    }
     let return_query = return_serializer.finish();
     let return_to = format!(
         "/offers{}",
@@ -245,4 +246,40 @@ pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
             }
         </div>
     })
+}
+
+fn parse_after_cursor(raw: Option<&str>) -> (Option<OfferCursor>, Option<String>) {
+    let Some(raw) = raw else {
+        return (None, None);
+    };
+    let Ok(cursor) = OfferCursor::decode(raw) else {
+        return (None, None);
+    };
+    (Some(cursor), Some(raw.to_owned()))
+}
+
+#[cfg(test)]
+#[allow(clippy::expect_used, reason = "test assertions")]
+mod tests {
+    use super::parse_after_cursor;
+    use chrono::{TimeZone, Utc};
+    use haven_domain::{offer::OfferCursor, offer::OfferId};
+    use uuid::Uuid;
+
+    #[test]
+    fn keeps_only_a_decoded_cursor_for_save_return() {
+        let cursor = OfferCursor::new(
+            Utc.timestamp_micros(1_700_000_000_000_000)
+                .single()
+                .expect("valid timestamp"),
+            OfferId::from_uuid(Uuid::from_u128(1)),
+        );
+        let encoded = cursor.encode();
+
+        let (decoded, return_after) = parse_after_cursor(Some(&encoded));
+        assert_eq!(decoded, Some(cursor));
+        assert_eq!(return_after.as_deref(), Some(encoded.as_str()));
+        assert_eq!(parse_after_cursor(Some("invalid")), (None, None));
+        assert_eq!(parse_after_cursor(None), (None, None));
+    }
 }
