@@ -59,6 +59,14 @@ PG_PASSWORD="${PG_PASSWORD:-}"
 HAVEN_URL="${HAVEN_URL:-http://127.0.0.1:3000}"
 WORKERS="${WORKERS:-16}"
 USERS="${USERS:-$((WORKERS * 22))}"
+if ! [[ "$WORKERS" =~ ^[0-9]+$ ]] || (( WORKERS < 1 )); then
+  echo "ERROR: WORKERS must be a positive integer" >&2
+  exit 1
+fi
+if ! [[ "$USERS" =~ ^[0-9]+$ ]] || (( USERS < 1 )); then
+  echo "ERROR: USERS must be a positive integer" >&2
+  exit 1
+fi
 if (( USERS < WORKERS * 22 )); then
   echo "ERROR: USERS must be at least WORKERS*22 ($((WORKERS * 22)))" >&2
   exit 1
@@ -143,21 +151,18 @@ cmd_setup() {
   if [[ "$db_exists_flag" == true ]]; then
     if [[ "$SKIP_HAVEN_START" == "1" ]]; then
       log "database exists; SKIP_HAVEN_START=1: reusing it without recreation"
-    else
-      local active
-      active="$(psql "$DATABASE_URL" -Atc "select count(*) from pg_stat_activity where datname = current_database() and pid <> pg_backend_pid()" 2>/dev/null || echo 0)"
-      if [[ "$active" != "0" && -n "$active" ]]; then
-        die "database $HAVEN_LOAD_TEST_DB has $active active connection(s); stop Haven first, or set SKIP_HAVEN_START=1 to reuse the database"
-      fi
-      log "recreating disposable database: $HAVEN_LOAD_TEST_DB on $PG_HOST:$PG_PORT"
+    elif [[ "${RECREATE_DB:-0}" == "1" ]]; then
+      log "recreating database (RECREATE_DB=1): $HAVEN_LOAD_TEST_DB on $PG_HOST:$PG_PORT"
       libpq dropdb --if-exists -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" "$HAVEN_LOAD_TEST_DB"
       libpq createdb -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" "$HAVEN_LOAD_TEST_DB"
+    else
+      die "database $HAVEN_LOAD_TEST_DB already exists; set RECREATE_DB=1 to drop and recreate it, or set SKIP_HAVEN_START=1 to reuse the existing database"
     fi
   else
     if [[ "$SKIP_HAVEN_START" == "1" ]]; then
       die "database $HAVEN_LOAD_TEST_DB does not exist; SKIP_HAVEN_START=1 assumes a running Haven. Unset it or create the database."
     fi
-    log "creating disposable database: $HAVEN_LOAD_TEST_DB on $PG_HOST:$PG_PORT"
+    log "creating database: $HAVEN_LOAD_TEST_DB on $PG_HOST:$PG_PORT"
     libpq createdb -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" "$HAVEN_LOAD_TEST_DB"
   fi
 

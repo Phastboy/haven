@@ -193,13 +193,13 @@ func TestRouteLabelNormalization(t *testing.T) {
 }
 
 func TestProfileExitCode(t *testing.T) {
-	if got := profileExitCode(runSummary{Failed: 1}); got != 0 {
-		t.Fatalf("expected 0 for failed-only non-profile summary path, got %d", got)
+	if got := profileExitCode(runSummary{Failed: 1}); got != 1 {
+		t.Fatalf("expected 1 for failed journeys in profile context, got %d", got)
 	}
 	if got := profileExitCode(runSummary{ProfileFailed: true}); got != 1 {
 		t.Fatalf("expected 1 when profile failed, got %d", got)
 	}
-	if got := profileExitCode(runSummary{ProfileFailed: false}); got != 0 {
+	if got := profileExitCode(runSummary{ProfileFailed: false, Failed: 0, Dropped: 0}); got != 0 {
 		t.Fatalf("expected 0 when profile not failed, got %d", got)
 	}
 }
