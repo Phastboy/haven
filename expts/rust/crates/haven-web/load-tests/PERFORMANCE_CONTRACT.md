@@ -239,6 +239,7 @@ mkdir -p crates/haven-web/load-tests/results
 ### Individual scenarios
 
 ```bash
+BASE_URL="${BASE_URL:-http://127.0.0.1:3000}"
 # The command paths below are relative to crates/haven-web/load-tests.
 ./results/haven-load --base-url "$BASE_URL" --scenario smoke --iterations 1
 ./results/haven-load --base-url "$BASE_URL" --scenario steady --rate 1000 --duration 5m \
