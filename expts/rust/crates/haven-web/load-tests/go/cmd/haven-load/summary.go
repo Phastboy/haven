@@ -30,6 +30,13 @@ type routeSummary struct {
 	P99   time.Duration `json:"p99_ns"`
 }
 
+type latencySummary struct {
+	Count int           `json:"count"`
+	P50   time.Duration `json:"p50_ns"`
+	P95   time.Duration `json:"p95_ns"`
+	P99   time.Duration `json:"p99_ns"`
+}
+
 type runSummary struct {
 	Scenario                string         `json:"scenario"`
 	Duration                time.Duration  `json:"duration_ns"`
@@ -46,6 +53,7 @@ type runSummary struct {
 	Routes                  []routeSummary `json:"routes"`
 	Stages                  []stageSummary `json:"stages,omitempty"`
 	ProfileFailed           bool           `json:"profile_failed,omitempty"`
+	Overall                 latencySummary `json:"overall"`
 }
 
 func (collector *stats) merge(other *stats) {
@@ -86,16 +94,27 @@ func makeSummary(scenario string, duration time.Duration, rate int, scheduled, s
 		routes = append(routes, route)
 	}
 	sort.Strings(routes)
+	var all []time.Duration
 	for _, route := range routes {
 		values := collector.samples[route]
-		sort.Slice(values, func(i, j int) bool { return values[i] < values[j] })
+		valuesCopy := make([]time.Duration, len(values))
+		copy(valuesCopy, values)
+		sort.Slice(valuesCopy, func(i, j int) bool { return valuesCopy[i] < valuesCopy[j] })
+		all = append(all, valuesCopy...)
 		summary.Routes = append(summary.Routes, routeSummary{
 			Route: route,
-			Count: len(values),
-			P50:   percentile(values, .50),
-			P95:   percentile(values, .95),
-			P99:   percentile(values, .99),
+			Count: len(valuesCopy),
+			P50:   percentile(valuesCopy, .50),
+			P95:   percentile(valuesCopy, .95),
+			P99:   percentile(valuesCopy, .99),
 		})
+	}
+	sort.Slice(all, func(i, j int) bool { return all[i] < all[j] })
+	summary.Overall = latencySummary{
+		Count: len(all),
+		P50:   percentile(all, .50),
+		P95:   percentile(all, .95),
+		P99:   percentile(all, .99),
 	}
 	return summary
 }
@@ -105,6 +124,7 @@ func printSummary(summary runSummary) {
 		summary.Scenario, summary.Duration.Round(time.Millisecond), summary.TargetJourneysPerSecond,
 		summary.Scheduled, summary.Started, summary.Completed, summary.Dropped, summary.Failed, summary.Requests,
 		summary.RequestsPerSecond, summary.ChecksPassed, summary.Checks)
+	fmt.Printf("overall count=%d p50=%s p95=%s p99=%s\n", summary.Overall.Count, summary.Overall.P50, summary.Overall.P95, summary.Overall.P99)
 	for _, route := range summary.Routes {
 		fmt.Printf("route=%s count=%d p50=%s p95=%s p99=%s\n", route.Route, route.Count,
 			route.P50, route.P95, route.P99)
