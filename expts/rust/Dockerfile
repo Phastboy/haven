@@ -7,8 +7,8 @@ RUN cargo chef prepare --recipe-path recipe.json
 # 2. Builder stage
 FROM lukemathwalker/cargo-chef:latest-rust-1.99-bookworm AS builder
 WORKDIR /app
-ARG TOPCOAT_CLI_VERSION=0.11.0
-RUN cargo install topcoat-cli --version "${TOPCOAT_CLI_VERSION}" --locked
+# Must match the resolved `topcoat` version in Cargo.lock and CI.
+RUN cargo install topcoat-cli --version 0.11.0 --locked
 COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
