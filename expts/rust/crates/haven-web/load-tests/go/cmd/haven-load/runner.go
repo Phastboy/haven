@@ -35,7 +35,6 @@ func run(ctx context.Context, client *http.Client, baseURL, scenario string, ses
 		if maxIterations > 0 && index >= maxIterations {
 			break
 		}
-		scheduled.Add(1)
 		if delay := time.Until(next); delay > 0 {
 			timer := time.NewTimer(delay)
 			deadlineTimer := time.NewTimer(time.Until(deadline))
@@ -55,6 +54,7 @@ func run(ctx context.Context, client *http.Client, baseURL, scenario string, ses
 				deadlineTimer.Stop()
 			}
 		}
+		scheduled.Add(1)
 		select {
 		case queue <- job{index: index}:
 		default:

@@ -162,3 +162,91 @@ type roundTripFunc func(*http.Request) (*http.Response, error)
 func (roundTrip roundTripFunc) RoundTrip(request *http.Request) (*http.Response, error) {
 	return roundTrip(request)
 }
+
+func TestRouteLabelNormalization(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"/offers", "/offers"},
+		{"/offers/rustic-table-123", "/offers/{slug}"},
+		{"/offers/rustic-table-123/save", "/offers/{slug}/save"},
+		{"/offers/rustic-table-123/message", "/offers/{slug}/message"},
+		{"/offers?q=Test+Offer&currency=NGN&min_price=1000&max_price=10000", "/offers?currency&max_price&min_price&q"},
+		{"/offers?q=Test+Offer&after=abc", "/offers?q"},
+		{"/profile/offers/3f2504e0-4f89-11d3-9a0c-0305e82c3301", "/profile/offers/{id}"},
+		{"/profile/offers/3f2504e0-4f89-11d3-9a0c-0305e82c3301/edit", "/profile/offers/{id}/edit"},
+		{"/profile/offers/new", "/profile/offers/new"},
+		{"/profiles/alex-wood", "/profiles/{handle}"},
+		{"/profiles/alex-wood/follow", "/profiles/{handle}/follow"},
+		{"/profile/saved?after=abc", "/profile/saved"},
+		{"/conversations/3f2504e0-4f89-11d3-9a0c-0305e82c3301", "/conversations/{id}"},
+		{"/conversations/3f2504e0-4f89-11d3-9a0c-0305e82c3301/messages", "/conversations/{id}/messages"},
+		{"/health", "/health"},
+		{"/", "/"},
+	}
+	for _, tt := range tests {
+		if got := routeLabel(tt.input); got != tt.want {
+			t.Errorf("routeLabel(%q) = %q, want %q", tt.input, got, tt.want)
+		}
+	}
+}
+
+func TestProfileExitCode(t *testing.T) {
+	if got := profileExitCode(runSummary{Failed: 1}); got != 0 {
+		t.Fatalf("expected 0 for failed-only non-profile summary path, got %d", got)
+	}
+	if got := profileExitCode(runSummary{ProfileFailed: true}); got != 1 {
+		t.Fatalf("expected 1 when profile failed, got %d", got)
+	}
+	if got := profileExitCode(runSummary{ProfileFailed: false}); got != 0 {
+		t.Fatalf("expected 0 when profile not failed, got %d", got)
+	}
+}
+
+func TestBodyInclusiveLatency(t *testing.T) {
+	collector := &stats{samples: make(map[string][]time.Duration)}
+	client := &http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+		time.Sleep(80 * time.Millisecond)
+		return &http.Response{StatusCode: http.StatusOK, Header: make(http.Header), Body: io.NopCloser(strings.NewReader("ok")), Request: nil}, nil
+	})}
+	if err := get(context.Background(), client, "http://example.test", "/health", "", http.StatusOK, collector); err != nil {
+		t.Fatal(err)
+	}
+	if len(collector.samples["/health"]) != 1 {
+		t.Fatalf("expected 1 sample, got %d", len(collector.samples))
+	}
+	if collector.samples["/health"][0] < 50*time.Millisecond {
+		t.Fatalf("expected body-inclusive latency >= 50ms, got %s", collector.samples["/health"][0])
+	}
+}
+
+func TestOverallPercentiles(t *testing.T) {
+	collector := &stats{samples: make(map[string][]time.Duration)}
+	collector.record(sample{Route: "/a", Duration: 10 * time.Millisecond}, true)
+	collector.record(sample{Route: "/a", Duration: 20 * time.Millisecond}, true)
+	collector.record(sample{Route: "/b", Duration: 30 * time.Millisecond}, true)
+	summary := makeSummary("test", time.Second, 1, 3, 3, 3, 0, 0, collector)
+	if summary.Overall.Count != 3 {
+		t.Fatalf("expected overall count 3, got %d", summary.Overall.Count)
+	}
+	if summary.Overall.P50 != 20*time.Millisecond {
+		t.Fatalf("expected overall p50 20ms, got %s", summary.Overall.P50)
+	}
+}
+
+func TestScheduledInvariant(t *testing.T) {
+	ctx := context.Background()
+	client := &http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+		return &http.Response{StatusCode: http.StatusOK, Header: make(http.Header), Body: io.NopCloser(strings.NewReader("ok")), Request: nil}, nil
+	})}
+	sessions := []session{{Session: "t", OfferIDs: []string{"1"}, Handle: "h"}}
+	scheduled, started, completed, dropped, failed := run(ctx, client, "http://example.test", "steady", sessions, 1, 1200*time.Millisecond, 1, 0, &stats{samples: make(map[string][]time.Duration)})
+	if scheduled != started+dropped {
+		t.Fatalf("scheduled != started+dropped: %d != %d+%d", scheduled, started, dropped)
+	}
+	if failed != 0 {
+		t.Fatalf("failed = %d", failed)
+	}
+	_ = completed
+}

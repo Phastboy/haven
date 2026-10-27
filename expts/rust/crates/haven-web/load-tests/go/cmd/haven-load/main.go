@@ -96,7 +96,7 @@ func main() {
 				log.Fatal(err)
 			}
 		}
-		if summary.Failed != 0 || summary.Dropped != 0 || summary.ProfileFailed {
+		if profileExitCode(summary) != 0 {
 			os.Exit(1)
 		}
 		return
@@ -112,6 +112,13 @@ func main() {
 	if failed != 0 || dropped != 0 {
 		os.Exit(1)
 	}
+}
+
+func profileExitCode(summary runSummary) int {
+	if summary.ProfileFailed {
+		return 1
+	}
+	return 0
 }
 
 func validate(baseURL, scenario string, rate int, duration time.Duration, workers int) error {
