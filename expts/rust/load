@@ -2,24 +2,26 @@
 # run-load-test.sh - automate the Manual Go Load-Test Runbook
 #
 # Usage:
-#   ./run-load-test.sh setup            # create DB, run Haven migrations, generate fixture
-#   ./run-load-test.sh build            # build the haven-load binary
-#   ./run-load-test.sh smoke            # 1-iteration smoke check
-#   ./run-load-test.sh v05              # v0.5 journey (rate 10, 60s, 1 worker)
-#   ./run-load-test.sh v06              # v0.6 journey (rate 1, 60s, 16 workers)
-#   ./run-load-test.sh suite            # ./run-all.sh with the generated fixture
-#   ./run-load-test.sh report [file]    # print p95/p99 per route from a summary JSON
-#   ./run-load-test.sh all              # setup + build + smoke + v05 + v06
+#   ./load setup            # create DB, run Haven migrations, generate fixture
+#   ./load build            # build the haven-load binary
+#   ./load smoke            # 1-iteration smoke check
+#   ./load v05              # v0.5 journey (rate 10, 60s, 1 worker)
+#   ./load v06              # v0.6 journey (rate 1, 60s, 16 workers)
+#   ./load suite            # ./run-all.sh with the generated fixture
+#   ./load report [file]    # print p95/p99 per route from a summary JSON
+#   ./load all              # setup + build + smoke + v05 + v06
 #
 # Environment overrides:
 #   HAVEN_LOAD_TEST_DB  (default: haven_load_test)
 #   PG_HOST             (default: 127.0.0.1)
 #   PG_PORT             (default: 5432)
 #   PG_USER             (default: current OS user)
-#   PG_PASSWORD         (optional; used to build DATABASE_URL)
+#   PG_PASSWORD         (optional; used to build DATABASE_URL and passed to createdb/dropdb)
 #   HAVEN_URL           (default: http://127.0.0.1:3000)
 #   WORKERS             (default: 16)
-#   SESSIONS_FILE       (default: data/go-sessions.json)
+#   USERS               (default: WORKERS * 22)
+#   USERS               (default: WORKERS * 22)
+#   SESSIONS_FILE       (default: <load-tests>/data/go-sessions.json; relative paths resolved from $PWD)
 #   SKIP_HAVEN_START    (default: 0) - set to 1 if Haven is already running
 #
 # Requires: createdb, psql, cargo, go, jq, curl
@@ -40,6 +42,12 @@ fi
 LOADTEST_DIR="$RUST_DIR/crates/haven-web/load-tests"
 RESULTS_DIR="$LOADTEST_DIR/results"
 SESSIONS_FILE="${SESSIONS_FILE:-$LOADTEST_DIR/data/go-sessions.json}"
+if [[ "$SESSIONS_FILE" != /* ]]; then
+  SESSIONS_FILE="$PWD/$SESSIONS_FILE"
+fi
+if [[ "$SESSIONS_FILE" != /* ]]; then
+  SESSIONS_FILE="$PWD/$SESSIONS_FILE"
+fi
 BINARY="$RESULTS_DIR/haven-load"
 
 # ----- config -----
@@ -50,6 +58,11 @@ PG_USER="${PG_USER:-$(id -un)}"
 PG_PASSWORD="${PG_PASSWORD:-}"
 HAVEN_URL="${HAVEN_URL:-http://127.0.0.1:3000}"
 WORKERS="${WORKERS:-16}"
+USERS="${USERS:-$((WORKERS * 22))}"
+if (( USERS < WORKERS * 22 )); then
+  echo "ERROR: USERS must be at least WORKERS*22 ($((WORKERS * 22)))" >&2
+  exit 1
+fi
 SKIP_HAVEN_START="${SKIP_HAVEN_START:-0}"
 
 # ----- guards -----
@@ -68,18 +81,29 @@ fi
 urlencode() { python3 -c 'import sys,urllib.parse;print(urllib.parse.quote(sys.argv[1],safe=""))' "$1"; }
 
 build_database_url() {
-  local user_enc pw_part=""
+  local user_enc pw_part="" host_part="$PG_HOST"
   user_enc="$(urlencode "$PG_USER")"
   if [[ -n "$PG_PASSWORD" ]]; then
     pw_part=":$(urlencode "$PG_PASSWORD")"
   fi
-  echo "postgres://${user_enc}${pw_part}@${PG_HOST}:${PG_PORT}/${HAVEN_LOAD_TEST_DB}"
+  if [[ "$PG_HOST" == *:* && "$PG_HOST" != \[*\] ]]; then
+    host_part="[$PG_HOST]"
+  fi
+  echo "postgres://${user_enc}${pw_part}@${host_part}:${PG_PORT}/${HAVEN_LOAD_TEST_DB}"
 }
 
 DATABASE_URL="$(build_database_url)"
 export DATABASE_URL HAVEN_LOAD_TEST_DB
 
 # ----- helpers -----
+libpq() {
+  if [[ -n "${PG_PASSWORD:-}" ]]; then
+    PGPASSWORD="$PG_PASSWORD" "$@"
+  else
+    "$@"
+  fi
+}
+
 log() { printf '\n==> %s\n' "$*"; }
 die() { echo "ERROR: $*" >&2; exit 1; }
 
@@ -111,12 +135,31 @@ cmd_setup() {
   check_tools
   mkdir -p "$RESULTS_DIR"
 
-  log "creating disposable database: $HAVEN_LOAD_TEST_DB on $PG_HOST:$PG_PORT"
+  local db_exists_flag=false
   if psql "$DATABASE_URL" -c 'SELECT 1' >/dev/null 2>&1; then
-    echo "database already exists; dropping and recreating"
-    dropdb --if-exists -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" "$HAVEN_LOAD_TEST_DB"
+    db_exists_flag=true
   fi
-  createdb -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" "$HAVEN_LOAD_TEST_DB"
+
+  if [[ "$db_exists_flag" == true ]]; then
+    if [[ "$SKIP_HAVEN_START" == "1" ]]; then
+      log "database exists; SKIP_HAVEN_START=1: reusing it without recreation"
+    else
+      local active
+      active="$(psql "$DATABASE_URL" -Atc "select count(*) from pg_stat_activity where datname = current_database() and pid <> pg_backend_pid()" 2>/dev/null || echo 0)"
+      if [[ "$active" != "0" && -n "$active" ]]; then
+        die "database $HAVEN_LOAD_TEST_DB has $active active connection(s); stop Haven first, or set SKIP_HAVEN_START=1 to reuse the database"
+      fi
+      log "recreating disposable database: $HAVEN_LOAD_TEST_DB on $PG_HOST:$PG_PORT"
+      libpq dropdb --if-exists -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" "$HAVEN_LOAD_TEST_DB"
+      libpq createdb -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" "$HAVEN_LOAD_TEST_DB"
+    fi
+  else
+    if [[ "$SKIP_HAVEN_START" == "1" ]]; then
+      die "database $HAVEN_LOAD_TEST_DB does not exist; SKIP_HAVEN_START=1 assumes a running Haven. Unset it or create the database."
+    fi
+    log "creating disposable database: $HAVEN_LOAD_TEST_DB on $PG_HOST:$PG_PORT"
+    libpq createdb -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" "$HAVEN_LOAD_TEST_DB"
+  fi
 
   log "starting Haven once to apply migrations"
   if [[ "$SKIP_HAVEN_START" == "1" ]]; then
@@ -133,10 +176,10 @@ cmd_setup() {
     echo "Haven is running (pid $(cat "$RESULTS_DIR/haven.pid"), log: $RESULTS_DIR/haven.log)"
   fi
 
-  log "generating fixture: $SESSIONS_FILE (352 users, 16 workers)"
+  log "generating fixture: $SESSIONS_FILE ($USERS users, $WORKERS workers)"
   (
     cd "$RUST_DIR"
-    cargo run -p load-test-support -- --users 352 \
+    cargo run -p load-test-support -- --users "$USERS" \
       --output "$SESSIONS_FILE"
   )
 
@@ -202,16 +245,16 @@ cmd_suite() {
 }
 
 cmd_report() {
-  require_cmd jq
-  local file="${1:-$RESULTS_DIR/v06.json}"
-  [[ -f "$file" ]] || die "summary not found: $file"
-  log "per-route p95/p99 (ms): $file"
-  jq -r '.routes[] | [.route, (.p95_ns/1000000), (.p99_ns/1000000)] | @tsv' "$file"
-  if jq -e '.stages' "$file" >/dev/null 2>&1; then
-    log "per-stage p95/p99 (ms)"
-    jq -r '.stages[] | .journeys_per_second as $r |
-      .summary.routes[] | [$r, .route, (.p95_ns/1000000), (.p99_ns/1000000)] | @tsv' "$file"
+  local file="${1:-$LOADTEST_DIR/results/v06.json}"
+  if [[ ! -f "$file" ]]; then
+    die "summary file not found: $file"
   fi
+  if ! command -v jq >/dev/null 2>&1; then
+    die "jq is required for report"
+  fi
+  echo "Report: $file"
+  jq -r '.overall | ["overall", .count, (.p50_ns/1000000), (.p95_ns/1000000), (.p99_ns/1000000)] | @tsv' "$file" 2>/dev/null | awk '{printf "%-60s %8d %10.3f %10.3f %10.3f\n",$1,$2,$3,$4,$5}' || true
+  jq -r '.routes[] | [.route, .count, (.p50_ns/1000000), (.p95_ns/1000000), (.p99_ns/1000000)] | @tsv' "$file" | awk 'BEGIN{printf "%-60s %8s %10s %10s %10s\n","route","count","p50_ms","p95_ms","p99_ms"} {printf "%-60s %8d %10.3f %10.3f %10.3f\n",$1,$2,$3,$4,$5}'
 }
 
 cmd_all() {
