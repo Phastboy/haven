@@ -78,8 +78,8 @@ jobs:
       - name: Verify Topcoat CLI pins
         run: |
           framework=$(cargo metadata --format-version 1 --locked | jq -r '.packages[] | select(.name == "topcoat") | .version')
-          dockerfile=$(grep -oP 'cargo install topcoat-cli --version \K[0-9.]+' expts/rust/Dockerfile | head -1)
-          ci=$(grep -oP 'cargo install topcoat-cli --version \K[0-9.]+' .github/workflows/haven-rust-ci.yml | head -1)
+          dockerfile=$(sed -n 's/.*cargo install topcoat-cli --version \([0-9.]*\).*/\1/p' expts/rust/Dockerfile | head -1)
+          ci=$(sed -n 's/.*cargo install topcoat-cli --version \([0-9.]*\).*/\1/p' .github/workflows/haven-rust-ci.yml | head -1)
           test "$dockerfile" = "$framework" || { echo "Dockerfile Topcoat CLI $dockerfile does not match framework $framework"; exit 1; }
           test "$ci" = "$framework" || { echo "CI Topcoat CLI $ci does not match framework $framework"; exit 1; }
 
