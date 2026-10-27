@@ -84,7 +84,7 @@ An offer can receive a meaningful response from another person, and the system m
 
 ## Stage 0.6.x: Can I come back to what I care about? (completed)
 
-The feature checklist is implemented and the load-test gate is recorded as met in `crates/haven-web/load-tests/SCORECARD.md`. Stage 0.7.x has not started.
+The feature checklist is implemented and the load-test gate is recorded as met in [`crates/haven-web/load-tests/SCORECARD.md`](../expts/rust/crates/haven-web/load-tests/SCORECARD.md). Stage 0.7.x has not started.
 
 ### Untangled items
 
