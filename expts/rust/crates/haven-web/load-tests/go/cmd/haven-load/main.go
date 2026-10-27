@@ -115,7 +115,7 @@ func main() {
 }
 
 func profileExitCode(summary runSummary) int {
-	if summary.ProfileFailed {
+	if summary.ProfileFailed || summary.Failed > 0 || summary.Dropped > 0 {
 		return 1
 	}
 	return 0

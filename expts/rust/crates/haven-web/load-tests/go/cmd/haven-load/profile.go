@@ -47,7 +47,7 @@ func runProfile(ctx context.Context, client *http.Client, baseURL, scenario stri
 		completedTotal += completed
 		droppedTotal += dropped
 		failedTotal += failed
-		if stageResult.Breach != "" {
+		if stageResult.Breach != "" || failed > 0 {
 			profileFailed = true
 		}
 		collector.merge(stageStats)
