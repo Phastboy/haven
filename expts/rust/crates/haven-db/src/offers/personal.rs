@@ -24,10 +24,9 @@ pub(super) async fn list(
         PersonalScope::Inquired(_) => "x.offer_id",
     };
     let mut sql = QueryBuilder::<Postgres>::new(
-        "SELECT o.id, o.user_id, o.slug, o.title, o.description, o.price, o.currency, o.category, o.image_count, o.created_at, o.updated_at, u.display_name, u.handle, x.created_at AS activity_at, ",
+        "WITH matching AS MATERIALIZED (SELECT o.id, o.user_id, o.slug, o.title, o.description, o.price, o.currency, o.category, o.image_count, o.created_at, o.updated_at, x.created_at AS activity_at, ",
     );
-    sql.push(key)
-        .push(" AS activity_id FROM offer o JOIN \"user\" u ON u.id = o.user_id ");
+    sql.push(key).push(" AS activity_id FROM offer o ");
     match query.scope() {
         PersonalScope::Saved(person) => {
             sql.push("JOIN saved_offer x ON x.offer_id = o.id WHERE x.user_id = ")
@@ -49,9 +48,11 @@ pub(super) async fn list(
             .push_bind(position.id)
             .push(")");
     }
+    // Bound membership/facets before loading maker details, so planner row
+    // estimates cannot turn the maker join into repeated full-table scans.
     sql.push(" ORDER BY x.created_at DESC, ")
         .push(key)
-        .push(" DESC LIMIT 21");
+        .push(" DESC LIMIT 21) SELECT matching.*, u.display_name, u.handle FROM matching JOIN \"user\" u ON u.id = matching.user_id ORDER BY activity_at DESC, activity_id DESC");
     let mut rows = sql
         .build_query_as::<ActivityRow>()
         // Facet selectivity varies sharply; a cached generic plan can scan the
