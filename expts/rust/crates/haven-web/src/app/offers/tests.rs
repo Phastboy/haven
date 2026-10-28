@@ -157,7 +157,7 @@ impl Registry for TestRegistry {
         &self.convs_repo
     }
     fn saved_offers(&self) -> &(dyn haven_domain::ports::SavedOfferRepository + 'static) {
-        unimplemented!()
+        &self.offers_repo
     }
     fn follows(&self) -> &(dyn haven_domain::ports::FollowRepository + 'static) {
         unimplemented!()
