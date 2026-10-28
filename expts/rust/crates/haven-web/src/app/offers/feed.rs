@@ -32,7 +32,10 @@ pub struct FeedQuery {
 /// Serves the public offers feed page at `/offers`.
 #[topcoat::router::page("/offers")]
 pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
-    let query = topcoat::router::query_params::<FeedQuery>(cx).ok();
+    let query = Some(
+        topcoat::router::query_params::<FeedQuery>(cx)
+            .map_err(|_| topcoat::router::error::bad_request("Invalid offer filters."))?,
+    );
     let (after_cursor, return_after) =
         parse_after_cursor(query.as_ref().and_then(|q| q.after.as_deref()));
 
@@ -166,9 +169,9 @@ pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
 
 /// Canonical URL for an indexable first-page public landing; other criteria are noindex.
 pub(crate) fn canonical(cx: &Cx) -> Option<String> {
-    let query = topcoat::router::query_params::<FeedQuery>(cx).ok();
-    let parsed = ParsedCriteria::parse(query);
-    if query.is_some_and(|q| q.after.is_some())
+    let query = topcoat::router::query_params::<FeedQuery>(cx).ok()?;
+    let parsed = ParsedCriteria::parse(Some(query));
+    if query.after.is_some()
         || parsed.controls.category_error.is_some()
         || parsed.controls.title_error.is_some()
         || parsed.controls.price_error.is_some()

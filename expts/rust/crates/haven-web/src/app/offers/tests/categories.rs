@@ -301,3 +301,21 @@ fn export_snapshot(name: &str, body: &str) {
         std::fs::write(directory.join(name), body).unwrap();
     }
 }
+
+#[tokio::test]
+async fn malformed_price_cannot_silently_discard_a_category_filter() {
+    let (router, _) = setup_test_app();
+    for category in ["food-groceries", "unknown-topic"] {
+        let response = router
+            .handle(
+                Request::builder()
+                    .uri(format!(
+                        "/offers?category={category}&max_price=not-a-number"
+                    ))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await;
+        assert_eq!(response.status(), http::StatusCode::BAD_REQUEST);
+    }
+}
