@@ -54,3 +54,18 @@ The dense broad query also exposed a maker join executing a sequential scan of
 membership/facets/order to 21 rows in a materialized CTE before the maker join
 changed that join to primary-key lookups: 20.43 ms to 1.07 ms in the isolated SQL
 comparison. This preserves visibility, membership and pagination semantics.
+
+### 2026-10-28 Public rerun after planning fix — contract failure
+
+Release `3c54037`, passing [CI run 40716208008](https://github.com/Phastboy/haven/actions/runs/40716208008),
+same fixture/host as above. At 100 offered RPS: 99.85 achieved, p95 118.12 ms,
+p99 160.82 ms; 6,000/6,000 checks correct, no errors/drops (100% semantic checks).
+At 1,010 offered RPS: 197.29 achieved, p95 1,279.97 ms, p99 1,374.91 ms;
+12,154/12,154 status/check outcomes passed, 48,446 dropped arrivals. Semantic
+checking was stratified 10%, seed 42; per-case counts remain in the raw JSON.
+**Contract failed.** Host load rose to about 17 on four logical CPUs. These are
+shared-desktop measurements, not evidence of isolated production capacity.
+The next run uses an opt-in CI workload with a fresh database, the complete
+correctness/contract/mixed/spike/30-minute-soak/capacity sequence, and exported
+CPU/RSS/descriptor telemetry. The runner and database share that clean CI host;
+its hardware and source SHA are exported with results. No release bump yet.
