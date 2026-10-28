@@ -156,6 +156,9 @@ pub(super) async fn list_public(
         .push_bind(fetch_limit);
     let rs = sql
         .build_query_as::<PublicOfferDbRow>()
+        // Facet selectivity varies sharply; a cached generic plan can scan the
+        // entire matching history before LIMIT instead of streaming the keyset.
+        .persistent(false)
         .fetch_all(pool)
         .await
         .map_err(crate::map_sqlx_err)?;
