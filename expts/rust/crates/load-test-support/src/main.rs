@@ -10,10 +10,12 @@
     reason = "Test script"
 )]
 
+mod narrowing;
+
 use clap::Parser;
 use dotenvy::dotenv;
 use haven_db::PostgresRegistry;
-use haven_domain::account::Email;
+use haven_domain::account::{AccountId, Email};
 use haven_domain::ports::Registry;
 use serde::Serialize;
 use sqlx::postgres::PgPoolOptions;
@@ -24,6 +26,14 @@ use std::sync::Arc;
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
+    /// Generate v0.7 skewed categories, private offers and personal histories.
+    #[arg(long)]
+    narrowing: bool,
+
+    /// Expected-result fixture for v0.7 (defaults beside session output).
+    #[arg(long)]
+    cases: Option<PathBuf>,
+
     /// Number of users to generate
     #[arg(short, long, default_value_t = 10000)]
     users: usize,
@@ -54,29 +64,7 @@ fn validate_local_database_url(database_url: &str) {
     }
 }
 
-async fn seed_user(registry: &dyn Registry, i: usize) -> SessionOutput {
-    let email_str = format!("load-test-user-{}@test.haven.com", uuid::Uuid::new_v4());
-    let email = Email::parse(&email_str).expect("valid email");
-
-    let account = registry
-        .accounts()
-        .create(&email)
-        .await
-        .expect("create account");
-    registry
-        .accounts()
-        .mark_verified(account.id)
-        .await
-        .expect("mark verified");
-    let suffix = format!("{:08x}", i);
-    let initial_profile =
-        haven_domain::user::UserProfileUpdate::from_email_initial(email.as_str(), &suffix);
-    let user = registry
-        .users()
-        .create(account.id, &initial_profile)
-        .await
-        .expect("create user");
-
+async fn seed_session(registry: &dyn Registry, account_id: AccountId) -> String {
     let (raw_token, hashed_token) = {
         let pt = topcoat::session::Token::random();
         let hash_bytes = pt.hash();
@@ -100,15 +88,47 @@ async fn seed_user(registry: &dyn Registry, i: usize) -> SessionOutput {
     let expires_at = chrono::Utc::now() + chrono::Duration::try_days(7).unwrap();
     let _session = registry
         .sessions()
-        .create(account.id, &hashed_token, expires_at, None, None)
+        .create(account_id, &hashed_token, expires_at, None, None)
         .await
         .expect("create session");
+
+    raw_token.as_str().to_string()
+}
+
+async fn seed_user(registry: &dyn Registry, i: usize, narrowing: bool) -> SessionOutput {
+    let email_str = format!("load-test-user-{}@test.haven.com", uuid::Uuid::new_v4());
+    let email = Email::parse(&email_str).expect("valid email");
+
+    let account = registry
+        .accounts()
+        .create(&email)
+        .await
+        .expect("create account");
+    registry
+        .accounts()
+        .mark_verified(account.id)
+        .await
+        .expect("mark verified");
+    let suffix = format!("{:08x}", i);
+    let initial_profile =
+        haven_domain::user::UserProfileUpdate::from_email_initial(email.as_str(), &suffix);
+    let user = registry
+        .users()
+        .create(account.id, &initial_profile)
+        .await
+        .expect("create user");
+
+    let raw_token = seed_session(registry, account.id).await;
 
     // Seed offers to make the database realistically populated.
     // Mostly 10 per user, but every 100th user gets 200 offers to test unpaginated tails.
     let mut user_offer_ids = Vec::new();
     let mut user_offer_slugs = Vec::new();
-    let num_offers: usize = if i.is_multiple_of(100) { 200 } else { 10 };
+    let num_offers: usize = if !narrowing && i.is_multiple_of(100) {
+        200
+    } else {
+        10
+    };
 
     for j in 0..num_offers {
         let price = if j.is_multiple_of(20) {
@@ -117,7 +137,11 @@ async fn seed_user(registry: &dyn Registry, i: usize) -> SessionOutput {
             1000 + i32::try_from(j).expect("seeded offer index fits in i32")
         };
         let create_req = haven_domain::offer::CreateOffer {
-            category: haven_domain::offer::Category::Other,
+            category: if narrowing {
+                narrowing::category(i * 10 + j)
+            } else {
+                haven_domain::offer::Category::Other
+            },
             title: format!("Test Offer {j} from User {i}"),
             description: "This is a seeded offer to fill the database.".to_string(),
             price: haven_domain::offer::Price::new(price).unwrap(),
@@ -137,16 +161,18 @@ async fn seed_user(registry: &dyn Registry, i: usize) -> SessionOutput {
         let pub_id =
             haven_domain::image::ImagePublicId::parse(format!("offers/{}/cover", offer.id))
                 .expect("valid public id");
-        registry
-            .offer_images()
-            .add_image(
-                offer.id,
-                user.id,
-                &pub_id,
-                haven_domain::image::ImageDimensions::default(),
-            )
-            .await
-            .expect("add seeded image");
+        if !narrowing || !(i * 10 + j).is_multiple_of(37) {
+            registry
+                .offer_images()
+                .add_image(
+                    offer.id,
+                    user.id,
+                    &pub_id,
+                    haven_domain::image::ImageDimensions::default(),
+                )
+                .await
+                .expect("add seeded image");
+        }
 
         user_offer_ids.push(offer.id.to_string());
         user_offer_slugs.push(offer.slug.as_str().to_string());
@@ -155,15 +181,15 @@ async fn seed_user(registry: &dyn Registry, i: usize) -> SessionOutput {
     SessionOutput {
         user_id: user.id.to_string(),
         handle: user.handle.as_str().to_string(),
-        session_token: raw_token.as_str().to_string(),
+        session_token: raw_token,
         offer_ids: user_offer_ids,
         offer_slugs: user_offer_slugs,
     }
 }
 
-fn write_sessions(
+fn write_fixture(
     output_path: &Path,
-    sessions: &[SessionOutput],
+    fixture: &impl Serialize,
 ) -> Result<(), Box<dyn std::error::Error>> {
     println!("Writing sessions to {}", output_path.display());
     if let Some(parent) = output_path.parent() {
@@ -182,7 +208,7 @@ fn write_sessions(
         use std::os::unix::fs::PermissionsExt;
         file.set_permissions(std::fs::Permissions::from_mode(0o600))?;
     }
-    serde_json::to_writer_pretty(file, sessions)?;
+    serde_json::to_writer_pretty(file, fixture)?;
     Ok(())
 }
 
@@ -200,6 +226,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .connect(&database_url)
         .await?;
 
+    if args.narrowing {
+        let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM offer")
+            .fetch_one(&pool)
+            .await?;
+        if count != 0 {
+            return Err("narrowing fixtures require an empty disposable database".into());
+        }
+    }
     let registry = Arc::new(PostgresRegistry::new(&pool));
 
     println!("Seeding {} users...", args.users);
@@ -214,10 +248,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let start = chunk_idx * chunk_size;
         let end = std::cmp::min(start + chunk_size, args.users);
 
+        let narrowing = args.narrowing;
         let handle = tokio::spawn(async move {
             let mut chunk_sessions = Vec::new();
             for i in start..end {
-                chunk_sessions.push(seed_user(registry.as_ref(), i).await);
+                chunk_sessions.push(seed_user(registry.as_ref(), i, narrowing).await);
             }
             chunk_sessions
         });
@@ -232,7 +267,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Vacuuming and analyzing database to ensure accurate statistics...");
     sqlx::query("VACUUM ANALYZE;").execute(&pool).await?;
 
-    write_sessions(&args.output, &sessions)?;
+    write_fixture(&args.output, &sessions)?;
+    if args.narrowing {
+        let cases = args
+            .cases
+            .unwrap_or_else(|| args.output.with_extension("narrowing.json"));
+        narrowing::generate(&pool, &sessions, &cases).await?;
+        sqlx::query("VACUUM ANALYZE").execute(&pool).await?;
+    }
     println!("Done. Seeded {} sessions.", sessions.len());
 
     Ok(())

@@ -4,6 +4,7 @@ use super::super::FeedQuery;
 use crate::app::components::{chip_row::ChipRowData, feed_filters::FeedFiltersData};
 use haven_domain::offer::{Category, PublicCriteria, PublicCriterion};
 
+#[derive(Clone, Copy)]
 struct FeedLink<'a> {
     scope: &'a str,
     category: &'a str,

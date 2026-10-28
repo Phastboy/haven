@@ -86,6 +86,8 @@ func execute(ctx context.Context, client *http.Client, baseURL, scenario string,
 		err = authorizationJourney(ctx, client, baseURL, sessions, index, collector)
 	case "v05":
 		err = v05Journey(ctx, client, baseURL, collector)
+	case "v07":
+		err = narrowingJourney(ctx, client, baseURL, index, collector)
 	case "v06":
 		err = v06Journey(ctx, client, baseURL, sessions, workerID, collector)
 	}

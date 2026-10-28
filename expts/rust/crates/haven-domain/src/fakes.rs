@@ -161,7 +161,7 @@ impl OfferRepository for FakeOfferRepository {
                 Some((offer.clone(), position))
             })
             .collect();
-        matches.sort_by(|a, b| (b.1.at, b.1.id).cmp(&(a.1.at, a.1.id)));
+        matches.sort_by_key(|row| std::cmp::Reverse((row.1.at, row.1.id)));
         let has_more = matches.len() > 20;
         matches.truncate(20);
         let next_cursor = if has_more {
@@ -984,6 +984,25 @@ impl Registry for FakeRegistry {
     }
 }
 
+fn matches_personal_facets(offer: &Offer, criteria: &crate::offer::PublicCriteria) -> bool {
+    criteria.iter().all(|criterion| match criterion {
+        crate::offer::PublicCriterion::Category(category) => offer.category == category,
+        crate::offer::PublicCriterion::Title(title) => offer
+            .title
+            .to_lowercase()
+            .contains(&title.as_str().to_lowercase()),
+        crate::offer::PublicCriterion::Price(price) => {
+            offer.currency == price.currency
+                && price
+                    .min
+                    .is_none_or(|min| offer.price.as_i32() >= min.as_i32())
+                && price
+                    .max
+                    .is_none_or(|max| offer.price.as_i32() <= max.as_i32())
+        }
+    })
+}
+
 #[cfg(test)]
 #[allow(
     clippy::unwrap_used,
@@ -1068,23 +1087,4 @@ mod tests {
         let offers = repo.offers.lock().unwrap();
         assert_eq!(offers.len(), 1);
     }
-}
-
-fn matches_personal_facets(offer: &Offer, criteria: &crate::offer::PublicCriteria) -> bool {
-    criteria.iter().all(|criterion| match criterion {
-        crate::offer::PublicCriterion::Category(category) => offer.category == category,
-        crate::offer::PublicCriterion::Title(title) => offer
-            .title
-            .to_lowercase()
-            .contains(&title.as_str().to_lowercase()),
-        crate::offer::PublicCriterion::Price(price) => {
-            offer.currency == price.currency
-                && price
-                    .min
-                    .is_none_or(|min| offer.price.as_i32() >= min.as_i32())
-                && price
-                    .max
-                    .is_none_or(|max| offer.price.as_i32() <= max.as_i32())
-        }
-    })
 }

@@ -35,17 +35,19 @@ type job struct {
 }
 
 type stats struct {
-	mu       sync.Mutex
-	samples  map[string][]time.Duration
-	requests atomic.Uint64
-	failures atomic.Uint64
-	checks   atomic.Uint64
-	passed   atomic.Uint64
+	narrowing *narrowingConfig
+	semantic  map[string]semanticCount
+	mu        sync.Mutex
+	samples   map[string][]time.Duration
+	requests  atomic.Uint64
+	failures  atomic.Uint64
+	checks    atomic.Uint64
+	passed    atomic.Uint64
 }
 
 func main() {
 	baseURL := flag.String("base-url", envOr("BASE_URL", "http://127.0.0.1:3000"), "Haven base URL")
-	scenario := flag.String("scenario", "smoke", "smoke, warmup, steady, authorization, v05, v06, spike, or capacity")
+	scenario := flag.String("scenario", "smoke", "smoke, warmup, steady, authorization, v05, v06, v07, spike, or capacity")
 	sessionsPath := flag.String("sessions", "../data/sessions.json", "load-test-support session JSON")
 	rate := flag.Int("rate", 1, "open arrival rate in journeys per second")
 	duration := flag.Duration("duration", time.Second, "test duration")
@@ -53,17 +55,27 @@ func main() {
 	maxIterations := flag.Int("iterations", 0, "stop after this many scheduled journeys (0 uses duration)")
 	summaryPath := flag.String("summary", "", "write machine-readable JSON summary")
 	skipTLSVerify := flag.Bool("insecure-skip-tls-verify", false, "skip TLS verification for isolated self-signed QEMU benchmarks")
+	narrowingPath := flag.String("narrowing-fixture", "", "private v0.7 expected-result fixture")
+	queryClass := flag.String("query-class", "public", "public, saved, inquired or mixed")
+	semanticPercent := flag.Int("semantic-percent", 10, "stratified result checks per 100 case visits")
+	sampleSeed := flag.Uint64("sample-seed", 42, "reproducible semantic sampling seed")
+	profileTarget := flag.String("profile-target", "steady", "steady or v07 workload for spike/capacity")
 	flag.Parse()
 
 	if err := validate(*baseURL, *scenario, *rate, *duration, *workers); err != nil {
 		log.Fatal(err)
 	}
 	fixture, err := loadSessions(*sessionsPath)
-	if err != nil && needsSessions(*scenario) {
+	if err != nil && needsSessions(*scenario) && *profileTarget != "v07" {
 		log.Fatal(err)
 	}
-	if err := validateSessions(*scenario, fixture); err != nil {
-		log.Fatal(err)
+	if *profileTarget != "v07" {
+		if err := validateSessions(*scenario, fixture); err != nil {
+			log.Fatal(err)
+		}
+	}
+	if *profileTarget != "steady" && *profileTarget != "v07" {
+		log.Fatal("profile-target must be steady or v07")
 	}
 	if *scenario == "v06" && len(fixture) < *workers*22 {
 		log.Fatalf("v06 needs %d seeded users for isolated pagination fixtures; found %d", *workers*22, len(fixture))
@@ -81,11 +93,17 @@ func main() {
 		CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse },
 	}
 	collector := &stats{samples: make(map[string][]time.Duration)}
+	if *scenario == "v07" || *profileTarget == "v07" {
+		collector.narrowing, err = loadNarrowing(*narrowingPath, *queryClass, *semanticPercent, *sampleSeed)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	started := time.Now()
 	if *scenario == "spike" || *scenario == "capacity" {
-		summary := runProfile(ctx, client, *baseURL, *scenario, fixture, *workers, collector)
+		summary := runProfile(ctx, client, *baseURL, *scenario, *profileTarget, fixture, *workers, collector)
 		summary.Duration = time.Since(started)
 		if summary.Duration > 0 {
 			summary.RequestsPerSecond = float64(summary.Requests) / summary.Duration.Seconds()
@@ -125,7 +143,7 @@ func validate(baseURL, scenario string, rate int, duration time.Duration, worker
 	if !strings.HasPrefix(baseURL, "http://") && !strings.HasPrefix(baseURL, "https://") {
 		return errors.New("base-url must use http or https")
 	}
-	if scenario != "smoke" && scenario != "warmup" && scenario != "steady" && scenario != "authorization" && scenario != "v05" && scenario != "v06" && scenario != "spike" && scenario != "capacity" {
+	if scenario != "smoke" && scenario != "warmup" && scenario != "steady" && scenario != "authorization" && scenario != "v05" && scenario != "v06" && scenario != "v07" && scenario != "spike" && scenario != "capacity" {
 		return fmt.Errorf("unknown scenario %q", scenario)
 	}
 	if rate < 1 || workers < 1 || duration <= 0 {

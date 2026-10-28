@@ -141,7 +141,7 @@ pub(super) async fn fetch(
             };
             let cursor =
                 after.and_then(|raw| PersonalCursor::decode(raw, scope, &parsed.criteria).ok());
-            let return_after = cursor.as_ref().map(|cursor| cursor.encode());
+            let return_after = cursor.as_ref().map(PersonalCursor::encode);
             let mut query = PersonalFeedQuery::new(scope, parsed.criteria.clone());
             if let Some(cursor) = cursor {
                 query = query

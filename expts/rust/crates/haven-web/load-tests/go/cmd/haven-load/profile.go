@@ -21,15 +21,15 @@ type stageSummary struct {
 	Breach  string     `json:"breach,omitempty"`
 }
 
-func runProfile(ctx context.Context, client *http.Client, baseURL, scenario string, sessions []session, workers int, collector *stats) runSummary {
+func runProfile(ctx context.Context, client *http.Client, baseURL, scenario, target string, sessions []session, workers int, collector *stats) runSummary {
 	stages := profileStages(scenario)
 	var scheduledTotal, startedTotal, completedTotal, droppedTotal, failedTotal uint64
 	var profileFailed bool
 	stageResults := make([]stageSummary, 0, len(stages))
 	for _, stage := range stages {
 		stageStarted := time.Now()
-		stageStats := &stats{samples: make(map[string][]time.Duration)}
-		scheduled, started, completed, dropped, failed := run(ctx, client, baseURL, "steady", sessions, stage.rate, stage.duration, workers, 0, stageStats)
+		stageStats := &stats{samples: make(map[string][]time.Duration), narrowing: collector.narrowing}
+		scheduled, started, completed, dropped, failed := run(ctx, client, baseURL, target, sessions, stage.rate, stage.duration, workers, 0, stageStats)
 		summary := makeSummary(scenario, stage.duration, stage.rate, scheduled, started, completed, dropped, failed, stageStats)
 		summary.Duration = time.Since(stageStarted)
 		if summary.Duration > 0 {
