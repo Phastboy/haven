@@ -31,7 +31,7 @@ pub async fn google_sign_in(cx: &topcoat::context::Cx) -> topcoat::Result<()> {
     };
 
     if crate::app::auth::guard::current_user(cx).await?.is_some() {
-        return Err(see_other("/offers").into());
+        return Err(see_other(crate::app::auth::return_to::destination(cx)).into());
     }
 
     let Some(config) = crate::app::state::google_oauth(cx) else {
@@ -77,7 +77,7 @@ async fn handle_google_callback(cx: &topcoat::context::Cx) -> topcoat::Result<()
     };
 
     if crate::app::auth::guard::current_user(cx).await?.is_some() {
-        return Err(see_other("/offers").into());
+        return Err(see_other(crate::app::auth::return_to::destination(cx)).into());
     }
 
     let query = topcoat::router::parse_query_params::<CallbackQuery>(cx).unwrap_or_default();
@@ -218,7 +218,7 @@ async fn handle_google_callback(cx: &topcoat::context::Cx) -> topcoat::Result<()
         .await
         .map_err(map_err)?;
 
-    Err(see_other("/offers").into())
+    Err(see_other(crate::app::auth::return_to::destination(cx)).into())
 }
 
 /// GET /auth/google/redirect

@@ -4,6 +4,7 @@ use super::ParsedCriteria;
 #[test]
 fn retains_invalid_price_in_links_while_applying_valid_title() {
     let query = FeedQuery {
+        scope: None,
         category: None,
         after: None,
         q: Some("  wooden desk  ".to_string()),
@@ -32,6 +33,7 @@ fn retains_invalid_price_in_links_while_applying_valid_title() {
 #[test]
 fn currency_without_bounds_stays_in_links_without_becoming_a_filter() {
     let query = FeedQuery {
+        scope: None,
         category: None,
         after: None,
         q: None,
@@ -49,6 +51,7 @@ fn currency_without_bounds_stays_in_links_without_becoming_a_filter() {
 #[test]
 fn free_price_keeps_summary_and_intersects_title() {
     let query = FeedQuery {
+        scope: None,
         category: None,
         after: None,
         q: Some("chair".to_string()),
@@ -68,6 +71,7 @@ fn free_price_keeps_summary_and_intersects_title() {
 #[test]
 fn category_survives_pagination_save_return_and_price_clear() {
     let query = FeedQuery {
+        scope: None,
         category: Some("food-groceries".to_string()),
         q: Some("rice".to_string()),
         currency: Some("NGN".to_string()),
@@ -128,6 +132,7 @@ fn category_chips_cover_the_vocabulary_in_stable_browse_order() {
 #[test]
 fn switching_category_or_all_preserves_other_input_and_drops_the_cursor() {
     let query = FeedQuery {
+        scope: None,
         category: Some("food-groceries".to_string()),
         q: Some("rice & beans".to_string()),
         currency: Some("NGN".to_string()),
@@ -170,6 +175,7 @@ fn switching_category_or_all_preserves_other_input_and_drops_the_cursor() {
 #[test]
 fn category_alone_does_not_duplicate_its_chip_in_the_summary_or_badge() {
     let query = FeedQuery {
+        scope: None,
         category: Some("food-groceries".to_string()),
         q: None,
         currency: None,
@@ -185,6 +191,7 @@ fn category_alone_does_not_duplicate_its_chip_in_the_summary_or_badge() {
 #[test]
 fn unknown_category_is_invalid_without_selecting_all() {
     let query = FeedQuery {
+        scope: None,
         category: Some("unknown-topic".to_string()),
         q: None,
         currency: None,
@@ -202,4 +209,30 @@ fn unknown_category_is_invalid_without_selecting_all() {
             .all(|chip| !chip.selected)
     );
     assert_eq!(parsed.category_href(None), "/offers");
+}
+
+#[test]
+fn scope_switches_preserve_facets_and_reset_cursors() {
+    let query = FeedQuery {
+        scope: Some("saved".to_string()),
+        category: Some("food-groceries".to_string()),
+        q: Some("rice".to_string()),
+        currency: Some("NGN".to_string()),
+        min_price: Some(10),
+        max_price: None,
+        after: Some("old-cursor".to_string()),
+    };
+    let parsed = ParsedCriteria::parse(Some(&query));
+    assert_eq!(
+        parsed.scope_href(super::super::collection::Collection::Inquired),
+        "/offers?scope=inquired&category=food-groceries&q=rice&currency=NGN&min_price=10"
+    );
+    assert_eq!(
+        parsed.category_href(None),
+        "/offers?scope=saved&q=rice&currency=NGN&min_price=10"
+    );
+    assert_eq!(
+        parsed.controls.clear_filters_href,
+        "/offers?scope=saved&category=food-groceries"
+    );
 }

@@ -6,15 +6,19 @@ use topcoat::{Result as TopcoatResult, context::Cx, router::error::see_other, vi
 #[derive(serde::Deserialize, Default)]
 pub struct SignInQuery {
     pub error: Option<String>,
+    pub return_to: Option<String>,
 }
 
 #[topcoat::router::page]
 pub async fn sign_in_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
+    let query = topcoat::router::parse_query_params::<SignInQuery>(cx).ok();
+    if let Some(target) = query.as_ref().and_then(|query| query.return_to.as_deref()) {
+        super::return_to::remember(cx, target);
+    }
     if crate::app::auth::guard::current_user(cx).await?.is_some() {
-        return Err(topcoat::router::error::redirect("/offers").into());
+        return Err(topcoat::router::error::redirect(super::return_to::destination(cx)).into());
     }
 
-    let query = topcoat::router::parse_query_params::<SignInQuery>(cx).ok();
     let error_message = query.and_then(|q| q.error).map(|err| match err.as_str() {
         "google_cancelled" => "Google sign-in was cancelled.".to_string(),
         "state_mismatch" | "state_missing" => {

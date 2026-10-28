@@ -1,5 +1,6 @@
 //! Public offers feed page and query parameters.
 
+mod collection;
 mod criteria;
 
 use crate::app::components::chip_row::chip_row;
@@ -9,12 +10,14 @@ use crate::app::components::feed_filters::feed_filters;
 use crate::app::components::listing_card::{ListingCardData, listing_card};
 use crate::app::components::pagination::pagination_nav;
 use criteria::ParsedCriteria;
-use haven_domain::offer::{OfferCursor, PublicFeedQuery};
+use haven_domain::offer::OfferCursor;
 use topcoat::{Result as TopcoatResult, context::Cx, view::view};
 
 /// Keyset pagination and filter query parameters for the public offers feed.
 #[topcoat::router::query_params]
 pub struct FeedQuery {
+    /// Public, saved or inquired collection; personal actors come from the session.
+    pub scope: Option<String>,
     /// Stable topic slug; unknown values are validation errors.
     pub category: Option<String>,
     /// Opaque cursor string marking the offer to list after.
@@ -36,51 +39,33 @@ pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
         topcoat::router::query_params::<FeedQuery>(cx)
             .map_err(|_| topcoat::router::error::bad_request("Invalid offer filters."))?,
     );
-    let (after_cursor, return_after) =
-        parse_after_cursor(query.as_ref().and_then(|q| q.after.as_deref()));
-
     let parsed = ParsedCriteria::parse(query);
     let active_filters_count = parsed.criteria.iter().count();
-    let feed_query = PublicFeedQuery::new(parsed.criteria.clone(), after_cursor, 20);
-
+    let selected_collection = collection::Collection::parse(&parsed.controls.scope);
+    let heading = selected_collection.and_then(collection::Collection::heading);
     let invalid_category = parsed.controls.category_error.is_some();
-    let category_only = parsed.criteria.category.is_some()
+    let invalid_scope = selected_collection.is_none();
+    let category_only = selected_collection == Some(collection::Collection::Public)
+        && parsed.criteria.category.is_some()
         && active_filters_count == 1
         && parsed.controls.title_error.is_none()
         && parsed.controls.price_error.is_none();
-    let canonical = canonical(cx);
-    let repo = crate::app::state::registry(cx).offers();
-    let page = if invalid_category {
-        haven_domain::offer::PublicOfferPage {
-            items: Vec::new(),
-            next_cursor: None,
-        }
-    } else {
-        repo.list_public(&feed_query)
-            .await
-            .map_err(crate::app::state::map_repo_err)?
-    };
-
-    let next_href = page.next_cursor.map(|cursor| parsed.href(Some(&cursor)));
-
+    let data = collection::fetch(cx, &parsed, query.and_then(|q| q.after.as_deref())).await?;
+    let collection::FeedPage {
+        page,
+        viewer,
+        return_after,
+        cursor_notice,
+    } = data;
+    let next_href = page
+        .next_cursor
+        .as_ref()
+        .map(|cursor| parsed.href(Some(cursor)));
     let cloud_name = crate::app::state::cloudinary_cloud_name(cx);
-    let viewer = crate::app::auth::guard::current_user(cx).await?;
-    let headers = topcoat::router::response::response_headers(cx);
-    headers.append(
-        topcoat::router::header::HeaderName::from_static("vary"),
-        topcoat::router::header::HeaderValue::from_static("Cookie"),
-    );
-    if canonical.is_none() {
-        headers.append(
+    if canonical(cx).is_none() {
+        topcoat::router::response::response_headers(cx).append(
             topcoat::router::header::HeaderName::from_static("x-robots-tag"),
             topcoat::router::header::HeaderValue::from_static("noindex, follow"),
-        );
-    }
-    if viewer.is_some() {
-        let headers = topcoat::router::response::response_headers(cx);
-        headers.append(
-            topcoat::router::header::HeaderName::from_static("cache-control"),
-            topcoat::router::header::HeaderValue::from_static("private, no-store"),
         );
     }
     let saved_ids = if let Some(person) = viewer.as_ref() {
@@ -98,10 +83,18 @@ pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
 
     Ok(view! {
         <div class="offers-feed">
+            if let Some(heading) = heading { <h1>(heading)</h1> }
+            if cursor_notice { <p class="notice-banner" role="status">"Your page no longer matches these filters. Showing the first page."</p> }
             feed_filters(data: parsed.controls)
             chip_row(props: category_row)
             if page.items.is_empty() {
-                if invalid_category {
+                if invalid_scope {
+                    empty_state(title: "Choose a valid collection", message: "Choose All offers, Saved or Inquired above.", action_href: Some("/offers".to_string()), action_label: Some("View all offers".to_string()))
+                } else if active_filters_count == 0 && selected_collection == Some(collection::Collection::Saved) {
+                    empty_state(title: "No saved offers yet", message: "Save an offer to return to it here.", action_href: Some("/offers".to_string()), action_label: Some("View all offers".to_string()))
+                } else if active_filters_count == 0 && selected_collection == Some(collection::Collection::Inquired) {
+                    empty_state(title: "No offers inquired about yet", message: "Offers you message someone about will appear here.", action_href: Some("/offers".to_string()), action_label: Some("View all offers".to_string()))
+                } else if invalid_category {
                     empty_state(
                         title: "Choose a valid category",
                         message: "Select a category above to find offers.",
@@ -171,7 +164,8 @@ pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
 pub(crate) fn canonical(cx: &Cx) -> Option<String> {
     let query = topcoat::router::query_params::<FeedQuery>(cx).ok()?;
     let parsed = ParsedCriteria::parse(Some(query));
-    if query.after.is_some()
+    if parsed.controls.scope != "public"
+        || query.after.is_some()
         || parsed.controls.category_error.is_some()
         || parsed.controls.title_error.is_some()
         || parsed.controls.price_error.is_some()

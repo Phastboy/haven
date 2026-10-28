@@ -118,7 +118,8 @@ async fn category_feed_intersects_facets_and_handles_empty_and_invalid_topics() 
         assert_eq!(head.contains("rel=\"canonical\""), !noindex);
         let row = body
             .split("<nav class=\"chip-row\"")
-            .nth(1)
+            .skip(1)
+            .find(|row| row.starts_with(" aria-label=\"Offer categories\""))
             .unwrap()
             .split("</nav>")
             .next()

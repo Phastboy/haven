@@ -4,6 +4,7 @@ pub mod category;
 pub mod currency;
 pub mod cursor;
 pub mod filter;
+pub mod personal;
 pub mod price;
 pub mod slug;
 pub mod validation;
@@ -20,6 +21,7 @@ pub use category::{Category, CategoryError};
 pub use currency::{CurrencyCode, SUPPORTED_CURRENCIES};
 pub use cursor::{OfferCursor, OfferPage};
 pub use filter::{PriceFilter, PublicCriteria, PublicCriterion, Scope, SearchQuery};
+pub use personal::{ActivityPosition, PersonalCursor, PersonalFeedQuery, PersonalScope};
 pub use price::Price;
 pub use slug::{MAX_SLUG_CHARS, MIN_SLUG_CHARS, OfferSlug, RESERVED_SLUGS};
 pub use validation::{

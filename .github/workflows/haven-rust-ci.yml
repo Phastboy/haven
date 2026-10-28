@@ -13,6 +13,10 @@ on:
       - '.github/workflows/haven-rust-*'
   workflow_dispatch:
     inputs:
+      load_review:
+        description: Build release binaries for isolated local load testing
+        type: boolean
+        default: false
       category_review:
         description: Regenerate SQLx metadata and export synthetic feed snapshots
         type: boolean
@@ -130,5 +134,23 @@ jobs:
         with:
           name: category-review
           path: /tmp/haven-category-review
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Build release load-test artifacts
+        if: inputs.load_review
+        run: |
+          cargo build --release --locked -p haven-web -p load-test-support
+          topcoat asset bundle --package haven-web --release
+          mkdir -p /tmp/haven-load-review
+          tar -czf /tmp/haven-load-review/release.tar.gz -C target/release haven-web load-test-support assets
+          git rev-parse HEAD > /tmp/haven-load-review/revision.txt
+
+      - name: Export release load-test artifacts
+        if: inputs.load_review
+        uses: actions/upload-artifact@v7
+        with:
+          name: load-review
+          path: /tmp/haven-load-review
           if-no-files-found: error
           retention-days: 7

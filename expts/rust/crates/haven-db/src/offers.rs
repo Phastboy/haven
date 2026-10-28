@@ -3,6 +3,7 @@
 mod criteria;
 pub mod feed;
 pub mod images;
+mod personal;
 pub mod queries;
 pub mod rows;
 
@@ -57,6 +58,13 @@ impl OfferRepository for PostgresOfferRepository {
         query: &haven_domain::offer::PublicFeedQuery,
     ) -> Result<PublicOfferPage, RepoError> {
         feed::list_public(&self.pool, query).await
+    }
+
+    async fn list_personal(
+        &self,
+        query: &haven_domain::offer::PersonalFeedQuery,
+    ) -> Result<PublicOfferPage, RepoError> {
+        personal::list(&self.pool, query).await
     }
 
     async fn list_by_user(

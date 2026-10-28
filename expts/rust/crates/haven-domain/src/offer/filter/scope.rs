@@ -5,7 +5,7 @@ use crate::user::UserId;
 /// The collection to which public criteria apply.
 ///
 /// Only [`Scope::Public`] is currently accepted by the public feed API.
-/// Personal retrieval and its ordering/cursors are implemented in later steps.
+/// Personal retrieval uses its separate typed query and activity cursor API.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum Scope {
     /// All publicly visible offers.

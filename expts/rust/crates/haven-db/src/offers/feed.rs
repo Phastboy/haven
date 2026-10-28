@@ -29,7 +29,7 @@ struct UserOfferDbRow {
 }
 
 #[derive(sqlx::FromRow)]
-struct PublicOfferDbRow {
+pub(super) struct PublicOfferDbRow {
     pub id: uuid::Uuid,
     pub user_id: uuid::Uuid,
     pub slug: String,
@@ -45,7 +45,7 @@ struct PublicOfferDbRow {
     pub handle: String,
 }
 
-fn map_public_row(
+pub(super) fn map_public_row(
     r: PublicOfferDbRow,
     images: Vec<haven_domain::image::OfferImage>,
 ) -> Result<PublicOffer, RepoError> {
@@ -74,7 +74,7 @@ fn map_public_row(
     })
 }
 
-async fn fetch_cover_images_for_offers(
+pub(super) async fn fetch_cover_images_for_offers(
     pool: &DbPool,
     offer_ids: &[uuid::Uuid],
 ) -> Result<std::collections::HashMap<uuid::Uuid, haven_domain::image::OfferImage>, RepoError> {

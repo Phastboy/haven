@@ -3,6 +3,7 @@
 mod sheet;
 mod summary;
 
+use super::chip_row::{ChipRowData, chip_row};
 use sheet::{FeedFilterSheetData, feed_filter_sheet};
 use summary::filter_summary;
 use topcoat::{
@@ -12,6 +13,12 @@ use topcoat::{
 
 /// Validated and display-ready values used to render the offers filter form.
 pub struct FeedFiltersData {
+    /// Selected collection, retained by form submission.
+    pub scope: String,
+    /// Invalid collection feedback.
+    pub scope_error: Option<String>,
+    /// Collection navigation supplied by the feed assembly.
+    pub scope_row: Option<ChipRowData>,
     /// Submitted category slug, retained even when unknown.
     pub category: String,
     /// Category validation error shown above the topic links.
@@ -50,6 +57,9 @@ pub async fn feed_filters(data: FeedFiltersData) -> TopcoatResult<impl View> {
 
     Ok(view! {
         <form action="/offers" method="get" class="feed-filters" role="search" aria-label="Filter offers">
+            <input type="hidden" name="scope" value=(data.scope) />
+            if let Some(row) = data.scope_row { chip_row(props: row) }
+            if let Some(error) = data.scope_error { <p class="feed-filter-error" role="alert">(error)</p> }
             <input type="hidden" name="category" value=(data.category) />
             <div class="filter-header-row">
                 <div class="filter-field filter-field-title">
@@ -120,6 +130,9 @@ mod tests {
 
     fn data(count: u32, summary: Option<&str>) -> FeedFiltersData {
         FeedFiltersData {
+            scope: "public".to_string(),
+            scope_error: None,
+            scope_row: None,
             category: String::new(),
             category_error: None,
             clear_filters_href: "/offers".to_string(),
