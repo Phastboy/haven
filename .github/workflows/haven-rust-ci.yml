@@ -13,6 +13,10 @@ on:
       - '.github/workflows/haven-rust-*'
   workflow_dispatch:
     inputs:
+      load_gate:
+        description: Run isolated v0.7 HTTP contract, spike, soak and capacity gates
+        type: boolean
+        default: false
       load_review:
         description: Build release binaries for isolated local load testing
         type: boolean
@@ -33,6 +37,7 @@ jobs:
   ci:
     name: Lint, Test & Document
     runs-on: ubuntu-latest
+    timeout-minutes: 100
 
     defaults:
       run:
@@ -138,7 +143,7 @@ jobs:
           retention-days: 7
 
       - name: Build release load-test artifacts
-        if: inputs.load_review
+        if: inputs.load_review || inputs.load_gate
         run: |
           cargo build --release --locked -p haven-web -p load-test-support
           topcoat asset bundle --package haven-web --release
@@ -147,10 +152,56 @@ jobs:
           git rev-parse HEAD > /tmp/haven-load-review/revision.txt
 
       - name: Export release load-test artifacts
-        if: inputs.load_review
+        if: inputs.load_review || inputs.load_gate
         uses: actions/upload-artifact@v7
         with:
           name: load-review
           path: /tmp/haven-load-review
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Run isolated v0.7 HTTP gates
+        if: inputs.load_gate
+        env:
+          PORT: "3337"
+          HOST: "127.0.0.1"
+          DB_POOL_SIZE: "20"
+        run: |
+          mkdir -p /tmp/haven-v07-private /tmp/haven-v07-results
+          chmod 700 /tmp/haven-v07-private
+          psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -c 'CREATE DATABASE haven_v07_load'
+          export DATABASE_URL="${DATABASE_URL%/haven}/haven_v07_load"
+          git rev-parse HEAD > /tmp/haven-v07-results/revision.txt
+          lscpu > /tmp/haven-v07-results/hardware.txt
+          free -m >> /tmp/haven-v07-results/hardware.txt
+          target/release/haven-web > /tmp/haven-v07-results/server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          python3 - <<'PYCODE'
+          import time, urllib.request
+          for attempt in range(60):
+              try:
+                  with urllib.request.urlopen('http://127.0.0.1:3337/offers', timeout=2) as response:
+                      assert response.status == 200
+                  break
+              except Exception:
+                  if attempt == 59:
+                      raise
+                  time.sleep(1)
+          PYCODE
+          target/release/load-test-support --narrowing --users 10000 \
+            --output /tmp/haven-v07-private/sessions.json --cases /tmp/haven-v07-private/cases.json \
+            > /tmp/haven-v07-results/seed.log 2>&1
+          (cd crates/haven-web/load-tests/go && go build -o /tmp/haven-v07-private/haven-load ./cmd/haven-load)
+          python3 -u crates/haven-web/load-tests/v07-gate.py \
+            --runner /tmp/haven-v07-private/haven-load --fixture /tmp/haven-v07-private/cases.json \
+            --output /tmp/haven-v07-results
+
+      - name: Export v0.7 HTTP gate evidence
+        if: always() && inputs.load_gate
+        uses: actions/upload-artifact@v7
+        with:
+          name: v07-gate
+          path: /tmp/haven-v07-results
           if-no-files-found: error
           retention-days: 7
