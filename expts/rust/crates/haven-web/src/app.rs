@@ -130,8 +130,8 @@ pub async fn root_layout(
                 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
                 <title>"Haven"</title>
                 <link rel="stylesheet" href="/style.css" />
-                <script src="/cover-images.js" defer="defer"></script>
                 if !is_offer_detail {
+                    <script src="/cover-images.js" defer="defer"></script>
                     topcoat::runtime::script()
                 }
             </head>

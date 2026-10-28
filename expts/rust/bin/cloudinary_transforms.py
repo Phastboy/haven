@@ -37,7 +37,10 @@ class AdminAPI:
         })
         try:
             with self.opener.open(request, timeout=30) as response:
-                return json.load(response)
+                body = json.load(response)
+                if not isinstance(body, dict):
+                    raise ProvisionError(f'{method} {name}: malformed response')
+                return body
         except HTTPError as error:
             if method == 'GET' and error.code == 404:
                 return None
