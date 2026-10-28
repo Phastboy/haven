@@ -132,6 +132,7 @@ pub struct TestRegistry {
     pub offers_repo: FakeOfferRepository,
     pub users_repo: TestUserRepository,
     pub convs_repo: haven_domain::fakes::FakeConversationRepository,
+    pub saved_repo: Arc<haven_domain::fakes::FakeSavedOfferRepository>,
 }
 
 impl Registry for TestRegistry {
@@ -157,7 +158,7 @@ impl Registry for TestRegistry {
         &self.convs_repo
     }
     fn saved_offers(&self) -> &(dyn haven_domain::ports::SavedOfferRepository + 'static) {
-        &self.offers_repo
+        self.saved_repo.as_ref()
     }
     fn follows(&self) -> &(dyn haven_domain::ports::FollowRepository + 'static) {
         unimplemented!()
@@ -169,6 +170,7 @@ pub(crate) fn setup_test_app() -> (topcoat::router::Router, TestRegistry) {
         offers_repo: FakeOfferRepository::default(),
         users_repo: TestUserRepository::default(),
         convs_repo: haven_domain::fakes::FakeConversationRepository::default(),
+        saved_repo: Arc::new(haven_domain::fakes::FakeSavedOfferRepository::default()),
     };
 
     let state = crate::app::state::AppState {
@@ -176,6 +178,7 @@ pub(crate) fn setup_test_app() -> (topcoat::router::Router, TestRegistry) {
             offers_repo: registry.offers_repo.clone(),
             users_repo: registry.users_repo.clone(),
             convs_repo: registry.convs_repo.clone(),
+            saved_repo: registry.saved_repo.clone(),
         }),
         google_oauth: None,
         http_client: reqwest::Client::new(),
