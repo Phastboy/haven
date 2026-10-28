@@ -1,11 +1,14 @@
 //! Composition of the public facets shared by all discovery scopes.
 
 use super::{PriceFilter, SearchQuery};
+use crate::offer::Category;
 use serde::{Deserialize, Serialize};
 
 /// Public facets intersected to narrow an offer collection.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PublicCriteria {
+    /// Optional topic, intersected with all other facets.
+    pub category: Option<Category>,
     /// Optional title search query.
     pub title: Option<SearchQuery>,
     /// Optional price and currency filter.
@@ -15,6 +18,8 @@ pub struct PublicCriteria {
 /// One validated public facet, borrowed for layer-specific composition.
 #[derive(Debug, Clone, Copy)]
 pub enum PublicCriterion<'a> {
+    /// Match the offer topic.
+    Category(Category),
     /// Match an offer title.
     Title(&'a SearchQuery),
     /// Match an offer's currency and inclusive price range.
@@ -22,9 +27,10 @@ pub enum PublicCriterion<'a> {
 }
 
 impl PublicCriteria {
-    /// Visits active facets in stable title/price order.
+    /// Visits active facets in stable category/title/price order.
     pub fn iter(&self) -> impl Iterator<Item = PublicCriterion<'_>> {
         [
+            self.category.map(PublicCriterion::Category),
             self.title.as_ref().map(PublicCriterion::Title),
             self.price.as_ref().map(PublicCriterion::Price),
         ]

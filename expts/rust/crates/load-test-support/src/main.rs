@@ -117,6 +117,7 @@ async fn seed_user(registry: &dyn Registry, i: usize) -> SessionOutput {
             1000 + i32::try_from(j).expect("seeded offer index fits in i32")
         };
         let create_req = haven_domain::offer::CreateOffer {
+            category: haven_domain::offer::Category::Other,
             title: format!("Test Offer {j} from User {i}"),
             description: "This is a seeded offer to fill the database.".to_string(),
             price: haven_domain::offer::Price::new(price).unwrap(),

@@ -2,6 +2,7 @@
 
 mod criteria;
 
+use crate::app::components::chip_row::chip_row;
 use crate::app::components::empty_state::empty_state;
 
 use crate::app::components::feed_filters::feed_filters;
@@ -14,6 +15,8 @@ use topcoat::{Result as TopcoatResult, context::Cx, view::view};
 /// Keyset pagination and filter query parameters for the public offers feed.
 #[topcoat::router::query_params]
 pub struct FeedQuery {
+    /// Stable topic slug; unknown values are validation errors.
+    pub category: Option<String>,
     /// Opaque cursor string marking the offer to list after.
     pub after: Option<String>,
     /// Search query string matching offer title.
@@ -37,16 +40,39 @@ pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
     let active_filters_count = parsed.criteria.iter().count();
     let feed_query = PublicFeedQuery::new(parsed.criteria.clone(), after_cursor, 20);
 
+    let invalid_category = parsed.controls.category_error.is_some();
+    let category_only = parsed.criteria.category.is_some()
+        && active_filters_count == 1
+        && parsed.controls.title_error.is_none()
+        && parsed.controls.price_error.is_none();
+    let canonical = canonical(cx);
     let repo = crate::app::state::registry(cx).offers();
-    let page = repo
-        .list_public(&feed_query)
-        .await
-        .map_err(crate::app::state::map_repo_err)?;
+    let page = if invalid_category {
+        haven_domain::offer::PublicOfferPage {
+            items: Vec::new(),
+            next_cursor: None,
+        }
+    } else {
+        repo.list_public(&feed_query)
+            .await
+            .map_err(crate::app::state::map_repo_err)?
+    };
 
     let next_href = page.next_cursor.map(|cursor| parsed.href(Some(&cursor)));
 
     let cloud_name = crate::app::state::cloudinary_cloud_name(cx);
     let viewer = crate::app::auth::guard::current_user(cx).await?;
+    let headers = topcoat::router::response::response_headers(cx);
+    headers.append(
+        topcoat::router::header::HeaderName::from_static("vary"),
+        topcoat::router::header::HeaderValue::from_static("Cookie"),
+    );
+    if canonical.is_none() {
+        headers.append(
+            topcoat::router::header::HeaderName::from_static("x-robots-tag"),
+            topcoat::router::header::HeaderValue::from_static("noindex, follow"),
+        );
+    }
     if viewer.is_some() {
         let headers = topcoat::router::response::response_headers(cx);
         headers.append(
@@ -65,12 +91,28 @@ pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
         std::collections::HashSet::new()
     };
     let return_to = parsed.href(return_after.as_deref());
+    let category_row = parsed.category_row();
 
     Ok(view! {
         <div class="offers-feed">
             feed_filters(data: parsed.controls)
+            chip_row(props: category_row)
             if page.items.is_empty() {
-                if active_filters_count > 0 {
+                if invalid_category {
+                    empty_state(
+                        title: "Choose a valid category",
+                        message: "Select a category above to find offers.",
+                        action_href: Some("/offers".to_string()),
+                        action_label: Some("Clear all filters".to_string()),
+                    )
+                } else if category_only {
+                    empty_state(
+                        title: "No offers here yet",
+                        message: "There are no public offers in this category yet. Try another category or clear your filters.",
+                        action_href: Some("/offers".to_string()),
+                        action_label: Some("Clear all filters".to_string()),
+                    )
+                } else if active_filters_count > 0 {
                     empty_state(
                         title: "No offers match your filters",
                         message: "Try clearing your filters or broadening your search parameters.",
@@ -120,6 +162,26 @@ pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
             }
         </div>
     })
+}
+
+/// Canonical URL for an indexable first-page public landing; other criteria are noindex.
+pub(crate) fn canonical(cx: &Cx) -> Option<String> {
+    let query = topcoat::router::query_params::<FeedQuery>(cx).ok();
+    let parsed = ParsedCriteria::parse(query);
+    if query.is_some_and(|q| q.after.is_some())
+        || parsed.controls.category_error.is_some()
+        || parsed.controls.title_error.is_some()
+        || parsed.controls.price_error.is_some()
+        || parsed.criteria.title.is_some()
+        || parsed.criteria.price.is_some()
+    {
+        None
+    } else {
+        Some(parsed.criteria.category.map_or_else(
+            || "/offers".to_string(),
+            |category| format!("/offers?category={}", category.as_str()),
+        ))
+    }
 }
 
 fn parse_after_cursor(raw: Option<&str>) -> (Option<OfferCursor>, Option<String>) {

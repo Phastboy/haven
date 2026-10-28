@@ -78,6 +78,7 @@ impl OfferRepository for FakeOfferRepository {
                     return false;
                 }
                 if !query.criteria.iter().all(|criterion| match criterion {
+                    crate::offer::PublicCriterion::Category(category) => o.category == category,
                     crate::offer::PublicCriterion::Title(title) => o
                         .title
                         .to_lowercase()
@@ -184,6 +185,7 @@ impl OfferRepository for FakeOfferRepository {
             .map_err(|e| RepoError::Corrupt(e.to_string()))?;
 
         let offer = Offer {
+            category: req.category,
             id: offer_id,
             user_id,
             slug,
@@ -223,6 +225,9 @@ impl OfferRepository for FakeOfferRepository {
         }
         if let Some(p) = req.price {
             offer.price = p;
+        }
+        if let Some(category) = req.category {
+            offer.category = category;
         }
         if let Some(c) = req.currency {
             offer.currency = c;
@@ -966,6 +971,7 @@ mod tests {
         let user_id = UserId::generate();
         let idempotency_key = IdempotencyKey::new(uuid::Uuid::new_v4());
         let req = CreateOffer {
+            category: crate::offer::Category::Other,
             title: "Test Offer".to_string(),
             description: "A concurrent test offer description.".to_string(),
             price: crate::offer::Price::ZERO,

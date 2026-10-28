@@ -1,5 +1,6 @@
-//! Public title/price parsing, display and URL composition for the feed.
+//! Public topic/title/price parsing, display and URL composition for the feed.
 
+mod category;
 mod parsed;
 mod price;
 mod title;

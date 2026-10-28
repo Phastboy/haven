@@ -19,7 +19,7 @@ pub(super) async fn find_owned(
     let u_id = user_id.as_uuid();
     let row = sqlx::query!(
         r#"
-            SELECT id, user_id, slug, title, description, price, currency, image_count, created_at, updated_at
+            SELECT id, user_id, slug, title, description, price, currency, category, image_count, created_at, updated_at
             FROM offer
             WHERE id = $1 AND user_id = $2
             "#,
@@ -40,6 +40,7 @@ pub(super) async fn find_owned(
             r.description,
             r.price,
             &r.currency,
+            &r.category,
             r.image_count,
             images,
             r.created_at,
@@ -57,7 +58,7 @@ pub(super) async fn find_by_user(pool: &DbPool, user_id: UserId) -> Result<Vec<O
     let rows = sqlx::query!(
         r#"
             SELECT 
-                o.id, o.user_id, o.slug, o.title, o.description, o.price, o.currency, o.image_count, o.created_at, o.updated_at,
+                o.id, o.user_id, o.slug, o.title, o.description, o.price, o.currency, o.category, o.image_count, o.created_at, o.updated_at,
                 img.id AS "img_id?", img.public_id AS "img_public_id?", img.position AS "img_position?", 
                 img.width AS "img_width?", img.height AS "img_height?", img.created_at AS "img_created_at?"
             FROM offer o
@@ -114,6 +115,7 @@ pub(super) async fn find_by_user(pool: &DbPool, user_id: UserId) -> Result<Vec<O
             r.description,
             r.price,
             &r.currency,
+            &r.category,
             r.image_count,
             images,
             r.created_at,
@@ -130,7 +132,7 @@ pub(super) async fn find_by_slug(
     let slug_str = slug.as_str();
     let row = sqlx::query!(
         r#"
-            SELECT id, user_id, slug, title, description, price, currency, image_count, created_at, updated_at
+            SELECT id, user_id, slug, title, description, price, currency, category, image_count, created_at, updated_at
             FROM offer
             WHERE slug = $1
             "#,
@@ -150,6 +152,7 @@ pub(super) async fn find_by_slug(
             r.description,
             r.price,
             &r.currency,
+            &r.category,
             r.image_count,
             images,
             r.created_at,
@@ -189,10 +192,10 @@ pub(super) async fn create(
     let r = sqlx::query!(
         r#"
         WITH inserted AS (
-            INSERT INTO offer (id, user_id, slug, title, description, price, currency, idempotency_key)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            INSERT INTO offer (id, user_id, slug, title, description, price, currency, idempotency_key, category)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             ON CONFLICT (user_id, idempotency_key) DO NOTHING
-            RETURNING id, user_id, slug, title, description, price, currency, image_count, created_at, updated_at, true AS is_new
+            RETURNING id, user_id, slug, title, description, price, currency, category, image_count, created_at, updated_at, true AS is_new
         )
         SELECT 
             id AS "id!", 
@@ -201,7 +204,8 @@ pub(super) async fn create(
             title AS "title!", 
             description AS "description!", 
             price AS "price!", 
-            currency AS "currency!", 
+            currency AS "currency!",
+            category AS "category!",
             image_count AS "image_count!", 
             created_at AS "created_at!", 
             updated_at AS "updated_at!", 
@@ -216,6 +220,7 @@ pub(super) async fn create(
             description, 
             price, 
             currency, 
+            category,
             image_count, 
             created_at, 
             updated_at, 
@@ -231,7 +236,8 @@ pub(super) async fn create(
         create_offer.description,
         price_val,
         currency_val,
-        k
+        k,
+        create_offer.category.as_str()
     )
     .fetch_one(pool)
     .await
@@ -245,6 +251,7 @@ pub(super) async fn create(
         r.description,
         r.price,
         &r.currency,
+        &r.category,
         r.image_count,
         Vec::new(),
         r.created_at,
@@ -282,16 +289,18 @@ pub(super) async fn update(
                 description = COALESCE($2, description),
                 price = COALESCE($3, price),
                 currency = COALESCE($4, currency),
+                category = COALESCE($7, category),
                 updated_at = NOW()
             WHERE id = $5 AND user_id = $6
-            RETURNING id, user_id, slug, title, description, price, currency, image_count, created_at, updated_at
+            RETURNING id, user_id, slug, title, description, price, currency, category, image_count, created_at, updated_at
             "#,
         title_val,
         desc_val,
         price_val,
         currency_val,
         o_id,
-        u_id
+        u_id,
+        update_offer.category.map(haven_domain::offer::Category::as_str)
     )
     .fetch_optional(pool)
     .await
@@ -308,6 +317,7 @@ pub(super) async fn update(
                 r.description,
                 r.price,
                 &r.currency,
+                &r.category,
                 r.image_count,
                 images,
                 r.created_at,

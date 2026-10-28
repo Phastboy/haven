@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            UPDATE offer\n            SET title = COALESCE($1, title),\n                description = COALESCE($2, description),\n                price = COALESCE($3, price),\n                currency = COALESCE($4, currency),\n                updated_at = NOW()\n            WHERE id = $5 AND user_id = $6\n            RETURNING id, user_id, slug, title, description, price, currency, image_count, created_at, updated_at\n            ",
+  "query": "\n            SELECT id, user_id, slug, title, description, price, currency, category, image_count, created_at, updated_at\n            FROM offer\n            WHERE user_id = $1 AND image_count >= 1\n            ORDER BY created_at DESC, id DESC\n            LIMIT $2\n            ",
   "describe": {
     "columns": [
       {
@@ -82,6 +82,17 @@
       },
       {
         "ordinal": 7,
+        "name": "category",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "offer",
+            "name": "category"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
         "name": "image_count",
         "type_info": "Int2",
         "origin": {
@@ -92,7 +103,7 @@
         }
       },
       {
-        "ordinal": 8,
+        "ordinal": 9,
         "name": "created_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -103,7 +114,7 @@
         }
       },
       {
-        "ordinal": 9,
+        "ordinal": 10,
         "name": "updated_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -116,12 +127,8 @@
     ],
     "parameters": {
       "Left": [
-        "Varchar",
-        "Text",
-        "Int4",
-        "Bpchar",
         "Uuid",
-        "Uuid"
+        "Int8"
       ]
     },
     "nullable": [
@@ -134,8 +141,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "9149f7483d3c271d898fed8cc2adcb3c3c5e27928a09cd164706b66d476e3296"
+  "hash": "f7a151c4de8a9b6b5aca435de9382ca8b228ed538ff4c380bc45ca40d62c28c9"
 }

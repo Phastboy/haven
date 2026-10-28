@@ -22,6 +22,7 @@ struct UserOfferDbRow {
     pub description: String,
     pub price: i32,
     pub currency: String,
+    pub category: String,
     pub image_count: i16,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
@@ -36,6 +37,7 @@ struct PublicOfferDbRow {
     pub description: String,
     pub price: i32,
     pub currency: String,
+    pub category: String,
     pub image_count: i16,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
@@ -55,6 +57,7 @@ fn map_public_row(
         r.description,
         r.price,
         &r.currency,
+        &r.category,
         r.image_count,
         images,
         r.created_at,
@@ -134,7 +137,7 @@ pub(super) async fn list_public(
 
     let mut sql = sqlx::QueryBuilder::<sqlx::Postgres>::new(
         r#"
-        SELECT o.id, o.user_id, o.slug, o.title, o.description, o.price, o.currency, o.image_count, o.created_at, o.updated_at,
+        SELECT o.id, o.user_id, o.slug, o.title, o.description, o.price, o.currency, o.category, o.image_count, o.created_at, o.updated_at,
                u.display_name, u.handle
         FROM offer o
         JOIN "user" u ON o.user_id = u.id
@@ -204,7 +207,7 @@ pub(super) async fn list_by_user(
         sqlx::query_as!(
             UserOfferDbRow,
             r#"
-            SELECT id, user_id, slug, title, description, price, currency, image_count, created_at, updated_at
+            SELECT id, user_id, slug, title, description, price, currency, category, image_count, created_at, updated_at
             FROM offer
             WHERE user_id = $1 AND image_count >= 1 AND (created_at, id) < ($2, $3)
             ORDER BY created_at DESC, id DESC
@@ -222,7 +225,7 @@ pub(super) async fn list_by_user(
         sqlx::query_as!(
             UserOfferDbRow,
             r#"
-            SELECT id, user_id, slug, title, description, price, currency, image_count, created_at, updated_at
+            SELECT id, user_id, slug, title, description, price, currency, category, image_count, created_at, updated_at
             FROM offer
             WHERE user_id = $1 AND image_count >= 1
             ORDER BY created_at DESC, id DESC
@@ -253,6 +256,7 @@ pub(super) async fn list_by_user(
             r.description,
             r.price,
             &r.currency,
+            &r.category,
             r.image_count,
             images,
             r.created_at,

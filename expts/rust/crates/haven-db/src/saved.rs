@@ -82,9 +82,9 @@ impl SavedOfferRepository for PostgresSavedOfferRepository {
             .unwrap_or(50)
             .saturating_add(1);
         let query = if cursor.is_some() {
-            "SELECT s.id AS saved_id, s.created_at AS saved_at, o.id, o.user_id, o.slug, o.title, o.description, o.price, o.currency, o.image_count, o.created_at, o.updated_at FROM saved_offer s LEFT JOIN offer o ON o.id = s.offer_id WHERE s.user_id = $1 AND (s.created_at, s.id) < ($2, $3) ORDER BY s.created_at DESC, s.id DESC LIMIT $4"
+            "SELECT s.id AS saved_id, s.created_at AS saved_at, o.id, o.user_id, o.slug, o.title, o.description, o.price, o.currency, o.category, o.image_count, o.created_at, o.updated_at FROM saved_offer s LEFT JOIN offer o ON o.id = s.offer_id WHERE s.user_id = $1 AND (s.created_at, s.id) < ($2, $3) ORDER BY s.created_at DESC, s.id DESC LIMIT $4"
         } else {
-            "SELECT s.id AS saved_id, s.created_at AS saved_at, o.id, o.user_id, o.slug, o.title, o.description, o.price, o.currency, o.image_count, o.created_at, o.updated_at FROM saved_offer s LEFT JOIN offer o ON o.id = s.offer_id WHERE s.user_id = $1 ORDER BY s.created_at DESC, s.id DESC LIMIT $2"
+            "SELECT s.id AS saved_id, s.created_at AS saved_at, o.id, o.user_id, o.slug, o.title, o.description, o.price, o.currency, o.category, o.image_count, o.created_at, o.updated_at FROM saved_offer s LEFT JOIN offer o ON o.id = s.offer_id WHERE s.user_id = $1 ORDER BY s.created_at DESC, s.id DESC LIMIT $2"
         };
         let mut q = sqlx::query(query).bind(user_id.as_uuid());
         if let Some(c) = cursor {
@@ -113,6 +113,7 @@ impl SavedOfferRepository for PostgresSavedOfferRepository {
                         sqlx::Row::get(&row, "description"),
                         sqlx::Row::get(&row, "price"),
                         sqlx::Row::get(&row, "currency"),
+                        sqlx::Row::get(&row, "category"),
                         image_count.unwrap_or_default(),
                         Vec::new(),
                         sqlx::Row::get(&row, "created_at"),

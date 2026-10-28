@@ -92,21 +92,57 @@ keyset. Offerers' publishing journey is unchanged. Scope is separate from facets
 the public query API accepts only Public. Saved and Inquired are type definitions,
 with no personal retrieval, cursor or cache behavior implemented yet.
 
-Category vocabulary and permanent slugs require accepted real-title groupings
-before schema or forms. Synthetic titles cannot settle that decision. Tags remain
+There is no prelaunch real-title inventory gate: Haven is deployed but unlaunched
+and has no real offers. Accept vocabulary by owner decision, review names/control
+at 390px before migration, and schedule real-title grouping after launch. Existing
+slugs freeze at launch; prelaunch renames/merges may use migrations and new
+categories may be added later. Synthetic fixtures test performance, not taxonomy. Tags remain
 pending owner acceptance. After category, Saved uses its existing index. Before
 Inquired is built, spike dense read-time aggregation; if it misses the contract
 budget, use maintained last-inquiry rows with a qualifying-message write and
 backfill. Record evidence and the design choice before building. Personal cursor
 encode/decode and normalized-facet binding tests precede repository queries.
 
-The [cover patch](COVER_PATCH.md) is merged independently. Sitemap discovery is a
+The [cover patch](COVER_PATCH.md) is merged independently; verify it before launch
+as readiness work, not an incident. Sitemap discovery is a
 separate lane: include deep visible offers and remove deleted/unavailable offers;
 its acceptance does not block the narrowing gate. No new narrowing journey or
 performance gate is marked complete by this refactor.
 
+### Category chip journey (implemented, pending final verification)
+
+Offerers choose one required category in create/edit; validation retains their
+entered values. Responders browse all eleven categories through the existing
+feed row slot, including categories with no public offers. Category links preserve
+search and price inputs and reset pagination. All clears only category; submitting
+search/price retains it; Clear filters clears title/price while retaining category.
+Compact browse labels use the full accepted names as accessible labels. Category
+alone adds no duplicate summary or price badge. Invalid categories show validation
+and no unfiltered offers; empty-category and combined-filter empty states differ.
+
+Generic Chip/ChipRow passed isolated Part 1 CI and responsive CSS checks. The
+assembled category journey and its regression tests await the final verification
+pass; only formatting and diff checks run during Part 2 per owner direction. No
+narrowing item or performance gate is marked complete.
+
 ### Decided for v0.7
 
+- The owner accepts eleven launch categories on judgement, including Food & groceries
+  and Stays & accommodation, as a hypothesis for post-launch review. A final names
+  and control check at 390px precedes migration; existing slugs freeze at launch. Cooking meals belongs in Food & groceries; cooking lessons in
+  Books & learning. Long-term housing and short visitor stays are separate.
+  See the examples and model review in [the plan](../expts/rust/V0.7_PLAN.md).
+- Show all eleven categories in stable order, including empty ones, with a clear
+  “No offers here yet” state that retains criteria and allows changing them.
+  Backfill to Other touches only test/seeded rows; category is required on
+  create/edit. Performance fixtures deliberately include one dominant category,
+  several near-empty ones and empty-category cases; their skew is an assumption.
+- Food/stays follow-ups remain outside v0.7: stock availability, freshness/expiry,
+  quantity/price units, food hygiene/allergen expectations and grocery photo
+  usability. The current model has no stock-out state or expiry; old offers with
+  photos remain discoverable. State units in titles/descriptions for now.
+  Category should compose with future proximity; location/privacy/ranking remain
+  in the unscheduled proximity stage.
 - Inquiry is non-binding communication. Messaging someone about an offer does
   not signify commitment. The filter is for offers a person has inquired about.
 

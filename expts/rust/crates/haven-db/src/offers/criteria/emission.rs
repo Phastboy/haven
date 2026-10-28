@@ -6,6 +6,7 @@ use sqlx::{Postgres, QueryBuilder};
 pub(in crate::offers) fn append(sql: &mut QueryBuilder<Postgres>, criteria: &PublicCriteria) {
     for criterion in criteria.iter() {
         match criterion {
+            PublicCriterion::Category(category) => super::category::append(sql, category),
             PublicCriterion::Title(title) => super::title::append(sql, title),
             PublicCriterion::Price(price) => super::price::append(sql, price),
         }

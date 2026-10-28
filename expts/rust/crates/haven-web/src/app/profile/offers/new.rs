@@ -4,6 +4,7 @@
 )]
 
 use crate::app::components::button::{ButtonVariant, button, button_link};
+use crate::app::components::category_select::category_select;
 use crate::app::components::field::{text_field, textarea_field};
 use haven_domain::image::{
     ImageDimensions, ImagePublicId, MAX_IMAGE_BYTES, validate_image_magic_bytes,
@@ -21,6 +22,7 @@ struct NewOfferFormFields {
     description: Option<String>,
     price: Option<String>,
     currency: Option<String>,
+    category: Option<String>,
 }
 
 struct NewOfferFormView {
@@ -34,6 +36,11 @@ fn render_new_offer_form(cx: &Cx, view_data: NewOfferFormView) -> impl topcoat::
     let __cx = cx;
     let idempotency_key = view_data.idempotency_key;
     let fields = view_data.fields;
+    let category_error = view_data.status_code.and_then(|_| {
+        crate::app::offers::fields::parse_category(fields.category.as_deref())
+            .err()
+            .map(|error| error.to_string())
+    });
     view! {
         <div class="new-offer">
             <meta name="robots" content="noindex" />
@@ -58,6 +65,12 @@ fn render_new_offer_form(cx: &Cx, view_data: NewOfferFormView) -> impl topcoat::
                     required: true,
                     minlength: Some(3),
                     maxlength: Some(50),
+                )
+                category_select(
+                    id: "offer-category",
+                    selected: fields.category,
+                    required: true,
+                    error: category_error,
                 )
                 textarea_field(
                     label: "Description",
@@ -150,6 +163,7 @@ pub async fn create_offer(
     let mut description: Option<String> = None;
     let mut price: Option<String> = None;
     let mut currency: Option<String> = None;
+    let mut category: Option<String> = None;
     let mut photo_bytes: Option<Vec<u8>> = None;
 
     while let Ok(Some(field)) = mp.next_field().await {
@@ -159,6 +173,7 @@ pub async fn create_offer(
             Some("description") => description = field.text().await.ok(),
             Some("price") => price = field.text().await.ok(),
             Some("currency") => currency = field.text().await.ok(),
+            Some("category") => category = field.text().await.ok(),
             Some("photo") => {
                 if let Ok(bytes) = field.bytes().await {
                     photo_bytes = (!bytes.is_empty()).then(|| bytes.to_vec());
@@ -174,6 +189,22 @@ pub async fn create_offer(
         description,
         price,
         currency,
+        category,
+    };
+
+    let category = match crate::app::offers::fields::parse_category(fields.category.as_deref()) {
+        Ok(category) => category,
+        Err(error) => {
+            return Ok(render_new_offer_form(
+                cx,
+                NewOfferFormView {
+                    idempotency_key: raw_key,
+                    fields,
+                    error_banner: Some(error.to_string()),
+                    status_code: Some(http::StatusCode::UNPROCESSABLE_ENTITY),
+                },
+            ));
+        }
     };
 
     if let Some(bytes) = photo_bytes.as_ref() {
@@ -227,6 +258,7 @@ pub async fn create_offer(
     let desc_str = fields.description.clone().unwrap_or_default();
 
     let create_req = haven_domain::offer::CreateOffer {
+        category,
         title: title_str,
         description: desc_str,
         price,

@@ -45,6 +45,7 @@ async fn saved_offers_and_follows_are_idempotent_and_keyset_paginated(pool: PgPo
             owner_id,
             IdempotencyKey::new(Uuid::new_v4()),
             &CreateOffer {
+                category: haven_domain::offer::Category::Other,
                 title: "Saved offer".into(),
                 description: "An offer to save".into(),
                 price: Price::new(100).unwrap(),

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, user_id, slug, title, description, price, currency, image_count, created_at, updated_at\n            FROM offer\n            WHERE slug = $1\n            ",
+  "query": "\n            SELECT id, user_id, slug, title, description, price, currency, category, image_count, created_at, updated_at\n            FROM offer\n            WHERE id = $1 AND user_id = $2\n            ",
   "describe": {
     "columns": [
       {
@@ -82,6 +82,17 @@
       },
       {
         "ordinal": 7,
+        "name": "category",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "offer",
+            "name": "category"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
         "name": "image_count",
         "type_info": "Int2",
         "origin": {
@@ -92,7 +103,7 @@
         }
       },
       {
-        "ordinal": 8,
+        "ordinal": 9,
         "name": "created_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -103,7 +114,7 @@
         }
       },
       {
-        "ordinal": 9,
+        "ordinal": 10,
         "name": "updated_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -116,7 +127,8 @@
     ],
     "parameters": {
       "Left": [
-        "Text"
+        "Uuid",
+        "Uuid"
       ]
     },
     "nullable": [
@@ -129,8 +141,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "7b53235054a1b2297513a9117e5b02aa2ec42c2e0ef468d1263e78ef64af0ded"
+  "hash": "91614137d1e03e012888d5988af09a75fd49e5856b7329c13c1e43bd589e3219"
 }

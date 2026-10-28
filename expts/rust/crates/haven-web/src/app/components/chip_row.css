@@ -1,0 +1,28 @@
+/* The next clipped link provides the overflow cue; there are no scroll controls. */
+.chip-row {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-padding-inline: var(--space-3);
+}
+
+.chip-row::-webkit-scrollbar { display: none; }
+
+.chip-row-list {
+  display: flex;
+  width: max-content;
+  min-width: 100%;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-1) var(--space-3);
+  list-style: none;
+}
+
+.chip-row-list > li { flex: 0 0 auto; }
+
+/* Match the existing feed-control breakpoint, independently of the nav rail. */
+@media (min-width: 900px) {
+  .chip-row { overflow: visible; }
+  .chip-row-list { width: auto; flex-wrap: wrap; }
+}

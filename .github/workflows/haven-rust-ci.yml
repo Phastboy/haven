@@ -12,6 +12,11 @@ on:
       - 'expts/rust/**'
       - '.github/workflows/haven-rust-*'
   workflow_dispatch:
+    inputs:
+      category_review:
+        description: Regenerate SQLx metadata and export synthetic feed snapshots
+        type: boolean
+        default: false
 
 concurrency:
   group: haven-rust-ci-${{ github.ref }}
@@ -69,6 +74,23 @@ jobs:
       - name: Check code formatting
         run: cargo fmt --all --check
 
+      - name: Prepare fresh database for category review
+        if: inputs.category_review
+        run: |
+          for migration in migrations/*.sql; do
+            psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f "$migration"
+          done
+
+      - name: Regenerate SQLx metadata against PostgreSQL
+        if: inputs.category_review
+        env:
+          SQLX_OFFLINE: "false"
+          SQLX_OFFLINE_DIR: /tmp/haven-category-review/sqlx
+        run: |
+          mkdir -p "$SQLX_OFFLINE_DIR"
+          cargo check -p haven-db --all-targets --locked
+          cp "$SQLX_OFFLINE_DIR"/query-*.json .sqlx/
+
       - name: Lint with Clippy (-D warnings)
         run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
 
@@ -82,6 +104,8 @@ jobs:
         run: topcoat asset bundle --package haven-web
 
       - name: Run unit & integration tests
+        env:
+          HAVEN_PREVIEW_DIR: ${{ inputs.category_review && '/tmp/haven-category-review/feed' || '' }}
         run: cargo test --workspace --locked
 
       - name: Run doctests
@@ -99,3 +123,12 @@ jobs:
 
       - name: Validate documentation (-D warnings)
         run: RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --document-private-items
+
+      - name: Export category review artifacts
+        if: always() && inputs.category_review
+        uses: actions/upload-artifact@v7
+        with:
+          name: category-review
+          path: /tmp/haven-category-review
+          if-no-files-found: error
+          retention-days: 7

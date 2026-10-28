@@ -1,3 +1,5 @@
+mod category;
+
 use super::*;
 use haven_domain::offer::{CreateOffer, CurrencyCode, Price, UpdateOffer};
 use haven_domain::ports::{IdempotencyKey, OfferImageRepository, OfferRepository};
@@ -37,6 +39,7 @@ async fn test_update_patch_semantics(pool: PgPool) {
     // 2. Create an offer
     let key = IdempotencyKey::new(Uuid::new_v4());
     let co = CreateOffer {
+        category: haven_domain::offer::Category::Other,
         title: "Original Title".to_string(),
         description: "Original Description".to_string(),
         price: Price::new(100).unwrap(),
@@ -57,6 +60,7 @@ async fn test_update_patch_semantics(pool: PgPool) {
 
     // 3. Update title, leave description, price and currency unchanged (None)
     let uo1 = UpdateOffer {
+        category: None,
         title: Some("New Title".to_string()),
         description: None,
         price: None,
@@ -70,6 +74,7 @@ async fn test_update_patch_semantics(pool: PgPool) {
 
     // 4. Update price only
     let uo2 = UpdateOffer {
+        category: None,
         title: None,
         description: None,
         price: Some(Price::new(200).unwrap()),
@@ -83,6 +88,7 @@ async fn test_update_patch_semantics(pool: PgPool) {
 
     // 5. Update currency and description
     let uo3 = UpdateOffer {
+        category: None,
         title: None,
         description: Some("Updated Description".to_string()),
         price: None,
@@ -104,6 +110,7 @@ async fn test_update_patch_semantics(pool: PgPool) {
     // 7. Seed multiple offers with images and test keyset feed pagination
     for i in 1..=5 {
         let req = CreateOffer {
+            category: haven_domain::offer::Category::Other,
             title: format!("Feed Offer {i}"),
             description: format!("Description for feed offer number {i}"),
             price: Price::new(10_i32.saturating_mul(i)).unwrap(),
@@ -268,6 +275,7 @@ async fn test_offers_search_and_price_filtering(pool: PgPool) {
             user_id,
             IdempotencyKey::new(Uuid::new_v4()),
             &CreateOffer {
+                category: haven_domain::offer::Category::Other,
                 title: "Vintage Wooden Lamp".to_string(),
                 description: "Handcrafted wooden desk lamp in great condition.".to_string(),
                 price: Price::new(5000).unwrap(),
@@ -283,6 +291,7 @@ async fn test_offers_search_and_price_filtering(pool: PgPool) {
             user_id,
             IdempotencyKey::new(Uuid::new_v4()),
             &CreateOffer {
+                category: haven_domain::offer::Category::Other,
                 title: "Free Wooden Chair".to_string(),
                 description: "Sturdy wooden dining chair, free for pickup.".to_string(),
                 price: Price::ZERO,
@@ -298,6 +307,7 @@ async fn test_offers_search_and_price_filtering(pool: PgPool) {
             user_id,
             IdempotencyKey::new(Uuid::new_v4()),
             &CreateOffer {
+                category: haven_domain::offer::Category::Other,
                 title: "Modern Glass Desk".to_string(),
                 description: "Sleek glass computer desk in pristine shape.".to_string(),
                 price: Price::new(15000).unwrap(),
@@ -327,6 +337,7 @@ async fn test_offers_search_and_price_filtering(pool: PgPool) {
     let res_title = repo
         .list_public(&haven_domain::offer::PublicFeedQuery::new(
             haven_domain::offer::PublicCriteria {
+                category: None,
                 title: Some(search_title),
                 price: None,
             },
@@ -345,6 +356,7 @@ async fn test_offers_search_and_price_filtering(pool: PgPool) {
     let res_free = repo
         .list_public(&haven_domain::offer::PublicFeedQuery::new(
             haven_domain::offer::PublicCriteria {
+                category: None,
                 title: None,
                 price: Some(free_filter),
             },
@@ -368,6 +380,7 @@ async fn test_offers_search_and_price_filtering(pool: PgPool) {
     let res_range = repo
         .list_public(&haven_domain::offer::PublicFeedQuery::new(
             haven_domain::offer::PublicCriteria {
+                category: None,
                 title: None,
                 price: Some(range_filter),
             },
@@ -385,6 +398,7 @@ async fn test_offers_search_and_price_filtering(pool: PgPool) {
     let res_combined = repo
         .list_public(&haven_domain::offer::PublicFeedQuery::new(
             haven_domain::offer::PublicCriteria {
+                category: None,
                 title: Some(haven_domain::offer::SearchQuery::parse("Wooden").unwrap()),
                 price: Some(free_filter),
             },

@@ -17,11 +17,14 @@ pub(crate) fn map_row(
     description: String,
     price: i32,
     currency: &str,
+    category: &str,
     image_count: i16,
     images: Vec<haven_domain::image::OfferImage>,
     created_at: chrono::DateTime<chrono::Utc>,
     updated_at: chrono::DateTime<chrono::Utc>,
 ) -> Result<Offer, RepoError> {
+    let category = haven_domain::offer::Category::parse(category)
+        .map_err(|_| RepoError::Corrupt("Invalid category".into()))?;
     let p = Price::new(price).map_err(|_| RepoError::Corrupt("Invalid price".into()))?;
     let c =
         CurrencyCode::parse(currency).map_err(|_| RepoError::Corrupt("Invalid currency".into()))?;
@@ -30,6 +33,7 @@ pub(crate) fn map_row(
         .map_err(|_| RepoError::Corrupt("Invalid image_count".into()))?;
 
     Ok(Offer {
+        category,
         id: OfferId::from_uuid(id),
         user_id: UserId::from_uuid(user_id),
         slug: s,
