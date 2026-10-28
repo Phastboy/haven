@@ -46,3 +46,11 @@ hits, 677.25 ms execution. Planning the same query with actual values used order
 keyset streaming and took 0.75 ms. Dynamic public/personal feed statements now
 close after execution so PostgreSQL plans for current facet selectivity; rerun
 required on the resulting release binary. No v0.7 gate is claimed.
+
+A separate 10 RPS Inquired diagnostic on the initial binary returned 400/400
+correct responses, zero dropped arrivals, p95 1,224.77 ms and p99 3,005.60 ms.
+The dense broad query also exposed a maker join executing a sequential scan of
+`user` for each candidate (105,948 rejected join rows for 21 results). Bounding
+membership/facets/order to 21 rows in a materialized CTE before the maker join
+changed that join to primary-key lookups: 20.43 ms to 1.07 ms in the isolated SQL
+comparison. This preserves visibility, membership and pagination semantics.
