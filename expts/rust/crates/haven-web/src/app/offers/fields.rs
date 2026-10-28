@@ -2,6 +2,15 @@ use haven_domain::offer::{CurrencyCode, Price};
 use topcoat::Error as TopcoatError;
 use topcoat::router::error::bad_request;
 
+/// Parses the required category submitted by a create/edit form.
+///
+/// # Errors
+/// Returns a validation error when the category is missing, blank or unknown.
+pub fn parse_category(raw: Option<&str>) -> Result<haven_domain::offer::Category, TopcoatError> {
+    haven_domain::offer::Category::parse(raw.unwrap_or_default())
+        .map_err(|e| bad_request(e.to_string()).into())
+}
+
 /// Parses an optional string into a `Price`.
 /// Rejects commas or decimals. Returns a validation error for invalid formats.
 fn parse_price_str(raw: &str) -> Result<Price, TopcoatError> {

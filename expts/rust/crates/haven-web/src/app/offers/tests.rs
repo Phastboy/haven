@@ -8,6 +8,8 @@
     reason = "test assertions and mocks"
 )]
 
+mod categories;
+
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
@@ -291,6 +293,7 @@ async fn test_public_slug_route_caching_and_headers() {
     // Create an offer in the repo
     let user_id = UserId::generate();
     let create_offer = CreateOffer {
+        category: haven_domain::offer::Category::Other,
         title: "Vintage Oak Table".to_string(),
         description: "A beautifully restored vintage oak dining table.".to_string(),
         price: Price::new(250).unwrap(),
@@ -472,6 +475,7 @@ async fn test_owner_routes_enforce_ownership_and_identical_404() {
 
     // Create offer owned by user1
     let create_offer = CreateOffer {
+        category: haven_domain::offer::Category::Other,
         title: "User 1 Painting".to_string(),
         description: "Original acrylic on canvas by user 1.".to_string(),
         price: Price::ZERO,
@@ -549,6 +553,7 @@ async fn test_owner_offers_quick_delete_and_navigation_loop_guard() {
     let session1_token = create_auth_session(&registry.users_repo, user1.clone());
 
     let create_offer = CreateOffer {
+        category: haven_domain::offer::Category::Other,
         title: "User 1 Painting".to_string(),
         description: "Original acrylic on canvas by user 1.".to_string(),
         price: Price::ZERO,
@@ -771,6 +776,7 @@ async fn test_update_offer_ownership_checked_before_invalid_form() {
     let session2_token = create_auth_session(&registry.users_repo, user2);
 
     let create_offer = CreateOffer {
+        category: haven_domain::offer::Category::Other,
         title: "User 1 Item".to_string(),
         description: "User 1 item description.".to_string(),
         price: Price::ZERO,
@@ -829,6 +835,7 @@ async fn test_public_profile_route_renders_maker_and_offers_and_404_when_missing
 
     // 3. Known user with an offer without images remains hidden on public profile
     let create_offer = CreateOffer {
+        category: haven_domain::offer::Category::Other,
         title: "Handmade Wooden Chair".to_string(),
         description: "Solid oak handcrafted dining chair.".to_string(),
         price: Price::new(15000).unwrap(),
@@ -1005,6 +1012,7 @@ async fn test_maker_attribution_rendered_on_offer_page_and_feed() {
     let _ = create_auth_session(&registry.users_repo, user.clone());
 
     let create_offer = CreateOffer {
+        category: haven_domain::offer::Category::Other,
         title: "Handmade Ceramic Vase".to_string(),
         description: "Stoneware vase fired in wood kiln.".to_string(),
         price: Price::new(4500).unwrap(),
@@ -1061,6 +1069,7 @@ async fn test_navigation_layout_rule_main_vs_child() {
     let user = mock_user(UserId::generate(), AccountId::generate(), "artisan-nav");
     let _ = create_auth_session(&registry.users_repo, user.clone());
     let create_offer = CreateOffer {
+        category: haven_domain::offer::Category::Other,
         title: "Carved Wooden Bowl".to_string(),
         description: "Hand-carved wooden bowl from walnut.".to_string(),
         price: Price::new(3000).unwrap(),
@@ -1187,6 +1196,7 @@ async fn test_public_offer_back_returns_to_owner_offer_page() {
     let session = create_auth_session(&registry.users_repo, user.clone());
 
     let create_offer = CreateOffer {
+        category: haven_domain::offer::Category::Other,
         title: "Handcrafted Desk".to_string(),
         description: "Solid oak study desk.".to_string(),
         price: Price::ZERO,
@@ -1566,6 +1576,7 @@ async fn test_offer_visibility_rules_and_slug_404() {
     let other_session = create_auth_session(&registry.users_repo, other_user);
 
     let create_offer = CreateOffer {
+        category: haven_domain::offer::Category::Other,
         title: "Invisible Without Photo".to_string(),
         description: "This offer should be hidden until a photo is uploaded.".to_string(),
         price: Price::new(100).unwrap(),
@@ -1686,6 +1697,7 @@ async fn test_offer_image_upload_and_limit() {
     let session = create_auth_session(&registry.users_repo, user.clone());
 
     let create_offer = CreateOffer {
+        category: haven_domain::offer::Category::Other,
         title: "Photo Upload Showcase".to_string(),
         description: "Demonstrating image management and limits.".to_string(),
         price: Price::new(500).unwrap(),
@@ -1815,6 +1827,7 @@ async fn test_offer_image_reordering() {
     let session = create_auth_session(&registry.users_repo, user.clone());
 
     let create_offer = CreateOffer {
+        category: haven_domain::offer::Category::Other,
         title: "Reorderable Photos".to_string(),
         description: "Testing image positions.".to_string(),
         price: Price::new(100).unwrap(),
@@ -1887,6 +1900,7 @@ async fn test_offer_image_deletion_and_protection() {
     let session = create_auth_session(&registry.users_repo, user.clone());
 
     let create_offer = CreateOffer {
+        category: haven_domain::offer::Category::Other,
         title: "Delete Protection Offer".to_string(),
         description: "Checking last image protection.".to_string(),
         price: Price::new(200).unwrap(),
@@ -1997,6 +2011,7 @@ async fn test_offer_create_with_multipart_photo() {
     let (ct, body) = create_multipart_form(
         &[
             ("title", "Multipart Handmade Quilt"),
+            ("category", "home-furniture"),
             ("description", "Cozy patchwork quilt handmade from cotton."),
             ("price", "120"),
             ("currency", "USD"),
@@ -2024,6 +2039,10 @@ async fn test_offer_create_with_multipart_photo() {
     assert_eq!(user_offers.len(), 1);
     let created = &user_offers[0];
     assert_eq!(created.title, "Multipart Handmade Quilt");
+    assert_eq!(
+        created.category,
+        haven_domain::offer::Category::HomeFurniture
+    );
     assert_eq!(created.image_count, 1);
     assert!(created.is_public());
     assert!(created.cover_image().is_some());
@@ -2044,6 +2063,7 @@ async fn test_offer_images_security_and_authorization() {
     let session2 = create_auth_session(&registry.users_repo, user2);
 
     let create_offer = CreateOffer {
+        category: haven_domain::offer::Category::Other,
         title: "Secure Offer".to_string(),
         description: "Protected against IDOR and CSRF.".to_string(),
         price: Price::new(250).unwrap(),
@@ -2171,6 +2191,7 @@ async fn test_feed_search_and_price_filtering_and_empty_states() {
             user.id,
             IdempotencyKey::new(Uuid::new_v4()),
             &CreateOffer {
+                category: haven_domain::offer::Category::Other,
                 title: "Handmade Oak Desk".to_string(),
                 description: "Sturdy solid oak desk handcrafted with love.".to_string(),
                 price: Price::new(5000).unwrap(),
@@ -2187,6 +2208,7 @@ async fn test_feed_search_and_price_filtering_and_empty_states() {
             user.id,
             IdempotencyKey::new(Uuid::new_v4()),
             &CreateOffer {
+                category: haven_domain::offer::Category::Other,
                 title: "Vintage Glass Table".to_string(),
                 description: "Mid-century round glass coffee table.".to_string(),
                 price: Price::new(15000).unwrap(),
@@ -2203,6 +2225,7 @@ async fn test_feed_search_and_price_filtering_and_empty_states() {
             user.id,
             IdempotencyKey::new(Uuid::new_v4()),
             &CreateOffer {
+                category: haven_domain::offer::Category::Other,
                 title: "Free Wooden Chair".to_string(),
                 description: "Good wooden chair ready for porch or patio.".to_string(),
                 price: Price::ZERO,
@@ -2219,6 +2242,7 @@ async fn test_feed_search_and_price_filtering_and_empty_states() {
             user.id,
             IdempotencyKey::new(Uuid::new_v4()),
             &CreateOffer {
+                category: haven_domain::offer::Category::Other,
                 title: "US Designer Lamp".to_string(),
                 description: "Modern brass desk lamp priced in USD.".to_string(),
                 price: Price::new(5000).unwrap(),
@@ -2340,6 +2364,7 @@ async fn test_feed_pagination_survives_filter_params() {
                 user.id,
                 IdempotencyKey::new(Uuid::new_v4()),
                 &CreateOffer {
+                    category: haven_domain::offer::Category::Other,
                     title: format!("Filterable Ceramic Pot #{i:02}"),
                     description: "Hand-thrown stoneware ceramic plant pot.".to_string(),
                     price: Price::new(2500).unwrap(),
@@ -2365,7 +2390,7 @@ async fn test_feed_pagination_survives_filter_params() {
     // Request page 1 with search and price filters
     let req_p1 = Request::builder()
         .method("GET")
-        .uri("/offers?q=Ceramic&currency=NGN&min_price=2000&max_price=3000")
+        .uri("/offers?category=other&q=Ceramic&currency=NGN&min_price=2000&max_price=3000")
         .body(Body::empty())
         .unwrap();
     let res_p1 = router.handle(req_p1).await;
@@ -2378,4 +2403,19 @@ async fn test_feed_pagination_survives_filter_params() {
     assert!(body_p1.contains("min_price=2000"));
     assert!(body_p1.contains("max_price=3000"));
     assert!(body_p1.contains("after="));
+    assert!(body_p1.contains("category=other"));
+    let next = body_p1
+        .split("href=\"")
+        .filter_map(|part| part.split('"').next())
+        .find(|href| href.starts_with("/offers?") && href.contains("after="))
+        .unwrap()
+        .replace("&amp;", "&");
+    assert!(next.contains("category=other"));
+    let response = router
+        .handle(Request::builder().uri(next).body(Body::empty()).unwrap())
+        .await;
+    assert_eq!(response.status(), http::StatusCode::OK);
+    let body_p2 = body_to_string(response.into_body()).await;
+    assert_eq!(body_p1.matches("class=\"listing-card\"").count(), 20);
+    assert_eq!(body_p2.matches("class=\"listing-card\"").count(), 5);
 }

@@ -1,4 +1,5 @@
 use crate::app::components::button::{ButtonVariant, button, button_link};
+use crate::app::components::category_select::category_select;
 use crate::app::components::field::{text_field, textarea_field};
 use topcoat::{Result as TopcoatResult, context::Cx, router::error::see_other, view::view};
 
@@ -8,6 +9,7 @@ struct EditOfferFormFields {
     description: Option<String>,
     price: Option<String>,
     currency: Option<String>,
+    category: Option<String>,
 }
 
 struct EditOfferFormView {
@@ -21,6 +23,11 @@ fn render_edit_offer_form(cx: &Cx, view_data: EditOfferFormView) -> impl topcoat
     let __cx = cx;
     let offer_id = view_data.offer_id;
     let fields = view_data.fields;
+    let category_error = view_data.status_code.and_then(|_| {
+        crate::app::offers::fields::parse_category(fields.category.as_deref())
+            .err()
+            .map(|error| error.to_string())
+    });
     view! {
         <div class="edit-offer">
             <meta name="robots" content="noindex" />
@@ -44,6 +51,12 @@ fn render_edit_offer_form(cx: &Cx, view_data: EditOfferFormView) -> impl topcoat
                     required: true,
                     minlength: Some(3),
                     maxlength: Some(50),
+                )
+                category_select(
+                    id: "offer-category",
+                    selected: fields.category,
+                    required: true,
+                    error: category_error,
                 )
                 textarea_field(
                     label: "Description",
@@ -98,6 +111,7 @@ pub async fn edit_offer_page(cx: &Cx) -> TopcoatResult<impl topcoat::view::View>
         description: Some(offer.description),
         price: Some(offer.price.as_i32().to_string()),
         currency: Some(offer.currency.as_str().to_string()),
+        category: Some(offer.category.as_str().to_string()),
     };
 
     Ok(render_edit_offer_form(
@@ -117,6 +131,7 @@ pub struct EditOfferForm {
     pub description: Option<String>,
     pub price: Option<String>,
     pub currency: Option<String>,
+    pub category: Option<String>,
 }
 
 #[topcoat::router::page(POST)]
@@ -149,6 +164,22 @@ pub async fn update_offer(
         description: f.description.clone(),
         price: f.price.clone(),
         currency: f.currency.clone(),
+        category: f.category.clone(),
+    };
+
+    let category = match crate::app::offers::fields::parse_category(f.category.as_deref()) {
+        Ok(category) => category,
+        Err(error) => {
+            return Ok(render_edit_offer_form(
+                cx,
+                EditOfferFormView {
+                    offer_id,
+                    fields,
+                    error_banner: Some(error.to_string()),
+                    status_code: Some(http::StatusCode::UNPROCESSABLE_ENTITY),
+                },
+            ));
+        }
     };
 
     let patch = match crate::app::offers::fields::parse_for_patch(
@@ -174,6 +205,7 @@ pub async fn update_offer(
     };
 
     let domain_update = haven_domain::offer::UpdateOffer {
+        category: Some(category),
         title: patch.title,
         description: patch.description,
         price: patch.price,

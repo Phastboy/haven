@@ -65,6 +65,7 @@ fn test_public_criteria_empty() {
     assert!(filter.is_empty());
 
     let with_title = PublicCriteria {
+        category: None,
         title: Some(SearchQuery::parse("test").unwrap()),
         price: None,
     };
@@ -74,6 +75,7 @@ fn test_public_criteria_empty() {
 #[test]
 fn public_criteria_composes_title_and_price_in_order() {
     let criteria = PublicCriteria {
+        category: None,
         title: Some(SearchQuery::parse("  wooden desk ").unwrap()),
         price: Some(PriceFilter::free(CurrencyCode::Ngn)),
     };
@@ -88,6 +90,7 @@ fn public_criteria_composes_title_and_price_in_order() {
 #[test]
 fn public_feed_query_keeps_scope_separate_from_facets() {
     let criteria = PublicCriteria {
+        category: None,
         title: None,
         price: Some(PriceFilter::free(CurrencyCode::Usd)),
     };

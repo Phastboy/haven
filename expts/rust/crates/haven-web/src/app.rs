@@ -92,6 +92,7 @@ pub async fn root_layout(
 ) -> TopcoatResult<impl topcoat::view::View> {
     let user = crate::app::auth::guard::current_user(cx).await?;
     let path = topcoat::router::request::uri(cx).path();
+    let feed_canonical = (path == "/offers").then(|| offers::feed::canonical(cx));
     let is_offer_detail = path
         .strip_prefix("/offers/")
         .is_some_and(|tail| !tail.is_empty() && !tail.contains('/'));
@@ -129,6 +130,13 @@ pub async fn root_layout(
                 <meta charset="utf-8" />
                 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
                 <title>"Haven"</title>
+                if let Some(feed_canonical) = feed_canonical {
+                    if let Some(canonical) = feed_canonical {
+                        <link rel="canonical" href=(canonical) />
+                    } else {
+                        <meta name="robots" content="noindex, follow" />
+                    }
+                }
                 <link rel="stylesheet" href="/style.css" />
                 if !is_offer_detail {
                     <script src="/cover-images.js" defer="defer"></script>

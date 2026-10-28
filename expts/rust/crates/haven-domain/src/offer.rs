@@ -1,5 +1,6 @@
 //! Offer aggregate, identifiers, commands, and submodule assembly.
 
+pub mod category;
 pub mod currency;
 pub mod cursor;
 pub mod filter;
@@ -15,6 +16,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+pub use category::{Category, CategoryError};
 pub use currency::{CurrencyCode, SUPPORTED_CURRENCIES};
 pub use cursor::{OfferCursor, OfferPage};
 pub use filter::{PriceFilter, PublicCriteria, PublicCriterion, Scope, SearchQuery};
@@ -130,6 +132,8 @@ pub struct Offer {
     pub title: String,
     /// Detailed description.
     pub description: String,
+    /// Topic used for discovery.
+    pub category: Category,
     /// Price value in minor currency units.
     pub price: Price,
     /// ISO 4217 currency code.
@@ -165,6 +169,8 @@ pub struct CreateOffer {
     pub title: String,
     /// Proposed detailed description.
     pub description: String,
+    /// Required topic for this offer.
+    pub category: Category,
     /// Proposed price in minor currency units.
     pub price: Price,
     /// Proposed ISO 4217 currency code.
@@ -192,6 +198,8 @@ pub struct UpdateOffer {
     pub title: Option<String>,
     /// Updated description, or `None` to retain current.
     pub description: Option<String>,
+    /// Updated topic, or `None` to retain current for repository patches.
+    pub category: Option<Category>,
     /// Updated price, or `None` to retain current.
     pub price: Option<Price>,
     /// Updated currency, or `None` to retain current.

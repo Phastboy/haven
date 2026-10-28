@@ -98,6 +98,7 @@ fn validate_description_enforces_character_bounds() {
 #[test]
 fn create_offer_validates_title_and_description() {
     let mut co = CreateOffer {
+        category: crate::offer::Category::Other,
         title: "Valid Title".into(),
         description: "Valid description here".into(),
         price: Price::ZERO,
@@ -125,6 +126,7 @@ fn create_offer_validates_title_and_description() {
 #[test]
 fn update_offer_validates_partial_updates() {
     let uo = UpdateOffer {
+        category: None,
         title: None,
         description: None,
         price: None,
@@ -133,6 +135,7 @@ fn update_offer_validates_partial_updates() {
     assert!(uo.validate().is_ok());
 
     let uo_invalid_title = UpdateOffer {
+        category: None,
         title: Some("ab".into()),
         description: None,
         price: None,
@@ -144,6 +147,7 @@ fn update_offer_validates_partial_updates() {
     ));
 
     let uo_invalid_desc = UpdateOffer {
+        category: None,
         title: None,
         description: Some("short".into()),
         price: None,
@@ -155,6 +159,7 @@ fn update_offer_validates_partial_updates() {
     ));
 
     let uo_overlong_title = UpdateOffer {
+        category: None,
         title: Some("a".repeat(51)),
         description: None,
         price: None,
@@ -166,6 +171,7 @@ fn update_offer_validates_partial_updates() {
     ));
 
     let uo_overlong_desc = UpdateOffer {
+        category: None,
         title: None,
         description: Some("x".repeat(2001)),
         price: None,
@@ -180,6 +186,7 @@ fn update_offer_validates_partial_updates() {
 #[test]
 fn create_offer_rejects_overlong_inputs() {
     let mut co = CreateOffer {
+        category: crate::offer::Category::Other,
         title: "a".repeat(51),
         description: "A valid description for testing.".into(),
         price: Price::ZERO,

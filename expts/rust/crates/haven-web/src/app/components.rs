@@ -4,6 +4,9 @@
 )]
 
 pub mod button;
+pub mod category_select;
+pub mod chip;
+pub mod chip_row;
 pub mod confirm_dialog;
 pub mod date;
 pub mod empty_state;

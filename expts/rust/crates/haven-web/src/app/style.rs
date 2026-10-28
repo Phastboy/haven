@@ -4,6 +4,12 @@ use topcoat::{
 };
 
 const STYLESHEET: &str = concat!(
+    include_str!("components/chip.css"),
+    "\n",
+    include_str!("components/chip_row.css"),
+    "\n",
+    include_str!("offers/feed/criteria/category.css"),
+    "\n",
     include_str!("../../static/style.css"),
     "\n",
     include_str!("../../static/css/tokens.css"),

@@ -1,5 +1,6 @@
 //! Bound public-facet predicates; membership, visibility and pagination live in the feed.
 
+mod category;
 mod emission;
 mod price;
 mod title;

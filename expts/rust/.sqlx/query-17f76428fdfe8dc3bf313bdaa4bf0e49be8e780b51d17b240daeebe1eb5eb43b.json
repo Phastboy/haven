@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT \n                o.id, o.user_id, o.slug, o.title, o.description, o.price, o.currency, o.image_count, o.created_at, o.updated_at,\n                img.id AS \"img_id?\", img.public_id AS \"img_public_id?\", img.position AS \"img_position?\", \n                img.width AS \"img_width?\", img.height AS \"img_height?\", img.created_at AS \"img_created_at?\"\n            FROM offer o\n            LEFT JOIN offer_image img ON img.offer_id = o.id AND img.position = 1\n            WHERE o.user_id = $1\n            ORDER BY o.created_at DESC, o.id DESC\n            ",
+  "query": "\n            UPDATE offer\n            SET title = COALESCE($1, title),\n                description = COALESCE($2, description),\n                price = COALESCE($3, price),\n                currency = COALESCE($4, currency),\n                category = COALESCE($7, category),\n                updated_at = NOW()\n            WHERE id = $5 AND user_id = $6\n            RETURNING id, user_id, slug, title, description, price, currency, category, image_count, created_at, updated_at\n            ",
   "describe": {
     "columns": [
       {
@@ -82,6 +82,17 @@
       },
       {
         "ordinal": 7,
+        "name": "category",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "offer",
+            "name": "category"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
         "name": "image_count",
         "type_info": "Int2",
         "origin": {
@@ -92,7 +103,7 @@
         }
       },
       {
-        "ordinal": 8,
+        "ordinal": 9,
         "name": "created_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -103,7 +114,7 @@
         }
       },
       {
-        "ordinal": 9,
+        "ordinal": 10,
         "name": "updated_at",
         "type_info": "Timestamptz",
         "origin": {
@@ -112,77 +123,17 @@
             "name": "updated_at"
           }
         }
-      },
-      {
-        "ordinal": 10,
-        "name": "img_id?",
-        "type_info": "Uuid",
-        "origin": {
-          "Table": {
-            "table": "offer_image",
-            "name": "id"
-          }
-        }
-      },
-      {
-        "ordinal": 11,
-        "name": "img_public_id?",
-        "type_info": "Varchar",
-        "origin": {
-          "Table": {
-            "table": "offer_image",
-            "name": "public_id"
-          }
-        }
-      },
-      {
-        "ordinal": 12,
-        "name": "img_position?",
-        "type_info": "Int2",
-        "origin": {
-          "Table": {
-            "table": "offer_image",
-            "name": "position"
-          }
-        }
-      },
-      {
-        "ordinal": 13,
-        "name": "img_width?",
-        "type_info": "Int4",
-        "origin": {
-          "Table": {
-            "table": "offer_image",
-            "name": "width"
-          }
-        }
-      },
-      {
-        "ordinal": 14,
-        "name": "img_height?",
-        "type_info": "Int4",
-        "origin": {
-          "Table": {
-            "table": "offer_image",
-            "name": "height"
-          }
-        }
-      },
-      {
-        "ordinal": 15,
-        "name": "img_created_at?",
-        "type_info": "Timestamptz",
-        "origin": {
-          "Table": {
-            "table": "offer_image",
-            "name": "created_at"
-          }
-        }
       }
     ],
     "parameters": {
       "Left": [
-        "Uuid"
+        "Varchar",
+        "Text",
+        "Int4",
+        "Bpchar",
+        "Uuid",
+        "Uuid",
+        "Text"
       ]
     },
     "nullable": [
@@ -196,13 +147,8 @@
       false,
       false,
       false,
-      false,
-      false,
-      false,
-      false,
-      false,
       false
     ]
   },
-  "hash": "78bc20446bee765afb3eff305b08dd7d274e2e4b2df44fedca2eb6af1b431be8"
+  "hash": "17f76428fdfe8dc3bf313bdaa4bf0e49be8e780b51d17b240daeebe1eb5eb43b"
 }

@@ -1556,3 +1556,6 @@ body:has(.offer-detail) .app-shell-content { padding-top: var(--space-4); paddin
 [data-cover-image] { position: relative; background: transparent; }
 [data-cover-image][hidden] { display: none; }
 .cover-fallback[hidden] { display: none; }
+
+.category-field { min-width: 0; }
+.category-field select { width: 100%; min-width: 0; }

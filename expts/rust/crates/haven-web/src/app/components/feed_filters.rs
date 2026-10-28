@@ -12,6 +12,12 @@ use topcoat::{
 
 /// Validated and display-ready values used to render the offers filter form.
 pub struct FeedFiltersData {
+    /// Submitted category slug, retained even when unknown.
+    pub category: String,
+    /// Category validation error shown above the topic links.
+    pub category_error: Option<String>,
+    /// Clears title and price while retaining the selected topic.
+    pub clear_filters_href: String,
     /// Current search field value, retained even when invalid.
     pub title_query: String,
     /// Current currency field value, retained even when invalid.
@@ -44,6 +50,7 @@ pub async fn feed_filters(data: FeedFiltersData) -> TopcoatResult<impl View> {
 
     Ok(view! {
         <form action="/offers" method="get" class="feed-filters" role="search" aria-label="Filter offers">
+            <input type="hidden" name="category" value=(data.category) />
             <div class="filter-header-row">
                 <div class="filter-field filter-field-title">
                     <label for="filter-q" class="field-label">"Find by title"</label>
@@ -73,6 +80,9 @@ pub async fn feed_filters(data: FeedFiltersData) -> TopcoatResult<impl View> {
                 </button>
             </div>
 
+            if let Some(error) = data.category_error {
+                <p class="feed-filter-error" role="alert">(error)</p>
+            }
             if let Some(error) = data.title_error {
                 <p class="feed-filter-error" role="alert">(error)</p>
             }
@@ -80,7 +90,7 @@ pub async fn feed_filters(data: FeedFiltersData) -> TopcoatResult<impl View> {
                 <p class="feed-filter-error" role="alert">(error)</p>
             }
             if let Some(summary) = data.summary {
-                filter_summary(summary: summary)
+                filter_summary(summary: summary, clear_href: data.clear_filters_href)
             }
 
             feed_filter_sheet(data: sheet_data)
@@ -110,6 +120,9 @@ mod tests {
 
     fn data(count: u32, summary: Option<&str>) -> FeedFiltersData {
         FeedFiltersData {
+            category: String::new(),
+            category_error: None,
+            clear_filters_href: "/offers".to_string(),
             title_query: "mug & bowl".to_string(),
             currency: "USD".to_string(),
             min_price: None,
@@ -131,7 +144,7 @@ mod tests {
         assert!(html.contains("method=\"get\""));
         assert!(html.contains("id=\"feed-filter-sheet\" popover=\"auto\""));
         assert!(html.contains("popovertarget=\"feed-filter-sheet\""));
-        for field in ["q", "currency", "min_price", "max_price"] {
+        for field in ["category", "q", "currency", "min_price", "max_price"] {
             assert_eq!(html.matches(&format!("name=\"{field}\"")).count(), 1);
         }
         assert!(html.contains("class=\"filter-count-badge\""));
@@ -147,5 +160,21 @@ mod tests {
         let html = rendered.single().await.unwrap().render(__cx);
         assert!(!html.contains("filter-count-badge"));
         assert!(!html.contains("filter-summary"));
+    }
+    #[tokio::test]
+    async fn submitting_controls_retains_the_category_without_a_second_selector() {
+        let cx = Cx::default();
+        let __cx = &cx;
+        let mut fields = data(1, Some("Search: rice · NGN · Max 600"));
+        fields.category = "food-groceries".to_string();
+        fields.clear_filters_href = "/offers?category=food-groceries".to_string();
+        let rendered = view! { feed_filters(data: fields) };
+        let html = rendered.single().await.unwrap().render(__cx);
+        assert!(html.contains("type=\"hidden\" name=\"category\" value=\"food-groceries\""));
+        assert_eq!(html.matches("name=\"category\"").count(), 1);
+        assert!(!html.contains("id=\"filter-category\""));
+        assert!(
+            html.contains("href=\"/offers?category=food-groceries\" class=\"filter-clear-link\"")
+        );
     }
 }

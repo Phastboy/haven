@@ -158,6 +158,7 @@ fn setup_conversation_app() -> (
 
     let offers_repo = haven_domain::fakes::FakeOfferRepository::default();
     let offer = Offer {
+        category: haven_domain::offer::Category::Other,
         id: OfferId::generate(),
         user_id: u1.id,
         slug: haven_domain::offer::OfferSlug::parse("handmade-table-123456").unwrap(),
