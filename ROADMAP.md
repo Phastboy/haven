@@ -109,16 +109,18 @@ The load-test gate is recorded as met in [`crates/haven-web/load-tests/SCORECARD
 
 ---
 
-The workspace package version is **0.6.0**. Stages 0.1.x through 0.6.x are complete; 0.7.x has not started.
+The workspace package version is **0.6.0**. Stages 0.1.x through 0.6.x are complete; v0.7 implementation has begun with the behavior-preserving title/price criteria refactor. Its narrowing journeys and performance gate remain incomplete.
 
 ## 0.7.x — Can I narrow it down?
+
+Plan: [v0.7 narrowing plan](expts/rust/V0.7_PLAN.md). Typed title/price criteria composition is implemented; existing discovery behavior is retained. Category vocabulary and permanent slugs await grouped real-title inventory and owner acceptance before migration. Tag deferral remains proposed, not accepted. Saved scope follows category; Inquired requires a dense-query spike and a recorded read-time versus maintained-summary decision before implementation. Scope-specific cursor and facet-binding tests precede personal repository queries. The [cover patch](docs/COVER_PATCH.md) is merged independently; sitemap discovery is a separate deliverable with its own acceptance, outside the narrowing gate. Inquiry means non-binding communication; messaging about an offer signifies no commitment.
 
 Finding something should become more precise as the number of offers grows.
 
 * [ ] A person can narrow offers down by category.
 * [ ] A person can narrow offers down by tags.
 * [ ] A person can narrow offers down to things they have saved.
-* [ ] A person can narrow offers down to things they have committed to.
+* [ ] A person can narrow offers down to things they have inquired about.
 
 **The question:**
 
@@ -147,6 +149,28 @@ It should be determined by what we learn from the previous versions rather than 
 > What is the next thing Haven needs to prove?
 
 To be defined from what Haven has taught us by this point.
+
+---
+
+## Future question — Can I find what's near me? (unscheduled)
+
+The earlier proximity draft is retained as a future planning input, deliberately
+outside v0.7. A person should be able to offer from a visible place, find nearby
+offers and understand proximity while retaining a fully working Haven without
+sharing location. The stage needs real offers in one chosen neighbourhood,
+campus or business district, with a target count set before work begins.
+No version is assigned here; location, privacy and ranking remain undefined.
+
+---
+
+## Future question — Can I find the person I'm looking for? (unscheduled)
+
+A person should be able to find someone and return to their catalogue even when
+an offer they previously saw no longer appears in discovery.
+
+This question is recorded for later planning. Haven is not ready to take it on;
+no version is assigned, and it is explicitly not planned for v0.8. Search rules
+and contacting a person without an existing offer remain undefined.
 
 ---
 
