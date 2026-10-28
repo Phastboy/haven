@@ -1,0 +1,198 @@
+Isolated synthetic schema: v07_spike_fb355bed67
+CREATE SCHEMA
+SET
+SELECT 100000
+CREATE INDEX
+CREATE INDEX
+SELECT 5890
+CREATE INDEX
+CREATE INDEX
+SELECT 30000
+CREATE INDEX
+ANALYZE
+ANALYZE
+ANALYZE
+ fixture_offers
+----------------
+         100000
+(1 row)
+
+ fixture_messages | inquired_offers
+------------------+-----------------
+            30000 |           10000
+(1 row)
+
+
+                                                                                                   QUERY PLAN
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=7633.49..7633.50 rows=1 width=52) (actual time=211.185..211.203 rows=21.00 loops=1)
+   Buffers: shared hit=13867 read=283, temp read=464 written=565
+   ->  Sort  (cost=7633.49..7633.50 rows=1 width=52) (actual time=211.183..211.195 rows=21.00 loops=1)
+         Sort Key: message.created_at DESC, o.id DESC
+         Sort Method: top-N heapsort  Memory: 29kB
+         Buffers: shared hit=13867 read=283, temp read=464 written=565
+         ->  Merge Join  (cost=4844.03..7633.48 rows=1 width=52) (actual time=157.185..207.626 rows=10000.00 loops=1)
+               Merge Cond: ((o.id = message.offer_id) AND (c.id = message.conversation_id))
+               Buffers: shared hit=13864 read=283, temp read=464 written=565
+               ->  Sort  (cost=4843.62..4844.87 rows=500 width=60) (actual time=153.835..156.710 rows=10001.00 loops=1)
+                     Sort Key: o.id, c.id
+                     Sort Method: external merge  Disk: 4512kB
+                     Buffers: shared hit=2624, temp read=464 written=565
+                     ->  Hash Join  (cost=275.25..4821.21 rows=500 width=60) (actual time=5.034..112.585 rows=65556.00 loops=1)
+                           Hash Cond: ((LEAST('00000000-0000-0000-0000-000000000001'::uuid, o.user_id) = c.user_low) AND (GREATEST('00000000-0000-0000-0000-000000000001'::uuid, o.user_id) = c.user_high))
+                           Buffers: shared hit=2624
+                           ->  Seq Scan on offer o  (cost=0.00..3996.00 rows=99992 width=60) (actual time=0.023..38.393 rows=100000.00 loops=1)
+                                 Filter: ((image_count >= 1) AND (user_id <> '00000000-0000-0000-0000-000000000001'::uuid))
+                                 Buffers: shared hit=2496
+                           ->  Hash  (cost=186.90..186.90 rows=5890 width=48) (actual time=4.939..4.941 rows=5890.00 loops=1)
+                                 Buckets: 8192  Batches: 1  Memory Usage: 525kB
+                                 Buffers: shared hit=128
+                                 ->  Seq Scan on conversation c  (cost=0.00..186.90 rows=5890 width=48) (actual time=0.015..1.826 rows=5890.00 loops=1)
+                                       Buffers: shared hit=128
+               ->  Unique  (cost=0.41..2636.10 rows=10000 width=40) (actual time=3.337..44.003 rows=10000.00 loops=1)
+                     Buffers: shared hit=11240 read=283
+                     ->  Index Only Scan using message_sender_id_offer_id_conversation_id_created_at_idx on message  (cost=0.41..2486.10 rows=30000 width=40) (actual time=3.334..37.301 rows=30000.00 loops=1)
+                           Index Cond: ((sender_id = '00000000-0000-0000-0000-000000000001'::uuid) AND (offer_id IS NOT NULL))
+                           Heap Fetches: 30000
+                           Index Searches: 1
+                           Buffers: shared hit=11240 read=283
+ Planning:
+   Buffers: shared hit=265
+ Planning Time: 14.509 ms
+ Execution Time: 212.874 ms
+(35 rows)
+
+
+PGbench dense SQL spike, 16 clients, 2 workers, 30s, 1000 arrivals/s, 200ms latency limit:
+pgbench (18.6)
+transaction type: /tmp/haven-inquiry-spike-query.sql
+scaling factor: 1
+query mode: simple
+number of clients: 16
+number of threads: 2
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 657
+number of failed transactions: 0 (0.000%)
+number of transactions skipped: 28956 (97.781%)
+number of transactions above the 200.0 ms latency limit: 657/657 (100.000%)
+latency average = 925.569 ms
+latency stddev = 103.787 ms
+rate limit schedule lag: avg 193.257 (max 199.999) ms
+initial connection time = 209.365 ms
+tps = 21.724686 (without initial connection time)
+statement latencies in milliseconds and failures:
+       732.313           0 SELECT o.id,o.title,h.last_inquiry_at FROM (
+
+Streaming latest-message candidate broad after VACUUM, 1000 arrivals/s, 30s:
+                                                                                                      QUERY PLAN
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=1.11..256652.16 rows=1 width=68) (actual time=2.878..363.404 rows=21.00 loops=1)
+   Buffers: shared hit=168 read=47
+   ->  Nested Loop  (cost=1.11..256652.16 rows=1 width=68) (actual time=2.876..363.378 rows=21.00 loops=1)
+         Join Filter: ((c.user_low = LEAST(m.sender_id, o.user_id)) AND (c.user_high = GREATEST(m.sender_id, o.user_id)))
+         Buffers: shared hit=168 read=47
+         ->  Nested Loop  (cost=0.69..255495.16 rows=150 width=72) (actual time=0.279..124.394 rows=21.00 loops=1)
+               Buffers: shared hit=97 read=34
+               ->  Index Only Scan using message_sender_id_created_at_offer_id_id_conversation_id_idx on message m  (cost=0.41..255082.16 rows=150 width=56) (actual time=0.248..26.325 rows=21.00 loops=1)
+                     Index Cond: (sender_id = '00000000-0000-0000-0000-000000000001'::uuid)
+                     Filter: (id = (SubPlan 1))
+                     Heap Fetches: 0
+                     Index Searches: 1
+                     Buffers: shared hit=43 read=25
+                     SubPlan 1
+                       ->  Limit  (cost=0.41..8.43 rows=1 width=24) (actual time=1.234..1.234 rows=1.00 loops=21)
+                             Buffers: shared hit=42 read=22
+                             ->  Index Only Scan using message_sender_id_offer_id_conversation_id_created_at_id_idx on message newer  (cost=0.41..8.43 rows=1 width=24) (actual time=1.229..1.229 rows=1.00 loops=21)
+                                   Index Cond: ((sender_id = m.sender_id) AND (offer_id = m.offer_id) AND (conversation_id = m.conversation_id))
+                                   Heap Fetches: 0
+                                   Index Searches: 21
+                                   Buffers: shared hit=42 read=22
+               ->  Index Scan using conversation_id_idx on conversation c  (cost=0.28..2.75 rows=1 width=48) (actual time=4.660..4.660 rows=1.00 loops=21)
+                     Index Cond: (id = m.conversation_id)
+                     Index Searches: 21
+                     Buffers: shared hit=54 read=9
+         ->  Index Scan using offer_id_idx on offer o  (cost=0.42..7.69 rows=1 width=60) (actual time=11.372..11.372 rows=1.00 loops=21)
+               Index Cond: (id = m.offer_id)
+               Filter: ((image_count >= 1) AND (user_id <> m.sender_id))
+               Index Searches: 21
+               Buffers: shared hit=71 read=13
+ Planning:
+   Buffers: shared hit=397 read=6
+ Planning Time: 91.035 ms
+ Execution Time: 367.364 ms
+(34 rows)
+
+pgbench (18.6)
+transaction type: /tmp/haven-inquiry-streaming.sql
+scaling factor: 1
+query mode: simple
+number of clients: 16
+number of threads: 2
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 29495
+number of failed transactions: 0 (0.000%)
+number of transactions skipped: 0 (0.000%)
+number of transactions above the 200.0 ms latency limit: 0/29495 (0.000%)
+latency average = 5.326 ms
+latency stddev = 3.254 ms
+rate limit schedule lag: avg 0.544 (max 22.462) ms
+initial connection time = 581.450 ms
+tps = 1002.248441 (without initial connection time)
+
+Streaming latest-message candidate empty-category after VACUUM, 1000 arrivals/s, 30s:
+                                                                                          QUERY PLAN
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=42.77..42.78 rows=1 width=68) (actual time=6.236..6.240 rows=0.00 loops=1)
+   Buffers: shared hit=6 read=3
+   ->  Sort  (cost=42.77..42.78 rows=1 width=68) (actual time=6.233..6.236 rows=0.00 loops=1)
+         Sort Key: m.created_at DESC, o.id DESC
+         Sort Method: quicksort  Memory: 25kB
+         Buffers: shared hit=6 read=3
+         ->  Nested Loop  (cost=1.11..42.76 rows=1 width=68) (actual time=3.332..3.334 rows=0.00 loops=1)
+               Join Filter: ((c.user_low = LEAST(m.sender_id, o.user_id)) AND (c.user_high = GREATEST(m.sender_id, o.user_id)))
+               Buffers: shared read=3
+               ->  Nested Loop  (cost=0.83..39.99 rows=1 width=116) (actual time=3.327..3.329 rows=0.00 loops=1)
+                     Buffers: shared read=3
+                     ->  Index Scan using offer_category_created_at_id_idx on offer o  (cost=0.42..6.19 rows=1 width=60) (actual time=3.325..3.325 rows=0.00 loops=1)
+                           Index Cond: (category = 'food-groceries'::text)
+                           Index Searches: 1
+                           Buffers: shared read=3
+                     ->  Index Only Scan using message_sender_id_offer_id_conversation_id_created_at_id_idx on message m  (cost=0.41..33.79 rows=1 width=56) (never executed)
+                           Index Cond: ((sender_id = '00000000-0000-0000-0000-000000000001'::uuid) AND (offer_id = o.id))
+                           Filter: ((o.user_id <> sender_id) AND (id = (SubPlan 1)))
+                           Heap Fetches: 0
+                           Index Searches: 0
+                           SubPlan 1
+                             ->  Limit  (cost=0.41..8.43 rows=1 width=24) (never executed)
+                                   ->  Index Only Scan using message_sender_id_offer_id_conversation_id_created_at_id_idx on message newer  (cost=0.41..8.43 rows=1 width=24) (never executed)
+                                         Index Cond: ((sender_id = m.sender_id) AND (offer_id = m.offer_id) AND (conversation_id = m.conversation_id))
+                                         Heap Fetches: 0
+                                         Index Searches: 0
+               ->  Index Scan using conversation_id_idx on conversation c  (cost=0.28..2.75 rows=1 width=48) (never executed)
+                     Index Cond: (id = m.conversation_id)
+                     Index Searches: 0
+ Planning:
+   Buffers: shared hit=385
+ Planning Time: 4.695 ms
+ Execution Time: 6.548 ms
+(33 rows)
+
+pgbench (18.6)
+transaction type: /tmp/haven-inquiry-streaming.sql
+scaling factor: 1
+query mode: simple
+number of clients: 16
+number of threads: 2
+maximum number of tries: 1
+duration: 30 s
+number of transactions actually processed: 29497
+number of failed transactions: 0 (0.000%)
+number of transactions skipped: 0 (0.000%)
+number of transactions above the 200.0 ms latency limit: 0/29497 (0.000%)
+latency average = 3.721 ms
+latency stddev = 2.119 ms
+rate limit schedule lag: avg 0.382 (max 13.511) ms
+initial connection time = 337.473 ms
+tps = 994.272710 (without initial connection time)

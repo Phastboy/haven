@@ -4,6 +4,12 @@ use super::super::FeedQuery;
 use crate::app::components::{chip_row::ChipRowData, feed_filters::FeedFiltersData};
 use haven_domain::offer::{Category, PublicCriteria, PublicCriterion};
 
+struct FeedLink<'a> {
+    scope: &'a str,
+    category: &'a str,
+    after: Option<&'a str>,
+}
+
 pub(in crate::app::offers::feed) struct ParsedCriteria {
     pub(in crate::app::offers::feed) criteria: PublicCriteria,
     pub(in crate::app::offers::feed) controls: FeedFiltersData,
@@ -11,6 +17,13 @@ pub(in crate::app::offers::feed) struct ParsedCriteria {
 
 impl ParsedCriteria {
     pub(in crate::app::offers::feed) fn parse(query: Option<&FeedQuery>) -> Self {
+        let raw_scope = query
+            .and_then(|query| query.scope.as_deref())
+            .filter(|scope| !scope.is_empty())
+            .unwrap_or("public");
+        let scope_error = super::super::collection::Collection::parse(raw_scope)
+            .is_none()
+            .then(|| "Choose a valid collection.".to_string());
         let raw_category = query
             .and_then(|q| q.category.as_deref())
             .unwrap_or_default();
@@ -42,13 +55,18 @@ impl ParsedCriteria {
             }
         }
         let mut clear_serializer = url::form_urlencoded::Serializer::new(String::new());
+        append_scope(&mut clear_serializer, raw_scope);
         super::category::append_url(&mut clear_serializer, raw_category);
         let category_query = clear_serializer.finish();
         let mut clear_serializer = url::form_urlencoded::Serializer::new(String::new());
+        append_scope(&mut clear_serializer, raw_scope);
         super::category::append_url(&mut clear_serializer, raw_category);
         super::title::append_url(&mut clear_serializer, raw_title);
         let clear_query = clear_serializer.finish();
         let controls = FeedFiltersData {
+            scope: raw_scope.to_string(),
+            scope_error,
+            scope_row: None,
             category: raw_category.to_owned(),
             category_error,
             clear_filters_href: if category_query.is_empty() {
@@ -70,11 +88,17 @@ impl ParsedCriteria {
                 format!("/offers?{clear_query}")
             },
         };
-        Self { criteria, controls }
+        let mut parsed = Self { criteria, controls };
+        parsed.controls.scope_row = Some(super::super::collection::row(&parsed));
+        parsed
     }
 
     pub(in crate::app::offers::feed) fn href(&self, after: Option<&str>) -> String {
-        self.href_with_category(&self.controls.category, after)
+        self.href_to(FeedLink {
+            scope: &self.controls.scope,
+            category: &self.controls.category,
+            after,
+        })
     }
 
     pub(in crate::app::offers::feed) fn category_row(&self) -> ChipRowData {
@@ -82,15 +106,31 @@ impl ParsedCriteria {
     }
 
     pub(in crate::app::offers::feed) fn category_href(&self, category: Option<Category>) -> String {
-        self.href_with_category(category.map_or("", Category::as_str), None)
+        self.href_to(FeedLink {
+            scope: &self.controls.scope,
+            category: category.map_or("", Category::as_str),
+            after: None,
+        })
     }
 
-    fn href_with_category(&self, category: &str, after: Option<&str>) -> String {
+    pub(in crate::app::offers::feed) fn scope_href(
+        &self,
+        scope: super::super::collection::Collection,
+    ) -> String {
+        self.href_to(FeedLink {
+            scope: scope.label(),
+            category: &self.controls.category,
+            after: None,
+        })
+    }
+
+    fn href_to(&self, target: FeedLink<'_>) -> String {
         let mut serializer = url::form_urlencoded::Serializer::new(String::new());
-        super::category::append_url(&mut serializer, category);
+        append_scope(&mut serializer, target.scope);
+        super::category::append_url(&mut serializer, target.category);
         super::title::append_url(&mut serializer, &self.controls.title_query);
         super::price::append_url(&mut serializer, &self.controls);
-        if let Some(after) = after {
+        if let Some(after) = target.after {
             serializer.append_pair("after", after);
         }
         let query = serializer.finish();
@@ -99,5 +139,11 @@ impl ParsedCriteria {
         } else {
             format!("/offers?{query}")
         }
+    }
+}
+
+fn append_scope(serializer: &mut url::form_urlencoded::Serializer<'_, String>, scope: &str) {
+    if scope != "public" {
+        serializer.append_pair("scope", scope);
     }
 }

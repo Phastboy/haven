@@ -26,6 +26,8 @@ use chrono::Utc;
 #[derive(Default, Clone)]
 pub struct FakeOfferRepository {
     pub offers: Arc<Mutex<Vec<Offer>>>,
+    pub saved: Arc<Mutex<SavedOfferMap>>,
+    pub inquired: Arc<Mutex<SavedOfferMap>>,
     // (user_id, idempotency_key) -> Offer
     pub idemp: Arc<Mutex<HashMap<(UserId, uuid::Uuid), Offer>>>,
 }
@@ -123,6 +125,61 @@ impl OfferRepository for FakeOfferRepository {
             items: public_items,
             next_cursor,
         })
+    }
+
+    async fn list_personal(
+        &self,
+        query: &crate::offer::PersonalFeedQuery,
+    ) -> Result<crate::offer::PublicOfferPage, RepoError> {
+        use crate::offer::{ActivityPosition, PersonalCursor, PersonalScope};
+        let scope = query.scope();
+        let relations = match scope {
+            PersonalScope::Saved(_) => self.saved.lock().unwrap().clone(),
+            PersonalScope::Inquired(_) => self.inquired.lock().unwrap().clone(),
+        };
+        let offers = self.offers.lock().unwrap();
+        let mut matches: Vec<_> = offers
+            .iter()
+            .filter_map(|offer| {
+                let at = relations.get(&(scope.person(), offer.id))?;
+                if matches!(scope, PersonalScope::Inquired(person) if offer.user_id == person)
+                    || !offer.is_public()
+                    || !matches_personal_facets(offer, query.criteria())
+                {
+                    return None;
+                }
+                let position = ActivityPosition {
+                    at: *at,
+                    id: offer.id.as_uuid(),
+                };
+                if query
+                    .position()
+                    .is_some_and(|cursor| (position.at, position.id) >= (cursor.at, cursor.id))
+                {
+                    return None;
+                }
+                Some((offer.clone(), position))
+            })
+            .collect();
+        matches.sort_by(|a, b| (b.1.at, b.1.id).cmp(&(a.1.at, a.1.id)));
+        let has_more = matches.len() > 20;
+        matches.truncate(20);
+        let next_cursor = if has_more {
+            matches.last().map(|(_, position)| {
+                PersonalCursor::new(scope, query.criteria(), *position).encode()
+            })
+        } else {
+            None
+        };
+        let items = matches
+            .into_iter()
+            .map(|(offer, _)| crate::offer::PublicOffer {
+                offer,
+                maker_display_name: crate::user::DisplayName::parse("Test Maker").unwrap(),
+                maker_handle: crate::user::ProfileHandle::parse("test-maker").unwrap(),
+            })
+            .collect();
+        Ok(crate::offer::PublicOfferPage { items, next_cursor })
     }
 
     async fn list_by_user(
@@ -260,10 +317,7 @@ impl Default for FakeRegistry {
     fn default() -> Self {
         let offers = Box::new(FakeOfferRepository::default());
         Self {
-            saved_offers: Box::new(FakeSavedOfferRepository {
-                pairs: Arc::new(Mutex::new(HashMap::new())),
-                offers: offers.offers.clone(),
-            }),
+            saved_offers: Box::new(FakeSavedOfferRepository::for_offers(&offers)),
             offers,
             follows: Box::new(FakeFollowRepository::default()),
         }
@@ -278,6 +332,16 @@ pub struct FakeSavedOfferRepository {
     pub pairs: Arc<Mutex<SavedOfferMap>>,
     offers: Arc<Mutex<Vec<Offer>>>,
 }
+impl FakeSavedOfferRepository {
+    /// Shares saved relationships and offer visibility with a fake offer repository.
+    pub fn for_offers(offers: &FakeOfferRepository) -> Self {
+        Self {
+            pairs: offers.saved.clone(),
+            offers: offers.offers.clone(),
+        }
+    }
+}
+
 #[async_trait]
 impl crate::ports::SavedOfferRepository for FakeSavedOfferRepository {
     async fn is_saved(&self, user_id: UserId, offer_id: OfferId) -> Result<bool, RepoError> {
@@ -1004,4 +1068,23 @@ mod tests {
         let offers = repo.offers.lock().unwrap();
         assert_eq!(offers.len(), 1);
     }
+}
+
+fn matches_personal_facets(offer: &Offer, criteria: &crate::offer::PublicCriteria) -> bool {
+    criteria.iter().all(|criterion| match criterion {
+        crate::offer::PublicCriterion::Category(category) => offer.category == category,
+        crate::offer::PublicCriterion::Title(title) => offer
+            .title
+            .to_lowercase()
+            .contains(&title.as_str().to_lowercase()),
+        crate::offer::PublicCriterion::Price(price) => {
+            offer.currency == price.currency
+                && price
+                    .min
+                    .is_none_or(|min| offer.price.as_i32() >= min.as_i32())
+                && price
+                    .max
+                    .is_none_or(|max| offer.price.as_i32() <= max.as_i32())
+        }
+    })
 }

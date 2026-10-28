@@ -11,3 +11,5 @@
   .offers-feed > .feed-filters { margin-bottom: var(--space-3); }
   .offers-feed > .chip-row { margin-bottom: var(--space-3); }
 }
+
+.feed-filters > .chip-row { grid-column: 1 / -1; margin-inline: calc(-1 * var(--space-3)); max-width: calc(100% + 2 * var(--space-3)); }

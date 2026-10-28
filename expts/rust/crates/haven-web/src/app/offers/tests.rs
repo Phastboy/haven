@@ -9,6 +9,7 @@
 )]
 
 mod categories;
+mod personal;
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -166,11 +167,15 @@ impl Registry for TestRegistry {
 }
 
 pub(crate) fn setup_test_app() -> (topcoat::router::Router, TestRegistry) {
+    let offers_repo = FakeOfferRepository::default();
+    let saved_repo = Arc::new(haven_domain::fakes::FakeSavedOfferRepository::for_offers(
+        &offers_repo,
+    ));
     let registry = TestRegistry {
-        offers_repo: FakeOfferRepository::default(),
+        offers_repo,
         users_repo: TestUserRepository::default(),
         convs_repo: haven_domain::fakes::FakeConversationRepository::default(),
-        saved_repo: Arc::new(haven_domain::fakes::FakeSavedOfferRepository::default()),
+        saved_repo,
     };
 
     let state = crate::app::state::AppState {

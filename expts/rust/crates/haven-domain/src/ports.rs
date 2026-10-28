@@ -113,6 +113,12 @@ pub trait OfferRepository: Send + Sync {
         query: &crate::offer::PublicFeedQuery,
     ) -> Result<PublicOfferPage, RepoError>;
 
+    /// Retrieves only the authenticated person's saved or inquired collection.
+    async fn list_personal(
+        &self,
+        query: &crate::offer::PersonalFeedQuery,
+    ) -> Result<PublicOfferPage, RepoError>;
+
     async fn list_by_user(
         &self,
         user_id: UserId,

@@ -89,15 +89,16 @@ The [v0.7 narrowing plan](../expts/rust/V0.7_PLAN.md) now starts with typed
 submit the same controls, see the same validation/summary, retain criteria across
 paging and save-return links, and receive offers ordered by the existing public
 keyset. Offerers' publishing journey is unchanged. Scope is separate from facets;
-the public query API accepts only Public. Saved and Inquired are type definitions,
-with no personal retrieval, cursor or cache behavior implemented yet.
+the public query API accepts only Public. Saved and Inquired now have separate personal retrieval with actor/scope/facet-bound
+activity cursors. Saved orders by save-row time/id; Inquired streams the latest
+qualifying sent message with participant and non-owner checks. Regression and HTTP
+performance validation of these paths remain pending.
 
 There is no prelaunch real-title inventory gate: Haven is deployed but unlaunched
 and has no real offers. Accept vocabulary by owner decision, review names/control
 at 390px before migration, and schedule real-title grouping after launch. Existing
 slugs freeze at launch; prelaunch renames/merges may use migrations and new
-categories may be added later. Synthetic fixtures test performance, not taxonomy. Tags remain
-pending owner acceptance. After category, Saved uses its existing index. Before
+categories may be added later. Synthetic fixtures test performance, not taxonomy. Tags are deferred until further notice by owner decision on 2026-10-28. After category, Saved uses its existing index. Before
 Inquired is built, spike dense read-time aggregation; if it misses the contract
 budget, use maintained last-inquiry rows with a qualifying-message write and
 backfill. Record evidence and the design choice before building. Personal cursor
@@ -128,7 +129,25 @@ images disabled; photo delivery is outside that review. Malformed numeric filter
 return 400 rather than silently dropping category. No narrowing item or performance
 gate is marked complete; v0.7 load testing remains pending.
 
+### Personal narrowing journey (implemented, verification pending)
+
+Responders select All offers, Saved or Inquired in the filter controls. A personal
+URL always refers to the signed-in recipient's own collection. Guests sign in
+with a validated local return destination that preserves facets. Personal pages
+show their collection name, use private/no-store and noindex, and retain scope
+across category links, forms, pagination and save-return navigation. Changing scope
+or facets drops the cursor; invalid or differently bound cursors restart with a
+notice. Saved retains save-time order, with unavailable offers omitted from this
+feed (the profile collection keeps its existing placeholders). Inquired uses latest
+qualifying sent-message time; replies, self-offer messages and mismatched participant
+pairs do not qualify. The dense SQL spike selected indexed latest-message streaming;
+see V0.7_PLAN.md and V0.7_INQUIRY_SPIKE.txt. HTTP load gates are still pending.
+
 ### Decided for v0.7
+
+- Tags are deferred until further notice (owner, 2026-10-28). People cannot add
+  or filter tags today; categories and title search cover current discovery needs.
+  No future version or tag interaction model is assigned.
 
 - The owner accepts eleven launch categories on judgement, including Food & groceries
   and Stays & accommodation, as a hypothesis for post-launch review. A final names

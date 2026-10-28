@@ -1,4 +1,5 @@
 mod category;
+mod personal;
 
 use super::*;
 use haven_domain::offer::{CreateOffer, CurrencyCode, Price, UpdateOffer};
