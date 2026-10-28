@@ -43,8 +43,9 @@ pub async fn listing_card(props: ListingCardData) -> TopcoatResult<impl View> {
     Ok(
         view! { <li id=(format!("offer-{}", props.slug.as_str())) class="listing-card">
             <div class="listing-card-media">
+                <span class="cover-fallback" role="img" aria-label="Image unavailable">"Image unavailable"</span>
                 if let Some(src) = props.cover_url {
-                    <img class="listing-card-image" src=(src) srcset=(props.cover_srcset.unwrap_or_default()) alt="" loading=(loading) />
+                    <img class="listing-card-image" data-cover-image="" width="320" height="320" src=(src) srcset=(props.cover_srcset.unwrap_or_default()) alt="" loading=(loading) />
                 } else {
                     <div class="listing-card-placeholder" aria-hidden="true"></div>
                 }
@@ -84,6 +85,8 @@ mod tests {
         }) };
         let html = card.single().await.expect("single component").render(__cx);
         assert!(html.contains("listing-card-image"));
+        assert!(html.contains("data-cover-image"));
+        assert!(html.contains("Image unavailable"));
         assert!(html.contains("&lt;Wood chair&gt;"));
         assert!(html.contains("Maker &amp; Co"));
         assert!(html.contains("loading=\"eager\""));

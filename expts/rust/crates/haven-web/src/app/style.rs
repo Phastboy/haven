@@ -29,6 +29,14 @@ pub async fn stylesheet() -> TopcoatResult<Css<&'static str>> {
     Ok(Css(STYLESHEET))
 }
 
+/// Serves the CSP-compatible offer cover delivery fallback.
+#[route(GET "/cover-images.js")]
+pub async fn cover_images_script() -> TopcoatResult<topcoat::router::content::Js<&'static str>> {
+    Ok(topcoat::router::content::Js(include_str!(
+        "../../static/cover-images.js"
+    )))
+}
+
 #[cfg(test)]
 mod tests {
     use http::Request;

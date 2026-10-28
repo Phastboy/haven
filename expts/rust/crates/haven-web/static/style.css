@@ -1541,3 +1541,18 @@ body:has(.offer-detail) .app-shell-content { padding-top: var(--space-4); paddin
 
 
 
+
+/* A successful image covers the fallback; failed images are hidden by cover-images.js.
+   The background and text also remain in place when JavaScript is unavailable. */
+.cover-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  font-size: 0.875rem;
+}
+[data-cover-image] { position: relative; background: transparent; }
+[data-cover-image][hidden] { display: none; }
+.cover-fallback[hidden] { display: none; }

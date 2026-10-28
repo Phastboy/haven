@@ -1,0 +1,46 @@
+{
+  "revision": 1,
+  "quality_policy": "Cloudinary default (no q parameter), preserving setup_cloudinary.sh policy",
+  "transformations": {
+    "avatar": {
+      "definition": "c_fill,w_96,h_96,f_webp,g_face",
+      "allowed_for_strict": true
+    },
+    "avatar_2x": {
+      "definition": "c_fill,w_192,h_192,f_webp,g_face",
+      "allowed_for_strict": true
+    },
+    "thumb": {
+      "definition": "c_fill,w_120,h_90,f_webp",
+      "allowed_for_strict": true
+    },
+    "thumb_2x": {
+      "definition": "c_fill,w_240,h_180,f_webp",
+      "allowed_for_strict": true
+    },
+    "card": {
+      "definition": "c_fill,w_320,h_240,f_webp",
+      "allowed_for_strict": true
+    },
+    "card_2x": {
+      "definition": "c_fill,w_640,h_480,f_webp",
+      "allowed_for_strict": true
+    },
+    "card_sq": {
+      "definition": "c_fill,w_320,h_320,f_webp",
+      "allowed_for_strict": true
+    },
+    "card_sq_2x": {
+      "definition": "c_fill,w_640,h_640,f_webp",
+      "allowed_for_strict": true
+    },
+    "detail": {
+      "definition": "c_fill,w_640,h_480,f_webp",
+      "allowed_for_strict": true
+    },
+    "detail_2x": {
+      "definition": "c_fill,w_960,h_720,f_webp",
+      "allowed_for_strict": true
+    }
+  }
+}
