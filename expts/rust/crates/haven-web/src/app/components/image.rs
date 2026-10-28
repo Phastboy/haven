@@ -168,6 +168,49 @@ mod tests {
     use super::*;
 
     #[test]
+    fn provisioning_manifest_covers_every_builder_variant() -> Result<(), Box<dyn std::error::Error>>
+    {
+        let manifest: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../../bin/cloudinary_transformations.json"
+        ))?;
+        let transforms = manifest
+            .get("transformations")
+            .and_then(serde_json::Value::as_object)
+            .ok_or("missing transformations")?;
+        assert_eq!(transforms.len(), 10);
+        for variant in [
+            ImageVariant::Avatar,
+            ImageVariant::Thumb,
+            ImageVariant::Card,
+            ImageVariant::CardSquare,
+            ImageVariant::Detail,
+        ] {
+            for dpr in [ImageDpr::Dpr1x, ImageDpr::Dpr2x] {
+                let name = variant.transformation_name(dpr).trim_start_matches("t_");
+                let entry = transforms.get(name).ok_or("missing variant")?;
+                let (width, height) = variant.dimensions(dpr);
+                let parameters: Vec<_> = entry
+                    .get("definition")
+                    .and_then(serde_json::Value::as_str)
+                    .ok_or("missing definition")?
+                    .split(',')
+                    .collect();
+                assert!(parameters.contains(&format!("w_{width}").as_str()));
+                assert!(parameters.contains(&format!("h_{height}").as_str()));
+                assert!(parameters.contains(&"c_fill"));
+                assert!(parameters.contains(&"f_webp"));
+                assert_eq!(
+                    entry
+                        .get("allowed_for_strict")
+                        .and_then(serde_json::Value::as_bool),
+                    Some(true)
+                );
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
     fn test_transformation_names_and_dimensions() {
         assert_eq!(
             ImageVariant::Avatar.transformation_name(ImageDpr::Dpr1x),

@@ -255,3 +255,14 @@ A person looking at an offer can find out who made it, and from there see everyt
 ### Done when (from the roadmap)
 
 An offer created by one person can be seen by another person, and the system meets its load-testing target.
+
+
+## Released cover delivery repair (v0.6 patch)
+
+The Offerer still supplies private offer photos. Responders can continue opening
+an offer even if its cover fails to load: feed, profile and saved cards retain
+their title, price, links and media space with “Image unavailable” feedback.
+The CDN setup now versions every named image variant and checks configuration
+before deployment. This repairs released behavior independently of v0.7.
+See [patch verification](COVER_PATCH.md) for the live CDN check
+and remaining validation limits. The UI change is not yet deployed.
