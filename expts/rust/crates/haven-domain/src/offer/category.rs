@@ -133,7 +133,7 @@ mod tests {
         for category in Category::ALL {
             assert_eq!(Category::parse(category.as_str()), Ok(category));
             assert!(slugs.insert(category.as_str()));
-            assert!(!category.label().is_empty());
+            assert_ne!(category.label(), "");
         }
         for invalid in ["", "food", "Food-groceries", "other "] {
             assert_eq!(Category::parse(invalid), Err(CategoryError));

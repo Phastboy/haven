@@ -208,12 +208,12 @@
       false,
       false,
       false,
-      false,
-      false,
-      false,
-      false,
-      false,
-      false
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
     ]
   },
   "hash": "705325ff69e7faf5308761d2702bdf8f5d1c8ccc6a96db76b4e565c8394dffed"

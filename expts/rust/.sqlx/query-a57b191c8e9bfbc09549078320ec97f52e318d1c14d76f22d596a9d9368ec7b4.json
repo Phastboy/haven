@@ -49,12 +49,7 @@
         "ordinal": 7,
         "name": "category!",
         "type_info": "Text",
-        "origin": {
-          "Table": {
-            "table": "offer",
-            "name": "category"
-          }
-        }
+        "origin": "Expression"
       },
       {
         "ordinal": 8,
@@ -102,7 +97,7 @@
       null,
       null,
       null,
-      false,
+      null,
       null,
       null,
       null,
