@@ -77,26 +77,18 @@ impl OfferRepository for FakeOfferRepository {
                 if !o.is_public() {
                     return false;
                 }
-                if let Some(ref title_q) = query.filter.title {
-                    let needle = title_q.as_str().to_lowercase();
-                    if !o.title.to_lowercase().contains(&needle) {
-                        return false;
+                if !query.criteria.iter().all(|criterion| match criterion {
+                    crate::offer::PublicCriterion::Title(title) => o
+                        .title
+                        .to_lowercase()
+                        .contains(&title.as_str().to_lowercase()),
+                    crate::offer::PublicCriterion::Price(price) => {
+                        o.currency == price.currency
+                            && price.min.is_none_or(|min| o.price.as_i32() >= min.as_i32())
+                            && price.max.is_none_or(|max| o.price.as_i32() <= max.as_i32())
                     }
-                }
-                if let Some(ref pf) = query.filter.price {
-                    if o.currency != pf.currency {
-                        return false;
-                    }
-                    if let Some(min_p) = pf.min
-                        && o.price.as_i32() < min_p.as_i32()
-                    {
-                        return false;
-                    }
-                    if let Some(max_p) = pf.max
-                        && o.price.as_i32() > max_p.as_i32()
-                    {
-                        return false;
-                    }
+                }) {
+                    return false;
                 }
                 if let Some(ref c) = query.cursor
                     && (o.created_at, o.id.as_uuid()) >= (c.created_at, c.id.as_uuid())

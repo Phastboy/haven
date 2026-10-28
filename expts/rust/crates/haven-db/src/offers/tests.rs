@@ -128,7 +128,7 @@ async fn test_update_patch_semantics(pool: PgPool) {
     // Fetch first page of 3 items
     let page1 = repo
         .list_public(&haven_domain::offer::PublicFeedQuery::new(
-            haven_domain::offer::OfferFilter::default(),
+            haven_domain::offer::PublicCriteria::default(),
             None,
             3,
         ))
@@ -142,7 +142,7 @@ async fn test_update_patch_semantics(pool: PgPool) {
     let cursor = haven_domain::offer::OfferCursor::decode(&cursor_str).unwrap();
     let page2 = repo
         .list_public(&haven_domain::offer::PublicFeedQuery::new(
-            haven_domain::offer::OfferFilter::default(),
+            haven_domain::offer::PublicCriteria::default(),
             Some(cursor),
             3,
         ))
@@ -326,7 +326,7 @@ async fn test_offers_search_and_price_filtering(pool: PgPool) {
     let search_title = haven_domain::offer::SearchQuery::parse("Wooden").unwrap();
     let res_title = repo
         .list_public(&haven_domain::offer::PublicFeedQuery::new(
-            haven_domain::offer::OfferFilter {
+            haven_domain::offer::PublicCriteria {
                 title: Some(search_title),
                 price: None,
             },
@@ -344,7 +344,7 @@ async fn test_offers_search_and_price_filtering(pool: PgPool) {
     let free_filter = haven_domain::offer::PriceFilter::free(CurrencyCode::Ngn);
     let res_free = repo
         .list_public(&haven_domain::offer::PublicFeedQuery::new(
-            haven_domain::offer::OfferFilter {
+            haven_domain::offer::PublicCriteria {
                 title: None,
                 price: Some(free_filter),
             },
@@ -367,7 +367,7 @@ async fn test_offers_search_and_price_filtering(pool: PgPool) {
     .unwrap();
     let res_range = repo
         .list_public(&haven_domain::offer::PublicFeedQuery::new(
-            haven_domain::offer::OfferFilter {
+            haven_domain::offer::PublicCriteria {
                 title: None,
                 price: Some(range_filter),
             },
@@ -384,7 +384,7 @@ async fn test_offers_search_and_price_filtering(pool: PgPool) {
     // 4. Combined title search ("Wooden") + Free filter -> should return o2 only
     let res_combined = repo
         .list_public(&haven_domain::offer::PublicFeedQuery::new(
-            haven_domain::offer::OfferFilter {
+            haven_domain::offer::PublicCriteria {
                 title: Some(haven_domain::offer::SearchQuery::parse("Wooden").unwrap()),
                 price: Some(free_filter),
             },

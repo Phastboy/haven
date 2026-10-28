@@ -17,7 +17,7 @@ use uuid::Uuid;
 
 pub use currency::{CurrencyCode, SUPPORTED_CURRENCIES};
 pub use cursor::{OfferCursor, OfferPage};
-pub use filter::{OfferFilter, PriceFilter, SearchQuery};
+pub use filter::{PriceFilter, PublicCriteria, PublicCriterion, Scope, SearchQuery};
 pub use price::Price;
 pub use slug::{MAX_SLUG_CHARS, MIN_SLUG_CHARS, OfferSlug, RESERVED_SLUGS};
 pub use validation::{
@@ -31,8 +31,9 @@ pub use crate::user::{DisplayName, ProfileHandle, UserId};
 /// Query parameters for listing public offers on the feed.
 #[derive(Debug, Clone, Default)]
 pub struct PublicFeedQuery {
+    scope: Scope,
     /// Criteria for filtering offers by title, price, and currency.
-    pub filter: OfferFilter,
+    pub criteria: PublicCriteria,
     /// Optional keyset cursor to paginate after.
     pub cursor: Option<OfferCursor>,
     /// Maximum number of items to return in a single page.
@@ -40,11 +41,20 @@ pub struct PublicFeedQuery {
 }
 
 impl PublicFeedQuery {
+    /// Returns the collection permitted by this public-only query type.
+    ///
+    /// Personal scope variants cannot be passed to this API and silently ignored.
+    #[must_use]
+    pub fn scope(&self) -> Scope {
+        self.scope
+    }
+
     /// Constructs a new public feed query.
     #[must_use]
-    pub fn new(filter: OfferFilter, cursor: Option<OfferCursor>, limit: usize) -> Self {
+    pub fn new(criteria: PublicCriteria, cursor: Option<OfferCursor>, limit: usize) -> Self {
         Self {
-            filter,
+            scope: Scope::Public,
+            criteria,
             cursor,
             limit,
         }

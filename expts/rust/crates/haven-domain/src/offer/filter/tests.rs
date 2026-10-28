@@ -1,4 +1,5 @@
 use super::*;
+use crate::error::FilterValidationError;
 use crate::offer::currency::CurrencyCode;
 use crate::offer::price::Price;
 
@@ -59,13 +60,42 @@ fn test_price_filter_validation() {
 }
 
 #[test]
-fn test_offer_filter_empty() {
-    let filter = OfferFilter::default();
+fn test_public_criteria_empty() {
+    let filter = PublicCriteria::default();
     assert!(filter.is_empty());
 
-    let with_title = OfferFilter {
+    let with_title = PublicCriteria {
         title: Some(SearchQuery::parse("test").unwrap()),
         price: None,
     };
     assert!(!with_title.is_empty());
+}
+
+#[test]
+fn public_criteria_composes_title_and_price_in_order() {
+    let criteria = PublicCriteria {
+        title: Some(SearchQuery::parse("  wooden desk ").unwrap()),
+        price: Some(PriceFilter::free(CurrencyCode::Ngn)),
+    };
+    let mut facets = criteria.iter();
+    assert!(
+        matches!(facets.next(), Some(PublicCriterion::Title(title)) if title.as_str() == "wooden desk")
+    );
+    assert!(matches!(facets.next(), Some(PublicCriterion::Price(price)) if price.is_free_only()));
+    assert!(facets.next().is_none());
+}
+
+#[test]
+fn public_feed_query_keeps_scope_separate_from_facets() {
+    let criteria = PublicCriteria {
+        title: None,
+        price: Some(PriceFilter::free(CurrencyCode::Usd)),
+    };
+    let query = crate::offer::PublicFeedQuery::new(criteria.clone(), None, 20);
+    assert_eq!(query.scope(), Scope::Public);
+    assert_eq!(query.criteria, criteria);
+    assert_eq!(
+        crate::offer::PublicFeedQuery::default().scope(),
+        Scope::Public
+    );
 }
