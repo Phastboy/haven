@@ -1,5 +1,6 @@
 //! PostgreSQL implementation of `OfferRepository` and submodule assembly.
 
+mod criteria;
 pub mod feed;
 pub mod images;
 pub mod queries;

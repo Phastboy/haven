@@ -3,7 +3,7 @@
     reason = "Root layout with desktop and mobile nav shells and unread badge"
 )]
 
-use haven_domain::offer::{OfferFilter, PublicFeedQuery};
+use haven_domain::offer::{PublicCriteria, PublicFeedQuery};
 use topcoat::asset::{AssetBundle, RouterBuilderAssetExt};
 use topcoat::{
     Result as TopcoatResult,
@@ -157,7 +157,7 @@ pub async fn index(cx: &Cx) -> TopcoatResult<impl topcoat::view::View> {
         return Err(topcoat::router::error::redirect("/offers").into());
     }
 
-    let query = PublicFeedQuery::new(OfferFilter::default(), None, 8);
+    let query = PublicFeedQuery::new(PublicCriteria::default(), None, 8);
     let page = crate::app::state::registry(cx)
         .offers()
         .list_public(&query)
