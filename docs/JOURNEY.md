@@ -14,7 +14,7 @@ Status: draft. Only entries under **Decided** were confirmed by the owner. The w
 | 0.4.x | Can someone act on it? | know about expressed interest | express willingness to take on an offer | inquiry and communication | completed | |
 | 0.5.x | Can someone find it? | | find an offer by name, narrow by price | | completed | met; aggregate p95 28.0ms / p99 31.4ms |
 | 0.6.x | Can I come back to what I care about? | | save an offer, follow a person, return to both | | completed | met; aggregate p95 17.8ms / p99 23.4ms |
-| 0.7.x | Can I narrow it down? | | narrow by category, tags, saved, inquired about | | not reached | |
+| 0.7.x | Can I narrow it down? | | narrow by category, tags, saved, inquired about | | in progress | |
 | 0.8.x to 0.9.x | TBD | | | | not reached | |
 | 1.0.x | Can two people close an offer? | | | agreement, closing | not reached | |
 | 1.x | TBD | | | | not reached | |
@@ -109,7 +109,7 @@ separate lane: include deep visible offers and remove deleted/unavailable offers
 its acceptance does not block the narrowing gate. No new narrowing journey or
 performance gate is marked complete by this refactor.
 
-### Category chip journey (implemented, pending final verification)
+### Category chip journey (implemented and regression-verified)
 
 Offerers choose one required category in create/edit; validation retains their
 entered values. Responders browse all eleven categories through the existing
@@ -120,10 +120,13 @@ Compact browse labels use the full accepted names as accessible labels. Category
 alone adds no duplicate summary or price badge. Invalid categories show validation
 and no unfiltered offers; empty-category and combined-filter empty states differ.
 
-Generic Chip/ChipRow passed isolated Part 1 CI and responsive CSS checks. The
-assembled category journey and its regression tests await the final verification
-pass; only formatting and diff checks run during Part 2 per owner direction. No
-narrowing item or performance gate is marked complete.
+The assembled journey passed [integrated CI](https://github.com/Phastboy/haven/actions/runs/40699691494)
+on commit `699ec12`, including fresh migrations, regenerated SQLx metadata, database
+and route regressions, build, lint and documentation checks. Synthetic SSR snapshots
+passed responsive review at 390px, 768px, 1024px and 1440px with JavaScript and
+images disabled; photo delivery is outside that review. Malformed numeric filters
+return 400 rather than silently dropping category. No narrowing item or performance
+gate is marked complete; v0.7 load testing remains pending.
 
 ### Decided for v0.7
 
