@@ -49,9 +49,11 @@ cargo test -p haven-web app::style
 ## Delivery fallback
 
 Both card components retain their media dimensions, title, price and links.
-A same-origin deferred script captures load/error events, handles cached failures
-and inspects cards inserted by the runtime. Failed images are hidden; successful
-images hide the accessible “Image unavailable” text. There are no inline event
+On pages with cards, a same-origin deferred script captures load/error events, handles cached failures
+and inspects cards inserted by the runtime. The fallback starts decorative (`aria-hidden="true"`), so loading and
+JavaScript-disabled successful images do not announce a failure. Confirmed failures
+hide the image and expose “Image unavailable”; successful images hide the fallback.
+Offer detail pages retain their script-free layout. There are no inline event
 handlers, retries, URL changes or visibility mutations. The existing CSP permits
 the script. Background/text remain behind the image without JavaScript.
 
@@ -80,3 +82,13 @@ builds. Browser acceptance steps from the original plan are therefore not run.
   as passing.
 - Newly uploaded asset delivery, full image decoding and rendered page behavior
   remain unverified. The UI patch has not been deployed or released.
+
+
+## PR #41 follow-up
+
+The fallback script is scoped to non-detail pages, preserving the public detail
+route's existing no-script assertion. Admin API JSON must be an object; non-object
+success bodies fail with a redacted error before any provisioning write. Fallback
+text starts hidden from assistive technology and is exposed only after failure.
+Eight Python tests and CLI JavaScript checks cover these review fixes. The Rust
+suite is left to CI under the owner's lightweight CLI-only verification constraint.

@@ -48,7 +48,7 @@ pub async fn offer_card(
     Ok(view! {
         <li id=(card_id) class="offer-card">
             <div class="offer-card-media">
-                <span class="cover-fallback" role="img" aria-label="Image unavailable">"Image unavailable"</span>
+                <span class="cover-fallback" aria-hidden="true" role="img" aria-label="Image unavailable">"Image unavailable"</span>
                 if let Some(src) = cover_image_url {
                     if is_above_fold {
                         <img

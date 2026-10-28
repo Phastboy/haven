@@ -5,7 +5,11 @@ const fs = require('node:fs');
 const source = fs.readFileSync(__dirname + '/cover-images.js', 'utf8');
 
 function fixture(complete, naturalWidth) {
-  const fallback = {hidden: false};
+  const fallback = {hidden: false, ariaHidden: 'true',
+    setAttribute(name, value) {
+      assert.equal(name, 'aria-hidden');
+      this.ariaHidden = value;
+    }};
   const image = {complete, naturalWidth, hidden: false,
     matches: selector => selector === 'img[data-cover-image]',
     parentElement: {querySelector: () => fallback}};
@@ -23,11 +27,18 @@ test('cached decode or delivery failure preserves fallback and hides broken imag
   const {image, fallback} = fixture(true, 0);
   assert.equal(image.hidden, true);
   assert.equal(fallback.hidden, false);
+  assert.equal(fallback.ariaHidden, 'false');
 });
 test('successful cached delivery hides fallback', () => {
   const {image, fallback} = fixture(true, 320);
   assert.equal(image.hidden, false);
   assert.equal(fallback.hidden, true);
+  assert.equal(fallback.ariaHidden, 'true');
+});
+test('loading images do not announce a delivery failure', () => {
+  const {image, fallback} = fixture(false, 0);
+  assert.equal(image.hidden, false);
+  assert.equal(fallback.ariaHidden, 'true');
 });
 test('lazy srcset failure and subsequent success settle without retrying URLs', () => {
   const f = fixture(false, 0);

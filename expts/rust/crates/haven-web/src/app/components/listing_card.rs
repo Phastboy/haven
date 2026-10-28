@@ -43,7 +43,7 @@ pub async fn listing_card(props: ListingCardData) -> TopcoatResult<impl View> {
     Ok(
         view! { <li id=(format!("offer-{}", props.slug.as_str())) class="listing-card">
             <div class="listing-card-media">
-                <span class="cover-fallback" role="img" aria-label="Image unavailable">"Image unavailable"</span>
+                <span class="cover-fallback" aria-hidden="true" role="img" aria-label="Image unavailable">"Image unavailable"</span>
                 if let Some(src) = props.cover_url {
                     <img class="listing-card-image" data-cover-image="" width="320" height="320" src=(src) srcset=(props.cover_srcset.unwrap_or_default()) alt="" loading=(loading) />
                 } else {

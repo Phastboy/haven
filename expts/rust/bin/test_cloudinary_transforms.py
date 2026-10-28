@@ -1,7 +1,9 @@
 """Credential-free provisioning regression tests."""
 import json
+import io
+from unittest.mock import Mock
 import unittest
-from cloudinary_transforms import MANIFEST, ProvisionError, reconcile
+from cloudinary_transforms import AdminAPI, MANIFEST, ProvisionError, reconcile
 
 
 class FakeAPI:
@@ -23,6 +25,19 @@ class FakeAPI:
 class ProvisionTests(unittest.TestCase):
     def setUp(self):
         self.manifest = json.loads(MANIFEST.read_text())
+
+    def test_non_object_api_response_fails_before_provisioning(self):
+        for body in [None, [], 'unexpected', 42, True]:
+            with self.subTest(body=body):
+                api = AdminAPI('test-cloud', 'redacted-key', 'redacted-secret')
+                response = io.StringIO(json.dumps(body))
+                api.opener = Mock()
+                api.opener.open.return_value = response
+                with self.assertRaisesRegex(ProvisionError, 'GET avatar: malformed response'):
+                    reconcile(api, self.manifest, True)
+                self.assertEqual(api.opener.open.call_count, 1)
+                request = api.opener.open.call_args.args[0]
+                self.assertEqual(request.get_method(), 'GET')
 
     def test_missing_check_is_read_only(self):
         api = FakeAPI()
