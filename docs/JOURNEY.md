@@ -2,7 +2,7 @@
 
 One story, two lanes. Lanes are roles, not people: the **Offerer** (the person making an offer) and the **Responder** (the person responding to it). One person can play both. Stages follow `ROADMAP.md`; only the current stage is detailed.
 
-Status: draft. Only entries under **Decided** were confirmed by the owner. The workspace package version is 0.6.0. Stages 0.1.x through 0.6.x are complete; 0.7.x has not started.
+Status: draft. Only entries under **Decided** were confirmed by the owner. The workspace package version is 0.6.0. Stages 0.1.x through 0.6.x are complete; v0.7 has begun with the behavior-preserving title/price criteria refactor. Narrowing journeys and their performance gate remain incomplete.
 
 ## The story at a glance
 
@@ -11,10 +11,10 @@ Status: draft. Only entries under **Decided** were confirmed by the owner. The w
 | 0.1.x | Can I offer something? | create account, sign in, create / see own / edit / delete an offer | none yet | none | completed | met historical baseline (see PERFORMANCE_CONTRACT.md) |
 | 0.2.x | Can someone see it? | offer becomes public on create (generates slug); manage own via `/offers/manage/{id}` | see available offers (public feed), see another person's offer (`/offers/{slug}`) | an offer becomes visible to others | completed | met ≥ 1,200 iters/s host direct |
 | 0.3.x | Can I know who is behind an offer? | has profile, edits profile; profile shell wraps identity overview, offers management, and account | sees who made an offer, visits public profile, sees maker's offers | knowing who is behind an offer | completed | met target; keyset pagination |
-| 0.4.x | Can someone act on it? | know about expressed interest | express willingness to take on an offer | commitment | completed | |
+| 0.4.x | Can someone act on it? | know about expressed interest | express willingness to take on an offer | inquiry and communication | completed | |
 | 0.5.x | Can someone find it? | | find an offer by name, narrow by price | | completed | met; aggregate p95 28.0ms / p99 31.4ms |
 | 0.6.x | Can I come back to what I care about? | | save an offer, follow a person, return to both | | completed | met; aggregate p95 17.8ms / p99 23.4ms |
-| 0.7.x | Can I narrow it down? | | narrow by category, tags, saved, committed | | not reached | |
+| 0.7.x | Can I narrow it down? | | narrow by category, tags, saved, inquired about | | not reached | |
 | 0.8.x to 0.9.x | TBD | | | | not reached | |
 | 1.0.x | Can two people close an offer? | | | agreement, closing | not reached | |
 | 1.x | TBD | | | | not reached | |
@@ -77,14 +77,42 @@ sequenceDiagram
 ### Deferred dependencies
 - Formal contract closing and mutual agreement. Belongs to 1.0.x. Current behaviour until then: informal communication and status progression only.
 - Payment processing and escrow. Belongs to 2.0.x. Current behaviour until then: no money handling.
-- Category, tag, saved, and committed-offer filters. Belong to 0.7.x.
+- Category, tag, saved, and inquired-about filters. Belong to 0.7.x.
 
 ### Done when (from the roadmap)
 An offer can receive a meaningful response from another person, and the system meets its load-testing target.
 
+## Stage 0.7.x: Can I narrow it down? (criteria refactor)
+
+The [v0.7 narrowing plan](../expts/rust/V0.7_PLAN.md) now starts with typed
+`PublicCriteria` composition for the existing title/price journey. Responders
+submit the same controls, see the same validation/summary, retain criteria across
+paging and save-return links, and receive offers ordered by the existing public
+keyset. Offerers' publishing journey is unchanged. Scope is separate from facets;
+the public query API accepts only Public. Saved and Inquired are type definitions,
+with no personal retrieval, cursor or cache behavior implemented yet.
+
+Category vocabulary and permanent slugs require accepted real-title groupings
+before schema or forms. Synthetic titles cannot settle that decision. Tags remain
+pending owner acceptance. After category, Saved uses its existing index. Before
+Inquired is built, spike dense read-time aggregation; if it misses the contract
+budget, use maintained last-inquiry rows with a qualifying-message write and
+backfill. Record evidence and the design choice before building. Personal cursor
+encode/decode and normalized-facet binding tests precede repository queries.
+
+The [cover patch](COVER_PATCH.md) is merged independently. Sitemap discovery is a
+separate lane: include deep visible offers and remove deleted/unavailable offers;
+its acceptance does not block the narrowing gate. No new narrowing journey or
+performance gate is marked complete by this refactor.
+
+### Decided for v0.7
+
+- Inquiry is non-binding communication. Messaging someone about an offer does
+  not signify commitment. The filter is for offers a person has inquired about.
+
 ## Stage 0.6.x: Can I come back to what I care about? (completed)
 
-The feature checklist is implemented and the load-test gate is recorded as met in [`crates/haven-web/load-tests/SCORECARD.md`](../expts/rust/crates/haven-web/load-tests/SCORECARD.md). Stage 0.7.x has not started.
+The feature checklist is implemented and the load-test gate is recorded as met in [`crates/haven-web/load-tests/SCORECARD.md`](../expts/rust/crates/haven-web/load-tests/SCORECARD.md). Stage 0.7.x has begun with the title/price criteria refactor; its narrowing gate remains unmet.
 
 ### Untangled items
 

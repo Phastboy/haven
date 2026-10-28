@@ -1,0 +1,429 @@
+BEGIN
+SET
+SELECT 120196
+CREATE INDEX
+CREATE INDEX
+SELECT 10000
+CREATE INDEX
+SELECT 30000
+INSERT 0 5
+INSERT 0 5
+CREATE INDEX
+ANALYZE
+ANALYZE
+ANALYZE
+                                                                                                       QUERY PLAN
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.99..618.70 rows=21 width=52) (actual time=0.166..2.890 rows=21.00 loops=1)
+   Buffers: local hit=457 read=203
+   ->  Nested Loop Semi Join  (cost=0.99..191666.78 rows=6516 width=52) (actual time=0.115..2.831 rows=21.00 loops=1)
+         Buffers: local hit=457 read=203
+         ->  Index Scan using offer_created_at_id_idx on offer o  (cost=0.42..22415.75 rows=120186 width=68) (actual time=0.036..1.612 rows=191.00 loops=1)
+               Filter: (user_id <> '00000000-0000-0000-0000-000000000001'::uuid)
+               Index Searches: 1
+               Buffers: local hit=24 read=170
+         ->  Nested Loop  (cost=0.57..1.40 rows=1 width=48) (actual time=0.005..0.005 rows=0.11 loops=191)
+               Join Filter: (((c.user_low = '00000000-0000-0000-0000-000000000001'::uuid) AND (c.user_high = o.user_id)) OR ((c.user_high = '00000000-0000-0000-0000-000000000001'::uuid) AND (c.user_low = o.user_id)))
+               Buffers: local hit=433 read=33
+               ->  Index Scan using message_offer_id_created_at_idx on message m  (cost=0.29..0.36 rows=3 width=32) (actual time=0.004..0.004 rows=0.11 loops=191)
+                     Index Cond: (offer_id = o.id)
+                     Filter: (sender_id = '00000000-0000-0000-0000-000000000001'::uuid)
+                     Index Searches: 191
+                     Buffers: local hit=383 read=20
+               ->  Index Scan using conversation_id_idx on conversation c  (cost=0.29..0.33 rows=1 width=48) (actual time=0.009..0.009 rows=1.00 loops=21)
+                     Index Cond: (id = m.conversation_id)
+                     Index Searches: 21
+                     Buffers: local hit=50 read=13
+ Planning:
+   Buffers: shared hit=81, local hit=7 read=9
+ Planning Time: 1.357 ms
+ Execution Time: 2.950 ms
+(24 rows)
+
+                                                                                                                  QUERY PLAN
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=3981.56..3981.59 rows=10 width=52) (actual time=123.692..123.700 rows=21.00 loops=1)
+   Buffers: local hit=90204 read=562
+   ->  Sort  (cost=3981.56..3981.59 rows=10 width=52) (actual time=123.690..123.696 rows=21.00 loops=1)
+         Sort Key: (max(m.created_at)) DESC, o.id DESC
+         Sort Method: top-N heapsort  Memory: 29kB
+         Buffers: local hit=90204 read=562
+         ->  Nested Loop  (cost=3897.06..3981.39 rows=10 width=52) (actual time=78.425..119.570 rows=10000.00 loops=1)
+               Buffers: local hit=90204 read=562
+               ->  GroupAggregate  (cost=3896.64..3896.82 rows=10 width=24) (actual time=78.404..89.964 rows=10000.00 loops=1)
+                     Group Key: m.offer_id
+                     Buffers: local hit=50204 read=562
+                     ->  Sort  (cost=3896.64..3896.67 rows=10 width=24) (actual time=78.394..80.661 rows=30000.00 loops=1)
+                           Sort Key: m.offer_id
+                           Sort Method: quicksort  Memory: 1940kB
+                           Buffers: local hit=50204 read=562
+                           ->  Hash Join  (cost=354.06..3896.48 rows=10 width=24) (actual time=2.883..68.384 rows=30000.00 loops=1)
+                                 Hash Cond: (m.conversation_id = c.id)
+                                 Join Filter: (((c.user_low = '00000000-0000-0000-0000-000000000001'::uuid) AND (c.user_high = o_1.user_id)) OR ((c.user_high = '00000000-0000-0000-0000-000000000001'::uuid) AND (c.user_low = o_1.user_id)))
+                                 Buffers: local hit=50204 read=562
+                                 ->  Merge Join  (cost=0.95..3464.62 rows=29998 width=56) (actual time=0.074..51.999 rows=30000.00 loops=1)
+                                       Merge Cond: (m.offer_id = o_1.id)
+                                       Buffers: local hit=50076 read=562
+                                       ->  Index Scan using message_offer_id_created_at_idx on message m  (cost=0.29..2345.38 rows=30000 width=40) (actual time=0.042..18.836 rows=30000.00 loops=1)
+                                             Filter: (sender_id = '00000000-0000-0000-0000-000000000001'::uuid)
+                                             Rows Removed by Filter: 5
+                                             Index Searches: 1
+                                             Buffers: local hit=29977 read=173
+                                       ->  Index Scan using offer_id_idx on offer o_1  (cost=0.42..8450.85 rows=120186 width=32) (actual time=0.027..19.532 rows=30001.00 loops=1)
+                                             Filter: (user_id <> '00000000-0000-0000-0000-000000000001'::uuid)
+                                             Index Searches: 1
+                                             Buffers: local hit=20099 read=389
+                                 ->  Hash  (cost=228.05..228.05 rows=10005 width=48) (actual time=2.788..2.789 rows=10005.00 loops=1)
+                                       Buckets: 16384  Batches: 1  Memory Usage: 910kB
+                                       Buffers: local hit=128
+                                       ->  Seq Scan on conversation c  (cost=0.00..228.05 rows=10005 width=48) (actual time=0.016..1.059 rows=10005.00 loops=1)
+                                             Buffers: local hit=128
+               ->  Index Scan using offer_id_idx on offer o  (cost=0.42..8.44 rows=1 width=44) (actual time=0.002..0.003 rows=1.00 loops=10000)
+                     Index Cond: (id = m.offer_id)
+                     Filter: (image_count >= 1)
+                     Index Searches: 10000
+                     Buffers: local hit=40000
+ Planning:
+   Buffers: shared hit=6, local hit=10
+ Planning Time: 1.026 ms
+ Execution Time: 123.821 ms
+(45 rows)
+
+                                                                                                       QUERY PLAN
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=7337.34..7337.35 rows=1 width=52) (actual time=68.043..68.049 rows=5.00 loops=1)
+   Buffers: local hit=699 read=4116
+   ->  Sort  (cost=7337.34..7337.35 rows=1 width=52) (actual time=68.041..68.046 rows=5.00 loops=1)
+         Sort Key: o.created_at DESC, o.id DESC
+         Sort Method: quicksort  Memory: 25kB
+         Buffers: local hit=699 read=4116
+         ->  Hash Semi Join  (cost=738.90..7337.33 rows=1 width=52) (actual time=5.607..68.034 rows=5.00 loops=1)
+               Hash Cond: (o.id = m.offer_id)
+               Join Filter: (((c.user_low = '00000000-0000-0000-0000-000000000002'::uuid) AND (c.user_high = o.user_id)) OR ((c.user_high = '00000000-0000-0000-0000-000000000002'::uuid) AND (c.user_low = o.user_id)))
+               Buffers: local hit=699 read=4116
+               ->  Seq Scan on offer o  (cost=0.00..6282.94 rows=120186 width=68) (actual time=0.014..52.483 rows=120196.00 loops=1)
+                     Filter: ((image_count >= 1) AND (user_id <> '00000000-0000-0000-0000-000000000002'::uuid))
+                     Buffers: local hit=374 read=4106
+               ->  Hash  (cost=738.89..738.89 rows=1 width=48) (actual time=2.438..2.440 rows=5.00 loops=1)
+                     Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                     Buffers: local hit=325 read=10
+                     ->  Nested Loop  (cost=0.29..738.89 rows=1 width=48) (actual time=2.389..2.433 rows=5.00 loops=1)
+                           Buffers: local hit=325 read=10
+                           ->  Seq Scan on message m  (cost=0.00..695.06 rows=5 width=32) (actual time=2.363..2.397 rows=5.00 loops=1)
+                                 Filter: (sender_id = '00000000-0000-0000-0000-000000000002'::uuid)
+                                 Rows Removed by Filter: 30000
+                                 Buffers: local hit=310 read=10
+                           ->  Index Scan using conversation_id_idx on conversation c  (cost=0.29..8.31 rows=1 width=48) (actual time=0.005..0.005 rows=1.00 loops=5)
+                                 Index Cond: (id = m.conversation_id)
+                                 Filter: ((user_low = '00000000-0000-0000-0000-000000000002'::uuid) OR (user_high = '00000000-0000-0000-0000-000000000002'::uuid))
+                                 Index Searches: 5
+                                 Buffers: local hit=15
+ Planning:
+   Buffers: local hit=14
+ Planning Time: 0.630 ms
+ Execution Time: 68.098 ms
+(31 rows)
+
+                                                                                                                  QUERY PLAN
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=755.85..755.85 rows=1 width=52) (actual time=4.106..4.110 rows=5.00 loops=1)
+   Buffers: local hit=53 read=322
+   ->  Sort  (cost=755.85..755.85 rows=1 width=52) (actual time=4.104..4.106 rows=5.00 loops=1)
+         Sort Key: (max(m.created_at)) DESC, o.id DESC
+         Sort Method: quicksort  Memory: 25kB
+         Buffers: local hit=53 read=322
+         ->  Nested Loop  (cost=747.78..755.84 rows=1 width=52) (actual time=4.079..4.098 rows=5.00 loops=1)
+               Buffers: local hit=53 read=322
+               ->  GroupAggregate  (cost=747.36..747.38 rows=1 width=24) (actual time=4.072..4.079 rows=5.00 loops=1)
+                     Group Key: m.offer_id
+                     Buffers: local hit=33 read=322
+                     ->  Sort  (cost=747.36..747.36 rows=1 width=24) (actual time=4.064..4.066 rows=5.00 loops=1)
+                           Sort Key: m.offer_id
+                           Sort Method: quicksort  Memory: 25kB
+                           Buffers: local hit=33 read=322
+                           ->  Nested Loop  (cost=0.70..747.35 rows=1 width=24) (actual time=4.024..4.056 rows=5.00 loops=1)
+                                 Join Filter: (((c.user_low = '00000000-0000-0000-0000-000000000002'::uuid) AND (c.user_high = o_1.user_id)) OR ((c.user_high = '00000000-0000-0000-0000-000000000002'::uuid) AND (c.user_low = o_1.user_id)))
+                                 Buffers: local hit=33 read=322
+                                 ->  Nested Loop  (cost=0.29..738.89 rows=1 width=56) (actual time=3.992..4.009 rows=5.00 loops=1)
+                                       Buffers: local hit=15 read=320
+                                       ->  Seq Scan on message m  (cost=0.00..695.06 rows=5 width=40) (actual time=3.966..3.969 rows=5.00 loops=1)
+                                             Filter: (sender_id = '00000000-0000-0000-0000-000000000002'::uuid)
+                                             Rows Removed by Filter: 30000
+                                             Buffers: local read=320
+                                       ->  Index Scan using conversation_id_idx on conversation c  (cost=0.29..8.31 rows=1 width=48) (actual time=0.006..0.006 rows=1.00 loops=5)
+                                             Index Cond: (id = m.conversation_id)
+                                             Filter: ((user_low = '00000000-0000-0000-0000-000000000002'::uuid) OR (user_high = '00000000-0000-0000-0000-000000000002'::uuid))
+                                             Index Searches: 5
+                                             Buffers: local hit=15
+                                 ->  Index Scan using offer_id_idx on offer o_1  (cost=0.42..8.44 rows=1 width=32) (actual time=0.008..0.008 rows=1.00 loops=5)
+                                       Index Cond: (id = m.offer_id)
+                                       Filter: (user_id <> '00000000-0000-0000-0000-000000000002'::uuid)
+                                       Index Searches: 5
+                                       Buffers: local hit=18 read=2
+               ->  Index Scan using offer_id_idx on offer o  (cost=0.42..8.44 rows=1 width=44) (actual time=0.003..0.003 rows=1.00 loops=5)
+                     Index Cond: (id = m.offer_id)
+                     Filter: (image_count >= 1)
+                     Index Searches: 5
+                     Buffers: local hit=20
+ Planning:
+   Buffers: local hit=3 read=7
+ Planning Time: 1.183 ms
+ Execution Time: 4.172 ms
+(43 rows)
+
+CREATE INDEX
+ANALYZE
+                                                                                                       QUERY PLAN
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.99..618.70 rows=21 width=52) (actual time=0.104..1.715 rows=21.00 loops=1)
+   Buffers: local hit=444 read=216
+   ->  Nested Loop Semi Join  (cost=0.99..191666.78 rows=6516 width=52) (actual time=0.103..1.710 rows=21.00 loops=1)
+         Buffers: local hit=444 read=216
+         ->  Index Scan using offer_created_at_id_idx on offer o  (cost=0.42..22415.75 rows=120186 width=68) (actual time=0.038..0.975 rows=191.00 loops=1)
+               Filter: (user_id <> '00000000-0000-0000-0000-000000000001'::uuid)
+               Index Searches: 1
+               Buffers: local hit=27 read=167
+         ->  Nested Loop  (cost=0.57..1.40 rows=1 width=48) (actual time=0.003..0.003 rows=0.11 loops=191)
+               Join Filter: (((c.user_low = '00000000-0000-0000-0000-000000000001'::uuid) AND (c.user_high = o.user_id)) OR ((c.user_high = '00000000-0000-0000-0000-000000000001'::uuid) AND (c.user_low = o.user_id)))
+               Buffers: local hit=417 read=49
+               ->  Index Scan using message_offer_id_created_at_idx on message m  (cost=0.29..0.36 rows=3 width=32) (actual time=0.002..0.002 rows=0.11 loops=191)
+                     Index Cond: (offer_id = o.id)
+                     Filter: (sender_id = '00000000-0000-0000-0000-000000000001'::uuid)
+                     Index Searches: 191
+                     Buffers: local hit=383 read=20
+               ->  Index Scan using conversation_id_idx on conversation c  (cost=0.29..0.33 rows=1 width=48) (actual time=0.010..0.010 rows=1.00 loops=21)
+                     Index Cond: (id = m.conversation_id)
+                     Index Searches: 21
+                     Buffers: local hit=34 read=29
+ Planning:
+   Buffers: shared hit=15, local hit=14 read=1
+ Planning Time: 0.690 ms
+ Execution Time: 1.755 ms
+(24 rows)
+
+                                                                                                                  QUERY PLAN
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=3779.28..3779.30 rows=10 width=52) (actual time=154.396..154.404 rows=21.00 loops=1)
+   Buffers: local hit=90116 read=717
+   ->  Sort  (cost=3779.28..3779.30 rows=10 width=52) (actual time=154.394..154.400 rows=21.00 loops=1)
+         Sort Key: (max(m.created_at)) DESC, o.id DESC
+         Sort Method: top-N heapsort  Memory: 29kB
+         Buffers: local hit=90116 read=717
+         ->  Nested Loop  (cost=3694.78..3779.11 rows=10 width=52) (actual time=89.305..148.719 rows=10000.00 loops=1)
+               Buffers: local hit=90116 read=717
+               ->  GroupAggregate  (cost=3694.36..3694.54 rows=10 width=24) (actual time=89.281..106.918 rows=10000.00 loops=1)
+                     Group Key: m.offer_id
+                     Buffers: local hit=50116 read=717
+                     ->  Sort  (cost=3694.36..3694.39 rows=10 width=24) (actual time=89.271..93.018 rows=30000.00 loops=1)
+                           Sort Key: m.offer_id
+                           Sort Method: quicksort  Memory: 1940kB
+                           Buffers: local hit=50116 read=717
+                           ->  Hash Join  (cost=354.16..3694.19 rows=10 width=24) (actual time=3.412..78.056 rows=30000.00 loops=1)
+                                 Hash Cond: (m.conversation_id = c.id)
+                                 Join Filter: (((c.user_low = '00000000-0000-0000-0000-000000000001'::uuid) AND (c.user_high = o_1.user_id)) OR ((c.user_high = '00000000-0000-0000-0000-000000000001'::uuid) AND (c.user_low = o_1.user_id)))
+                                 Buffers: local hit=50116 read=717
+                                 ->  Merge Join  (cost=1.05..3262.34 rows=29998 width=56) (actual time=0.064..58.545 rows=30000.00 loops=1)
+                                       Merge Cond: (m.offer_id = o_1.id)
+                                       Buffers: local hit=50098 read=607
+                                       ->  Index Scan using idx_fixture_sender_offer_time on message m  (cost=0.41..2143.10 rows=30000 width=40) (actual time=0.049..19.684 rows=30000.00 loops=1)
+                                             Index Cond: (sender_id = '00000000-0000-0000-0000-000000000001'::uuid)
+                                             Index Searches: 1
+                                             Buffers: local hit=30000 read=217
+                                       ->  Index Scan using offer_id_idx on offer o_1  (cost=0.42..8450.85 rows=120186 width=32) (actual time=0.010..21.880 rows=30001.00 loops=1)
+                                             Filter: (user_id <> '00000000-0000-0000-0000-000000000001'::uuid)
+                                             Index Searches: 1
+                                             Buffers: local hit=20098 read=390
+                                 ->  Hash  (cost=228.05..228.05 rows=10005 width=48) (actual time=3.331..3.332 rows=10005.00 loops=1)
+                                       Buckets: 16384  Batches: 1  Memory Usage: 910kB
+                                       Buffers: local hit=18 read=110
+                                       ->  Seq Scan on conversation c  (cost=0.00..228.05 rows=10005 width=48) (actual time=0.020..1.691 rows=10005.00 loops=1)
+                                             Buffers: local hit=18 read=110
+               ->  Index Scan using offer_id_idx on offer o  (cost=0.42..8.44 rows=1 width=44) (actual time=0.003..0.004 rows=1.00 loops=10000)
+                     Index Cond: (id = m.offer_id)
+                     Filter: (image_count >= 1)
+                     Index Searches: 10000
+                     Buffers: local hit=40000
+ Planning:
+   Buffers: shared hit=4, local hit=10
+ Planning Time: 0.644 ms
+ Execution Time: 154.472 ms
+(44 rows)
+
+                                                                                                       QUERY PLAN
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=6655.61..6655.61 rows=1 width=52) (actual time=63.223..63.228 rows=5.00 loops=1)
+   Buffers: local hit=388 read=4111
+   ->  Sort  (cost=6655.61..6655.61 rows=1 width=52) (actual time=63.221..63.226 rows=5.00 loops=1)
+         Sort Key: o.created_at DESC, o.id DESC
+         Sort Method: quicksort  Memory: 25kB
+         Buffers: local hit=388 read=4111
+         ->  Hash Semi Join  (cost=57.17..6655.60 rows=1 width=52) (actual time=3.682..63.214 rows=5.00 loops=1)
+               Hash Cond: (o.id = m.offer_id)
+               Join Filter: (((c.user_low = '00000000-0000-0000-0000-000000000002'::uuid) AND (c.user_high = o.user_id)) OR ((c.user_high = '00000000-0000-0000-0000-000000000002'::uuid) AND (c.user_low = o.user_id)))
+               Buffers: local hit=388 read=4111
+               ->  Seq Scan on offer o  (cost=0.00..6282.94 rows=120186 width=68) (actual time=0.012..51.754 rows=120196.00 loops=1)
+                     Filter: ((image_count >= 1) AND (user_id <> '00000000-0000-0000-0000-000000000002'::uuid))
+                     Buffers: local hit=371 read=4109
+               ->  Hash  (cost=57.16..57.16 rows=1 width=48) (actual time=0.055..0.058 rows=5.00 loops=1)
+                     Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                     Buffers: local hit=17 read=2
+                     ->  Nested Loop  (cost=0.71..57.16 rows=1 width=48) (actual time=0.039..0.053 rows=5.00 loops=1)
+                           Buffers: local hit=17 read=2
+                           ->  Index Scan Backward using idx_fixture_sender_offer_time on message m  (cost=0.41..15.50 rows=5 width=32) (actual time=0.029..0.031 rows=5.00 loops=1)
+                                 Index Cond: (sender_id = '00000000-0000-0000-0000-000000000002'::uuid)
+                                 Index Searches: 1
+                                 Buffers: local hit=2 read=2
+                           ->  Memoize  (cost=0.30..8.32 rows=1 width=48) (actual time=0.004..0.004 rows=1.00 loops=5)
+                                 Cache Key: m.conversation_id
+                                 Cache Mode: logical
+                                 Hits: 0  Misses: 5  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+                                 Buffers: local hit=15
+                                 ->  Index Scan using conversation_id_idx on conversation c  (cost=0.29..8.31 rows=1 width=48) (actual time=0.002..0.002 rows=1.00 loops=5)
+                                       Index Cond: (id = m.conversation_id)
+                                       Filter: ((user_low = '00000000-0000-0000-0000-000000000002'::uuid) OR (user_high = '00000000-0000-0000-0000-000000000002'::uuid))
+                                       Index Searches: 5
+                                       Buffers: local hit=15
+ Planning:
+   Buffers: local hit=14
+ Planning Time: 0.526 ms
+ Execution Time: 63.275 ms
+(36 rows)
+
+                                                                                                               QUERY PLAN
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=74.10..74.10 rows=1 width=52) (actual time=0.204..0.208 rows=5.00 loops=1)
+   Buffers: local hit=53 read=6
+   ->  Sort  (cost=74.10..74.10 rows=1 width=52) (actual time=0.203..0.206 rows=5.00 loops=1)
+         Sort Key: (max(m.created_at)) DESC, o.id DESC
+         Sort Method: quicksort  Memory: 25kB
+         Buffers: local hit=53 read=6
+         ->  Nested Loop  (cost=1.54..74.09 rows=1 width=52) (actual time=0.109..0.174 rows=5.00 loops=1)
+               Buffers: local hit=53 read=6
+               ->  GroupAggregate  (cost=1.12..65.63 rows=1 width=24) (actual time=0.101..0.146 rows=5.00 loops=1)
+                     Group Key: m.offer_id
+                     Buffers: local hit=33 read=6
+                     ->  Nested Loop  (cost=1.12..65.61 rows=1 width=24) (actual time=0.074..0.132 rows=5.00 loops=1)
+                           Join Filter: (((c.user_low = '00000000-0000-0000-0000-000000000002'::uuid) AND (c.user_high = o_1.user_id)) OR ((c.user_high = '00000000-0000-0000-0000-000000000002'::uuid) AND (c.user_low = o_1.user_id)))
+                           Buffers: local hit=33 read=6
+                           ->  Nested Loop  (cost=0.71..57.16 rows=1 width=56) (actual time=0.053..0.087 rows=5.00 loops=1)
+                                 Buffers: local hit=15 read=4
+                                 ->  Index Scan using idx_fixture_sender_offer_time on message m  (cost=0.41..15.50 rows=5 width=40) (actual time=0.038..0.041 rows=5.00 loops=1)
+                                       Index Cond: (sender_id = '00000000-0000-0000-0000-000000000002'::uuid)
+                                       Index Searches: 1
+                                       Buffers: local read=4
+                                 ->  Memoize  (cost=0.30..8.32 rows=1 width=48) (actual time=0.007..0.007 rows=1.00 loops=5)
+                                       Cache Key: m.conversation_id
+                                       Cache Mode: logical
+                                       Hits: 0  Misses: 5  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+                                       Buffers: local hit=15
+                                       ->  Index Scan using conversation_id_idx on conversation c  (cost=0.29..8.31 rows=1 width=48) (actual time=0.004..0.004 rows=1.00 loops=5)
+                                             Index Cond: (id = m.conversation_id)
+                                             Filter: ((user_low = '00000000-0000-0000-0000-000000000002'::uuid) OR (user_high = '00000000-0000-0000-0000-000000000002'::uuid))
+                                             Index Searches: 5
+                                             Buffers: local hit=15
+                           ->  Index Scan using offer_id_idx on offer o_1  (cost=0.42..8.44 rows=1 width=32) (actual time=0.007..0.007 rows=1.00 loops=5)
+                                 Index Cond: (id = m.offer_id)
+                                 Filter: (user_id <> '00000000-0000-0000-0000-000000000002'::uuid)
+                                 Index Searches: 5
+                                 Buffers: local hit=18 read=2
+               ->  Index Scan using offer_id_idx on offer o  (cost=0.42..8.44 rows=1 width=44) (actual time=0.004..0.004 rows=1.00 loops=5)
+                     Index Cond: (id = m.offer_id)
+                     Filter: (image_count >= 1)
+                     Index Searches: 5
+                     Buffers: local hit=20
+ Planning:
+   Buffers: local hit=3 read=7
+ Planning Time: 0.798 ms
+ Execution Time: 0.260 ms
+(44 rows)
+
+                                                                                                             QUERY PLAN
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=8836.53..8836.56 rows=10 width=52) (actual time=155.112..155.121 rows=21.00 loops=1)
+   Buffers: local hit=5 read=4923
+   ->  Sort  (cost=8836.53..8836.56 rows=10 width=52) (actual time=155.110..155.116 rows=21.00 loops=1)
+         Sort Key: (max(m.created_at)) DESC, o.id DESC
+         Sort Method: top-N heapsort  Memory: 29kB
+         Buffers: local hit=5 read=4923
+         ->  GroupAggregate  (cost=8836.17..8836.37 rows=10 width=52) (actual time=140.279..152.480 rows=10000.00 loops=1)
+               Group Key: o.id, o.title
+               Buffers: local hit=5 read=4923
+               ->  Sort  (cost=8836.17..8836.19 rows=10 width=52) (actual time=140.263..142.952 rows=30000.00 loops=1)
+                     Sort Key: o.id DESC, o.title
+                     Sort Method: quicksort  Memory: 2878kB
+                     Buffers: local hit=5 read=4923
+                     ->  Hash Join  (cost=1423.17..8836.00 rows=10 width=52) (actual time=16.274..127.239 rows=30000.00 loops=1)
+                           Hash Cond: (m.conversation_id = c.id)
+                           Join Filter: (((c.user_low = '00000000-0000-0000-0000-000000000001'::uuid) AND (c.user_high = o.user_id)) OR ((c.user_high = '00000000-0000-0000-0000-000000000001'::uuid) AND (c.user_low = o.user_id)))
+                           Buffers: local hit=5 read=4923
+                           ->  Hash Join  (cost=1070.06..8404.15 rows=29998 width=84) (actual time=13.477..110.416 rows=30000.00 loops=1)
+                                 Hash Cond: (o.id = m.offer_id)
+                                 Buffers: local hit=3 read=4797
+                                 ->  Seq Scan on offer o  (cost=0.00..6282.94 rows=120186 width=60) (actual time=0.024..53.728 rows=120196.00 loops=1)
+                                       Filter: ((user_id <> '00000000-0000-0000-0000-000000000001'::uuid) AND (image_count >= 1))
+                                       Buffers: local hit=2 read=4478
+                                 ->  Hash  (cost=695.06..695.06 rows=30000 width=40) (actual time=13.432..13.433 rows=30000.00 loops=1)
+                                       Buckets: 32768  Batches: 1  Memory Usage: 2366kB
+                                       Buffers: local hit=1 read=319
+                                       ->  Seq Scan on message m  (cost=0.00..695.06 rows=30000 width=40) (actual time=0.023..6.424 rows=30000.00 loops=1)
+                                             Filter: (sender_id = '00000000-0000-0000-0000-000000000001'::uuid)
+                                             Rows Removed by Filter: 5
+                                             Buffers: local hit=1 read=319
+                           ->  Hash  (cost=228.05..228.05 rows=10005 width=48) (actual time=2.783..2.784 rows=10005.00 loops=1)
+                                 Buckets: 16384  Batches: 1  Memory Usage: 910kB
+                                 Buffers: local hit=2 read=126
+                                 ->  Seq Scan on conversation c  (cost=0.00..228.05 rows=10005 width=48) (actual time=0.027..1.348 rows=10005.00 loops=1)
+                                       Buffers: local hit=2 read=126
+ Planning:
+   Buffers: local hit=14
+ Planning Time: 0.683 ms
+ Execution Time: 155.185 ms
+(39 rows)
+
+                                                                                                             QUERY PLAN
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=65.74..65.75 rows=1 width=52) (actual time=0.244..0.249 rows=5.00 loops=1)
+   Buffers: local hit=33 read=6
+   ->  Sort  (cost=65.74..65.75 rows=1 width=52) (actual time=0.242..0.245 rows=5.00 loops=1)
+         Sort Key: (max(m.created_at)) DESC, o.id DESC
+         Sort Method: quicksort  Memory: 25kB
+         Buffers: local hit=33 read=6
+         ->  GroupAggregate  (cost=33.38..65.73 rows=1 width=52) (actual time=0.228..0.235 rows=5.00 loops=1)
+               Group Key: o.id, o.title
+               Buffers: local hit=33 read=6
+               ->  Incremental Sort  (cost=33.38..65.71 rows=2 width=52) (actual time=0.207..0.210 rows=5.00 loops=1)
+                     Sort Key: o.id DESC, o.title
+                     Presorted Key: o.id
+                     Full-sort Groups: 1  Sort Method: quicksort  Average Memory: 25kB  Peak Memory: 25kB
+                     Buffers: local hit=33 read=6
+                     ->  Nested Loop  (cost=1.12..65.62 rows=1 width=52) (actual time=0.152..0.187 rows=5.00 loops=1)
+                           Join Filter: (((c.user_low = '00000000-0000-0000-0000-000000000002'::uuid) AND (c.user_high = o.user_id)) OR ((c.user_high = '00000000-0000-0000-0000-000000000002'::uuid) AND (c.user_low = o.user_id)))
+                           Buffers: local hit=33 read=6
+                           ->  Nested Loop  (cost=0.71..57.16 rows=1 width=56) (actual time=0.100..0.121 rows=5.00 loops=1)
+                                 Buffers: local hit=15 read=4
+                                 ->  Index Scan Backward using idx_fixture_sender_offer_time on message m  (cost=0.41..15.50 rows=5 width=40) (actual time=0.055..0.057 rows=5.00 loops=1)
+                                       Index Cond: (sender_id = '00000000-0000-0000-0000-000000000002'::uuid)
+                                       Index Searches: 1
+                                       Buffers: local read=4
+                                 ->  Memoize  (cost=0.30..8.32 rows=1 width=48) (actual time=0.010..0.010 rows=1.00 loops=5)
+                                       Cache Key: m.conversation_id
+                                       Cache Mode: logical
+                                       Hits: 0  Misses: 5  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+                                       Buffers: local hit=15
+                                       ->  Index Scan using conversation_id_idx on conversation c  (cost=0.29..8.31 rows=1 width=48) (actual time=0.005..0.005 rows=1.00 loops=5)
+                                             Index Cond: (id = m.conversation_id)
+                                             Filter: ((user_low = '00000000-0000-0000-0000-000000000002'::uuid) OR (user_high = '00000000-0000-0000-0000-000000000002'::uuid))
+                                             Index Searches: 5
+                                             Buffers: local hit=15
+                           ->  Index Scan using offer_id_idx on offer o  (cost=0.42..8.44 rows=1 width=60) (actual time=0.011..0.011 rows=1.00 loops=5)
+                                 Index Cond: (id = m.offer_id)
+                                 Filter: ((user_id <> '00000000-0000-0000-0000-000000000002'::uuid) AND (image_count >= 1))
+                                 Index Searches: 5
+                                 Buffers: local hit=18 read=2
+ Planning:
+   Buffers: local hit=5 read=9
+ Planning Time: 1.182 ms
+ Execution Time: 0.335 ms
+(42 rows)
+
+ROLLBACK
