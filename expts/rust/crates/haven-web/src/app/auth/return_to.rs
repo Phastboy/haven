@@ -7,7 +7,8 @@ use topcoat::{
 const NAME: &str = "haven_feed_return";
 
 fn safe_target(raw: &str) -> Option<&str> {
-    (raw.len() <= 1800
+    (raw.is_ascii()
+        && raw.len() <= 1800
         && (raw == "/offers" || raw.starts_with("/offers?"))
         && !raw.contains('\\')
         && !raw.chars().any(char::is_control))

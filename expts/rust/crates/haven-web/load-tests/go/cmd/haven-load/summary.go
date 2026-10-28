@@ -38,22 +38,27 @@ type latencySummary struct {
 }
 
 type runSummary struct {
-	Scenario                string         `json:"scenario"`
-	Duration                time.Duration  `json:"duration_ns"`
-	TargetJourneysPerSecond int            `json:"target_journeys_per_second"`
-	Scheduled               uint64         `json:"scheduled"`
-	Started                 uint64         `json:"started"`
-	Completed               uint64         `json:"completed"`
-	Dropped                 uint64         `json:"dropped"`
-	Failed                  uint64         `json:"failed"`
-	Requests                uint64         `json:"requests"`
-	RequestsPerSecond       float64        `json:"requests_per_second"`
-	ChecksPassed            uint64         `json:"checks_passed"`
-	Checks                  uint64         `json:"checks"`
-	Routes                  []routeSummary `json:"routes"`
-	Stages                  []stageSummary `json:"stages,omitempty"`
-	ProfileFailed           bool           `json:"profile_failed,omitempty"`
-	Overall                 latencySummary `json:"overall"`
+	FixtureSHA              string                   `json:"fixture_sha256,omitempty"`
+	SemanticPercent         int                      `json:"semantic_percent,omitempty"`
+	SampleSeed              uint64                   `json:"sample_seed,omitempty"`
+	QueryClass              string                   `json:"query_class,omitempty"`
+	Semantic                map[string]semanticCount `json:"semantic_cases,omitempty"`
+	Scenario                string                   `json:"scenario"`
+	Duration                time.Duration            `json:"duration_ns"`
+	TargetJourneysPerSecond int                      `json:"target_journeys_per_second"`
+	Scheduled               uint64                   `json:"scheduled"`
+	Started                 uint64                   `json:"started"`
+	Completed               uint64                   `json:"completed"`
+	Dropped                 uint64                   `json:"dropped"`
+	Failed                  uint64                   `json:"failed"`
+	Requests                uint64                   `json:"requests"`
+	RequestsPerSecond       float64                  `json:"requests_per_second"`
+	ChecksPassed            uint64                   `json:"checks_passed"`
+	Checks                  uint64                   `json:"checks"`
+	Routes                  []routeSummary           `json:"routes"`
+	Stages                  []stageSummary           `json:"stages,omitempty"`
+	ProfileFailed           bool                     `json:"profile_failed,omitempty"`
+	Overall                 latencySummary           `json:"overall"`
 }
 
 func (collector *stats) merge(other *stats) {
@@ -61,6 +66,15 @@ func (collector *stats) merge(other *stats) {
 	defer other.mu.Unlock()
 	collector.mu.Lock()
 	defer collector.mu.Unlock()
+	if collector.semantic == nil {
+		collector.semantic = make(map[string]semanticCount)
+	}
+	for key, count := range other.semantic {
+		current := collector.semantic[key]
+		current.Checked += count.Checked
+		current.Passed += count.Passed
+		collector.semantic[key] = current
+	}
 	for route, values := range other.samples {
 		collector.samples[route] = append(collector.samples[route], values...)
 	}
@@ -89,6 +103,16 @@ func makeSummary(scenario string, duration time.Duration, rate int, scheduled, s
 	}
 	collector.mu.Lock()
 	defer collector.mu.Unlock()
+	if collector.narrowing != nil {
+		summary.FixtureSHA = collector.narrowing.sha
+		summary.SemanticPercent = collector.narrowing.percent
+		summary.SampleSeed = collector.narrowing.seed
+		summary.QueryClass = collector.narrowing.class
+		summary.Semantic = make(map[string]semanticCount)
+		for key, count := range collector.semantic {
+			summary.Semantic[key] = count
+		}
+	}
 	routes := make([]string, 0, len(collector.samples))
 	for route := range collector.samples {
 		routes = append(routes, route)
