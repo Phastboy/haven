@@ -35,14 +35,15 @@ type job struct {
 }
 
 type stats struct {
-	narrowing *narrowingConfig
-	semantic  map[string]semanticCount
-	mu        sync.Mutex
-	samples   map[string][]time.Duration
-	requests  atomic.Uint64
-	failures  atomic.Uint64
-	checks    atomic.Uint64
-	passed    atomic.Uint64
+	narrowing      *narrowingConfig
+	semantic       map[string]semanticCount
+	journeySamples map[string][]time.Duration
+	mu             sync.Mutex
+	samples        map[string][]time.Duration
+	requests       atomic.Uint64
+	failures       atomic.Uint64
+	checks         atomic.Uint64
+	passed         atomic.Uint64
 }
 
 func main() {
@@ -56,7 +57,9 @@ func main() {
 	summaryPath := flag.String("summary", "", "write machine-readable JSON summary")
 	skipTLSVerify := flag.Bool("insecure-skip-tls-verify", false, "skip TLS verification for isolated self-signed QEMU benchmarks")
 	narrowingPath := flag.String("narrowing-fixture", "", "private v0.7 expected-result fixture")
-	queryClass := flag.String("query-class", "public", "public, saved, inquired or mixed")
+	historyClass := flag.String("history", "all", "all, dense, sparse or zero for an authenticated narrowing class")
+	fixtureSweep := flag.Bool("fixture-sweep", false, "visit every selected v07 fixture case once with 100% semantic checks; not a load gate")
+	queryClass := flag.String("query-class", "public", "public, public-authenticated, saved, inquired or mixed")
 	semanticPercent := flag.Int("semantic-percent", 10, "stratified result checks per 100 case visits")
 	sampleSeed := flag.Uint64("sample-seed", 42, "reproducible semantic sampling seed")
 	profileTarget := flag.String("profile-target", "steady", "steady or v07 workload for spike/capacity")
@@ -104,6 +107,15 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		if *historyClass != "all" {
+			if (*historyClass != "dense" && *historyClass != "sparse" && *historyClass != "zero") || *queryClass == "public" || *queryClass == "mixed" {
+				log.Fatal("history filter requires dense/sparse/zero and a single authenticated class")
+			}
+		}
+		collector.narrowing.history = *historyClass
+	}
+	if *fixtureSweep && *scenario != "v07" {
+		log.Fatal("fixture-sweep requires scenario v07")
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -125,8 +137,28 @@ func main() {
 		}
 		return
 	}
-	scheduled, startedCount, completed, dropped, failed := run(ctx, client, *baseURL, *scenario, fixture, *rate, *duration, *workers, *maxIterations, collector)
+	var scheduled, startedCount, completed, dropped, failed uint64
+	if *fixtureSweep {
+		for _, entry := range collector.narrowing.fixture.Cases {
+			if (*queryClass != "mixed" && entry.Class != *queryClass) || (*historyClass != "all" && entry.History != *historyClass) {
+				continue
+			}
+			scheduled++
+			startedCount++
+			if err := narrowingCaseJourney(ctx, client, *baseURL, entry, true, collector); err != nil {
+				failed++
+			}
+			completed++
+		}
+	} else {
+		scheduled, startedCount, completed, dropped, failed = run(ctx, client, *baseURL, *scenario, fixture, *rate, *duration, *workers, *maxIterations, collector)
+	}
 	summary := makeSummary(*scenario, time.Since(started), *rate, scheduled, startedCount, completed, dropped, failed, collector)
+	if *fixtureSweep {
+		summary.Scenario = "v07-correctness-sweep"
+		summary.TargetJourneysPerSecond = 0
+		summary.SemanticPercent = 100
+	}
 	printSummary(summary)
 	if *summaryPath != "" {
 		if err := writeSummary(*summaryPath, summary); err != nil {

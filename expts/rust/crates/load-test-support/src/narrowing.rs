@@ -26,6 +26,7 @@ struct Actor {
     scope: Option<PersonalScope>,
     history: &'static str,
     token: Option<String>,
+    person_id: Option<String>,
     positions: Option<HashMap<Uuid, ActivityPosition>>,
     number: usize,
 }
@@ -38,6 +39,10 @@ struct Case {
     path: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     session_token: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    person_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    expected_unread: Option<bool>,
     expected_slugs: Vec<String>,
     expected_next: bool,
     canonical: bool,
@@ -88,37 +93,12 @@ pub(super) async fn generate(
         scope: None,
         history: "none",
         token: None,
+        person_id: None,
         positions: None,
         number: 0,
     };
     let mut cases = cases::for_actor(&public, &rows);
-    for (number, session) in sessions.iter().take(17).enumerate() {
-        let person = haven_domain::user::UserId::from_uuid(Uuid::parse_str(&session.user_id)?);
-        let dense = number < 8;
-        let count = if dense {
-            10000
-        } else if number < 16 {
-            5
-        } else {
-            0
-        };
-        let history = if dense { "dense" } else { "sparse" };
-        let (saved, inquired) =
-            history::seed(pool, &rows, history::HistorySeed { person, count }).await?;
-        for (scope, positions) in [
-            (PersonalScope::Saved(person), saved),
-            (PersonalScope::Inquired(person), inquired),
-        ] {
-            let actor = Actor {
-                scope: Some(scope),
-                history,
-                token: Some(session.session_token.clone()),
-                positions: Some(positions),
-                number,
-            };
-            cases.extend(cases::for_actor(&actor, &rows));
-        }
-    }
+    cases.extend(authenticated_cases(pool, &rows, sessions).await?);
     let fixture = Fixture {
         people: sessions.len(),
         offers: rows.len(),
@@ -133,4 +113,76 @@ pub(super) async fn generate(
         fixture.cases.len()
     );
     Ok(())
+}
+
+async fn authenticated_cases(
+    pool: &PgPool,
+    rows: &[TruthRow],
+    sessions: &[SessionOutput],
+) -> Result<Vec<Case>, Box<dyn std::error::Error>> {
+    let mut cases = Vec::new();
+    let reserved = haven_domain::user::UserId::from_uuid(Uuid::parse_str(
+        &sessions
+            .get(16)
+            .ok_or("zero-history person missing")?
+            .user_id,
+    )?);
+    for (number, session) in sessions.iter().take(17).enumerate() {
+        let person = haven_domain::user::UserId::from_uuid(Uuid::parse_str(&session.user_id)?);
+        let dense = number < 8;
+        let count = if dense {
+            10000
+        } else if number < 16 {
+            5
+        } else {
+            0
+        };
+        let history = if dense {
+            "dense"
+        } else if count > 0 {
+            "sparse"
+        } else {
+            "zero"
+        };
+        let (saved, inquired) = history::seed(
+            pool,
+            rows,
+            history::HistorySeed {
+                person,
+                count,
+                reserved,
+            },
+        )
+        .await?;
+        let public_actor = Actor {
+            scope: None,
+            history,
+            token: Some(session.session_token.clone()),
+            person_id: Some(session.user_id.clone()),
+            positions: None,
+            number,
+        };
+        cases.extend(cases::for_actor(&public_actor, rows));
+        for (scope, positions) in [
+            (PersonalScope::Saved(person), saved),
+            (PersonalScope::Inquired(person), inquired),
+        ] {
+            let actor = Actor {
+                scope: Some(scope),
+                history,
+                token: Some(session.session_token.clone()),
+                person_id: Some(session.user_id.clone()),
+                positions: Some(positions),
+                number,
+            };
+            cases.extend(cases::for_actor(&actor, rows));
+        }
+    }
+    let zero_history: i64 = sqlx::query_scalar(
+        "SELECT (SELECT COUNT(*) FROM conversation WHERE user_low=$1 OR user_high=$1) + (SELECT COUNT(*) FROM saved_offer WHERE user_id=$1)",
+    ).bind(reserved.as_uuid()).fetch_one(pool).await?;
+    if zero_history != 0 {
+        return Err("reserved zero-history person has seeded activity".into());
+    }
+    Ok(cases)
 }

@@ -45,19 +45,24 @@ def main():
     sampler = threading.Thread(target=monitor, args=(output / 'telemetry.jsonl', stop))
     sampler.start()
     try:
-        phases = [(f'correctness-{scope}', scope, 100, '60s', 100, 'v07')
-                  for scope in ('public', 'saved', 'inquired')]
-        phases += [(f'contract-{scope}', scope, 1010, '60s', 10, 'v07')
-                   for scope in ('public', 'saved', 'inquired')]
-        phases += [('mixed', 'mixed', 1010, '60s', 10, 'v07'),
-                   ('spike', 'mixed', 100, '180s', 10, 'spike'),
-                   ('soak', 'mixed', 1010, '30m', 10, 'v07'),
-                   ('capacity', 'mixed', 100, '120s', 10, 'capacity')]
-        for label, scope, rate, duration, percent, scenario in phases:
+        # Every history has its own gate: adding zero-history people must not
+        # dilute the dense-history workload into an easier aggregate.
+        strata = [('public', 'all')] + [(scope, history)
+                  for scope in ('public-authenticated', 'saved', 'inquired')
+                  for history in ('dense', 'sparse', 'zero')]
+        phases = [(f'correctness-{scope}-{history}', scope, 100, '60s', 100, 'v07', history)
+                  for scope, history in strata]
+        phases += [(f'contract-{scope}-{history}', scope, 1010, '60s', 10, 'v07', history)
+                   for scope, history in strata]
+        phases += [('mixed', 'mixed', 1010, '60s', 10, 'v07', 'all'),
+                   ('spike', 'mixed', 100, '180s', 10, 'spike', 'all'),
+                   ('soak', 'mixed', 1010, '30m', 10, 'v07', 'all'),
+                   ('capacity', 'mixed', 100, '120s', 10, 'capacity', 'all')]
+        for label, scope, rate, duration, percent, scenario, history in phases:
             summary = output / (label + '.json')
             command = [args.runner, '--base-url', args.base_url, '--scenario', scenario,
                        '--profile-target', 'v07', '--narrowing-fixture', args.fixture,
-                       '--query-class', scope, '--rate', str(rate), '--duration', duration,
+                       '--query-class', scope, '--history', history, '--rate', str(rate), '--duration', duration,
                        '--workers', '200', '--semantic-percent', str(percent),
                        '--sample-seed', '42', '--summary', str(summary)]
             print(f'Starting {label}', flush=True)
@@ -85,7 +90,9 @@ def main():
                 if data.get('profile_failed'):
                     raise RuntimeError('Spike/recovery budget failed')
             elif not label.startswith('correctness'):
-                if data['requests_per_second'] < 1000 or latency['p95_ns'] > 200e6 or latency['p99_ns'] > 500e6:
+                if (data['completed'] / (data['duration_ns'] / 1e9) < 1000
+                        or any(route['p95_ns'] > 200e6 or route['p99_ns'] > 500e6
+                               for route in data['routes'])):
                     raise RuntimeError(f'{label}: throughput/latency budget failed')
         print('HTTP gates complete; review telemetry for bounded memory and CPU headroom.', flush=True)
     finally:

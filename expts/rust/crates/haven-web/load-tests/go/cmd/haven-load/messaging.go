@@ -138,7 +138,11 @@ func checkThread(ctx context.Context, client *http.Client, baseURL, path string,
 }
 
 // Unread is a separate request with its own timing and semantic/private checks.
-func checkUnread(ctx context.Context, client *http.Client, baseURL string, actor session, expected bool, collector *stats) (result error) {
+func checkUnread(ctx context.Context, client *http.Client, baseURL string, actor session, expected bool, collector *stats) error {
+	return checkUnreadLabeled(ctx, client, baseURL, actor, expected, "/unread-status", collector)
+}
+
+func checkUnreadLabeled(ctx context.Context, client *http.Client, baseURL string, actor session, expected bool, label string, collector *stats) (result error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, strings.TrimRight(baseURL, "/")+"/unread-status", nil)
 	if err != nil {
 		return err
@@ -147,7 +151,7 @@ func checkUnread(ctx context.Context, client *http.Client, baseURL string, actor
 	started := time.Now()
 	statusCode := 0
 	defer func() {
-		entry := sample{Route: "/unread-status", Duration: time.Since(started), Status: statusCode}
+		entry := sample{Route: label, Duration: time.Since(started), Status: statusCode}
 		if result != nil {
 			entry.Err = result.Error()
 		}

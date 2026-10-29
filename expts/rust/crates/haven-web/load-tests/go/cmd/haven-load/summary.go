@@ -22,6 +22,16 @@ func (collector *stats) record(entry sample, passed bool) {
 	}
 }
 
+// Journey timing is not an additional HTTP request.
+func (collector *stats) recordJourney(label string, elapsed time.Duration) {
+	collector.mu.Lock()
+	defer collector.mu.Unlock()
+	if collector.journeySamples == nil {
+		collector.journeySamples = make(map[string][]time.Duration)
+	}
+	collector.journeySamples[label] = append(collector.journeySamples[label], elapsed)
+}
+
 type routeSummary struct {
 	Route string        `json:"route"`
 	Count int           `json:"count"`
@@ -38,27 +48,29 @@ type latencySummary struct {
 }
 
 type runSummary struct {
-	FixtureSHA              string                   `json:"fixture_sha256,omitempty"`
-	SemanticPercent         int                      `json:"semantic_percent,omitempty"`
-	SampleSeed              uint64                   `json:"sample_seed,omitempty"`
-	QueryClass              string                   `json:"query_class,omitempty"`
-	Semantic                map[string]semanticCount `json:"semantic_cases,omitempty"`
-	Scenario                string                   `json:"scenario"`
-	Duration                time.Duration            `json:"duration_ns"`
-	TargetJourneysPerSecond int                      `json:"target_journeys_per_second"`
-	Scheduled               uint64                   `json:"scheduled"`
-	Started                 uint64                   `json:"started"`
-	Completed               uint64                   `json:"completed"`
-	Dropped                 uint64                   `json:"dropped"`
-	Failed                  uint64                   `json:"failed"`
-	Requests                uint64                   `json:"requests"`
-	RequestsPerSecond       float64                  `json:"requests_per_second"`
-	ChecksPassed            uint64                   `json:"checks_passed"`
-	Checks                  uint64                   `json:"checks"`
-	Routes                  []routeSummary           `json:"routes"`
-	Stages                  []stageSummary           `json:"stages,omitempty"`
-	ProfileFailed           bool                     `json:"profile_failed,omitempty"`
-	Overall                 latencySummary           `json:"overall"`
+	History                 string                    `json:"history,omitempty"`
+	Journeys                map[string]latencySummary `json:"journey_latencies,omitempty"`
+	FixtureSHA              string                    `json:"fixture_sha256,omitempty"`
+	SemanticPercent         int                       `json:"semantic_percent,omitempty"`
+	SampleSeed              uint64                    `json:"sample_seed,omitempty"`
+	QueryClass              string                    `json:"query_class,omitempty"`
+	Semantic                map[string]semanticCount  `json:"semantic_cases,omitempty"`
+	Scenario                string                    `json:"scenario"`
+	Duration                time.Duration             `json:"duration_ns"`
+	TargetJourneysPerSecond int                       `json:"target_journeys_per_second"`
+	Scheduled               uint64                    `json:"scheduled"`
+	Started                 uint64                    `json:"started"`
+	Completed               uint64                    `json:"completed"`
+	Dropped                 uint64                    `json:"dropped"`
+	Failed                  uint64                    `json:"failed"`
+	Requests                uint64                    `json:"requests"`
+	RequestsPerSecond       float64                   `json:"requests_per_second"`
+	ChecksPassed            uint64                    `json:"checks_passed"`
+	Checks                  uint64                    `json:"checks"`
+	Routes                  []routeSummary            `json:"routes"`
+	Stages                  []stageSummary            `json:"stages,omitempty"`
+	ProfileFailed           bool                      `json:"profile_failed,omitempty"`
+	Overall                 latencySummary            `json:"overall"`
 }
 
 func (collector *stats) merge(other *stats) {
@@ -77,6 +89,12 @@ func (collector *stats) merge(other *stats) {
 	}
 	for route, values := range other.samples {
 		collector.samples[route] = append(collector.samples[route], values...)
+	}
+	if collector.journeySamples == nil {
+		collector.journeySamples = make(map[string][]time.Duration)
+	}
+	for label, values := range other.journeySamples {
+		collector.journeySamples[label] = append(collector.journeySamples[label], values...)
 	}
 	collector.requests.Add(other.requests.Load())
 	collector.failures.Add(other.failures.Load())
@@ -108,11 +126,20 @@ func makeSummary(scenario string, duration time.Duration, rate int, scheduled, s
 		summary.SemanticPercent = collector.narrowing.percent
 		summary.SampleSeed = collector.narrowing.seed
 		summary.QueryClass = collector.narrowing.class
+		summary.History = collector.narrowing.history
 	}
 	if len(collector.semantic) > 0 {
 		summary.Semantic = make(map[string]semanticCount)
 		for key, count := range collector.semantic {
 			summary.Semantic[key] = count
+		}
+	}
+	if len(collector.journeySamples) > 0 {
+		summary.Journeys = make(map[string]latencySummary)
+		for label, values := range collector.journeySamples {
+			samples := append([]time.Duration(nil), values...)
+			sort.Slice(samples, func(i, j int) bool { return samples[i] < samples[j] })
+			summary.Journeys[label] = latencySummary{Count: len(samples), P50: percentile(samples, .5), P95: percentile(samples, .95), P99: percentile(samples, .99)}
 		}
 	}
 	routes := make([]string, 0, len(collector.samples))
