@@ -44,3 +44,6 @@
   height: 18px;
   flex: 0 0 auto;
 }
+
+/* Keep unknown unread state hidden even where navigation styles set display. */
+[data-unread-indicator][hidden] { display: none !important; }

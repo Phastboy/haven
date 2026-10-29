@@ -25,6 +25,8 @@ use std::sync::Arc;
 use topcoat::router::Body;
 use topcoat::session::Token;
 
+mod unread;
+
 #[derive(Clone, Default)]
 struct TestUserRepository {
     users_by_token: Arc<std::sync::Mutex<HashMap<String, User>>>,
@@ -75,6 +77,7 @@ struct TestRegistry {
     offers: haven_domain::fakes::FakeOfferRepository,
     users: TestUserRepository,
     conversations: FakeConversationRepository,
+    conversation_override: Option<Arc<dyn ConversationRepository>>,
 }
 
 impl Registry for TestRegistry {
@@ -97,7 +100,9 @@ impl Registry for TestRegistry {
         unimplemented!()
     }
     fn conversations(&self) -> &(dyn ConversationRepository + 'static) {
-        &self.conversations
+        self.conversation_override
+            .as_deref()
+            .unwrap_or(&self.conversations)
     }
     fn saved_offers(&self) -> &(dyn haven_domain::ports::SavedOfferRepository + 'static) {
         unimplemented!()
@@ -120,6 +125,24 @@ fn create_auth_session(users_repo: &TestUserRepository, user: User) -> String {
 }
 
 fn setup_conversation_app() -> (
+    topcoat::router::Router,
+    TestRegistry,
+    User,
+    User,
+    Offer,
+    String,
+    String,
+) {
+    setup_conversation_app_with_unread(None)
+}
+
+#[allow(
+    clippy::type_complexity,
+    reason = "Existing route-test fixture return values"
+)]
+fn setup_conversation_app_with_unread(
+    conversation_override: Option<Arc<dyn ConversationRepository>>,
+) -> (
     topcoat::router::Router,
     TestRegistry,
     User,
@@ -189,6 +212,7 @@ fn setup_conversation_app() -> (
         offers: offers_repo,
         users: users_repo,
         conversations: convs_repo,
+        conversation_override,
     };
 
     let state = crate::app::state::AppState {

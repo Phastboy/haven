@@ -22,7 +22,6 @@ async fn app_shell_renders_signed_in_visitor_and_auth_navigation() {
                 viewer: ViewerKind::SignedIn,
                 route: "/conversations",
                 kind: RouteKind::Main,
-                has_unread: true,
                 back_href: String::new(),
                 auth_page: false,
             },
@@ -34,6 +33,8 @@ async fn app_shell_renders_signed_in_visitor_and_auth_navigation() {
     assert!(signed_in_html.contains("aria-current=\"page\""));
     assert!(signed_in_html.contains("aria-label=\"Unread messages\""));
     assert!(signed_in_html.contains("aria-label=\"Profile\""));
+    assert_eq!(signed_in_html.matches("data-unread-indicator").count(), 2);
+    assert_eq!(signed_in_html.matches("hidden=\"hidden\"").count(), 2);
     assert!(signed_in_html.contains("app-bottom-tabs"));
     assert!(signed_in_html.contains("app-rail"));
     assert!(!signed_in_html.contains("site-header"));
@@ -44,7 +45,6 @@ async fn app_shell_renders_signed_in_visitor_and_auth_navigation() {
                 viewer: ViewerKind::Visitor,
                 route: "/",
                 kind: RouteKind::Main,
-                has_unread: false,
                 back_href: String::new(),
                 auth_page: false,
             },
@@ -66,7 +66,6 @@ async fn app_shell_renders_signed_in_visitor_and_auth_navigation() {
                 viewer: ViewerKind::Visitor,
                 route: "/auth/sign-in",
                 kind: RouteKind::Child,
-                has_unread: false,
                 back_href: "/".into(),
                 auth_page: true,
             },

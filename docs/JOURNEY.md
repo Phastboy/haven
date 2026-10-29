@@ -352,3 +352,18 @@ The CDN setup now versions every named image variant and checks configuration
 before deployment. This repairs released behavior independently of v0.7.
 See [patch verification](COVER_PATCH.md) for the live CDN check
 and remaining validation limits. The UI change is not yet deployed.
+
+
+## Independent unread navigation loading (v0.7 performance work)
+
+Both lanes can open pages without waiting for unread status. Signed-in navigation
+starts with its unread dot hidden, then a separate authenticated, private/no-store
+`GET /unread-status` updates desktop and mobile indicators together. A delayed or
+failed status request leaves the page usable; it never displays an assumed unread
+dot. Guest/auth pages make no status request. Public offer detail pages include
+the same independent enhancement. Without JavaScript, Messages remains available
+and the navigation dot stays hidden; the inbox still shows conversation state.
+
+Implementation and focused regression tests are pending CI verification. Reuse,
+refresh after messaging, return-to-app checks and account-change cleanup belong
+to the next A3 task. This change does not complete the v0.7 load gate.

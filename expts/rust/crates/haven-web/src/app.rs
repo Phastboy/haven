@@ -26,6 +26,7 @@ pub mod profile;
 pub mod profiles;
 pub mod state;
 pub mod style;
+pub mod unread;
 
 pub fn router() -> std::io::Result<topcoat::router::RouterBuilder> {
     let assets = load_asset_bundle()?;
@@ -99,16 +100,6 @@ pub async fn root_layout(
     let user_handle = user.as_ref().map(|u| u.handle.as_str());
     let nav_layout = classify_route(path, user_handle);
 
-    let has_unread = if let Some(ref u) = user {
-        crate::app::state::registry(cx)
-            .conversations()
-            .unread_exists(u.id)
-            .await
-            .unwrap_or(false)
-    } else {
-        false
-    };
-
     let (kind, back_url) = match nav_layout {
         NavigationLayout::Main => (RouteKind::Main, String::new()),
         NavigationLayout::Child { fallback_parent } => {
@@ -138,6 +129,9 @@ pub async fn root_layout(
                     }
                 }
                 <link rel="stylesheet" href="/style.css" />
+                if user.is_some() && !auth_page {
+                    <script src="/unread-status.js" defer="defer"></script>
+                }
                 if !is_offer_detail {
                     <script src="/cover-images.js" defer="defer"></script>
                     topcoat::runtime::script()
@@ -148,7 +142,6 @@ pub async fn root_layout(
                     viewer,
                     route: path,
                     kind,
-                    has_unread,
                     back_href: back_url,
                     auth_page,
                 },
