@@ -29,13 +29,13 @@ fn message(sender_id: UserId) -> NewMessage {
 
 async fn assert_consistent(pool: &PgPool) {
     let mismatches = sqlx::query_scalar::<_, i64>(
-        r#"SELECT COUNT(*) FROM conversation_participant cp
+        r"SELECT COUNT(*) FROM conversation_participant cp
         JOIN conversation c ON c.id=cp.conversation_id
         WHERE cp.is_unread <> COALESCE(
             cp.last_read_at < c.last_message_at AND (
                 SELECT sender_id FROM message WHERE conversation_id=c.id
                 ORDER BY created_at DESC,id DESC LIMIT 1
-            ) <> cp.user_id, FALSE)"#,
+            ) <> cp.user_id, FALSE)",
     )
     .fetch_one(pool)
     .await
