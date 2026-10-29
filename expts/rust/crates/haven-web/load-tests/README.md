@@ -8,7 +8,7 @@ machine-readable summaries with per-route p50, p95, and p99.
 
 - `smoke`: `GET /health`.
 - `warmup`: warms the sign-in and authenticated offer-feed routes before measurement.
-- `steady`: one-request mix of public feed, owner offer, landing, and public profile views.
+- `steady`: feed/owner/landing reads plus a multi-request create/edit/delete journey.
 - `authorization`: verifies that one signed-in person cannot view another person's owner
   offer-management page.
 - `v05`: title search with currency/price filters, filtered pagination, Free results, and
