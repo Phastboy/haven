@@ -188,7 +188,7 @@ B4–B7 still need cumulative every-push coverage, complete success/failure evid
 regression baselines, actual merge/deployment enforcement and measured procedure.
 
 
-## B3 authenticated/zero-history tranche — pending CI verification
+## B3 authenticated/zero-history tranche — verified partial progress
 
 The narrowing fixture now reserves one genuine zero-history person, excluding
 that person's offers from every seeded history and asserting zero conversations
@@ -204,7 +204,7 @@ semantic checks. Authenticated cases issue the page request and then a separatel
 measured unread request; `journey_latencies` reports their combined duration
 without counting another HTTP request. `--history` isolates a material history
 stratum. Local Go checks pass; Rust and full 10k-person/100k-offer verification
-run only in CI. The new opt-in `narrowing_review` publishes credential-free case,
+passed in CI. The new opt-in `narrowing_review` publishes credential-free case,
 stratum, HTTP/semantic and timing evidence through `journey-correctness.py`.
 
 The legacy narrowing mix now splits its former 70% Public journey share into
@@ -221,3 +221,24 @@ Cover and saved-status database work are included in complete page-body latency;
 external cover delivery, isolated pool waits, sustained before/after comparisons
 and bottleneck attribution have not yet been measured. B3 remains pending for the
 other fixture/scenario gaps listed above; no release gate is claimed.
+
+
+Evidence: `6a7056d`, corrective dependency-only commit `e2319fc`, lint fix
+`4af65d1` and guaranteed-density fixture `46d0432`,
+[CI 40845103713](https://github.com/Phastboy/haven/actions/runs/40845103713).
+All **546/546 cases and 1,081/1,081 HTTP checks** passed; zero failures/drops;
+all 546 combined journey timings were recorded. The same run passed 234 Rust
+tests, 15 script tests, Go checks, documentation, and the earlier live messaging
+scenario. Artifact `narrowing-correctness` records ten strata, the source revision,
+HTTP/semantic/timing summaries and fixture SHA256
+`bbb9a098209d545ef7bfb61ab6d84e37e5ef3384f7aa93832eaada0e06f29172`.
+Sessions and private fixture truth were not uploaded. A concurrently staged
+Cargo.lock dependency update was preserved separately and is not in the verified
+branch state.
+
+Latest continuation: A4 needs actual pool-wait telemetry, external-cover handling
+and comparable sustained authenticated measurements; request/journey accounting
+and the full correctness matrix are now available. B3 still needs inbox/thread
+paging and SSE, remaining auth/profile/media scenarios/adapters, complete mutable
+fixture isolation and the real legacy write round trip. B4–B7 and the v0.7 release
+gate remain pending. No checklist item is closed from this partial tranche alone.
