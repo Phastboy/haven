@@ -27,11 +27,19 @@ This checklist does not mark a product stage or release gate complete.
   plan test seeds 2,048 read conversations and asserts use of
   `idx_participant_unread_user`, with no sequential scan or message-index walk.
   End-to-end HTTP improvement remains unmeasured (A4).
-- [ ] **A2. Independent unread loading — medium; follows A1.** Render the page
+- [x] **A2. Independent unread loading — medium; follows A1.** Render the page
   without awaiting unread status. Fetch it through a small authenticated endpoint
   with private response handling. Keep the dot hidden while initial status is
   unknown; endpoint failure must leave the page usable. Verify page rendering
   completes independently of a delayed or failed unread request.
+  Evidence: `24b02db`,
+  [CI 40838910534](https://github.com/Phastboy/haven/actions/runs/40838910534).
+  Four added HTTP regressions pass: blocked/failing unread storage while pages
+  complete, private 401 for guests/invalid sessions, and session-only identity.
+  Four script tests cover delayed status, false status, malformed/failed responses
+  and no request without signed-in navigation. Both navigation indicators begin
+  hidden; public offer detail receives the same independent script. Workspace and
+  browser-script checks pass. Refresh/reuse remains A3.
 - [ ] **A3. Reuse and refresh unread status — small–medium; follows A2.** Reuse
   status during navigation where the runtime supports it. Refresh after sending
   or reading messages and on returning to the app. Prevent duplicate concurrent
@@ -78,11 +86,19 @@ Start B1 alongside A1. Build on the existing Go runner and CI release artifacts.
   Source audit maps 14 supported journey groups to lane, stage, endpoints,
   current scenarios and missing coverage. No full cumulative journey pass is
   claimed; contracts/scenarios/workflow/enforcement remain B2–B7.
-- [ ] **B2. Define journey and endpoint contracts — medium; follows B1.** For
+- [x] **B2. Define journey and endpoint contracts — medium; follows B1.** For
   each supported journey, specify actions, expected results, request counts,
   fixture needs, throughput/latency requirements, and sparse/dense/empty/
   unauthorized cases where applicable. Distinguish HTTP RPS from journeys/sec.
   Use the performance contract; do not lower targets to match current results.
+  Evidence: `24b02db`,
+  [contracts](crates/haven-web/load-tests/JOURNEY_CONTRACTS.md), and
+  [CI 40838910534](https://github.com/Phastboy/haven/actions/runs/40838910534).
+  All 14 inventory groups have explicit action sequences, expected outcomes,
+  primary/follow-up request counts and fixture/negative cases. The declared mix
+  totals 100% of HTTP requests; endpoint, mixed, spike/recovery, soak and capacity
+  requirements retain the absolute contract. Definition is complete; scenarios,
+  adapters, telemetry, cumulative workflow and enforcement remain B3–B7.
 - [ ] **B3. Complete reproducible fixtures and scenarios — medium–large; follows
   B2.** Fill the coverage gaps, including messaging and unread behavior. Use
   isolated databases and deterministic fixture truth. Isolate mutable sessions
@@ -127,41 +143,22 @@ For every completed task, append an evidence entry here:
 |---|---|---|---|
 | A1 | `81f5306`, `9c50d0e` / [40837141401](https://github.com/Phastboy/haven/actions/runs/40837141401) | Workspace CI passes; five new state/backfill/concurrency/authorization/fixture/plan regressions; 2,048-read-history partial-index assertion | 2026-10-29 |
 | B1 | `81f5306` / [40837141401](https://github.com/Phastboy/haven/actions/runs/40837141401) | 14 journey groups inventoried with explicit scenario/endpoint gaps and B2 handoff; full cumulative coverage remains pending | 2026-10-29 |
+| A2 | `24b02db` / [40838910534](https://github.com/Phastboy/haven/actions/runs/40838910534) | Independent/private unread endpoint; four HTTP and four script regressions pass with workspace checks | 2026-10-29 |
+| B2 | `24b02db` / [40838910534](https://github.com/Phastboy/haven/actions/runs/40838910534) | Contracts define all 14 groups, request accounting, fixtures, absolute endpoint/tier targets and 100% HTTP allocation | 2026-10-29 |
 
 
 ## Continuation point — 2026-10-29
 
-A1 and B1 are complete as recorded above. CI initially rejected an unnecessary
-raw-string delimiter in the test oracle; `9c50d0e` fixes that lint and the rerun
-passes. The new state/read queries use parameterized SQLx calls; unchanged macro
-queries retain their existing offline metadata.
+A1, A2, B1 and B2 are complete as recorded above. A2/B2 passed CI on `24b02db`;
+no full load gate or v0.7 completion is claimed.
 
-Next: A2 independent unread loading and B2 journey/endpoint contracts. Keep the
-unread dot hidden until its authenticated result is known, and make request
-failure independent of page rendering. A3 must then cover refresh, coalescing and
-person-specific state. Do not rerun the full release gates or mark v0.7 complete
-until applicable fixes and cumulative CI requirements are verified.
+Next: A3 unread reuse/refresh and B3 reproducible fixtures/scenarios. A3 must
+refresh after messaging/reading and return to the app, coalesce checks and clear
+person-specific state on account changes. Test runtime navigation counts against
+B2's explicit full-navigation request accounting. B3 must fill the inventory gaps,
+including the legacy write workload's missing required category and authenticated
+Public/zero-history fixtures. Keep mutable scenario actors isolated.
 
-The B1 audit also identifies a legacy load-workload issue: create requests omit
-v0.7's required category. Fix and verify it with B3's scenario work. Public v0.7
-fixture cases currently represent guests; A4 needs authenticated Public cases.
-
-
-## A2/B2 implementation — pending verification
-
-A2 removes unread I/O from the root layout. The new session-bound
-`GET /unread-status` is private/no-store (including failures), varies by Cookie,
-and returns 401 rather than redirecting unauthenticated API clients. A deferred
-same-origin script updates hidden desktop/mobile indicators together and treats
-unknown, malformed or failed responses as unavailable enhancement. Both regular
-and public offer-detail pages can render independently. Four HTTP regression
-tests cover blocked/failing storage, session identity and private rejection;
-four browser-script tests cover delay, read state, failures and guest pages.
-Local formatting, diff checks and script tests pass; Rust verification is in CI.
-A3 refresh/reuse remains separate.
-
-B2's [journey contracts](crates/haven-web/load-tests/JOURNEY_CONTRACTS.md) specify
-all J01–J14 action sequences, primary/follow-up request counts, fixture and
-negative-state requirements, per-endpoint targets and cumulative mix/tier rules.
-Implementation, adapters, complete telemetry and enforcement remain B3–B7.
-Completion evidence will be recorded after verification.
+A4 measures complete authenticated HTTP requests only after A1–A3; B4–B7 still
+need the every-push cumulative workflow, complete success/failure evidence,
+regression baselines, actual merge/deployment enforcement and measured procedure.
