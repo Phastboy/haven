@@ -83,4 +83,7 @@ applicable. Reuse the absolute targets in `PERFORMANCE_CONTRACT.md`: steady
 30-minute soak and capacity ladder remain required. Per-journey offered rates
 and endpoint allocations are **pending B2**, not inferred from today's results.
 
-No full journey run or B1 completion evidence is claimed by this document.
+B1 source audit is complete at `81f5306`, with
+[workspace CI](https://github.com/Phastboy/haven/actions/runs/40837141401) passing
+at `9c50d0e`. This completes the inventory only. No full cumulative journey pass
+is claimed; B2–B7 remain pending.
