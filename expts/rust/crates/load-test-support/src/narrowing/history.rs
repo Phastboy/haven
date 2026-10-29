@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use haven_domain::offer::ActivityPosition;
 use haven_domain::user::UserId;
 use sqlx::PgPool;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
 
 #[derive(sqlx::FromRow)]
@@ -32,17 +32,8 @@ pub(super) async fn seed(
     ),
     Box<dyn std::error::Error>,
 > {
-    let HistorySeed {
-        person,
-        count,
-        reserved,
-    } = selection;
-    let ids: Vec<_> = rows
-        .iter()
-        .filter(|row| row.user_id != person.as_uuid() && row.user_id != reserved.as_uuid())
-        .take(count)
-        .map(|row| row.id)
-        .collect();
+    let person = selection.person;
+    let ids = selected_offers(rows, selection);
     sqlx::query("INSERT INTO saved_offer (user_id,offer_id,created_at) SELECT $1,u.id,'2026-02-01'::timestamptz + ((u.n-1)/4)::int * interval '1 second' FROM unnest($2::uuid[]) WITH ORDINALITY u(id,n)")
         .bind(person.as_uuid()).bind(&ids).execute(pool).await?;
     let saved = sqlx::query_as::<_, SavedRow>(
@@ -89,4 +80,38 @@ pub(super) async fn seed(
         })
         .collect();
     Ok((saved, inquired))
+}
+
+// Preserve a deterministic minimum conversation population instead of relying
+// on randomly distributed offer owners to happen to produce dense histories.
+fn selected_offers(rows: &[TruthRow], selection: HistorySeed) -> Vec<Uuid> {
+    let candidates: Vec<_> = rows
+        .iter()
+        .filter(|row| {
+            row.user_id != selection.person.as_uuid() && row.user_id != selection.reserved.as_uuid()
+        })
+        .collect();
+    let mut ids = Vec::with_capacity(selection.count);
+    let mut selected = HashSet::new();
+    if selection.count >= 10000 {
+        let mut owners = HashSet::new();
+        for row in &candidates {
+            if owners.insert(row.user_id) {
+                ids.push(row.id);
+                selected.insert(row.id);
+            }
+            if owners.len() >= 6484 {
+                break;
+            }
+        }
+    }
+    for row in candidates {
+        if ids.len() >= selection.count {
+            break;
+        }
+        if selected.insert(row.id) {
+            ids.push(row.id);
+        }
+    }
+    ids
 }
