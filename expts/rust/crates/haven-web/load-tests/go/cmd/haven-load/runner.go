@@ -80,6 +80,8 @@ func execute(ctx context.Context, client *http.Client, baseURL, scenario string,
 		if err == nil {
 			err = get(ctx, client, baseURL, "/offers", actor.Session, 200, collector)
 		}
+	case "messaging":
+		err = messagingJourney(ctx, client, baseURL, sessions, workerID, index, collector)
 	case "steady":
 		err = steadyJourney(ctx, client, baseURL, actor, index, collector)
 	case "authorization":

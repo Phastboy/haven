@@ -24,8 +24,13 @@ latencies and the page-to-status completion interval. A failed status request
 must not fail page rendering; injected-failure scenarios are reported separately
 from the zero-error steady gate.
 
-A3 may reuse state across runtime navigation. For that browser variant, assert
-the actual per-navigation counts and separately count mutation/return refreshes;
+A3 reuses status within one runtime document: ordinary navigation adds zero
+checks, initial/full document loads add one, and read/message/return changes add
+one refresh. Multiple invalidations during an active check add one follow-up;
+account changes abort the old check and start one for the new identity. Visibility,
+focus and pageshow events within one second coalesce as one return. Restoring a
+persisted page always clears/revalidates. For that browser variant, assert
+these counts and separately report aborted/discarded requests;
 retain the full-navigation HTTP variant below as a reproducible upper-workload
 case. Do not interpret reduced follow-up counts as additional page throughput.
 No CSS/JS/image request is automatically implied by the Go HTTP client.

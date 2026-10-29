@@ -133,6 +133,20 @@ jobs:
         working-directory: expts/rust/crates/haven-web/load-tests/go
         run: go test ./... && go vet ./...
 
+      - name: Verify messaging and unread journey on a fresh database
+        run: >-
+          python3 crates/haven-web/load-tests/messaging-correctness.py
+          --output /tmp/haven-messaging-results --private /tmp/haven-messaging-private
+
+      - name: Export messaging correctness evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: messaging-correctness
+          path: /tmp/haven-messaging-results
+          if-no-files-found: warn
+          retention-days: 7
+
       - name: Validate documentation (-D warnings)
         run: RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --document-private-items
 

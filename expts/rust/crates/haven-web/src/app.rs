@@ -138,6 +138,7 @@ pub async fn root_layout(
                 }
             </head>
             <body>
+                <span hidden="hidden" data-unread-person=(user.as_ref().map(|person| person.id.to_string()).unwrap_or_default())></span>
                 app_shell(props: AppShellData {
                     viewer,
                     route: path,

@@ -370,3 +370,16 @@ Implementation and four focused HTTP regressions passed
 that the authenticated page finishes before status storage is released. Reuse,
 refresh after messaging, return-to-app checks and account-change cleanup belong
 to the next A3 task. This change does not complete the v0.7 load gate.
+
+
+### Unread reuse and refresh (A3, pending verification)
+
+Within one runtime document, both navigation indicators reuse the same status.
+Opening or rerendering a thread, new live message content, and returning to the
+visible app refresh that status. Overlapping refreshes share one request; a
+message/read change during that request schedules one follow-up. Full page loads
+start unknown and fetch again. There is no persistent browser cache of unread
+status. Account markers and private response identity prevent a delayed response
+for another person from populating the navigation; sign-out clears pending and
+cached state, and a restored page revalidates. Endpoint failure leaves the dot
+hidden and a later return can retry. These checks do not complete v0.7 load gates.

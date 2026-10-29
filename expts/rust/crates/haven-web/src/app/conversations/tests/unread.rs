@@ -108,7 +108,10 @@ async fn page_finishes_while_unread_endpoint_is_blocked() {
     });
     assert_eq!(response.status(), http::StatusCode::OK);
     assert_private(&response);
-    assert_eq!(body(response).await, r#"{"has_unread":true}"#);
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&body(response).await).unwrap(),
+        serde_json::json!({"person_id": person.id.to_string(), "has_unread": true}),
+    );
 }
 
 #[tokio::test]
@@ -163,7 +166,10 @@ async fn unread_status_uses_session_identity_and_never_renders_layout() {
         )
         .await
         .unwrap();
-    for (token, expected) in [(maker_token, true), (responder_token, false)] {
+    for (token, person_id, expected) in [
+        (maker_token, maker.id, true),
+        (responder_token, responder.id, false),
+    ] {
         let response = router
             .handle(request(
                 &format!("/unread-status?user_id={}", responder.id),
@@ -174,7 +180,10 @@ async fn unread_status_uses_session_identity_and_never_renders_layout() {
         assert_private(&response);
         assert_eq!(response.headers()["content-type"], "application/json");
         let status: serde_json::Value = serde_json::from_str(&body(response).await).unwrap();
-        assert_eq!(status, serde_json::json!({"has_unread": expected}));
+        assert_eq!(
+            status,
+            serde_json::json!({"person_id": person_id.to_string(), "has_unread": expected})
+        );
     }
     let guest_page = router.handle(request("/auth/sign-in", "")).await;
     assert!(!body(guest_page).await.contains("/unread-status.js"));

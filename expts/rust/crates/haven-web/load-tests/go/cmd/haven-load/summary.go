@@ -108,6 +108,8 @@ func makeSummary(scenario string, duration time.Duration, rate int, scheduled, s
 		summary.SemanticPercent = collector.narrowing.percent
 		summary.SampleSeed = collector.narrowing.seed
 		summary.QueryClass = collector.narrowing.class
+	}
+	if len(collector.semantic) > 0 {
 		summary.Semantic = make(map[string]semanticCount)
 		for key, count := range collector.semantic {
 			summary.Semantic[key] = count
