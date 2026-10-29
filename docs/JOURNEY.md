@@ -372,7 +372,7 @@ refresh after messaging, return-to-app checks and account-change cleanup belong
 to the next A3 task. This change does not complete the v0.7 load gate.
 
 
-### Unread reuse and refresh (A3, pending verification)
+### Unread reuse and refresh (A3, regression-verified)
 
 Within one runtime document, both navigation indicators reuse the same status.
 Opening or rerendering a thread, new live message content, and returning to the
@@ -383,3 +383,10 @@ status. Account markers and private response identity prevent a delayed response
 for another person from populating the navigation; sign-out clears pending and
 cached state, and a restored page revalidates. Endpoint failure leaves the dot
 hidden and a later return can retry. These checks do not complete v0.7 load gates.
+
+
+A3 passed [CI 40841600614](https://github.com/Phastboy/haven/actions/runs/40841600614)
+at `32bb582`: ten unread script regressions plus workspace checks. The first B3
+real-application messaging scenario also passed four round trips/68 HTTP checks
+on a fresh database. This is correctness evidence; cumulative journey coverage
+and sustained performance verification remain incomplete.

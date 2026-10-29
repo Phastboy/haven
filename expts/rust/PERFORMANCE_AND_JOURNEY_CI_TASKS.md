@@ -40,11 +40,18 @@ This checklist does not mark a product stage or release gate complete.
   and no request without signed-in navigation. Both navigation indicators begin
   hidden; public offer detail receives the same independent script. Workspace and
   browser-script checks pass. Refresh/reuse remains A3.
-- [ ] **A3. Reuse and refresh unread status — small–medium; follows A2.** Reuse
+- [x] **A3. Reuse and refresh unread status — small–medium; follows A2.** Reuse
   status during navigation where the runtime supports it. Refresh after sending
   or reading messages and on returning to the app. Prevent duplicate concurrent
   checks and clear person-specific state on sign-out/account changes. Verify
   refresh behavior and request counts across navigation.
+  Evidence: `3d4d2c4` + CI setup fix `32bb582`,
+  [CI 40841600614](https://github.com/Phastboy/haven/actions/runs/40841600614).
+  Ten unread script tests verify runtime reuse, thread/live-content refresh,
+  single-flight/follow-up counts, return-event coalescing, bfcache, account-switch
+  races, sign-out and retry. Private responses include session identity; stale
+  responses cannot populate another person's marker. No persistent browser cache.
+  All 232 Rust and 15 total script tests plus workspace/Go checks pass.
 - [ ] **A4. Measure complete authenticated requests — small; follows A1–A3.**
   Repeat Public, Saved, and Inquired measurements with sparse/dense histories,
   broad/selective/empty filters, and first/later pages. Include the unread
@@ -145,47 +152,37 @@ For every completed task, append an evidence entry here:
 | B1 | `81f5306` / [40837141401](https://github.com/Phastboy/haven/actions/runs/40837141401) | 14 journey groups inventoried with explicit scenario/endpoint gaps and B2 handoff; full cumulative coverage remains pending | 2026-10-29 |
 | A2 | `24b02db` / [40838910534](https://github.com/Phastboy/haven/actions/runs/40838910534) | Independent/private unread endpoint; four HTTP and four script regressions pass with workspace checks | 2026-10-29 |
 | B2 | `24b02db` / [40838910534](https://github.com/Phastboy/haven/actions/runs/40838910534) | Contracts define all 14 groups, request accounting, fixtures, absolute endpoint/tier targets and 100% HTTP allocation | 2026-10-29 |
+| A3 | `3d4d2c4`, `32bb582` / [40841600614](https://github.com/Phastboy/haven/actions/runs/40841600614) | Ten unread reuse/refresh/account-isolation script regressions; 232 Rust and 15 total script checks pass | 2026-10-29 |
 
 
 ## Continuation point — 2026-10-29
 
-A1, A2, B1 and B2 are complete as recorded above. A2/B2 passed CI on `24b02db`;
-no full load gate or v0.7 completion is claimed.
+A1–A3 and B1–B2 are complete as recorded above. A3 and the first B3 tranche passed
+[CI 40841600614](https://github.com/Phastboy/haven/actions/runs/40841600614) at
+`32bb582`. The initial run passed Rust/script/Go checks but failed before the live
+scenario because psql was not given its connection settings; the rerun fixes
+that setup. No full load gate or v0.7 completion is claimed.
 
-Next: A3 unread reuse/refresh and B3 reproducible fixtures/scenarios. A3 must
-refresh after messaging/reading and return to the app, coalesce checks and clear
-person-specific state on account changes. Test runtime navigation counts against
-B2's explicit full-navigation request accounting. B3 must fill the inventory gaps,
-including the legacy write workload's missing required category and authenticated
-Public/zero-history fixtures. Keep mutable scenario actors isolated.
+### B3 verified partial progress
 
-A4 measures complete authenticated HTTP requests only after A1–A3; B4–B7 still
-need the every-push cumulative workflow, complete success/failure evidence,
+- Required category payloads are supplied by legacy create/edit and concurrent
+  idempotency journeys; stateful transport regression and Go vet pass.
+- `--scenario messaging` reserves three distinct people per worker and checks a
+  17-request inquiry/read/reply/unread/access sequence. Status checks verify
+  private headers, session identity and state. Thread body/order and inbox
+  identity are checked; outsiders cannot read/write; guests receive unread 401.
+  Semantic counts are exported and conversation IDs are normalized from labels.
+- Fresh-database CI ran six people/two workers/four journeys: **68/68 HTTP checks
+  and 4/4 semantic round trips passed**, zero failures/drops. Artifact
+  `messaging-correctness` contains the revision, fixture hash, JSON summary and
+  runner report; sessions remain private. Fixture SHA256:
+  `e63391f07c712d6eb651f508f61fe29e88c42811a381d3d9a1715e6558fa3732`.
+  This is low-load correctness evidence, not a performance-gate result.
+
+**B3 remains unchecked.** Next fixture/scenario work includes authenticated Public
+and zero-history strata, dense/read-only and isolated mutable truth, inbox/thread
+paging and SSE, remaining auth/profile/media journeys/adapters and complete pool
+telemetry. The legacy write journey still needs a real-application round trip.
+A4 is now unblocked by A1–A3 and must measure complete authenticated requests.
+B4–B7 still need cumulative every-push coverage, complete success/failure evidence,
 regression baselines, actual merge/deployment enforcement and measured procedure.
-
-
-## A3 / first B3 tranche — pending CI verification
-
-A3 adds one document-scoped unread controller, with no persistent browser cache.
-A server-rendered person marker and private response `person_id` bind cached and
-in-flight state to an account. Runtime body updates reuse status; thread/read or
-live-message changes refresh it. Overlapping checks coalesce, with one follow-up
-when messaging invalidates a pending result. Visibility/focus/pageshow refreshes
-coalesce; hidden or restored pages clear stale status. Sign-out aborts pending
-work and hides the dot. Ten script tests pass locally, including request counts,
-account-switch races, sign-out, bfcache, return and retry behavior. Rust route
-regressions now assert the response identity; workspace verification remains CI.
-
-The first B3 tranche fixes required category payloads in legacy create/edit and
-idempotency journeys and adds `--scenario messaging`. Each worker owns three
-separate people. Its 17-request inquiry/read/reply/unread/access sequence checks
-private status headers, session identity, thread body/order, inbox identity,
-outsider denial and guest rejection. Semantic round-trip counts are exported and
-conversation IDs are normalized out of endpoint labels. Stateful transport tests
-and Go vet pass locally. CI will additionally run four low-load journeys against
-an isolated fresh database and export 68-request correctness evidence separately
-from credentials. This is not a sustained-load gate or complete B3 coverage.
-
-B3 remains pending for the remaining inventory/contract scenarios and fixture
-strata, SSE, paging, auth/media adapters, complete database telemetry and reusable
-fixture truth. No cumulative pass is claimed.
