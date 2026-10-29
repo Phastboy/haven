@@ -1,8 +1,8 @@
 # Performance fixes and cumulative journey CI
 
 Agreed 2026-10-28. This is the execution checklist for personal-feed performance
-fixes and a dedicated journey performance workflow on every push. All tasks are
-pending. Check an item only after its completion criteria are met; record the
+fixes and a dedicated journey performance workflow on every push. Task status is
+recorded below. Check an item only after its completion criteria are met; record the
 commit, CI run/report, and relevant measurements beneath the item. Implementation
 without verification remains pending. If measurement makes a conditional change
 unnecessary, record that evidence and the decision before closing the item.
@@ -14,12 +14,19 @@ This checklist does not mark a product stage or release gate complete.
 
 ## Track A — prioritized fixes
 
-- [ ] **A1. Indexed unread state — medium.** Maintain per-participant unread state
+- [x] **A1. Indexed unread state — medium.** Maintain per-participant unread state
   atomically with message sends and reads; provide a consistent backfill for
   existing conversations. Preserve participant authorization and current
   latest-sender/read semantics. Verify concurrent sends/reads, empty histories,
   and fixture consistency. Query plans must demonstrate that checking for unread
   messages no longer walks every read conversation in a dense history.
+  Evidence: `81f5306` + lint fix `9c50d0e`,
+  [CI 40837141401](https://github.com/Phastboy/haven/actions/runs/40837141401).
+  Five added database regressions pass, including populated-schema backfill,
+  concurrent sends/reads, unauthorized access and bulk fixture refresh. The dense
+  plan test seeds 2,048 read conversations and asserts use of
+  `idx_participant_unread_user`, with no sequential scan or message-index walk.
+  End-to-end HTTP improvement remains unmeasured (A4).
 - [ ] **A2. Independent unread loading — medium; follows A1.** Render the page
   without awaiting unread status. Fetch it through a small authenticated endpoint
   with private response handling. Keep the dot hidden while initial status is
@@ -59,12 +66,18 @@ rows; it does not by itself bound database work required to find those rows.
 
 Start B1 alongside A1. Build on the existing Go runner and CI release artifacts.
 
-- [ ] **B1. Inventory every supported journey — medium.** Map the current
+- [x] **B1. Inventory every supported journey — medium.** Map the current
   Offerer/Responder journeys in `docs/JOURNEY.md` to scenarios and important
   endpoints. Audit existing discovery, search/filter/pagination, save/follow,
   authorization, messaging, and unread coverage. Record missing coverage
   explicitly; do not report “all journeys passed” while supported journeys are
   absent. Future, unimplemented product stages are excluded.
+  Evidence: `81f5306`,
+  [inventory](crates/haven-web/load-tests/JOURNEY_COVERAGE.md), and
+  [CI 40837141401](https://github.com/Phastboy/haven/actions/runs/40837141401).
+  Source audit maps 14 supported journey groups to lane, stage, endpoints,
+  current scenarios and missing coverage. No full cumulative journey pass is
+  claimed; contracts/scenarios/workflow/enforcement remain B2–B7.
 - [ ] **B2. Define journey and endpoint contracts — medium; follows B1.** For
   each supported journey, specify actions, expected results, request counts,
   fixture needs, throughput/latency requirements, and sparse/dense/empty/
@@ -112,23 +125,23 @@ For every completed task, append an evidence entry here:
 
 | Task | Commit / CI run | Evidence and result | Completed |
 |---|---|---|---|
-| Pending | — | No task completion claimed | — |
+| A1 | `81f5306`, `9c50d0e` / [40837141401](https://github.com/Phastboy/haven/actions/runs/40837141401) | Workspace CI passes; five new state/backfill/concurrency/authorization/fixture/plan regressions; 2,048-read-history partial-index assertion | 2026-10-29 |
+| B1 | `81f5306` / [40837141401](https://github.com/Phastboy/haven/actions/runs/40837141401) | 14 journey groups inventoried with explicit scenario/endpoint gaps and B2 handoff; full cumulative coverage remains pending | 2026-10-29 |
 
 
-## Work in progress — 2026-10-29
+## Continuation point — 2026-10-29
 
-- **A1 implemented, pending CI verification.** Migration 019 backfills the existing
-  latest-sender/read predicate and adds a partial unread-person index. Participant
-  read changes and conversation activity changes refresh it within the transaction.
-  Sends and reads serialize on the conversation row after membership verification;
-  message timestamps are assigned after locking. Added regression tests for
-  unauthorized writes, empty/latest-sender state, concurrent send/read, populated
-  migration backfill, bulk fixture refresh and dense read-history query plans.
-  Local formatting and diff checks are the only completed checks; no performance
-  improvement or task completion is claimed yet.
-- **B1 source audit drafted, pending evidence record.** See
-  [journey coverage inventory](crates/haven-web/load-tests/JOURNEY_COVERAGE.md)
-  for all supported lanes, endpoints, current scenarios, explicit gaps and B2
-  handoff. Messaging/unread, authenticated Public, account/profile/media and
-  lifecycle coverage are incomplete. The legacy write workload also omits the
-  required create category. No cumulative journey pass is claimed.
+A1 and B1 are complete as recorded above. CI initially rejected an unnecessary
+raw-string delimiter in the test oracle; `9c50d0e` fixes that lint and the rerun
+passes. The new state/read queries use parameterized SQLx calls; unchanged macro
+queries retain their existing offline metadata.
+
+Next: A2 independent unread loading and B2 journey/endpoint contracts. Keep the
+unread dot hidden until its authenticated result is known, and make request
+failure independent of page rendering. A3 must then cover refresh, coalescing and
+person-specific state. Do not rerun the full release gates or mark v0.7 complete
+until applicable fixes and cumulative CI requirements are verified.
+
+The B1 audit also identifies a legacy load-workload issue: create requests omit
+v0.7's required category. Fix and verify it with B3's scenario work. Public v0.7
+fixture cases currently represent guests; A4 needs authenticated Public cases.
