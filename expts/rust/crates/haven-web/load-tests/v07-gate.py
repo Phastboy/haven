@@ -59,6 +59,8 @@ def main():
                    ('soak', 'mixed', 1010, '30m', 10, 'v07', 'all'),
                    ('capacity', 'mixed', 100, '120s', 10, 'capacity', 'all')]
         for label, scope, rate, duration, percent, scenario, history in phases:
+            pool_log = output / 'pool-acquire-seconds.txt'
+            pool_log_start = pool_log.stat().st_size if pool_log.exists() else 0
             summary = output / (label + '.json')
             command = [args.runner, '--base-url', args.base_url, '--scenario', scenario,
                        '--profile-target', 'v07', '--narrowing-fixture', args.fixture,
@@ -68,13 +70,20 @@ def main():
             print(f'Starting {label}', flush=True)
             with (output / (label + '.log')).open('w') as log:
                 result = subprocess.run(command, stdout=log, stderr=log, check=False)
+            time.sleep(0.3)  # flush telemetry after the measured phase has ended
             if not summary.exists():
                 raise RuntimeError(f'{label}: runner exited {result.returncode} without summary')
             data = json.loads(summary.read_text())
+            pool_samples = [float(value) for value in pool_log.read_bytes()[pool_log_start:].decode().splitlines()]
+            data['pool_acquire'] = summarize_pool_acquire(pool_samples)
+            summary.write_text(json.dumps(data, indent=2) + '\n')
+            if not pool_samples:
+                raise RuntimeError(f'{label}: SQLx pool acquisition telemetry was empty')
             latency = data['overall']
             print(json.dumps(dict(phase=label, rps=data['requests_per_second'],
                                   p95_ms=latency['p95_ns'] / 1e6,
                                   p99_ms=latency['p99_ns'] / 1e6,
+                                  pool_acquire_p95_ms=data['pool_acquire']['p95_seconds'] * 1000,
                                   failures=data['failed'], dropped=data['dropped'])), flush=True)
             # Capacity intentionally discovers failure; preserve its stage results.
             if scenario == 'capacity':
@@ -98,6 +107,20 @@ def main():
     finally:
         stop.set()
         sampler.join()
+
+
+def summarize_pool_acquire(values):
+    values.sort()
+
+    def percentile(fraction):
+        if not values:
+            return None
+        index = max(0, int(len(values) * fraction + 0.999999) - 1)
+        return values[index]
+
+    return {'scope': 'SQLx connection acquisition (wait plus connection creation)',
+            'count': len(values), 'p50_seconds': percentile(0.50),
+            'p95_seconds': percentile(0.95), 'p99_seconds': percentile(0.99)}
 
 
 if __name__ == '__main__':

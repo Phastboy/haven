@@ -48,6 +48,8 @@ def main():
         env.update(DATABASE_URL=database._replace(path='/' + database_name).geturl(),
                    PORT=port, HOST='127.0.0.1', PUBLIC_BASE_URL='http://127.0.0.1:' + port,
                    EMAIL_DELIVERY_ENABLED='false')
+        pool_log = private / 'pool-acquire-seconds.txt'
+        env['HAVEN_POOL_ACQUIRE_LOG'] = str(pool_log)
         runner = private / 'haven-load'
         subprocess.run(['go', 'build', '-o', str(runner), './cmd/haven-load'],
                        cwd=root / 'crates/haven-web/load-tests/go', check=True)
@@ -65,6 +67,7 @@ def main():
                     if attempt == 59:
                         raise RuntimeError('journey test server was not ready') from None
                     time.sleep(0.5)
+            pool_log_start = pool_log.stat().st_size
             fixture = private / 'sessions.json'
             cases_path = private / 'cases.json'
             seed_command = [str(root / 'target' / profile / 'load-test-support'),
@@ -98,7 +101,13 @@ def main():
                 result.update(workers=2, iterations=4)
             with (output / 'runner.log').open('w') as runner_log:
                 subprocess.run(command, cwd=root, stdout=runner_log, stderr=runner_log, check=True)
+            time.sleep(0.3)  # allow the off-path telemetry writer to flush its last batch
             summary = json.loads((output / 'summary.json').read_text())
+            load_window = pool_log.read_bytes()[pool_log_start:].decode().splitlines()
+            pool_values = [float(value) for value in load_window]
+            result['pool_acquire_seconds'] = summarize_pool_acquire(pool_values)
+            if not pool_values:
+                raise RuntimeError('SQLx pool acquisition telemetry was empty')
             if (summary['failed'] or summary['dropped'] or summary['requests'] != expected_requests
                     or summary['checks'] != expected_requests
                     or summary['checks_passed'] != expected_requests):
@@ -124,6 +133,20 @@ def main():
                 server.kill()
                 server.wait()
         report.write_text(json.dumps(result, indent=2))
+
+
+def summarize_pool_acquire(values):
+    values.sort()
+
+    def percentile(fraction):
+        if not values:
+            return None
+        index = max(0, int(len(values) * fraction + 0.999999) - 1)
+        return values[index]
+
+    return {'scope': 'SQLx connection acquisition (wait plus connection creation)',
+            'count': len(values), 'p50_seconds': percentile(0.50),
+            'p95_seconds': percentile(0.95), 'p99_seconds': percentile(0.99)}
 
 
 if __name__ == '__main__':

@@ -24,6 +24,8 @@ hex = { workspace = true }
 async-stream = "0.3.6"
 html-escape = "0.3.0"
 futures-core = "0.3.34"
+log = "0.4.29"
+tracing = "0.1.44"
 
 [lints]
 workspace=true
