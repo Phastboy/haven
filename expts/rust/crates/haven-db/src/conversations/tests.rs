@@ -9,6 +9,8 @@ use haven_domain::conversation::{ConversationPair, MessageBody, NewMessage};
 use sqlx::PgPool;
 use uuid::Uuid;
 
+mod unread;
+
 #[sqlx::test(migrations = "../../migrations")]
 async fn test_conversation_get_or_create_and_messages(pool: PgPool) {
     let repo = PostgresConversationRepository::new(pool.clone());

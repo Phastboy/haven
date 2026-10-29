@@ -20,6 +20,9 @@ use haven_domain::ports::RepoError;
 use haven_domain::user::UserId;
 use uuid::Uuid;
 
+mod unread;
+pub use unread::{mark_read, unread_exists};
+
 use super::rows::{ConversationRow, InboxRow, MessageRow};
 use crate::DbPool;
 
@@ -128,27 +131,8 @@ pub async fn append(
 
     let mut tx = pool.begin().await.map_err(crate::map_sqlx_err)?;
 
-    // 1. Verify conversation exists and sender is participant
-    let conv = sqlx::query_as!(
-        ConversationRow,
-        r#"
-        SELECT id, user_low, user_high, created_at, last_message_at
-        FROM conversation
-        WHERE id = $1 AND (user_low = $2 OR user_high = $2)
-        "#,
-        c_id,
-        s_id
-    )
-    .fetch_optional(&mut *tx)
-    .await
-    .map_err(crate::map_sqlx_err)?;
-
-    if conv.is_none() {
-        return Err(RepoError::NotFound {
-            entity: "conversation",
-            id: conversation_id.to_string(),
-        });
-    }
+    // Serialize sends and reads before assigning a message timestamp.
+    unread::lock_participant(&mut tx, conversation_id, new_message.sender_id).await?;
 
     // 2. Insert message
     let msg_row = sqlx::query_as!(
@@ -397,62 +381,6 @@ pub async fn messages(
     };
 
     Ok(MessagePage { items, next_cursor })
-}
-
-pub async fn mark_read(
-    pool: &DbPool,
-    conversation_id: ConversationId,
-    user_id: UserId,
-) -> Result<(), RepoError> {
-    let c_id = conversation_id.as_uuid();
-    let u_id = user_id.as_uuid();
-    let now = Utc::now();
-
-    sqlx::query!(
-        r#"
-        INSERT INTO conversation_participant (conversation_id, user_id, last_read_at)
-        VALUES ($1, $2, $3)
-        ON CONFLICT (conversation_id, user_id)
-        DO UPDATE SET last_read_at = EXCLUDED.last_read_at
-        "#,
-        c_id,
-        u_id,
-        now
-    )
-    .execute(pool)
-    .await
-    .map_err(crate::map_sqlx_err)?;
-
-    Ok(())
-}
-
-pub async fn unread_exists(pool: &DbPool, user_id: UserId) -> Result<bool, RepoError> {
-    let u_id = user_id.as_uuid();
-
-    let res = sqlx::query_scalar!(
-        r#"
-        SELECT EXISTS (
-            SELECT 1
-            FROM conversation_participant cp
-            JOIN conversation c ON c.id = cp.conversation_id
-            WHERE cp.user_id = $1
-              AND cp.last_read_at < c.last_message_at
-              AND (
-                  SELECT m.sender_id
-                  FROM message m
-                  WHERE m.conversation_id = c.id
-                  ORDER BY m.created_at DESC, m.id DESC
-                  LIMIT 1
-              ) != $1
-        ) AS "exists!"
-        "#,
-        u_id
-    )
-    .fetch_one(pool)
-    .await
-    .map_err(crate::map_sqlx_err)?;
-
-    Ok(res)
 }
 
 struct InquirerRow {
