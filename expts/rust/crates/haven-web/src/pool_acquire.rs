@@ -1,4 +1,4 @@
-//! Optional SQLx pool acquisition telemetry for isolated performance runs.
+//! Optional `SQLx` pool acquisition telemetry for isolated performance runs.
 
 use std::fs::OpenOptions;
 use std::io::{BufWriter, Write};
@@ -53,10 +53,10 @@ impl Subscriber for PoolAcquireSubscriber {
         }
         let mut duration = AcquireDuration(None);
         event.record(&mut duration);
-        if let Some(seconds) = duration.0 {
-            if let Ok(mut samples) = self.samples.lock() {
-                samples.push(seconds);
-            }
+        if let Some(seconds) = duration.0
+            && let Ok(mut samples) = self.samples.lock()
+        {
+            samples.push(seconds);
         }
     }
 
