@@ -58,7 +58,14 @@ def main():
                    ('spike', 'mixed', 100, '180s', 10, 'spike', 'all'),
                    ('soak', 'mixed', 1010, '30m', 10, 'v07', 'all'),
                    ('capacity', 'mixed', 100, '120s', 10, 'capacity', 'all')]
-        for label, scope, rate, duration, percent, scenario, history in phases:
+        phase_results = []
+        phase_failures = []
+        for phase_index, (label, scope, rate, duration, percent, scenario, history) in enumerate(phases):
+            correctness_phase = label.startswith('correctness-')
+            if phase_failures and not correctness_phase:
+                phase_results.extend({'phase': later[0], 'status': 'not_run_after_correctness_failure'}
+                                     for later in phases[phase_index:])
+                break
             pool_log = output / 'pool-acquire-seconds.txt'
             pool_log_start = pool_log.stat().st_size if pool_log.exists() else 0
             summary = output / (label + '.json')
@@ -76,33 +83,50 @@ def main():
             data = json.loads(summary.read_text())
             pool_samples = [float(value) for value in pool_log.read_bytes()[pool_log_start:].decode().splitlines()]
             data['pool_acquire'] = summarize_pool_acquire(pool_samples)
-            summary.write_text(json.dumps(data, indent=2) + '\n')
-            if not pool_samples:
-                raise RuntimeError(f'{label}: SQLx pool acquisition telemetry was empty')
             latency = data['overall']
+            phase_error = None
+            if not pool_samples:
+                phase_error = 'SQLx pool acquisition telemetry was empty'
+            elif scenario == 'capacity' and not data.get('profile_failed'):
+                phase_error = 'Capacity ladder exhausted: extend beyond final stage'
+            elif scenario != 'capacity' and (
+                    result.returncode or data['failed'] or data['dropped']
+                    or data['checks'] != data['checks_passed']):
+                phase_error = 'request/correctness/arrival failure'
+            semantic = data.get('semantic_cases', {})
+            if phase_error is None and scenario != 'capacity' and (
+                    not semantic or any(count['checked'] != count['passed'] for count in semantic.values())):
+                phase_error = 'semantic checks failed or absent'
+            if phase_error is None and scenario == 'spike' and data.get('profile_failed'):
+                phase_error = 'Spike/recovery budget failed'
+            if phase_error is None and not correctness_phase and scenario not in ('spike', 'capacity') and (
+                    data['completed'] / (data['duration_ns'] / 1e9) < 1000
+                    or any(route['p95_ns'] > 200e6 or route['p99_ns'] > 500e6
+                           for route in data['routes'])):
+                phase_error = 'throughput/latency budget failed'
+            data['gate_status'] = 'failed' if phase_error else 'passed'
+            if phase_error:
+                data['gate_error'] = phase_error
+            summary.write_text(json.dumps(data, indent=2) + '\n')
+            phase_results.append({'phase': label, 'status': data['gate_status'],
+                                  'error': phase_error, 'summary': summary.name})
             print(json.dumps(dict(phase=label, rps=data['requests_per_second'],
                                   p95_ms=latency['p95_ns'] / 1e6,
                                   p99_ms=latency['p99_ns'] / 1e6,
                                   pool_acquire_p95_ms=data['pool_acquire']['p95_seconds'] * 1000,
-                                  failures=data['failed'], dropped=data['dropped'])), flush=True)
-            # Capacity intentionally discovers failure; preserve its stage results.
-            if scenario == 'capacity':
-                if not data.get('profile_failed'):
-                    raise RuntimeError('Capacity ladder exhausted: extend beyond final stage')
-                continue
-            if result.returncode or data['failed'] or data['dropped'] or data['checks'] != data['checks_passed']:
-                raise RuntimeError(f'{label}: request/correctness/arrival failure')
-            semantic = data.get('semantic_cases', {})
-            if not semantic or any(count['checked'] != count['passed'] for count in semantic.values()):
-                raise RuntimeError(f'{label}: semantic checks failed or absent')
-            if scenario == 'spike':
-                if data.get('profile_failed'):
-                    raise RuntimeError('Spike/recovery budget failed')
-            elif not label.startswith('correctness'):
-                if (data['completed'] / (data['duration_ns'] / 1e9) < 1000
-                        or any(route['p95_ns'] > 200e6 or route['p99_ns'] > 500e6
-                               for route in data['routes'])):
-                    raise RuntimeError(f'{label}: throughput/latency budget failed')
+                                  failures=data['failed'], dropped=data['dropped'],
+                                  error=phase_error)), flush=True)
+            if phase_error:
+                phase_failures.append({'phase': label, 'error': phase_error})
+                if not correctness_phase:
+                    phase_results.extend({'phase': later[0], 'status': 'not_run_after_failure'}
+                                         for later in phases[phase_index + 1:])
+                    break
+        (output / 'gate-status.json').write_text(json.dumps(
+            {'status': 'failed' if phase_failures else 'passed', 'phases': phase_results,
+             'failures': phase_failures}, indent=2) + '\n')
+        if phase_failures:
+            raise RuntimeError(f"performance gate failed in {len(phase_failures)} phase(s); see gate-status.json")
         print('HTTP gates complete; review telemetry for bounded memory and CPU headroom.', flush=True)
     finally:
         stop.set()
