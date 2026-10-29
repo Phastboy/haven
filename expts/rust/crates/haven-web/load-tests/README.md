@@ -77,3 +77,35 @@ automatically; updating the tracked scorecard remains a manual review step.
 
 Do not mark the v0.5.x or v0.6.x roadmap gates complete until the agreed performance
 criteria have recorded results in `SCORECARD.md`.
+
+
+### Messaging correctness (B3, initial coverage)
+
+The Go `messaging` scenario reserves three distinct people per worker: responder,
+maker with a visible offer, and outsider. Generate a fresh ordinary fixture on a
+new migrated disposable database (`load-test-support --users 6` for two workers).
+Do not share these people with any concurrent mutation workload. Their unrelated
+conversations must initially be read/empty. Fixture identities are generated;
+assertions use the exported session/offer truth, and CI records its private-file
+SHA256 rather than exposing credentials.
+
+```sh
+./results/haven-load --base-url http://127.0.0.1:3000 --scenario messaging \
+  --sessions data/sessions.json --workers 2 --rate 2 --iterations 4 --duration 5s \
+  --summary results/messaging.json
+```
+
+Each journey issues 17 explicit HTTP requests: inquiry, unread transitions,
+responder/maker thread reads, inbox identity, maker reply, outsider read/write
+404s, unchanged authorized thread and guest unread 401. Status calls are separate
+requests, with their own latency, private-header and person/state assertions.
+Report `semantic_cases.messaging/round-trip` checked/passed counts alongside HTTP
+outcomes. This scenario only covers part of J06–J08/J14; SSE, message/inbox paging,
+full fixture strata and all other missing inventory rows remain pending.
+
+CI runs `messaging-correctness.py` after builds, assets, and Go checks. It creates
+`haven_messaging_ci` on the local disposable PostgreSQL service, starts the debug
+application, seeds six people, and requires four passing journeys/68 requests.
+The `messaging-correctness` artifact contains only result/summary/runner reports.
+Sessions and server/seed logs remain in a separate private directory. Results
+are low-load correctness evidence, not release performance measurements.

@@ -93,6 +93,14 @@ func routeLabel(raw string) string {
 		} else {
 			path = "/offers/{slug}"
 		}
+	case path == "/conversations":
+	case strings.HasPrefix(path, "/conversations/"):
+		rest := strings.TrimPrefix(path, "/conversations/")
+		if i := strings.IndexByte(rest, '/'); i >= 0 {
+			path = "/conversations/{id}" + rest[i:]
+		} else {
+			path = "/conversations/{id}"
+		}
 	case strings.HasPrefix(path, "/profiles/"):
 		rest := strings.TrimPrefix(path, "/profiles/")
 		if i := strings.IndexByte(rest, '/'); i >= 0 {

@@ -39,7 +39,7 @@ func offerWriteJourney(ctx context.Context, client *http.Client, baseURL string,
 	title := scenarioTitle("Load", actor, index)
 	createValues := map[string]string{
 		"title": title, "description": "Go load test create edit delete journey", "price": "500",
-		"currency": "NGN", "idempotency_key": keyMatch[1],
+		"currency": "NGN", "category": "other", "idempotency_key": keyMatch[1],
 	}
 	offerPath, err := requestWithLocation(ctx, client, baseURL, "/profile/offers/new", actor.Session, createValues, 303, collector)
 	if err != nil {
@@ -58,7 +58,7 @@ func offerWriteJourney(ctx context.Context, client *http.Client, baseURL string,
 	if err := get(ctx, client, baseURL, offerPath+"/edit", actor.Session, 200, collector); err != nil {
 		return err
 	}
-	editValues := map[string]string{"title": title + " Edited", "description": "Go load test edited offer", "price": "0", "currency": "NGN"}
+	editValues := map[string]string{"title": title + " Edited", "description": "Go load test edited offer", "price": "0", "currency": "NGN", "category": "other"}
 	if err := post(ctx, client, baseURL, offerPath+"/edit", actor.Session, editValues, 303, collector); err != nil {
 		return err
 	}
@@ -166,7 +166,7 @@ func authorizationJourney(ctx context.Context, client *http.Client, baseURL stri
 	if len(keyMatch) != 2 {
 		return errors.New("new-offer form did not include an idempotency key")
 	}
-	values := map[string]string{"title": scenarioTitle("Idem", actor, index), "description": "Go load test idempotency check", "price": "500", "currency": "NGN", "idempotency_key": keyMatch[1]}
+	values := map[string]string{"title": scenarioTitle("Idem", actor, index), "description": "Go load test idempotency check", "price": "500", "currency": "NGN", "category": "other", "idempotency_key": keyMatch[1]}
 	type createResult struct {
 		location string
 		err      error

@@ -47,7 +47,7 @@ type stats struct {
 
 func main() {
 	baseURL := flag.String("base-url", envOr("BASE_URL", "http://127.0.0.1:3000"), "Haven base URL")
-	scenario := flag.String("scenario", "smoke", "smoke, warmup, steady, authorization, v05, v06, v07, spike, or capacity")
+	scenario := flag.String("scenario", "smoke", "smoke, warmup, steady, authorization, v05, v06, v07, messaging, spike, or capacity")
 	sessionsPath := flag.String("sessions", "../data/sessions.json", "load-test-support session JSON")
 	rate := flag.Int("rate", 1, "open arrival rate in journeys per second")
 	duration := flag.Duration("duration", time.Second, "test duration")
@@ -79,6 +79,12 @@ func main() {
 	}
 	if *scenario == "v06" && len(fixture) < *workers*22 {
 		log.Fatalf("v06 needs %d seeded users for isolated pagination fixtures; found %d", *workers*22, len(fixture))
+	}
+
+	if *scenario == "messaging" {
+		if err := validateMessagingSessions(fixture, *workers); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	client := &http.Client{
@@ -143,7 +149,7 @@ func validate(baseURL, scenario string, rate int, duration time.Duration, worker
 	if !strings.HasPrefix(baseURL, "http://") && !strings.HasPrefix(baseURL, "https://") {
 		return errors.New("base-url must use http or https")
 	}
-	if scenario != "smoke" && scenario != "warmup" && scenario != "steady" && scenario != "authorization" && scenario != "v05" && scenario != "v06" && scenario != "v07" && scenario != "spike" && scenario != "capacity" {
+	if scenario != "smoke" && scenario != "warmup" && scenario != "steady" && scenario != "authorization" && scenario != "v05" && scenario != "v06" && scenario != "v07" && scenario != "messaging" && scenario != "spike" && scenario != "capacity" {
 		return fmt.Errorf("unknown scenario %q", scenario)
 	}
 	if rate < 1 || workers < 1 || duration <= 0 {

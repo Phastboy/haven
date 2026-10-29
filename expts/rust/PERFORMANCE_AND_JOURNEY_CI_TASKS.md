@@ -162,3 +162,30 @@ Public/zero-history fixtures. Keep mutable scenario actors isolated.
 A4 measures complete authenticated HTTP requests only after A1–A3; B4–B7 still
 need the every-push cumulative workflow, complete success/failure evidence,
 regression baselines, actual merge/deployment enforcement and measured procedure.
+
+
+## A3 / first B3 tranche — pending CI verification
+
+A3 adds one document-scoped unread controller, with no persistent browser cache.
+A server-rendered person marker and private response `person_id` bind cached and
+in-flight state to an account. Runtime body updates reuse status; thread/read or
+live-message changes refresh it. Overlapping checks coalesce, with one follow-up
+when messaging invalidates a pending result. Visibility/focus/pageshow refreshes
+coalesce; hidden or restored pages clear stale status. Sign-out aborts pending
+work and hides the dot. Ten script tests pass locally, including request counts,
+account-switch races, sign-out, bfcache, return and retry behavior. Rust route
+regressions now assert the response identity; workspace verification remains CI.
+
+The first B3 tranche fixes required category payloads in legacy create/edit and
+idempotency journeys and adds `--scenario messaging`. Each worker owns three
+separate people. Its 17-request inquiry/read/reply/unread/access sequence checks
+private status headers, session identity, thread body/order, inbox identity,
+outsider denial and guest rejection. Semantic round-trip counts are exported and
+conversation IDs are normalized out of endpoint labels. Stateful transport tests
+and Go vet pass locally. CI will additionally run four low-load journeys against
+an isolated fresh database and export 68-request correctness evidence separately
+from credentials. This is not a sustained-load gate or complete B3 coverage.
+
+B3 remains pending for the remaining inventory/contract scenarios and fixture
+strata, SSE, paging, auth/media adapters, complete database telemetry and reusable
+fixture truth. No cumulative pass is claimed.

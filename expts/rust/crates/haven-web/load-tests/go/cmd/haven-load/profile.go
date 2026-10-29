@@ -131,11 +131,13 @@ func profileStages(scenario string) []profileStage {
 }
 
 func needsSessions(scenario string) bool {
-	return scenario == "warmup" || scenario == "steady" || scenario == "authorization" || scenario == "v06" || scenario == "spike" || scenario == "capacity"
+	return scenario == "messaging" || scenario == "warmup" || scenario == "steady" || scenario == "authorization" || scenario == "v06" || scenario == "spike" || scenario == "capacity"
 }
 
 func validateSessions(scenario string, sessions []session) error {
 	switch scenario {
+	case "messaging":
+		return validateMessagingSessions(sessions, 1)
 	case "warmup":
 		if len(sessions) == 0 || sessions[0].Session == "" {
 			return errors.New("warmup requires seeded session tokens")

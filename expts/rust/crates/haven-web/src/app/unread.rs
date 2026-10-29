@@ -5,6 +5,8 @@ use topcoat::{Result, context::Cx, router::content::Json};
 /// The signed-in person's current navigation indicator state.
 #[derive(serde::Serialize)]
 pub struct UnreadStatus {
+    /// Identity bound to this private response, used to reject stale account state.
+    pub person_id: String,
     /// True when at least one conversation has an unread latest incoming message.
     pub has_unread: bool,
 }
@@ -33,7 +35,10 @@ pub async fn unread_status(cx: &Cx) -> Result<Json<UnreadStatus>> {
         .unread_exists(person.id)
         .await
         .map_err(crate::app::state::map_repo_err)?;
-    Ok(Json(UnreadStatus { has_unread }))
+    Ok(Json(UnreadStatus {
+        person_id: person.id.to_string(),
+        has_unread,
+    }))
 }
 
 /// Serves the initial unread-status enhancement under the site's script CSP.

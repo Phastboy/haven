@@ -21,8 +21,8 @@ the cumulative HTTP journey gate. Paths describe current code; historical
 | J03 / 0.2 | Responder: discover offers and open one | `/`, `/offers`, `/offers/{slug}` | `steady` reads feed/home; `v07` checks feed IDs/order; `v06` saves by slug | Public detail field/maker assertions, missing/deleted offer, guest vs authenticated responses/cache headers; authenticated Public feed is absent from v0.7 cases |
 | J04 / 0.3 | Both: represent identity and edit profile | `/profile`, `/profile/edit`, `/profile/account` | None | Profile round trip, invalid/duplicate handle, field escaping, account/session display, permissions and interruption |
 | J05 / 0.3 | Responder: identify maker and visit their catalogue | `/offers/{slug}`, `/profiles/{handle}` | `v06` follows a handle, without validating the catalogue | Maker handoff, expected identity, catalogue IDs/order/paging, empty/missing profile, long fields |
-| J06 / 0.4 | Responder → Offerer: inquire about an offer | `/offers/{slug}/message`, `/profile/offers/{id}`, `/conversations/{id}` | None; fixture messages seed Inquired membership only | First/repeated inquiry, single conversation per pair, offer tag and sender identity, maker inquirers, deleted offer, self-inquiry denial, anonymous return intent |
-| J07 / 0.4 | Both: inbox and private conversation | `/conversations`, `/conversations/{id}`, `/conversations/{id}/messages` | None | Exact inbox activity order/cursors, previews/latest sender, empty inbox/thread, thread paging, tagged/untagged messages, read-after-write, escaping and authorization |
+| J06 / 0.4 | Responder → Offerer: inquire about an offer | `/offers/{slug}/message`, `/profile/offers/{id}`, `/conversations/{id}` | `messaging`: inquiry, thread body/order, maker inbox identity and unread round trip; fixture messages also seed Inquired membership | First/repeated inquiry, single conversation per pair, offer tag and sender identity, maker inquirers, deleted offer, self-inquiry denial, anonymous return intent |
+| J07 / 0.4 | Both: inbox and private conversation | `/conversations`, `/conversations/{id}`, `/conversations/{id}/messages` | Partial `messaging` read/reply/body-order and outsider checks | Exact inbox activity order/cursors, previews/latest sender, empty inbox/thread, thread paging, tagged/untagged messages, read-after-write, escaping and authorization |
 | J08 / 0.4 | Both: live conversation and unread navigation | `/conversations/{id}/events`, authenticated page shells; `/unread-status` (A2) | None | SSE event identity/order, disconnect/reconnect, unread transitions after send/read, latest-own-message semantics, desktop/mobile dots, slow/failed independent loading and refresh counts once A2/A3 exist |
 | J09 / 0.5 | Responder: title and price discovery | `/offers?q=…&currency=…&min_price=…&max_price=…`, `after` | `v05`: combined filters, next link preservation, Free and empty text; `v07`: exact fixture IDs/order | Invalid/boundary input and back/refresh; connect UI controls/links to expected results rather than only prepared URLs |
 | J10 / 0.6 | Responder: save, return, unsave | `/offers/{slug}/save`, `/profile/saved`; feed saved-status database batch | `v06`: duplicate save/unsave, saved pagination; `v07`: saved scope IDs/order | Exact saved membership after each transition, empty state after removal, anonymous/own/deleted cases, saved-status batch assertions and query accounting |
@@ -39,14 +39,16 @@ evidence links, since the Go client does not execute a browser.
 ## Source evidence and constraints for B2/B3
 
 - `go/cmd/haven-load/runner.go` dispatches only `smoke`, `warmup`, `steady`,
-  `authorization`, `v05`, `v06`, `v07`, and the spike/capacity profiles. There is
-  no communication or account lifecycle scenario.
+  `authorization`, `v05`, `v06`, `v07`, `messaging`, and the spike/capacity profiles. Messaging
+  now has initial round-trip coverage; account lifecycle and full communication
+  coverage remain absent.
 - `journeys.go`: `steadyJourney` mixes single reads with a multi-request write
   journey. Its rate therefore does **not** equal HTTP RPS. The contract's
   historical assertion that every steady journey is one request is stale.
   Record offered journeys/sec and achieved requests/sec separately.
-- `offerWriteJourney` does not supply `category` on create. Validate/fix this
-  before calling the cumulative write journey functional for v0.7.
+- `offerWriteJourney` now supplies required `category` on create/edit; the
+  concurrent idempotency journey also supplies it. Full real-application write
+  scenario verification remains part of B3.
 - `v06Journey` reserves 22 people per worker. Other scenarios choose sessions
   by arrival index. Reserve disjoint actor groups across scenarios, including
   the two ends of a conversation, so mutation never invalidates fixture truth.
