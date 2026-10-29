@@ -192,7 +192,9 @@ regression baselines, actual merge/deployment enforcement and measured procedure
 
 The narrowing fixture now reserves one genuine zero-history person, excluding
 that person's offers from every seeded history and asserting zero conversations
-and saves after generation. Authenticated Public, Saved and Inquired each have
+and saves after generation. Dense selection first guarantees at least 6,484
+distinct offer makers, then fills to 10,000 offers; generated participant counts
+are checked against that minimum. Authenticated Public, Saved and Inquired each have
 explicit dense/sparse/zero groups, person identity and expected unread truth.
 Independent oracle regressions cover public cursor/result equivalence and empty
 personal truth. Old guest-only/incomplete fixtures are rejected by the runner.

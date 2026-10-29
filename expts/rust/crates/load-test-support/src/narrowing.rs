@@ -154,6 +154,17 @@ async fn authenticated_cases(
             },
         )
         .await?;
+        if dense {
+            let conversations: i64 = sqlx::query_scalar(
+                "SELECT COUNT(*) FROM conversation_participant WHERE user_id=$1",
+            )
+            .bind(person.as_uuid())
+            .fetch_one(pool)
+            .await?;
+            if conversations < 6484 {
+                return Err("dense fixture has fewer than 6,484 conversations".into());
+            }
+        }
         let public_actor = Actor {
             scope: None,
             history,
