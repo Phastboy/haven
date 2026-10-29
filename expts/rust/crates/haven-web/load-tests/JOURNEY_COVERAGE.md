@@ -18,7 +18,7 @@ the cumulative HTTP journey gate. Paths describe current code; historical
 |---|---|---|---|---|
 | J01 / 0.1 | Both: account creation, sign-in, return intent | `/auth/sign-in`, `/auth/sent`, `/auth/verify`, `/auth/google`, `/auth/google/callback` | `warmup` GETs the sign-in form; fixtures inject sessions | Magic-link issuance/consumption, expiry/reuse, new vs existing account, Google callback success/failure, safe return intent and session rotation; deterministic mail/OAuth adapters |
 | J02 / 0.1 | Offerer: create, inspect, edit, delete own offer | `/profile/offers`, `/profile/offers/new`, `/profile/offers/{id}`, `/edit`, `/delete` | `steady` write branch performs create/read/edit/read/delete/404; `authorization` checks concurrent idempotency | Exact persisted fields/category, validation and interruption/retry, own-list paging, deleted public slug, session isolation; create payload currently omits required v0.7 category |
-| J03 / 0.2 | Responder: discover offers and open one | `/`, `/offers`, `/offers/{slug}` | `steady` reads feed/home; `v07` checks feed IDs/order; `v06` saves by slug | Public detail field/maker assertions, missing/deleted offer, guest vs authenticated responses/cache headers; authenticated Public feed is absent from v0.7 cases |
+| J03 / 0.2 | Responder: discover offers and open one | `/`, `/offers`, `/offers/{slug}` | `steady` reads feed/home; `v07` checks feed IDs/order; `v06` saves by slug | Public detail field/maker assertions, missing/deleted offer, guest vs authenticated public-detail responses/cache headers; authenticated feed cases are now verified |
 | J04 / 0.3 | Both: represent identity and edit profile | `/profile`, `/profile/edit`, `/profile/account` | None | Profile round trip, invalid/duplicate handle, field escaping, account/session display, permissions and interruption |
 | J05 / 0.3 | Responder: identify maker and visit their catalogue | `/offers/{slug}`, `/profiles/{handle}` | `v06` follows a handle, without validating the catalogue | Maker handoff, expected identity, catalogue IDs/order/paging, empty/missing profile, long fields |
 | J06 / 0.4 | Responder → Offerer: inquire about an offer | `/offers/{slug}/message`, `/profile/offers/{id}`, `/conversations/{id}` | `messaging`: inquiry, thread body/order, maker inbox identity and unread round trip; fixture messages also seed Inquired membership | First/repeated inquiry, single conversation per pair, offer tag and sender identity, maker inquirers, deleted offer, self-inquiry denial, anonymous return intent |
@@ -27,7 +27,7 @@ the cumulative HTTP journey gate. Paths describe current code; historical
 | J09 / 0.5 | Responder: title and price discovery | `/offers?q=…&currency=…&min_price=…&max_price=…`, `after` | `v05`: combined filters, next link preservation, Free and empty text; `v07`: exact fixture IDs/order | Invalid/boundary input and back/refresh; connect UI controls/links to expected results rather than only prepared URLs |
 | J10 / 0.6 | Responder: save, return, unsave | `/offers/{slug}/save`, `/profile/saved`; feed saved-status database batch | `v06`: duplicate save/unsave, saved pagination; `v07`: saved scope IDs/order | Exact saved membership after each transition, empty state after removal, anonymous/own/deleted cases, saved-status batch assertions and query accounting |
 | J11 / 0.6 | Both: follow, return, unfollow | `/profiles/{handle}/follow`, `/profile/following` | `v06`: duplicate follow/unfollow and pagination | Exact identity/order, empty state after removal, self/missing/anonymous cases, actor isolation across other scenarios |
-| J12 / 0.7 | Offerer: publish/edit category; Responder: narrow progressively | `/profile/offers/new`, `/profile/offers/{id}/edit`, `/offers?category=…`, `scope=saved`, `scope=inquired` | `v07`: deterministic public/saved/inquired cases, sparse/dense histories, first/later pages and expected IDs/order | Category write/read round trip, chip/All/clear-filter navigation, scope/cursor tampering, authenticated Public with sparse/dense unread history, zero-history people and interrupted navigation |
+| J12 / 0.7 | Offerer: publish/edit category; Responder: narrow progressively | `/profile/offers/new`, `/profile/offers/{id}/edit`, `/offers?category=…`, `scope=saved`, `scope=inquired` | `v07`: guest/authenticated Public and Saved/Inquired cases, zero/sparse/dense histories, first/later pages, expected IDs/order and unread truth | Category write/read round trip, chip/All/clear-filter navigation, scope/cursor tampering, non-read unread states under discovery load and interrupted navigation |
 | J13 / released media | Offerer: offer photos and avatar; Responder: cover/gallery viewing | `/profile/offers/{id}/images`, `/images/delete`, `/images/reorder`, `/profile/avatar`, `/profile/avatar/delete`, public image URLs | None | Upload/reorder/delete ownership and validation, cover selection, gallery/thumbnail correctness, image failure fallback; image-provider test adapter and separate live CDN verification |
 | J14 / all supported stages | Both: sign-out and protected access | `/auth/sign-out`, protected profile/messaging routes | `authorization`: other-owner and anonymous offer edit/delete; idempotent create | Session invalidation, expired/malformed session, no cross-account unread cache after A3, conversation/SSE/media/profile ownership, private response headers, state-changing request protection |
 
@@ -52,20 +52,21 @@ evidence links, since the Go client does not execute a browser.
 - `v06Journey` reserves 22 people per worker. Other scenarios choose sessions
   by arrival index. Reserve disjoint actor groups across scenarios, including
   the two ends of a conversation, so mutation never invalidates fixture truth.
-- `narrowing.go` enforces guest tokens for Public and authenticated tokens for
-  personal scopes. It checks exact offer slugs/order and pagination against a
-  private fixture, with deterministic semantic sampling. Add a distinct
-  authenticated Public stratum rather than treating current Public measurements
-  as authenticated measurements.
-- `load-test-support/src/narrowing/history.rs` seeds repeated qualifying offer
-  messages and owner replies, then marks the focal person read. It does not
-  exercise HTTP messaging, unread transitions, or zero-history authenticated
-  people. Dense read histories must remain in the fixture after A1.
-- The Go HTTP client does not execute JavaScript, fetch CSS/images, or issue
-  follow-up unread runtime calls automatically. B2 must specify these
-  requests explicitly and account for them in request counts and latency. Saved-status
-  batches currently run inside feed rendering (`saved_among`), so measure their
-  database cost within the parent request rather than inventing an HTTP route.
+- `narrowing.go` requires guest Public plus authenticated Public/Saved/Inquired
+  dense/sparse/zero strata. Cases carry independent expected slugs/order,
+  pagination, person identity and unread truth. A correctness sweep visits every
+  case once; history filters isolate material cost. The narrowing-only mixed
+  journey schedule is 35% guest Public, 35% authenticated Public, 15% Saved and
+  15% Inquired, distinct from B2's cumulative HTTP mix.
+- `load-test-support/src/narrowing/history.rs` reserves one person with verified
+  zero conversations/saves and excludes that person's offers from all histories.
+  Dense actors have 10,000 offer histories and at least 6,484 distinct participant
+  conversations. Repeated qualifying messages/replies and read state remain.
+- The Go client does not execute browser JavaScript or fetch external CSS/images.
+  Narrowing now explicitly issues each authenticated page's unread follow-up and
+  records its latency separately. Combined journey timing adds no synthetic HTTP
+  request. Saved-status batches and cover database loading remain within page
+  latency; isolating pool waits and external delivery is still pending A4.
 - `v07-gate.py` currently stops at the first failing stage, without an explicit
   report entry for all skipped stages. It samples process CPU/RSS, but does not
   establish DB pool waits, full endpoint coverage, accepted regression baselines,
@@ -96,3 +97,11 @@ at `32bb582` passes four real-application messaging journeys (68 requests, all
 HTTP/semantic checks passed) using six fresh fixture people and two isolated
 worker groups. This covers the initial messaging/unread round trip only. All
 remaining gaps above, full B3 and the cumulative load gate remain pending.
+
+
+B3 authenticated/zero-history evidence:
+[CI 40845103713](https://github.com/Phastboy/haven/actions/runs/40845103713) at
+`46d0432` passed a full 10k-person/100k-offer release-binary sweep: 546 cases,
+1,081 HTTP checks, all passing, zero failures/drops, and 546 combined journey
+timings recorded across ten class/history strata. This is low-load correctness
+and timing evidence. Full B3 and A4 sustained measurements remain pending.
