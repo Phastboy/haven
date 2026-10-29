@@ -21,6 +21,10 @@ on:
         description: Build release binaries for isolated local load testing
         type: boolean
         default: false
+      narrowing_review:
+        description: Sweep every v0.7 fixture case, including authenticated Public and zero histories
+        type: boolean
+        default: false
       category_review:
         description: Regenerate SQLx metadata and export synthetic feed snapshots
         type: boolean
@@ -135,7 +139,7 @@ jobs:
 
       - name: Verify messaging and unread journey on a fresh database
         run: >-
-          python3 crates/haven-web/load-tests/messaging-correctness.py
+          python3 crates/haven-web/load-tests/journey-correctness.py
           --output /tmp/haven-messaging-results --private /tmp/haven-messaging-private
 
       - name: Export messaging correctness evidence
@@ -160,7 +164,7 @@ jobs:
           retention-days: 7
 
       - name: Build release load-test artifacts
-        if: inputs.load_review || inputs.load_gate
+        if: inputs.load_review || inputs.load_gate || inputs.narrowing_review
         run: |
           cargo build --release --locked -p haven-web -p load-test-support
           topcoat asset bundle --package haven-web --release
@@ -169,12 +173,27 @@ jobs:
           git rev-parse HEAD > /tmp/haven-load-review/revision.txt
 
       - name: Export release load-test artifacts
-        if: inputs.load_review || inputs.load_gate
+        if: inputs.load_review || inputs.load_gate || inputs.narrowing_review
         uses: actions/upload-artifact@v7
         with:
           name: load-review
           path: /tmp/haven-load-review
           if-no-files-found: error
+          retention-days: 7
+
+      - name: Verify every narrowing fixture case on a fresh database
+        if: inputs.narrowing_review
+        run: >-
+          python3 crates/haven-web/load-tests/journey-correctness.py --scenario narrowing
+          --output /tmp/haven-narrowing-results --private /tmp/haven-narrowing-private
+
+      - name: Export narrowing correctness evidence
+        if: always() && inputs.narrowing_review
+        uses: actions/upload-artifact@v7
+        with:
+          name: narrowing-correctness
+          path: /tmp/haven-narrowing-results
+          if-no-files-found: warn
           retention-days: 7
 
       - name: Run isolated v0.7 HTTP gates

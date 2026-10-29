@@ -139,7 +139,7 @@ Start B1 alongside A1. Build on the existing Go runner and CI release artifacts.
 
 ## Scale and completion record
 
-The current v0.7 schedule contains about 40 minutes of timed workloads before
+The current v0.7 schedule contains about 54 minutes of timed workloads before
 the capacity ladder, plus build, fixture preparation, and drain time. An hour or
 more per cumulative push run is a planning estimate, not a measured guarantee.
 Do not shorten coverage or weaken targets silently to meet that estimate.
@@ -186,3 +186,36 @@ telemetry. The legacy write journey still needs a real-application round trip.
 A4 is now unblocked by A1–A3 and must measure complete authenticated requests.
 B4–B7 still need cumulative every-push coverage, complete success/failure evidence,
 regression baselines, actual merge/deployment enforcement and measured procedure.
+
+
+## B3 authenticated/zero-history tranche — pending CI verification
+
+The narrowing fixture now reserves one genuine zero-history person, excluding
+that person's offers from every seeded history and asserting zero conversations
+and saves after generation. Authenticated Public, Saved and Inquired each have
+explicit dense/sparse/zero groups, person identity and expected unread truth.
+Independent oracle regressions cover public cursor/result equivalence and empty
+personal truth. Old guest-only/incomplete fixtures are rejected by the runner.
+
+`--fixture-sweep` visits every selected fixture case exactly once with 100%
+semantic checks. Authenticated cases issue the page request and then a separately
+measured unread request; `journey_latencies` reports their combined duration
+without counting another HTTP request. `--history` isolates a material history
+stratum. Local Go checks pass; Rust and full 10k-person/100k-offer verification
+run only in CI. The new opt-in `narrowing_review` publishes credential-free case,
+stratum, HTTP/semantic and timing evidence through `journey-correctness.py`.
+
+The legacy narrowing mix now splits its former 70% Public journey share into
+35% guest and 35% authenticated Public, retaining 15% Saved/15% Inquired. This is
+journey weighting, not the cumulative HTTP mix specified by B2. Full legacy gates
+now measure all ten class/history groups separately and apply latency limits per
+endpoint label, preventing zero histories or fast status calls from hiding dense
+page regressions. Authenticated contract phases retain ≥1,000 page journeys/sec
+and also issue ≥1,000 status requests/sec; targets were not lowered. Timed stages
+therefore grow from about 40 to 54 minutes before the capacity ladder.
+
+A4 remains pending: these are low-load correctness/measurement preparations.
+Cover and saved-status database work are included in complete page-body latency;
+external cover delivery, isolated pool waits, sustained before/after comparisons
+and bottleneck attribution have not yet been measured. B3 remains pending for the
+other fixture/scenario gaps listed above; no release gate is claimed.

@@ -18,6 +18,7 @@ struct SavedRow {
 pub(super) struct HistorySeed {
     pub(super) person: UserId,
     pub(super) count: usize,
+    pub(super) reserved: UserId,
 }
 
 pub(super) async fn seed(
@@ -31,10 +32,14 @@ pub(super) async fn seed(
     ),
     Box<dyn std::error::Error>,
 > {
-    let HistorySeed { person, count } = selection;
+    let HistorySeed {
+        person,
+        count,
+        reserved,
+    } = selection;
     let ids: Vec<_> = rows
         .iter()
-        .filter(|row| row.user_id != person.as_uuid())
+        .filter(|row| row.user_id != person.as_uuid() && row.user_id != reserved.as_uuid())
         .take(count)
         .map(|row| row.id)
         .collect();

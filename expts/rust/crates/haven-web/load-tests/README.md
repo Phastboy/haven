@@ -103,9 +103,44 @@ Report `semantic_cases.messaging/round-trip` checked/passed counts alongside HTT
 outcomes. This scenario only covers part of J06–J08/J14; SSE, message/inbox paging,
 full fixture strata and all other missing inventory rows remain pending.
 
-CI runs `messaging-correctness.py` after builds, assets, and Go checks. It creates
+CI runs `journey-correctness.py` after builds, assets, and Go checks. It creates
 `haven_messaging_ci` on the local disposable PostgreSQL service, starts the debug
 application, seeds six people, and requires four passing journeys/68 requests.
 The `messaging-correctness` artifact contains only result/summary/runner reports.
 Sessions and server/seed logs remain in a separate private directory. Results
 are low-load correctness evidence, not release performance measurements.
+
+
+### Expanded narrowing correctness and timings
+
+Regenerate old narrowing fixtures. The runner requires guest Public plus explicit
+`dense`, `sparse` and `zero` strata for `public-authenticated`, `saved` and
+`inquired`. Authenticated cases carry private person/unread truth. The reserved
+zero-history person is excluded from other seeded actors' histories and verified
+to have no conversations or saved offers.
+
+```sh
+./results/haven-load --base-url http://127.0.0.1:3000 --scenario v07 \
+  --narrowing-fixture data/cases.json --query-class mixed --fixture-sweep \
+  --semantic-percent 100 --summary results/narrowing-correctness.json
+
+./results/haven-load --base-url http://127.0.0.1:3000 --scenario v07 \
+  --narrowing-fixture data/cases.json --query-class public-authenticated \
+  --history dense --rate 100 --duration 60s --semantic-percent 100 \
+  --summary results/public-authenticated-dense.json
+```
+
+A sweep is sequential correctness work and reports `target_journeys_per_second=0`;
+it visits every selected case once, rather than hoping a timed sample reaches it.
+It is not a throughput gate. Each authenticated journey explicitly fetches the
+page and its private unread status. HTTP `routes` separate page/status latency;
+`journey_latencies` measures their combined wall time without inflating HTTP
+counts. The page body includes cover loading and saved-status database batches;
+this HTTP client does not fetch external cover images or isolate DB pool waits.
+
+Dispatch `haven-rust-ci.yml` with `narrowing_review=true` for the full fresh
+10k-person/100k-offer release-binary sweep. Artifact `narrowing-correctness` contains
+only revision, fixture hash, stratum counts, case checks, HTTP summaries and
+runner timing reports. Private fixture/session data remain outside the artifact.
+The legacy full load schedule separately gates guest Public and each authenticated
+class/history combination; adding empty histories must not dilute dense work.

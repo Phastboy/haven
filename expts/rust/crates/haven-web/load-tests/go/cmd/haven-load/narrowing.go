@@ -18,15 +18,17 @@ import (
 )
 
 type narrowingCase struct {
-	ID            string   `json:"id"`
-	Label         string   `json:"label"`
-	Class         string   `json:"class"`
-	History       string   `json:"history"`
-	Path          string   `json:"path"`
-	Token         string   `json:"session_token,omitempty"`
-	ExpectedSlugs []string `json:"expected_slugs"`
-	ExpectedNext  bool     `json:"expected_next"`
-	Canonical     bool     `json:"canonical"`
+	ID             string   `json:"id"`
+	Label          string   `json:"label"`
+	Class          string   `json:"class"`
+	History        string   `json:"history"`
+	Path           string   `json:"path"`
+	Token          string   `json:"session_token,omitempty"`
+	PersonID       string   `json:"person_id,omitempty"`
+	ExpectedUnread *bool    `json:"expected_unread,omitempty"`
+	ExpectedSlugs  []string `json:"expected_slugs"`
+	ExpectedNext   bool     `json:"expected_next"`
+	Canonical      bool     `json:"canonical"`
 }
 type narrowingFixture struct {
 	People         int             `json:"people"`
@@ -38,6 +40,7 @@ type narrowingConfig struct {
 	fixture narrowingFixture
 	sha     string
 	class   string
+	history string
 	percent int
 	seed    uint64
 	groups  map[string][]narrowingCase
@@ -53,8 +56,8 @@ func loadNarrowing(path, class string, percent int, seed uint64) (*narrowingConf
 	if percent < 1 || percent > 100 {
 		return nil, errors.New("semantic-percent must be 1..100")
 	}
-	if class != "public" && class != "saved" && class != "inquired" && class != "mixed" {
-		return nil, errors.New("query-class must be public, saved, inquired or mixed")
+	if class != "public" && class != "public-authenticated" && class != "saved" && class != "inquired" && class != "mixed" {
+		return nil, errors.New("query-class must be public, public-authenticated, saved, inquired or mixed")
 	}
 	raw, err := os.ReadFile(path)
 	if err != nil {
@@ -75,28 +78,36 @@ func loadNarrowing(path, class string, percent int, seed uint64) (*narrowingConf
 			return nil, errors.New("fixture case IDs must be unique and nonempty")
 		}
 		seen[entry.ID] = true
-		if entry.Class != "public" && entry.Class != "saved" && entry.Class != "inquired" {
+		if entry.Class != "public" && entry.Class != "public-authenticated" && entry.Class != "saved" && entry.Class != "inquired" {
 			return nil, errors.New("invalid fixture class")
 		}
 		if entry.Path != "/offers" && !strings.HasPrefix(entry.Path, "/offers?") {
 			return nil, errors.New("fixture paths must be feed-relative")
 		}
 		if (entry.Class == "public") != (entry.Token == "") {
-			return nil, errors.New("public cases must be guests and personal cases must have a token")
+			return nil, errors.New("guest Public cases must be unauthenticated and all other cases require a token")
 		}
 		if len(entry.ExpectedSlugs) > 20 {
 			return nil, errors.New("expected page exceeds feed limit")
 		}
 		key := entry.Class
 		if entry.Class != "public" {
-			if entry.History != "dense" && entry.History != "sparse" {
-				return nil, errors.New("personal history must be dense or sparse")
+			if entry.History != "dense" && entry.History != "sparse" && entry.History != "zero" {
+				return nil, errors.New("authenticated history must be dense, sparse or zero")
+			}
+			if entry.PersonID == "" || entry.ExpectedUnread == nil {
+				return nil, errors.New("authenticated cases require expected person and unread truth")
+			}
+			if entry.History == "zero" && entry.Class != "public-authenticated" && (len(entry.ExpectedSlugs) > 0 || entry.ExpectedNext) {
+				return nil, errors.New("zero-history personal cases must be empty")
 			}
 			key += "/" + entry.History
+		} else if entry.PersonID != "" || entry.ExpectedUnread != nil || entry.History != "none" {
+			return nil, errors.New("guest cases cannot contain authenticated truth")
 		}
 		config.groups[key] = append(config.groups[key], entry)
 	}
-	for _, key := range []string{"public", "saved/dense", "saved/sparse", "inquired/dense", "inquired/sparse"} {
+	for _, key := range []string{"public", "public-authenticated/dense", "public-authenticated/sparse", "public-authenticated/zero", "saved/dense", "saved/sparse", "saved/zero", "inquired/dense", "inquired/sparse", "inquired/zero"} {
 		if len(config.groups[key]) == 0 {
 			return nil, fmt.Errorf("missing fixture stratum %s", key)
 		}
@@ -110,9 +121,12 @@ func (config *narrowingConfig) choose(index int) (narrowingCase, uint64) {
 	if class == "mixed" {
 		cycle, bucket := index/100, index%100
 		switch {
-		case bucket < 70:
+		case bucket < 35:
 			class = "public"
-			ordinal = cycle*70 + bucket
+			ordinal = cycle*35 + bucket
+		case bucket < 70:
+			class = "public-authenticated"
+			ordinal = cycle*35 + bucket - 35
 		case bucket < 85:
 			class = "saved"
 			ordinal = cycle*15 + bucket - 70
@@ -123,12 +137,12 @@ func (config *narrowingConfig) choose(index int) (narrowingCase, uint64) {
 	}
 	key := class
 	if class != "public" {
-		if ordinal%2 == 0 {
-			key += "/dense"
+		if config.history != "" && config.history != "all" {
+			key += "/" + config.history
 		} else {
-			key += "/sparse"
+			key += "/" + []string{"dense", "sparse", "zero"}[ordinal%3]
+			ordinal /= 3
 		}
-		ordinal /= 2
 	}
 	group := config.groups[key]
 	return group[ordinal%len(group)], uint64(ordinal / len(group))
@@ -147,7 +161,12 @@ func narrowingJourney(ctx context.Context, client *http.Client, baseURL string, 
 		return errors.New("v07 needs --narrowing-fixture")
 	}
 	entry, occurrence := config.choose(index)
-	check := config.check(entry, occurrence)
+	return narrowingCaseJourney(ctx, client, baseURL, entry, config.check(entry, occurrence), collector)
+}
+
+func narrowingCaseJourney(ctx context.Context, client *http.Client, baseURL string, entry narrowingCase, check bool, collector *stats) error {
+	journeyStarted := time.Now()
+	defer func() { collector.recordJourney(entry.Label, time.Since(journeyStarted)) }()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, strings.TrimRight(baseURL, "/")+entry.Path, nil)
 	if err != nil {
 		return err
@@ -195,6 +214,9 @@ func narrowingJourney(ctx context.Context, client *http.Client, baseURL string, 
 		message = err.Error()
 	}
 	collector.record(sample{Route: entry.Label, Duration: elapsed, Status: response.StatusCode, Err: message}, err == nil)
+	if err == nil && entry.Token != "" {
+		err = checkUnreadLabeled(ctx, client, baseURL, session{UserID: entry.PersonID, Session: entry.Token}, *entry.ExpectedUnread, entry.Label+"/unread", collector)
+	}
 	return err
 }
 
@@ -214,7 +236,10 @@ func checkNarrowing(entry narrowingCase, body string, headers http.Header) error
 		return fmt.Errorf("%s returned wrong canonical state", entry.ID)
 	}
 	if entry.Class != "public" {
-		if !strings.Contains(headers.Get("Cache-Control"), "private, no-store") || !strings.Contains(headers.Get("X-Robots-Tag"), "noindex") {
+		if !strings.Contains(headers.Get("Cache-Control"), "private, no-store") {
+			return fmt.Errorf("%s exposed cacheable authenticated HTML", entry.ID)
+		}
+		if entry.Class != "public-authenticated" && !strings.Contains(headers.Get("X-Robots-Tag"), "noindex") {
 			return fmt.Errorf("%s exposed cacheable/indexable personal HTML", entry.ID)
 		}
 	}

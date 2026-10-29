@@ -105,14 +105,21 @@ pub(super) fn for_actor(actor: &Actor, rows: &[TruthRow]) -> Vec<Case> {
             })
             .collect();
         matches.sort_by_key(|row| std::cmp::Reverse((row.1.at, row.1.id)));
-        let class = actor.scope.map_or("public", |scope| scope.label());
+        let class = actor.scope.map_or(
+            if actor.token.is_some() {
+                "public-authenticated"
+            } else {
+                "public"
+            },
+            |scope| scope.label(),
+        );
         for page in 0..2 {
             if page == 1 && matches.is_empty() {
                 continue;
             }
             let offset = if page == 0 { 0 } else { matches.len().min(20) };
             let mut query = url::form_urlencoded::Serializer::new(String::new());
-            if class != "public" {
+            if actor.scope.is_some() {
                 query.append_pair("scope", class);
             }
             if let Some(category) = facets.category {
@@ -156,6 +163,8 @@ pub(super) fn for_actor(actor: &Actor, rows: &[TruthRow]) -> Vec<Case> {
                     format!("/offers?{query}")
                 },
                 session_token: actor.token.clone(),
+                person_id: actor.person_id.clone(),
+                expected_unread: actor.token.as_ref().map(|_| false),
                 expected_slugs: matches
                     .iter()
                     .skip(offset)
@@ -163,9 +172,12 @@ pub(super) fn for_actor(actor: &Actor, rows: &[TruthRow]) -> Vec<Case> {
                     .map(|(row, _)| row.slug.clone())
                     .collect(),
                 expected_next: matches.len() > offset + 20,
-                canonical: class == "public" && page == 0 && !facets.combined && !facets.free,
+                canonical: actor.scope.is_none() && page == 0 && !facets.combined && !facets.free,
             });
         }
     }
     cases
 }
+
+#[cfg(test)]
+mod tests;
