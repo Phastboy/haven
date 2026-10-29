@@ -145,3 +145,23 @@ until applicable fixes and cumulative CI requirements are verified.
 The B1 audit also identifies a legacy load-workload issue: create requests omit
 v0.7's required category. Fix and verify it with B3's scenario work. Public v0.7
 fixture cases currently represent guests; A4 needs authenticated Public cases.
+
+
+## A2/B2 implementation — pending verification
+
+A2 removes unread I/O from the root layout. The new session-bound
+`GET /unread-status` is private/no-store (including failures), varies by Cookie,
+and returns 401 rather than redirecting unauthenticated API clients. A deferred
+same-origin script updates hidden desktop/mobile indicators together and treats
+unknown, malformed or failed responses as unavailable enhancement. Both regular
+and public offer-detail pages can render independently. Four HTTP regression
+tests cover blocked/failing storage, session identity and private rejection;
+four browser-script tests cover delay, read state, failures and guest pages.
+Local formatting, diff checks and script tests pass; Rust verification is in CI.
+A3 refresh/reuse remains separate.
+
+B2's [journey contracts](crates/haven-web/load-tests/JOURNEY_CONTRACTS.md) specify
+all J01–J14 action sequences, primary/follow-up request counts, fixture and
+negative-state requirements, per-endpoint targets and cumulative mix/tier rules.
+Implementation, adapters, complete telemetry and enforcement remain B3–B7.
+Completion evidence will be recorded after verification.

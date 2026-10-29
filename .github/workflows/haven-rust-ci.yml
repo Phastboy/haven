@@ -117,6 +117,9 @@ jobs:
           HAVEN_PREVIEW_DIR: ${{ inputs.category_review && '/tmp/haven-category-review/feed' || '' }}
         run: cargo test --workspace --locked
 
+      - name: Test browser enhancements
+        run: node --test crates/haven-web/static/*.test.cjs
+
       - name: Run doctests
         run: cargo test --doc --workspace --locked
 

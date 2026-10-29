@@ -14,7 +14,6 @@ pub struct AppShellData<'a> {
     pub viewer: ViewerKind,
     pub route: &'a str,
     pub kind: RouteKind,
-    pub has_unread: bool,
     pub back_href: String,
     pub auth_page: bool,
 }
@@ -27,7 +26,7 @@ pub struct AppShellData<'a> {
 pub async fn app_shell(props: AppShellData<'_>, child: Child<'_>) -> TopcoatResult<impl View> {
     Ok(view! {
         <div class=(if props.kind == RouteKind::Child { "app-shell app-shell-child" } else { "app-shell app-shell-main-page" })>
-            rail(props: RailData { viewer: props.viewer, route: props.route, auth_page: props.auth_page, has_unread: props.has_unread })
+            rail(props: RailData { viewer: props.viewer, route: props.route, auth_page: props.auth_page })
             <div class="app-shell-main">
                 if props.kind == RouteKind::Child {
                     <div class="app-shell-back-desktop">
@@ -37,7 +36,7 @@ pub async fn app_shell(props: AppShellData<'_>, child: Child<'_>) -> TopcoatResu
                 }
                 <main class="app-shell-content">(child)</main>
                 if props.kind == RouteKind::Main {
-                    bottom_tabs(props: BottomTabsData { viewer: props.viewer, route: props.route, has_unread: props.has_unread })
+                    bottom_tabs(props: BottomTabsData { viewer: props.viewer, route: props.route })
                 }
             </div>
         </div>

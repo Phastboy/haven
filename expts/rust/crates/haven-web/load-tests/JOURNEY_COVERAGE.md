@@ -23,7 +23,7 @@ the cumulative HTTP journey gate. Paths describe current code; historical
 | J05 / 0.3 | Responder: identify maker and visit their catalogue | `/offers/{slug}`, `/profiles/{handle}` | `v06` follows a handle, without validating the catalogue | Maker handoff, expected identity, catalogue IDs/order/paging, empty/missing profile, long fields |
 | J06 / 0.4 | Responder → Offerer: inquire about an offer | `/offers/{slug}/message`, `/profile/offers/{id}`, `/conversations/{id}` | None; fixture messages seed Inquired membership only | First/repeated inquiry, single conversation per pair, offer tag and sender identity, maker inquirers, deleted offer, self-inquiry denial, anonymous return intent |
 | J07 / 0.4 | Both: inbox and private conversation | `/conversations`, `/conversations/{id}`, `/conversations/{id}/messages` | None | Exact inbox activity order/cursors, previews/latest sender, empty inbox/thread, thread paging, tagged/untagged messages, read-after-write, escaping and authorization |
-| J08 / 0.4 | Both: live conversation and unread navigation | `/conversations/{id}/events`, authenticated page shells; A2 endpoint pending | None | SSE event identity/order, disconnect/reconnect, unread transitions after send/read, latest-own-message semantics, desktop/mobile dots, slow/failed independent loading and refresh counts once A2/A3 exist |
+| J08 / 0.4 | Both: live conversation and unread navigation | `/conversations/{id}/events`, authenticated page shells; `/unread-status` (A2) | None | SSE event identity/order, disconnect/reconnect, unread transitions after send/read, latest-own-message semantics, desktop/mobile dots, slow/failed independent loading and refresh counts once A2/A3 exist |
 | J09 / 0.5 | Responder: title and price discovery | `/offers?q=…&currency=…&min_price=…&max_price=…`, `after` | `v05`: combined filters, next link preservation, Free and empty text; `v07`: exact fixture IDs/order | Invalid/boundary input and back/refresh; connect UI controls/links to expected results rather than only prepared URLs |
 | J10 / 0.6 | Responder: save, return, unsave | `/offers/{slug}/save`, `/profile/saved`; feed saved-status database batch | `v06`: duplicate save/unsave, saved pagination; `v07`: saved scope IDs/order | Exact saved membership after each transition, empty state after removal, anonymous/own/deleted cases, saved-status batch assertions and query accounting |
 | J11 / 0.6 | Both: follow, return, unfollow | `/profiles/{handle}/follow`, `/profile/following` | `v06`: duplicate follow/unfollow and pagination | Exact identity/order, empty state after removal, self/missing/anonymous cases, actor isolation across other scenarios |
@@ -80,8 +80,8 @@ For every ID, define exact action order, expected fields/IDs/state, request coun
 size and reset procedure. Include empty, sparse, dense and unauthorized cases as
 applicable. Reuse the absolute targets in `PERFORMANCE_CONTRACT.md`: steady
 ≥1,000 HTTP RPS, p95 ≤200 ms, p99 ≤500 ms, zero errors; the full spike/recovery,
-30-minute soak and capacity ladder remain required. Per-journey offered rates
-and endpoint allocations are **pending B2**, not inferred from today's results.
+30-minute soak and capacity ladder remain required. Per-journey request accounting and endpoint allocations are now specified in
+[JOURNEY_CONTRACTS.md](JOURNEY_CONTRACTS.md); they are not inferred from today's results.
 
 B1 source audit is complete at `81f5306`, with
 [workspace CI](https://github.com/Phastboy/haven/actions/runs/40837141401) passing
