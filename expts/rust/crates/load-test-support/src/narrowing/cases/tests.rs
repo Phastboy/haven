@@ -64,7 +64,7 @@ fn zero_history_personal_truth_is_empty_for_every_facet() {
     let cases = for_actor(&actor, &rows());
     assert_eq!(cases.len(), 6);
     for case in cases {
-        assert!(case.expected_slugs.is_empty());
+        assert_eq!(case.expected_slugs, Vec::<String>::new());
         assert!(!case.expected_next);
         assert!(!case.canonical);
         assert_eq!(case.history, "zero");
