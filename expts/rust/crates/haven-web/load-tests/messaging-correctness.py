@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 import subprocess
 import time
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 from urllib.request import urlopen
 
 
@@ -33,8 +33,12 @@ def main():
         database = urlparse(env['DATABASE_URL'])
         if database.hostname not in ('localhost', '127.0.0.1', '::1'):
             raise ValueError('messaging correctness requires a local disposable database')
+        postgres_env = dict(env, PGHOST=database.hostname, PGPORT=str(database.port or 5432),
+                            PGUSER=unquote(database.username or ''),
+                            PGPASSWORD=unquote(database.password or ''),
+                            PGDATABASE=unquote(database.path.lstrip('/')))
         subprocess.run(['psql', '-X', '-v', 'ON_ERROR_STOP=1', '-c',
-                        'CREATE DATABASE haven_messaging_ci'], env=env, check=True)
+                        'CREATE DATABASE haven_messaging_ci'], env=postgres_env, check=True)
         env.update(DATABASE_URL=database._replace(path='/haven_messaging_ci').geturl(),
                    PORT='3341', HOST='127.0.0.1', PUBLIC_BASE_URL='http://127.0.0.1:3341',
                    EMAIL_DELIVERY_ENABLED='false')
