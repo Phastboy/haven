@@ -364,6 +364,9 @@ dot. Guest/auth pages make no status request. Public offer detail pages include
 the same independent enhancement. Without JavaScript, Messages remains available
 and the navigation dot stays hidden; the inbox still shows conversation state.
 
-Implementation and focused regression tests are pending CI verification. Reuse,
+Implementation and four focused HTTP regressions passed
+[CI 40838910534](https://github.com/Phastboy/haven/actions/runs/40838910534) at
+`24b02db`, alongside script and workspace checks. The blocked-status test confirms
+that the authenticated page finishes before status storage is released. Reuse,
 refresh after messaging, return-to-app checks and account-change cleanup belong
 to the next A3 task. This change does not complete the v0.7 load gate.
