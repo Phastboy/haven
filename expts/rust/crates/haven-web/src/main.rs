@@ -1,6 +1,7 @@
 #![allow(unreachable_pub, reason = "binary crate")]
 
 mod app;
+mod pool_acquire;
 pub mod rate_limit;
 pub mod storage;
 pub mod token_store;
@@ -39,10 +40,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     writeln!(std::io::stdout(), "Effective DB_POOL_SIZE: {pool_size}").unwrap_or(());
 
-    let pool = PgPoolOptions::new()
-        .max_connections(pool_size)
-        .connect(&database_url)
-        .await?;
+    let mut pool_options = PgPoolOptions::new().max_connections(pool_size);
+    if let Ok(path) = env::var("HAVEN_POOL_ACQUIRE_LOG") {
+        pool_acquire::install(&path)?;
+        pool_options = pool_options.acquire_time_level(log::LevelFilter::Info);
+    }
+    let pool = pool_options.connect(&database_url).await?;
 
     sqlx::migrate!("../../migrations").run(&pool).await?;
 
