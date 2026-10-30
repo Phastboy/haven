@@ -31,6 +31,14 @@ def main():
          'jit_optimize_above_cost','shared_buffers','work_mem',
          'max_parallel_workers_per_gather','pg_stat_statements.track_planning')
     """) + '\n')
+    plans_spec = importlib.util.spec_from_file_location('plans', Path(__file__).with_name('public-plans.py'))
+    plans = importlib.util.module_from_spec(plans_spec)
+    plans_spec.loader.exec_module(plans)
+    plans.capture(args.fixture, output)
+    (output / 'offer-indexes.json').write_text(sql("""
+        SELECT json_agg(i) FROM (SELECT indexname, indexdef FROM pg_indexes
+        WHERE tablename = 'offer') i
+    """) + '\n')
     # Four fixed 30-second stages; no capacity search or automatic reruns.
     spec = importlib.util.spec_from_file_location('gate', Path(__file__).with_name('v07-gate.py'))
     gate = importlib.util.module_from_spec(spec)
