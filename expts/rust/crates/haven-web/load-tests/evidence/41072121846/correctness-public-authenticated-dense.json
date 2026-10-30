@@ -1,0 +1,611 @@
+{
+  "history": "dense",
+  "journey_latencies": {
+    "public-authenticated/dense/all/first": {
+      "count": 546,
+      "p50_ns": 17255305,
+      "p95_ns": 26363673,
+      "p99_ns": 29892514
+    },
+    "public-authenticated/dense/all/later": {
+      "count": 546,
+      "p50_ns": 15769420,
+      "p95_ns": 21553337,
+      "p99_ns": 25949977
+    },
+    "public-authenticated/dense/combined/first": {
+      "count": 545,
+      "p50_ns": 5065110,
+      "p95_ns": 6803940,
+      "p99_ns": 8670441
+    },
+    "public-authenticated/dense/combined/later": {
+      "count": 545,
+      "p50_ns": 5192229,
+      "p95_ns": 6529633,
+      "p99_ns": 8735300
+    },
+    "public-authenticated/dense/dominant/first": {
+      "count": 546,
+      "p50_ns": 11391017,
+      "p95_ns": 16387319,
+      "p99_ns": 20870663
+    },
+    "public-authenticated/dense/dominant/later": {
+      "count": 546,
+      "p50_ns": 7788446,
+      "p95_ns": 11031286,
+      "p99_ns": 16079111
+    },
+    "public-authenticated/dense/empty/first": {
+      "count": 545,
+      "p50_ns": 3113219,
+      "p95_ns": 4087643,
+      "p99_ns": 5447039
+    },
+    "public-authenticated/dense/free/first": {
+      "count": 545,
+      "p50_ns": 45572272,
+      "p95_ns": 53889652,
+      "p99_ns": 60713233
+    },
+    "public-authenticated/dense/free/later": {
+      "count": 545,
+      "p50_ns": 48007006,
+      "p95_ns": 55128750,
+      "p99_ns": 65822578
+    },
+    "public-authenticated/dense/rare/first": {
+      "count": 546,
+      "p50_ns": 4756165,
+      "p95_ns": 7907846,
+      "p99_ns": 12458838
+    },
+    "public-authenticated/dense/rare/later": {
+      "count": 545,
+      "p50_ns": 4800805,
+      "p95_ns": 6196065,
+      "p99_ns": 9046216
+    }
+  },
+  "fixture_sha256": "f4880de32a23999e68ac69fd3fe253b6aae58ae0a679493f78654050bffbb65a",
+  "semantic_percent": 100,
+  "sample_seed": 42,
+  "query_class": "public-authenticated",
+  "semantic_cases": {
+    "public-authenticated-dense-0-all-first": {
+      "checked": 69,
+      "passed": 69
+    },
+    "public-authenticated-dense-0-all-later": {
+      "checked": 69,
+      "passed": 69
+    },
+    "public-authenticated-dense-0-combined-first": {
+      "checked": 69,
+      "passed": 69
+    },
+    "public-authenticated-dense-0-combined-later": {
+      "checked": 69,
+      "passed": 69
+    },
+    "public-authenticated-dense-0-dominant-first": {
+      "checked": 69,
+      "passed": 69
+    },
+    "public-authenticated-dense-0-dominant-later": {
+      "checked": 69,
+      "passed": 69
+    },
+    "public-authenticated-dense-0-empty-first": {
+      "checked": 69,
+      "passed": 69
+    },
+    "public-authenticated-dense-0-free-first": {
+      "checked": 69,
+      "passed": 69
+    },
+    "public-authenticated-dense-0-free-later": {
+      "checked": 69,
+      "passed": 69
+    },
+    "public-authenticated-dense-0-rare-first": {
+      "checked": 69,
+      "passed": 69
+    },
+    "public-authenticated-dense-0-rare-later": {
+      "checked": 69,
+      "passed": 69
+    },
+    "public-authenticated-dense-1-all-first": {
+      "checked": 69,
+      "passed": 69
+    },
+    "public-authenticated-dense-1-all-later": {
+      "checked": 69,
+      "passed": 69
+    },
+    "public-authenticated-dense-1-combined-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-1-combined-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-1-dominant-first": {
+      "checked": 69,
+      "passed": 69
+    },
+    "public-authenticated-dense-1-dominant-later": {
+      "checked": 69,
+      "passed": 69
+    },
+    "public-authenticated-dense-1-empty-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-1-free-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-1-free-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-1-rare-first": {
+      "checked": 69,
+      "passed": 69
+    },
+    "public-authenticated-dense-1-rare-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-2-all-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-2-all-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-2-combined-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-2-combined-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-2-dominant-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-2-dominant-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-2-empty-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-2-free-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-2-free-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-2-rare-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-2-rare-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-3-all-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-3-all-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-3-combined-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-3-combined-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-3-dominant-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-3-dominant-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-3-empty-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-3-free-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-3-free-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-3-rare-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-3-rare-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-4-all-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-4-all-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-4-combined-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-4-combined-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-4-dominant-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-4-dominant-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-4-empty-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-4-free-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-4-free-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-4-rare-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-4-rare-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-5-all-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-5-all-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-5-combined-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-5-combined-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-5-dominant-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-5-dominant-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-5-empty-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-5-free-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-5-free-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-5-rare-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-5-rare-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-6-all-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-6-all-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-6-combined-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-6-combined-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-6-dominant-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-6-dominant-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-6-empty-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-6-free-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-6-free-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-6-rare-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-6-rare-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-7-all-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-7-all-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-7-combined-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-7-combined-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-7-dominant-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-7-dominant-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-7-empty-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-7-free-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-7-free-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-7-rare-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "public-authenticated-dense-7-rare-later": {
+      "checked": 68,
+      "passed": 68
+    }
+  },
+  "scenario": "v07",
+  "duration_ns": 60001094769,
+  "target_journeys_per_second": 100,
+  "scheduled": 6000,
+  "started": 6000,
+  "completed": 6000,
+  "dropped": 0,
+  "failed": 0,
+  "requests": 12000,
+  "requests_per_second": 199.9963508365832,
+  "checks_passed": 12000,
+  "checks": 12000,
+  "routes": [
+    {
+      "route": "public-authenticated/dense/all/first",
+      "count": 546,
+      "p50_ns": 12605819,
+      "p95_ns": 18476935,
+      "p99_ns": 22902666
+    },
+    {
+      "route": "public-authenticated/dense/all/first/unread",
+      "count": 546,
+      "p50_ns": 3685816,
+      "p95_ns": 8449731,
+      "p99_ns": 11274490
+    },
+    {
+      "route": "public-authenticated/dense/all/later",
+      "count": 546,
+      "p50_ns": 11480963,
+      "p95_ns": 17278136,
+      "p99_ns": 21251172
+    },
+    {
+      "route": "public-authenticated/dense/all/later/unread",
+      "count": 546,
+      "p50_ns": 2753037,
+      "p95_ns": 6355018,
+      "p99_ns": 8635066
+    },
+    {
+      "route": "public-authenticated/dense/combined/first",
+      "count": 545,
+      "p50_ns": 3564932,
+      "p95_ns": 4660549,
+      "p99_ns": 6283409
+    },
+    {
+      "route": "public-authenticated/dense/combined/first/unread",
+      "count": 545,
+      "p50_ns": 1029858,
+      "p95_ns": 1311834,
+      "p99_ns": 2083215
+    },
+    {
+      "route": "public-authenticated/dense/combined/later",
+      "count": 545,
+      "p50_ns": 3691764,
+      "p95_ns": 4442900,
+      "p99_ns": 5691146
+    },
+    {
+      "route": "public-authenticated/dense/combined/later/unread",
+      "count": 545,
+      "p50_ns": 1024786,
+      "p95_ns": 1261640,
+      "p99_ns": 2122610
+    },
+    {
+      "route": "public-authenticated/dense/dominant/first",
+      "count": 546,
+      "p50_ns": 8603577,
+      "p95_ns": 13152284,
+      "p99_ns": 16990674
+    },
+    {
+      "route": "public-authenticated/dense/dominant/first/unread",
+      "count": 546,
+      "p50_ns": 1925021,
+      "p95_ns": 4165657,
+      "p99_ns": 5629976
+    },
+    {
+      "route": "public-authenticated/dense/dominant/later",
+      "count": 546,
+      "p50_ns": 5840361,
+      "p95_ns": 8458084,
+      "p99_ns": 12208939
+    },
+    {
+      "route": "public-authenticated/dense/dominant/later/unread",
+      "count": 546,
+      "p50_ns": 1271744,
+      "p95_ns": 2314886,
+      "p99_ns": 3534926
+    },
+    {
+      "route": "public-authenticated/dense/empty/first",
+      "count": 545,
+      "p50_ns": 2017442,
+      "p95_ns": 2482793,
+      "p99_ns": 3731408
+    },
+    {
+      "route": "public-authenticated/dense/empty/first/unread",
+      "count": 545,
+      "p50_ns": 1023974,
+      "p95_ns": 1405815,
+      "p99_ns": 2108544
+    },
+    {
+      "route": "public-authenticated/dense/free/first",
+      "count": 545,
+      "p50_ns": 40735794,
+      "p95_ns": 49357741,
+      "p99_ns": 55579944
+    },
+    {
+      "route": "public-authenticated/dense/free/first/unread",
+      "count": 545,
+      "p50_ns": 2915971,
+      "p95_ns": 6607860,
+      "p99_ns": 9390639
+    },
+    {
+      "route": "public-authenticated/dense/free/later",
+      "count": 545,
+      "p50_ns": 45966224,
+      "p95_ns": 52825358,
+      "p99_ns": 62306356
+    },
+    {
+      "route": "public-authenticated/dense/free/later/unread",
+      "count": 545,
+      "p50_ns": 1339651,
+      "p95_ns": 2334703,
+      "p99_ns": 3034821
+    },
+    {
+      "route": "public-authenticated/dense/rare/first",
+      "count": 546,
+      "p50_ns": 3421265,
+      "p95_ns": 5990396,
+      "p99_ns": 9534579
+    },
+    {
+      "route": "public-authenticated/dense/rare/first/unread",
+      "count": 546,
+      "p50_ns": 1025936,
+      "p95_ns": 1348070,
+      "p99_ns": 2531134
+    },
+    {
+      "route": "public-authenticated/dense/rare/later",
+      "count": 545,
+      "p50_ns": 3452662,
+      "p95_ns": 4225262,
+      "p99_ns": 7318332
+    },
+    {
+      "route": "public-authenticated/dense/rare/later/unread",
+      "count": 545,
+      "p50_ns": 1018511,
+      "p95_ns": 1275047,
+      "p99_ns": 1989511
+    }
+  ],
+  "overall": {
+    "count": 12000,
+    "p50_ns": 3342530,
+    "p95_ns": 43682403,
+    "p99_ns": 48514875
+  },
+  "pool_acquire": {
+    "scope": "SQLx connection acquisition (wait plus connection creation)",
+    "count": 34922,
+    "p50_seconds": 0.000156211,
+    "p95_seconds": 0.001585931,
+    "p99_seconds": 0.003641967
+  },
+  "gate_status": "passed"
+}

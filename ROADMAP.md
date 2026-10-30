@@ -1,6 +1,22 @@
 # HAVEN
 
-> **Every version must meet its load-testing criteria before it is considered complete.**
+> **Every version must meet its load-testing criteria before it is considered complete, except for an explicit owner-approved release exception.**
+>
+> **v0.7 exception (2026-10-30):** Product scope is accepted for release with
+> documented performance and verification debt deferred to the development freeze.
+> The full load gate failed; its targets are unchanged. See
+> [release acceptance](expts/rust/V0.7_RELEASE.md) and [debt register](expts/rust/V0.7_DEBT.md).
+> Packaging/deployment are not yet recorded; this is not a performance pass.
+
+---
+
+## Product context
+
+Haven is an **identity-centered trade platform** built around offers and the people behind them. It is not a general-purpose social network. An offer may be a physical good, a local service, or digitally delivered work. Profiles, follows, and inquiries support trade rather than unrelated social content.
+
+**Identity is the frame; offer is the content.** Proximity helps people find locally relevant offers when they choose it, but does not exclude distant offers or make location a requirement for general discovery.
+
+**Status snapshot (2026-10-29):** v0.1–v0.6 complete; v0.7 product scope accepted for release under the documented exception, with PR/merge pending and maintenance deferred; v0.8 agreed but not implemented. Haven is deployed but unlaunched, with no real offers reported in the supplied roadmap. The workspace package version is **0.7.0** as recorded in that roadmap.
 
 ---
 
@@ -109,18 +125,29 @@ The load-test gate is recorded as met in [`crates/haven-web/load-tests/SCORECARD
 
 ---
 
-The workspace package version is **0.6.0**. Stages 0.1.x through 0.6.x are complete; v0.7 implementation has begun with the behavior-preserving title/price criteria refactor. Its narrowing journeys and performance gate remain incomplete.
+The workspace package version is **0.7.0**. Stages 0.1.x through 0.6.x are complete; v0.7 narrowing functionality is accepted for release under the 2026-10-30 exception. Its failed performance gate and incomplete verification remain open freeze-phase debt; merge and deployment remain pending.
 
 ## 0.7.x — Can I narrow it down?
 
-Plan: [v0.7 narrowing plan](expts/rust/V0.7_PLAN.md). Typed title/price criteria composition is implemented; existing discovery behavior is retained. Haven is deployed but unlaunched, with no real offers. The owner accepts eleven launch categories on judgement; review names/control at 390px before migration, then freeze existing slugs at launch. Real-title grouping is a post-launch review, not a migration gate. Show all categories with clear empty states; synthetic performance fixtures must include dominant, near-empty and empty categories. Category publishing, migration and feed chips passed integrated regression CI and responsive review; performance gates remain pending, so no narrowing item is marked complete. Tags are deferred until further notice by owner decision on 2026-10-28; no future version is assigned. Saved and Inquired retrieval are implemented with personal cursor binding and activity ordering, pending regression and HTTP load verification. The dense SQL spike selected indexed latest-message streaming for Inquired; the maintained-summary fallback remains available if its HTTP gate fails. The [cover patch](docs/COVER_PATCH.md) is merged independently and needs verification before launch, rather than incident treatment; sitemap discovery is a separate deliverable with its own acceptance, outside the narrowing gate. Inquiry means non-binding communication; messaging about an offer signifies no commitment.
+Plan: [v0.7 narrowing plan](expts/rust/V0.7_PLAN.md).
+[Release acceptance](expts/rust/V0.7_RELEASE.md) and
+[deferred debt](expts/rust/V0.7_DEBT.md) govern the current release decision.
+Category, Saved and Inquired narrowing are implemented and correctness-verified;
+the checks below record accepted product behavior. The full performance gate
+failed at guest Public contract load; later stages were skipped. Performance
+patches, routine bug fixes and maintenance investigations are deferred to the
+post-v0.8 development freeze. No performance target is reduced or marked passed.
+The existing baseline includes maintained Inquired activity and the verified Saved
+fix; the ineffective Public equality experiment is excluded. Tags remain deferred
+until further notice. Cover-patch launch verification and sitemap discovery retain
+their separate acceptance. Inquiry is non-binding communication.
 
 Finding something should become more precise as the number of offers grows.
 
-* [ ] A person can narrow offers down by category.
+* [x] A person can narrow offers down by category.
 * Deferred until further notice: narrowing offers by tags (owner decision, 2026-10-28).
-* [ ] A person can narrow offers down to things they have saved.
-* [ ] A person can narrow offers down to things they have inquired about.
+* [x] A person can narrow offers down to things they have saved.
+* [x] A person can narrow offers down to things they have inquired about.
 
 **The question:**
 
@@ -130,36 +157,205 @@ Finding something should become more precise as the number of offers grows.
 
 ---
 
-## 0.8.x — TBD
+## 0.8.x — Can I find what's near a place?
 
-**The question:**
+An explorer should be able to choose a location and discover offers ordered by their proximity to that location without losing access to general discovery.
 
-> What is the next thing Haven needs to prove?
+Haven does not assume that geographical proximity matters for every exchange. Instead, it gives explorers explicit control over when proximity influences discovery.
 
-This version is intentionally undefined.
+**The principle:**
 
-It should be determined by what we learn from the previous versions rather than by filling the roadmap with features in advance.
+> General discovery by default. Local relevance when requested. Identity always visible.
+
+### Core Principles
+
+1. General discovery is the default.
+2. The explorer explicitly activates proximity.
+3. The explorer selects a reference location.
+4. Haven ranks offers from nearest to farthest relative to that location.
+5. Distant offers remain discoverable.
+6. Proximity stays active until the explorer explicitly deactivates it.
+7. Provider identity remains visible regardless of discovery mode.
+8. Feed and search use proximity for ranking; the offer detail page provides a comprehensive breakdown of the offer's location.
+
+### Distance Calculation
+
+Distance is measured between the explorer's selected location and the location associated with the offer, not automatically the provider's personal location.
+
+The explorer's selected location does not have to be their current physical location.
+
+Proximity determines the order of discovery results, not whether an offer is eligible to appear.
+
+### Discovery and Offer Details
+
+**Feed and Search**
+
+When proximity is inactive, general discovery operates without geographical distance influencing ranking.
+
+When proximity is active, offers are ordered from nearest to farthest relative to the explorer's selected reference location.
+
+Distant offers remain discoverable.
+
+**Offer Detail Page**
+
+The offer detail page provides the full available geographical context of an offer.
+
+This separates discovery from understanding:
+
+- Feed and search determine the order in which offers are presented.
+- Offer details explain where an offer is situated and provide the location information relevant to accessing or fulfilling it.
+
+### What Remains to Be Defined
+
+The following questions must be resolved before implementation:
+
+**1. Offer Location**
+
+How geographical locations are represented for different forms of exchange, including physical goods, digital services, mobile services, and offers involving multiple locations.
+
+**2. Missing Locations**
+
+How offers without geographical information participate in proximity-based discovery.
+
+**3. Location Privacy**
+
+How much geographical information can be disclosed, particularly when individuals operate from private residences.
+
+These are definition questions within v0.8, not reasons to expand its scope.
+
+### The Question
+
+> Can an explorer choose a location and discover offers ordered by their proximity to that location, without losing access to general discovery?
+
+### Definition of Done
+
+v0.8 is complete when:
+
+- [ ] An explorer can explicitly activate proximity.
+- [ ] An explorer can select a reference location.
+- [ ] Offers are ordered from nearest to farthest relative to that location.
+- [ ] Distant offers remain discoverable.
+- [ ] An explorer can inspect an offer's geographical details.
+- [ ] An explorer can explicitly deactivate proximity and return to general discovery.
+- [ ] Proximity is never automatically activated or deactivated by the system.
+- [ ] Provider identity remains visible in both discovery modes.
+- [ ] Location handling and privacy requirements are satisfied.
+- [ ] Existing discovery functionality continues to work correctly.
+- [ ] The version satisfies its defined load-testing criteria.
+
+**Done when:** An explorer can deliberately control geographical relevance during discovery, understand where an offer is located, and return to general discovery without losing access to offers.
+
+---
+---
+
+## Post-v0.8 — Development Freeze & Market Validation
+
+Once v0.8 is fully implemented, verified, and has satisfied its load-testing criteria, Haven enters a development freeze. This is a deliberate transition from building functionality to validating Haven through real-world usage.
+
+## The Rule
+
+**No new features or expansions of existing functionality are permitted during the development freeze.**
+
+Development is restricted to:
+
+1. **Corrective maintenance:** Resolving defects, security vulnerabilities, performance problems, regressions, and other issues affecting existing functionality.
+2. **UI/UX improvements:** Improving the discoverability, accessibility, clarity, navigation, and usability of existing functionality.
+
+These issues may be identified through QA, code reviews, user feedback, usability observations, production monitoring, or any other legitimate source.
+
+The freeze restricts **what may be changed**, not how an issue is discovered.
+
+## What Is Permitted
+
+### Corrective Maintenance
+
+- Bug fixes and regression fixes.
+- Security patches.
+- Reliability and performance corrections.
+- Compatibility fixes.
+- Corrections to functionality that does not behave as intended.
+
+### UI/UX Improvements
+
+- Making frequently used functionality easier to access.
+- Improving navigation and information architecture.
+- Reorganizing existing screens and interface elements.
+- Improving labels, descriptions, and visual hierarchy.
+- Reducing unnecessary steps in existing workflows.
+- Addressing confusing or misleading interactions.
+- Improving accessibility and responsiveness.
+- Refining existing interfaces based on observed usability problems.
+
+UI/UX improvements must remain within the boundaries of existing functionality.
+
+## What Is Not Permitted
+
+- New features or capabilities.
+- Expansion of existing feature scope.
+- New workflows that introduce capabilities not previously supported.
+- Speculative functionality.
+- Feature requests disguised as usability improvements.
+
+## Evaluating Proposed Changes
+
+Every proposed change should answer two questions:
+
+1. **Does this correct a problem with existing functionality or improve how people access and use it?**
+2. **Does this introduce a capability Haven did not previously provide?**
+
+If the first answer is yes and the second is no, the change may proceed.
+
+If the change introduces new capabilities, it must be deferred until the development freeze is explicitly lifted.
+
+## The Principle
+
+> Freeze feature development, not product quality.
+
+Haven must remain responsive to usability problems discovered through real-world usage.
+
+The purpose of the freeze is not to preserve the interface exactly as it existed at launch. It is to prevent continued feature expansion from distracting from market validation.
+
+**Existing functionality may become easier to find, understand, and use. Haven's functional scope must remain unchanged.**
+
+## Market Validation
+
+The primary focus shifts from software development to market development. The objective is to validate Haven through real usage, not continued feature development.
+
+### Priorities
+
+1. Launch Haven into a deliberately selected community.
+2. Recruit providers and encourage the creation of real offers.
+3. Attract explorers and encourage meaningful discovery and inquiries.
+4. Observe how people use Haven in real trading situations.
+5. Identify adoption barriers, unmet needs, and actual trade outcomes.
+6. Understand whether proximity improves discovery when explorers activate it.
+7. Gather evidence to guide future product decisions.
+
+### Learning Without Building
+
+User feedback, usability observations, and new opportunities should be documented. Existing defects can be fixed and existing experiences improved under the freeze rule, but discovering an opportunity does not authorize new feature development. Record proposed capabilities for later consideration.
+
+### Ending the Freeze
+
+The freeze does not end automatically after a fixed period. Resuming feature development requires an **explicit product decision** informed by observed user behavior, explorer and provider feedback, real trading activity, adoption and retention patterns, and limitations found through market validation.
+
+Until that decision is made, the freeze remains in effect.
+
+> **Haven's next direction should be determined by what real usage teaches us, not by the desire to keep building.**
+
+**Build what is necessary. Verify that it works. Launch it. Let the market teach us what comes next.**
 
 ---
 
-## 0.9.x — TBD
+## 0.9.x — TBD (not scheduled; subject to post-launch evidence)
+
+Feature development is frozen after verified v0.8 completion. This version is not authorized or scheduled until an explicit post-validation product decision.
 
 **The question:**
 
 > What is the next thing Haven needs to prove?
 
 To be defined from what Haven has taught us by this point.
-
----
-
-## Future question — Can I find what's near me? (unscheduled)
-
-The earlier proximity draft is retained as a future planning input, deliberately
-outside v0.7. A person should be able to offer from a visible place, find nearby
-offers and understand proximity while retaining a fully working Haven without
-sharing location. The stage needs real offers in one chosen neighbourhood,
-campus or business district, with a target count set before work begins.
-No version is assigned here; location, privacy and ranking remain undefined.
 
 ---
 
@@ -249,64 +445,48 @@ Completion
 # The progression
 
 ```text
-                         HAVEN
-                           │
-                           ▼
-              ┌────────────────────────────┐
-  0.1.x       │ Can I offer something?     │
-              └─────────────┬──────────────┘
-                            │
-                            ▼
-              ┌────────────────────────────┐
-  0.2.x       │ Can someone see it?        │
-              └─────────────┬──────────────┘
-                            │
-                            ▼
-              ┌────────────────────────────┐
-  0.3.x       │ Can I know who is behind   │
-              │ an offer?                  │
-              └─────────────┬──────────────┘
-                            │
-                            ▼
-              ┌────────────────────────────┐
-  0.4.x       │ Can someone act on it?     │
-              └─────────────┬──────────────┘
-                            │
-                            ▼
-              ┌────────────────────────────┐
-  0.5.x       │ Can someone find it?       │
-              └─────────────┬──────────────┘
-                            │
-                            ▼
-              ┌────────────────────────────┐
-  0.6.x       │ Can I come back to it?     │
-              └─────────────┬──────────────┘
-                            │
-                            ▼
-              ┌────────────────────────────┐
-  0.7.x       │ Can I narrow it down?      │
-              └─────────────┬──────────────┘
-                            │
-                            ▼
-              ┌────────────────────────────┐
-  0.8–0.9     │            TBD             │
-              └─────────────┬──────────────┘
-                            │
-                            ▼
-              ┌────────────────────────────┐
-  1.0.x       │ Can two people close it?   │
-              └─────────────┬──────────────┘
-                            │
-                            ▼
-              ┌────────────────────────────┐
-  1.x         │            TBD             │
-              └─────────────┬──────────────┘
-                            │
-                            ▼
-              ┌────────────────────────────┐
-  2.0.x       │ Can Haven handle a complete│
-              │ trade from beginning to end│
-              └────────────────────────────┘
+HAVEN
+  |
+  v
+0.1.x — Can I offer something? [complete]
+  |
+  v
+0.2.x — Can someone see it? [complete]
+  |
+  v
+0.3.x — Can I know who is behind an offer? [complete]
+  |
+  v
+0.4.x — Can someone act on it? [complete]
+  |
+  v
+0.5.x — Can someone find it? [complete]
+  |
+  v
+0.6.x — Can I come back to what I care about? [complete]
+  |
+  v
+0.7.x — Can I narrow it down? [in progress]
+  |
+  v
+0.8.x — Can I find what's near a place? [agreed, not implemented]
+  |
+  v
+Verification + load-testing gate
+  |
+  v
+Development freeze (maintenance + UI/UX improvements only)
+  |
+  v
+Launch + market validation
+  |
+  v
+Evidence-based decision to resume feature development, if warranted
+  |
+  +--> 0.9.x — TBD (not scheduled)
+  +--> 1.0.x — Can two people close an offer? (future)
+  +--> 1.x — TBD (future)
+  +--> 2.0.x — Complete trade from beginning to end (future)
 ```
 
 ## The rule behind the roadmap

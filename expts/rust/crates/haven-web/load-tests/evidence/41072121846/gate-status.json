@@ -1,0 +1,129 @@
+{
+  "status": "failed",
+  "phases": [
+    {
+      "phase": "correctness-public-all",
+      "status": "passed",
+      "error": null,
+      "summary": "correctness-public-all.json"
+    },
+    {
+      "phase": "correctness-public-authenticated-dense",
+      "status": "passed",
+      "error": null,
+      "summary": "correctness-public-authenticated-dense.json"
+    },
+    {
+      "phase": "correctness-public-authenticated-sparse",
+      "status": "passed",
+      "error": null,
+      "summary": "correctness-public-authenticated-sparse.json"
+    },
+    {
+      "phase": "correctness-public-authenticated-zero",
+      "status": "passed",
+      "error": null,
+      "summary": "correctness-public-authenticated-zero.json"
+    },
+    {
+      "phase": "correctness-saved-dense",
+      "status": "passed",
+      "error": null,
+      "summary": "correctness-saved-dense.json"
+    },
+    {
+      "phase": "correctness-saved-sparse",
+      "status": "passed",
+      "error": null,
+      "summary": "correctness-saved-sparse.json"
+    },
+    {
+      "phase": "correctness-saved-zero",
+      "status": "passed",
+      "error": null,
+      "summary": "correctness-saved-zero.json"
+    },
+    {
+      "phase": "correctness-inquired-dense",
+      "status": "passed",
+      "error": null,
+      "summary": "correctness-inquired-dense.json"
+    },
+    {
+      "phase": "correctness-inquired-sparse",
+      "status": "passed",
+      "error": null,
+      "summary": "correctness-inquired-sparse.json"
+    },
+    {
+      "phase": "correctness-inquired-zero",
+      "status": "passed",
+      "error": null,
+      "summary": "correctness-inquired-zero.json"
+    },
+    {
+      "phase": "contract-public-all",
+      "status": "failed",
+      "error": "request/correctness/arrival failure",
+      "summary": "contract-public-all.json"
+    },
+    {
+      "phase": "contract-public-authenticated-dense",
+      "status": "not_run_after_failure"
+    },
+    {
+      "phase": "contract-public-authenticated-sparse",
+      "status": "not_run_after_failure"
+    },
+    {
+      "phase": "contract-public-authenticated-zero",
+      "status": "not_run_after_failure"
+    },
+    {
+      "phase": "contract-saved-dense",
+      "status": "not_run_after_failure"
+    },
+    {
+      "phase": "contract-saved-sparse",
+      "status": "not_run_after_failure"
+    },
+    {
+      "phase": "contract-saved-zero",
+      "status": "not_run_after_failure"
+    },
+    {
+      "phase": "contract-inquired-dense",
+      "status": "not_run_after_failure"
+    },
+    {
+      "phase": "contract-inquired-sparse",
+      "status": "not_run_after_failure"
+    },
+    {
+      "phase": "contract-inquired-zero",
+      "status": "not_run_after_failure"
+    },
+    {
+      "phase": "mixed",
+      "status": "not_run_after_failure"
+    },
+    {
+      "phase": "spike",
+      "status": "not_run_after_failure"
+    },
+    {
+      "phase": "soak",
+      "status": "not_run_after_failure"
+    },
+    {
+      "phase": "capacity",
+      "status": "not_run_after_failure"
+    }
+  ],
+  "failures": [
+    {
+      "phase": "contract-public-all",
+      "error": "request/correctness/arrival failure"
+    }
+  ]
+}

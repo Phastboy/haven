@@ -1,0 +1,611 @@
+{
+  "history": "dense",
+  "journey_latencies": {
+    "inquired/dense/all/first": {
+      "count": 546,
+      "p50_ns": 6190907,
+      "p95_ns": 8371340,
+      "p99_ns": 11035618
+    },
+    "inquired/dense/all/later": {
+      "count": 546,
+      "p50_ns": 5433177,
+      "p95_ns": 7079808,
+      "p99_ns": 9705792
+    },
+    "inquired/dense/combined/first": {
+      "count": 545,
+      "p50_ns": 15782664,
+      "p95_ns": 19060480,
+      "p99_ns": 23430177
+    },
+    "inquired/dense/combined/later": {
+      "count": 545,
+      "p50_ns": 17585815,
+      "p95_ns": 21836316,
+      "p99_ns": 26417821
+    },
+    "inquired/dense/dominant/first": {
+      "count": 546,
+      "p50_ns": 5394268,
+      "p95_ns": 7056014,
+      "p99_ns": 10674406
+    },
+    "inquired/dense/dominant/later": {
+      "count": 546,
+      "p50_ns": 5498589,
+      "p95_ns": 7063677,
+      "p99_ns": 8456256
+    },
+    "inquired/dense/empty/first": {
+      "count": 545,
+      "p50_ns": 3444364,
+      "p95_ns": 4280878,
+      "p99_ns": 5871756
+    },
+    "inquired/dense/free/first": {
+      "count": 545,
+      "p50_ns": 13129313,
+      "p95_ns": 16975814,
+      "p99_ns": 20810773
+    },
+    "inquired/dense/free/later": {
+      "count": 545,
+      "p50_ns": 12382171,
+      "p95_ns": 16188015,
+      "p99_ns": 19670125
+    },
+    "inquired/dense/rare/first": {
+      "count": 546,
+      "p50_ns": 5059244,
+      "p95_ns": 6498909,
+      "p99_ns": 8679882
+    },
+    "inquired/dense/rare/later": {
+      "count": 545,
+      "p50_ns": 3805127,
+      "p95_ns": 4801417,
+      "p99_ns": 6965881
+    }
+  },
+  "fixture_sha256": "f4880de32a23999e68ac69fd3fe253b6aae58ae0a679493f78654050bffbb65a",
+  "semantic_percent": 100,
+  "sample_seed": 42,
+  "query_class": "inquired",
+  "semantic_cases": {
+    "inquired-dense-0-all-first": {
+      "checked": 69,
+      "passed": 69
+    },
+    "inquired-dense-0-all-later": {
+      "checked": 69,
+      "passed": 69
+    },
+    "inquired-dense-0-combined-first": {
+      "checked": 69,
+      "passed": 69
+    },
+    "inquired-dense-0-combined-later": {
+      "checked": 69,
+      "passed": 69
+    },
+    "inquired-dense-0-dominant-first": {
+      "checked": 69,
+      "passed": 69
+    },
+    "inquired-dense-0-dominant-later": {
+      "checked": 69,
+      "passed": 69
+    },
+    "inquired-dense-0-empty-first": {
+      "checked": 69,
+      "passed": 69
+    },
+    "inquired-dense-0-free-first": {
+      "checked": 69,
+      "passed": 69
+    },
+    "inquired-dense-0-free-later": {
+      "checked": 69,
+      "passed": 69
+    },
+    "inquired-dense-0-rare-first": {
+      "checked": 69,
+      "passed": 69
+    },
+    "inquired-dense-0-rare-later": {
+      "checked": 69,
+      "passed": 69
+    },
+    "inquired-dense-1-all-first": {
+      "checked": 69,
+      "passed": 69
+    },
+    "inquired-dense-1-all-later": {
+      "checked": 69,
+      "passed": 69
+    },
+    "inquired-dense-1-combined-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-1-combined-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-1-dominant-first": {
+      "checked": 69,
+      "passed": 69
+    },
+    "inquired-dense-1-dominant-later": {
+      "checked": 69,
+      "passed": 69
+    },
+    "inquired-dense-1-empty-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-1-free-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-1-free-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-1-rare-first": {
+      "checked": 69,
+      "passed": 69
+    },
+    "inquired-dense-1-rare-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-2-all-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-2-all-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-2-combined-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-2-combined-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-2-dominant-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-2-dominant-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-2-empty-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-2-free-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-2-free-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-2-rare-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-2-rare-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-3-all-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-3-all-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-3-combined-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-3-combined-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-3-dominant-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-3-dominant-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-3-empty-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-3-free-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-3-free-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-3-rare-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-3-rare-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-4-all-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-4-all-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-4-combined-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-4-combined-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-4-dominant-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-4-dominant-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-4-empty-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-4-free-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-4-free-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-4-rare-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-4-rare-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-5-all-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-5-all-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-5-combined-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-5-combined-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-5-dominant-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-5-dominant-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-5-empty-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-5-free-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-5-free-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-5-rare-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-5-rare-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-6-all-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-6-all-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-6-combined-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-6-combined-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-6-dominant-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-6-dominant-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-6-empty-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-6-free-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-6-free-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-6-rare-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-6-rare-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-7-all-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-7-all-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-7-combined-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-7-combined-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-7-dominant-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-7-dominant-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-7-empty-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-7-free-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-7-free-later": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-7-rare-first": {
+      "checked": 68,
+      "passed": 68
+    },
+    "inquired-dense-7-rare-later": {
+      "checked": 68,
+      "passed": 68
+    }
+  },
+  "scenario": "v07",
+  "duration_ns": 60000852013,
+  "target_journeys_per_second": 100,
+  "scheduled": 6000,
+  "started": 6000,
+  "completed": 6000,
+  "dropped": 0,
+  "failed": 0,
+  "requests": 12000,
+  "requests_per_second": 199.99715999699532,
+  "checks_passed": 12000,
+  "checks": 12000,
+  "routes": [
+    {
+      "route": "inquired/dense/all/first",
+      "count": 546,
+      "p50_ns": 4634659,
+      "p95_ns": 6449362,
+      "p99_ns": 8176041
+    },
+    {
+      "route": "inquired/dense/all/first/unread",
+      "count": 546,
+      "p50_ns": 1044926,
+      "p95_ns": 1504750,
+      "p99_ns": 2586134
+    },
+    {
+      "route": "inquired/dense/all/later",
+      "count": 546,
+      "p50_ns": 3998798,
+      "p95_ns": 5166279,
+      "p99_ns": 7595602
+    },
+    {
+      "route": "inquired/dense/all/later/unread",
+      "count": 546,
+      "p50_ns": 1044504,
+      "p95_ns": 1361331,
+      "p99_ns": 2119280
+    },
+    {
+      "route": "inquired/dense/combined/first",
+      "count": 545,
+      "p50_ns": 13851424,
+      "p95_ns": 16254076,
+      "p99_ns": 19919452
+    },
+    {
+      "route": "inquired/dense/combined/first/unread",
+      "count": 545,
+      "p50_ns": 1171593,
+      "p95_ns": 1704973,
+      "p99_ns": 3296400
+    },
+    {
+      "route": "inquired/dense/combined/later",
+      "count": 545,
+      "p50_ns": 15625930,
+      "p95_ns": 18889614,
+      "p99_ns": 22314216
+    },
+    {
+      "route": "inquired/dense/combined/later/unread",
+      "count": 545,
+      "p50_ns": 1189467,
+      "p95_ns": 2085496,
+      "p99_ns": 3108971
+    },
+    {
+      "route": "inquired/dense/dominant/first",
+      "count": 546,
+      "p50_ns": 3951363,
+      "p95_ns": 5077198,
+      "p99_ns": 6291581
+    },
+    {
+      "route": "inquired/dense/dominant/first/unread",
+      "count": 546,
+      "p50_ns": 1049673,
+      "p95_ns": 1418283,
+      "p99_ns": 2321544
+    },
+    {
+      "route": "inquired/dense/dominant/later",
+      "count": 546,
+      "p50_ns": 4035789,
+      "p95_ns": 5172892,
+      "p99_ns": 6657980
+    },
+    {
+      "route": "inquired/dense/dominant/later/unread",
+      "count": 546,
+      "p50_ns": 1051085,
+      "p95_ns": 1283922,
+      "p99_ns": 1980254
+    },
+    {
+      "route": "inquired/dense/empty/first",
+      "count": 545,
+      "p50_ns": 2313368,
+      "p95_ns": 2836167,
+      "p99_ns": 3896268
+    },
+    {
+      "route": "inquired/dense/empty/first/unread",
+      "count": 545,
+      "p50_ns": 1042793,
+      "p95_ns": 1436394,
+      "p99_ns": 2304182
+    },
+    {
+      "route": "inquired/dense/free/first",
+      "count": 545,
+      "p50_ns": 11058580,
+      "p95_ns": 14559279,
+      "p99_ns": 17892291
+    },
+    {
+      "route": "inquired/dense/free/first/unread",
+      "count": 545,
+      "p50_ns": 1219240,
+      "p95_ns": 2079335,
+      "p99_ns": 3796794
+    },
+    {
+      "route": "inquired/dense/free/later",
+      "count": 545,
+      "p50_ns": 10355504,
+      "p95_ns": 13419549,
+      "p99_ns": 16944868
+    },
+    {
+      "route": "inquired/dense/free/later/unread",
+      "count": 545,
+      "p50_ns": 1257001,
+      "p95_ns": 2167159,
+      "p99_ns": 2859054
+    },
+    {
+      "route": "inquired/dense/rare/first",
+      "count": 546,
+      "p50_ns": 3764754,
+      "p95_ns": 4520813,
+      "p99_ns": 6502189
+    },
+    {
+      "route": "inquired/dense/rare/first/unread",
+      "count": 546,
+      "p50_ns": 1041879,
+      "p95_ns": 1299110,
+      "p99_ns": 2390597
+    },
+    {
+      "route": "inquired/dense/rare/later",
+      "count": 545,
+      "p50_ns": 2675870,
+      "p95_ns": 3323494,
+      "p99_ns": 4761197
+    },
+    {
+      "route": "inquired/dense/rare/later/unread",
+      "count": 545,
+      "p50_ns": 1041522,
+      "p95_ns": 1311570,
+      "p99_ns": 2340638
+    }
+  ],
+  "overall": {
+    "count": 12000,
+    "p50_ns": 2240206,
+    "p95_ns": 14712294,
+    "p99_ns": 17065922
+  },
+  "pool_acquire": {
+    "scope": "SQLx connection acquisition (wait plus connection creation)",
+    "count": 33832,
+    "p50_seconds": 0.000137115,
+    "p95_seconds": 0.00021182,
+    "p99_seconds": 0.000609874
+  },
+  "gate_status": "passed"
+}

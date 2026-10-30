@@ -1,0 +1,11 @@
+[{"indexname":"offer_pkey","indexdef":"CREATE UNIQUE INDEX offer_pkey ON public.offer USING btree (id)"}, 
+ {"indexname":"idx_offer_user_id","indexdef":"CREATE INDEX idx_offer_user_id ON public.offer USING btree (user_id)"}, 
+ {"indexname":"idx_offer_user_id_idempotency","indexdef":"CREATE UNIQUE INDEX idx_offer_user_id_idempotency ON public.offer USING btree (user_id, idempotency_key)"}, 
+ {"indexname":"idx_offer_slug","indexdef":"CREATE UNIQUE INDEX idx_offer_slug ON public.offer USING btree (slug)"}, 
+ {"indexname":"idx_offer_feed","indexdef":"CREATE INDEX idx_offer_feed ON public.offer USING btree (created_at DESC, id DESC)"}, 
+ {"indexname":"idx_offer_user_feed","indexdef":"CREATE INDEX idx_offer_user_feed ON public.offer USING btree (user_id, created_at DESC, id DESC)"}, 
+ {"indexname":"idx_offer_feed_visible","indexdef":"CREATE INDEX idx_offer_feed_visible ON public.offer USING btree (created_at DESC, id DESC) WHERE (image_count >= 1)"}, 
+ {"indexname":"idx_offer_user_feed_visible","indexdef":"CREATE INDEX idx_offer_user_feed_visible ON public.offer USING btree (user_id, created_at DESC, id DESC) WHERE (image_count >= 1)"}, 
+ {"indexname":"idx_offer_title_search","indexdef":"CREATE INDEX idx_offer_title_search ON public.offer USING gin (title_search) WHERE (image_count >= 1)"}, 
+ {"indexname":"idx_offer_feed_currency_price","indexdef":"CREATE INDEX idx_offer_feed_currency_price ON public.offer USING btree (currency, price, created_at DESC, id DESC) WHERE (image_count >= 1)"}, 
+ {"indexname":"idx_offer_category_created","indexdef":"CREATE INDEX idx_offer_category_created ON public.offer USING btree (category, created_at DESC, id DESC) WHERE (image_count >= 1)"}]

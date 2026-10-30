@@ -1,0 +1,46 @@
+[
+  {
+    "jit": "on",
+    "rate": 100,
+    "completed": 3000,
+    "dropped": 0,
+    "failed": 0,
+    "checks": 3000,
+    "checks_passed": 3000,
+    "exit_code": 0,
+    "p95_ms": 45.488946
+  },
+  {
+    "jit": "on",
+    "rate": 1010,
+    "completed": 8236,
+    "dropped": 22064,
+    "failed": 0,
+    "checks": 8236,
+    "checks_passed": 8236,
+    "exit_code": 1,
+    "p95_ms": 1122.220068
+  },
+  {
+    "jit": "off",
+    "rate": 100,
+    "completed": 3000,
+    "dropped": 0,
+    "failed": 0,
+    "checks": 3000,
+    "checks_passed": 3000,
+    "exit_code": 0,
+    "p95_ms": 45.136689
+  },
+  {
+    "jit": "off",
+    "rate": 1010,
+    "completed": 8752,
+    "dropped": 21548,
+    "failed": 0,
+    "checks": 8752,
+    "checks_passed": 8752,
+    "exit_code": 1,
+    "p95_ms": 1061.78186
+  }
+]

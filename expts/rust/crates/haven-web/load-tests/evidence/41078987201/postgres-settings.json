@@ -1,0 +1,1 @@
+{ "jit" : "on", "jit_above_cost" : "100000", "jit_inline_above_cost" : "500000", "jit_optimize_above_cost" : "500000", "max_parallel_workers_per_gather" : "2", "pg_stat_statements.track_planning" : "on", "server_version" : "17.11", "shared_buffers" : "16384", "work_mem" : "4096" }
