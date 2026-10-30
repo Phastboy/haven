@@ -33,15 +33,22 @@ pub(super) async fn list(
     sql.push(activity_at)
         .push(" AS activity_at, ")
         .push(key)
-        .push(" AS activity_id FROM offer o ");
+        .push(" AS activity_id FROM ");
     match query.scope() {
         PersonalScope::Saved(person) => {
-            sql.push("JOIN saved_offer x ON x.offer_id = o.id WHERE x.user_id = ")
-                .push_bind(person.as_uuid());
+            if query.criteria().price.is_some() {
+                // PostgreSQL 17 can scan and join the broad price range before
+                // sorting Saved activity. Keep each offer lookup dependent on
+                // the ordered membership stream; OFFSET 0 prevents flattening.
+                sql.push("saved_offer x JOIN LATERAL (SELECT * FROM offer WHERE id = x.offer_id OFFSET 0) o ON TRUE WHERE x.user_id = ");
+            } else {
+                sql.push("offer o JOIN saved_offer x ON x.offer_id = o.id WHERE x.user_id = ");
+            }
+            sql.push_bind(person.as_uuid());
         }
         PersonalScope::Inquired(person) => {
             sql.push(
-                "JOIN person_inquired_offer_activity x ON x.offer_id = o.id WHERE x.person_id = ",
+                "offer o JOIN person_inquired_offer_activity x ON x.offer_id = o.id WHERE x.person_id = ",
             )
             .push_bind(person.as_uuid());
         }
