@@ -63,7 +63,11 @@ def main():
             stop.set()
             sampler.join()
             container.terminate()
-            container.wait(timeout=10)
+            try:
+                container.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                container.kill()
+                container.wait(timeout=5)
             container_log.close()
         # Preserve statement costs even when arrivals or correctness fail.
         (output / f'{label}-statements.json').write_text(sql("""
