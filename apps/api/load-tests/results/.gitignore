@@ -1,4 +1,0 @@
-# load-tests/results are data, not source
-*.log
-*.json
-*.csv

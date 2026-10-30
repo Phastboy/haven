@@ -1,77 +1,83 @@
 # Haven
 
-A community directory for skills and services: people post offers and requests, and
-other members request them.
+Haven is an identity-centered trade platform built around offers and the people
+behind them. The supported implementation is Rust with Topcoat server-rendered
+views and PostgreSQL, in [`expts/rust`](expts/rust).
 
-- `apps/api` — Elysia 2 on Bun. Feature folders (`auth`, `user`, `offer`, `order`,
-  `fulfillment`, `directory`), each split into domain / application / infrastructure /
-  presentation. Drizzle + Postgres, TypeBox schemas, OpenAPI, GraphQL for the directory.
-- `apps/web` — Astro 7 (SSR via Bun) with Solid islands and Tailwind v4.
-- Types flow from the API into the web app through Eden Treaty (`treaty<App>`).
+- [`ROADMAP.md`](ROADMAP.md): product scope and release decisions.
+- [`docs/JOURNEY.md`](docs/JOURNEY.md): Offerer and Responder journeys.
+- [`ENGINEERING.md`](ENGINEERING.md): engineering principles.
+- [`v0.7 release record`](expts/rust/V0.7_RELEASE.md) and
+  [`deferred debt`](expts/rust/V0.7_DEBT.md): acceptance and known limitations.
 
-## Run
+The TypeScript/Bun API and Astro frontend have been retired. See
+[retirement scope](docs/TYPESCRIPT_RETIREMENT.md); their source remains in Git
+history. Bun, npm and the former TypeScript workspace are not required.
 
-```bash
-bun install
-docker compose up -d      # Postgres
-cp .env.example .env       # and apps/api/.env
-bun run --cwd apps/api db:push
-bun run dev                # api :3000 + web :4200
+## Rust workspace
+
+| Crate | Responsibility |
+|---|---|
+| `haven-domain` | Domain types, rules and ports |
+| `haven-db` | PostgreSQL repositories and migrations |
+| `haven-web` | Topcoat SSR application and browser enhancements |
+| `load-test-support` | Reproducible synthetic fixtures |
+
+The workspace pins Rust in `expts/rust/rust-toolchain.toml`. Use the Topcoat CLI
+version matched by the workspace Dockerfile and CI (currently 0.11.0). Go powers
+the HTTP load runner; Node runs the retained browser-enhancement tests.
+
+## Local database and application
+
+From the repository root, start the retained development database:
+
+```sh
+docker compose up -d db
 ```
 
-## Scripts
+The database listens on `127.0.0.1:5433`. The existing `postgres_data` volume and
+credentials are unchanged. The init script creates `haven_rust` only on a fresh
+volume. To ensure that database exists on an older volume without removing data:
 
-| Command | What it does |
-| --- | --- |
-| `bun run dev` | API and web in parallel |
-| `bun run typecheck` | `tsc --noEmit` per package |
-| `bun run typecheck:web` | `astro check` (templates + islands) |
-| `bun run build:web` | Production build of the web app |
-| `bun run start:web` | Serve the built web app |
-| `bun run test:api` | API tests (pushes the schema first) |
-
-## How the web app is wired
-
-**Auth.** The session token lives in an httpOnly cookie. `src/lib/session.ts` reads it
-during SSR and loads the account and profile in parallel:
-
-```ts
-const guard = await requireSession(Astro);
-if (guard.redirect) return guard.redirect;   // a page must RETURN a redirect;
-const session = guard.session;               // throwing one surfaces as a 500
+```sh
+docker compose exec -T db psql -U user -d mydb -v ON_ERROR_STOP=1 -f /docker-entrypoint-initdb.d/01-create-databases.sql
 ```
 
-**Islands never see the token.** `src/pages/api/[...path].ts` is a same-origin proxy:
-browser components call `/api/...` through `src/lib/browser-api.ts`, and the proxy
-attaches the `Authorization` header server-side. Passing `token={token}` into an island
-would serialise the session into the HTML and hand it to any script on the page, which
-defeats the point of httpOnly.
+Configure and run from the Rust workspace:
 
-**Islands.** `client:load` only where the component is the page's main interaction
-(login form, profile form, the Request button in the sticky bar). Lists use
-`client:visible` so cards hydrate when scrolled to. Everything else is plain HTML.
+```sh
+cd expts/rust
+cp .env.example .env  # first setup only; preserve an existing .env
+# Adjust .env for your environment.
+cargo run -p haven-web
+```
 
-**Mobile first.** Every page is laid out for a 360px screen and widens from there:
-a bottom tab bar instead of a hover menu (touch devices have no hover), `min-h-11`
-tap targets, `env(safe-area-inset-*)` padding for the notch and home indicator,
-16px inputs so iOS doesn't zoom on focus, and `viewport-fit=cover` with
-`initial-scale=1`.
+The application loads the workspace `.env` and applies its SQLx migrations at
+startup. The example configuration uses `http://localhost:3000`. Cloudinary and
+Google credentials are configured in that example; preserve real credentials
+locally and never commit them. Database Compose provides only PostgreSQL; it does
+not run the application or a reverse proxy.
 
-## Conventions
+## Verification and delivery
 
-- Prices are stored in **cents**. Format with `formatPrice` from `src/lib/format.ts`
-  (fixed `en-US` locale, so SSR and the browser produce identical text).
-- Pin exact versions of `elysia` and `@elysia/*` in every package. The floating `next`
-  tag can resolve to different betas per package, which gives two copies of `elysia` and
-  a confusing `Property '#private' ... refers to a different member` error from
-  `treaty<App>`. Check with:
-  `find . -path '*node_modules/elysia/package.json' -exec grep -H '"version"' {} \;`
-- Elysia 2 route signature is `(path, hook, handler)` — the hook comes first.
+Rust builds, database integration checks and sustained performance verification
+run in GitHub Actions. The workflows under `.github/workflows/haven-rust-*`
+provide CI, security checks, container smoke tests and tagged-release delivery.
+See [`CICD_PLAN.md`](expts/rust/CICD_PLAN.md) for details.
 
-## Known gaps
+The browser scripts remain part of the Rust application and can be checked with:
 
-- The directory page queries GraphQL with raw `fetch`, so those fields are not checked
-  by Eden. Typed by hand in `src/pages/directory.astro` for now.
-- Image uploads are not implemented; offers take an image URL.
-- No client-side routing: navigation is a full page load. Astro's `<ClientRouter />`
-  can change that if the app starts to feel slow between screens.
+```sh
+node --test expts/rust/crates/haven-web/static/*.test.cjs
+```
+
+Build the Rust container using the workspace as its context:
+
+```sh
+docker build -t haven-rust -f expts/rust/Dockerfile expts/rust
+```
+
+Load-test procedures and measurement limits are in the
+[runner documentation](expts/rust/crates/haven-web/load-tests/README.md).
+The v0.7 performance exception and freeze-phase debts remain in force; retirement
+of the old stack does not resolve them.

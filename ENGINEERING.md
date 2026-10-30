@@ -231,12 +231,12 @@ cookies in a production-grade system.
 
 ## The experiment
 
-**The existing Haven is the control group, not the target.**
+**Evaluate the supported implementation against Haven's requirements.**
 
-The TypeScript implementation is a working specimen.
-The Rust implementation is the research implementation.
-Comparing them requires that the comparison is honest — including places where
-the Rust version loses.
+Rust is the supported implementation. The retired TypeScript implementation
+remains available in Git history as evidence of earlier choices, not as a
+parallel application or the product specification. Compare alternatives honestly,
+including places where the current implementation loses.
 
 **Don't trust magic. Understand the mechanism.**
 
