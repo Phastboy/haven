@@ -17,6 +17,10 @@ on:
         description: Run isolated v0.7 HTTP contract, spike, soak and capacity gates
         type: boolean
         default: false
+      public_profile:
+        description: Run bounded guest Public query, JIT, pool and container diagnostics
+        type: boolean
+        default: false
       saved_profile:
         description: Run bounded dense Saved statement-cost and capacity profiling
         type: boolean
@@ -168,7 +172,7 @@ jobs:
           retention-days: 7
 
       - name: Build release load-test artifacts
-        if: inputs.load_review || inputs.load_gate || inputs.narrowing_review || inputs.saved_profile
+        if: inputs.load_review || inputs.load_gate || inputs.narrowing_review || inputs.saved_profile || inputs.public_profile
         run: |
           cargo build --release --locked -p haven-web -p load-test-support
           topcoat asset bundle --package haven-web --release
@@ -177,7 +181,7 @@ jobs:
           git rev-parse HEAD > /tmp/haven-load-review/revision.txt
 
       - name: Export release load-test artifacts
-        if: inputs.load_review || inputs.load_gate || inputs.narrowing_review || inputs.saved_profile
+        if: inputs.load_review || inputs.load_gate || inputs.narrowing_review || inputs.saved_profile || inputs.public_profile
         uses: actions/upload-artifact@v7
         with:
           name: load-review
@@ -201,18 +205,19 @@ jobs:
           retention-days: 7
 
       - name: Run isolated v0.7 HTTP gates
-        if: inputs.load_gate || inputs.saved_profile
+        if: inputs.load_gate || inputs.saved_profile || inputs.public_profile
         env:
           PORT: "3337"
           HOST: "127.0.0.1"
           DB_POOL_SIZE: "20"
           HAVEN_POOL_ACQUIRE_LOG: /tmp/haven-v07-results/pool-acquire-seconds.txt
           SAVED_PROFILE: ${{ inputs.saved_profile }}
+          PUBLIC_PROFILE: ${{ inputs.public_profile }}
           POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
         run: |
           mkdir -p /tmp/haven-v07-private /tmp/haven-v07-results
           chmod 700 /tmp/haven-v07-private
-          if [ "$SAVED_PROFILE" = "true" ]; then
+          if [ "$SAVED_PROFILE" = "true" ] || [ "$PUBLIC_PROFILE" = "true" ]; then
             docker exec "$POSTGRES_CONTAINER" psql -U haven -d haven -v ON_ERROR_STOP=1 -c "ALTER SYSTEM SET shared_preload_libraries = 'pg_stat_statements'"
             docker restart "$POSTGRES_CONTAINER"
             for attempt in $(seq 1 30); do
@@ -250,12 +255,15 @@ jobs:
           if [ "$SAVED_PROFILE" = "true" ]; then
             gate_script=crates/haven-web/load-tests/saved-profile.py
           fi
+          if [ "$PUBLIC_PROFILE" = "true" ]; then
+            gate_script=crates/haven-web/load-tests/public-profile.py
+          fi
           python3 -u "$gate_script" \
             --runner /tmp/haven-v07-private/haven-load --fixture /tmp/haven-v07-private/cases.json \
             --output /tmp/haven-v07-results
 
       - name: Export v0.7 HTTP gate evidence
-        if: always() && (inputs.load_gate || inputs.saved_profile)
+        if: always() && (inputs.load_gate || inputs.saved_profile || inputs.public_profile)
         uses: actions/upload-artifact@v7
         with:
           name: v07-gate
