@@ -48,3 +48,11 @@ EXPLAIN (ANALYZE, BUFFERS, SETTINGS, FORMAT JSON) EXECUTE feed ({', '.join(value
         plan = json.loads(result)
         name = case['label'].replace('/', '-')
         (output / f'plan-{name}.json').write_text(json.dumps(plan, indent=2) + '\n')
+
+        if 'max_price' in query:
+            equality_sql = sql.replace('o.price <= $3', 'o.price = $3')
+            result = subprocess.check_output(['psql', os.environ['DATABASE_URL'], '-XAtq',
+                                             '-v', 'ON_ERROR_STOP=1', *variables],
+                                            input=equality_sql, text=True)
+            (output / f'plan-equality-{name}.json').write_text(
+                json.dumps(json.loads(result), indent=2) + '\n')

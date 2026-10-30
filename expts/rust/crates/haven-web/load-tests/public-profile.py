@@ -39,12 +39,12 @@ def main():
         SELECT json_agg(i) FROM (SELECT indexname, indexdef FROM pg_indexes
         WHERE tablename = 'offer') i
     """) + '\n')
-    # Four fixed 30-second stages; no capacity search or automatic reruns.
+    # Two fixed 60-second verification stages; no capacity search or automatic reruns.
     spec = importlib.util.spec_from_file_location('gate', Path(__file__).with_name('v07-gate.py'))
     gate = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(gate)
     results = []
-    for jit, rate in (('on', 100), ('on', 1010), ('off', 100), ('off', 1010)):
+    for jit, rate in (('on', 100), ('on', 1010)):
         label = f'public-jit-{jit}-{rate}'
         sql(f"ALTER SYSTEM SET jit = '{jit}'")
         sql('SELECT pg_reload_conf()')
@@ -62,7 +62,7 @@ def main():
         command = [args.runner, '--base-url', 'http://127.0.0.1:3337',
                    '--scenario', 'v07', '--narrowing-fixture', args.fixture,
                    '--query-class', 'public', '--history', 'all',
-                   '--rate', str(rate), '--duration', '30s', '--workers', '200',
+                   '--rate', str(rate), '--duration', '60s', '--workers', '200',
                    '--semantic-percent', '100', '--summary', str(summary)]
         try:
             with (output / f'{label}.log').open('w') as log:
