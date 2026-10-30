@@ -1,5 +1,19 @@
 # Performance fixes and cumulative journey CI
 
+## Current execution policy — 2026-10-30
+
+The owner has deferred further performance patches, routine bug fixes and
+maintenance investigations to the development freeze so v0.7 can ship with
+explicit known debt. [Release acceptance](V0.7_RELEASE.md) and
+[debt register](V0.7_DEBT.md) govern this decision. No open maintenance item below
+is a v0.7 release blocker solely because its performance work is incomplete.
+A4–A7 and B3–B7 remain technically open; do not check them off or lower targets.
+A7's original release dependency is waived for this scoped release exception;
+versioning/packaging remains a separate release step. Security, data loss or
+broken core journeys still require immediate triage. Older continuation sections
+below are historical and do not authorize resuming maintenance before the freeze.
+
+
 Agreed 2026-10-28. This is the execution checklist for personal-feed performance
 fixes and a dedicated journey performance workflow on every push. Task status is
 recorded below. Check an item only after its completion criteria are met; record the
@@ -56,14 +70,36 @@ This checklist does not mark a product stage or release gate complete.
   Repeat Public, Saved, and Inquired measurements with sparse/dense histories,
   broad/selective/empty filters, and first/later pages. Include the unread
   endpoint, cover loading, saved-status batches, database pool waits, and total
-  HTTP latency. Record before/after evidence and identify remaining bottlenecks.
+  HTTP latency. CI 41026033154 on `07ba7a0` completed all ten correctness
+  strata: nine passed 6,000/6,000 with no drops. Dense Inquired passed at
+  14.7 ms journey p95 / 0.2 ms pool-acquisition p95. Dense Saved remains the
+  sole arrival failure: 5,017/6,000 completed, 983 dropped, 2,323 ms journey
+  p95 / 549 ms acquisition p95; completed checks were all correct. The Saved
+  covering index did not clear the loaded failure. Contract stages, external
+  cover transfer, and a controlled before/after comparison remain outstanding.
+  The clean-runner artifact and route-level evidence are recorded in
+  `load-tests/A4_STATE.md` and `load-tests/SCORECARD.md`. Local Saved plans were
+  fast in isolation; under a local replay PostgreSQL showed many active Saved
+  feed statements, but the source of the per-query CPU cost remains unisolated.
+  A Saved-status lookup removal was tried and reverted because sequential
+  replay results were inconclusive. Profile planning/execution on a comparable
+  clean host before another query rewrite.
+  Final update: `dfb79ad` resolved the measured Saved bottleneck. CI 41045410575
+  passed all 530 narrowing cases and Saved through 100 journeys/s: zero drops,
+  all checks correct, 3.07 ms HTTP p95. The investigation is concluded; see
+  `load-tests/SAVED_PROFILE_RESULT.md`. A4 remains open for the explicit release
+  measurements above, not further Saved diagnosis.
 - [ ] **A5. Bound Inquired candidate work if measurements require it —
   medium–large; follows A4.** Measure repeated latest-message checks under dense
   histories, repeated offer messages, and selective filters. Optimize only if
-  remaining cost warrants it; evaluate the maintained-summary fallback already
-  described in `V0.7_PLAN.md`. Preserve deduplication, membership, visibility,
-  activity ordering, and cursor behavior. Record passing evidence or the
-  evidence-based decision that no further change is needed.
+  remaining cost warrants it; the maintained-summary fallback already described
+  in `V0.7_PLAN.md` is implemented in migration 020. Preserve deduplication,
+  membership, visibility, activity ordering, and cursor behavior. Record passing evidence or the
+  evidence-based decision that no further change is needed. Migration 020's
+  maintained activity path passed the dense Inquired CI correctness stratum:
+  6,000/6,000 journeys, 14.7 ms journey p95, 0.2 ms pool-acquisition p95. The
+  contract-rate stage remains unrun because dense Saved stopped the gate. See
+  `load-tests/A4_STATE.md`.
 - [ ] **A6. Consolidate inbox latest-message lookups — small–medium.** Retrieve
   preview and sender together instead of repeating latest-message lookups.
   Preserve unread semantics, empty conversations, authorization, ordering, and
@@ -242,3 +278,14 @@ and the full correctness matrix are now available. B3 still needs inbox/thread
 paging and SSE, remaining auth/profile/media scenarios/adapters, complete mutable
 fixture isolation and the real legacy write round trip. B4–B7 and the v0.7 release
 gate remain pending. No checklist item is closed from this partial tranche alone.
+
+
+## Full release gate — 2026-10-30
+
+[CI 41072121846](https://github.com/Phastboy/haven/actions/runs/41072121846)
+on `4c379aa` failed at guest Public contract load. All ten correctness strata
+passed (60,000 journeys, 114,000 HTTP checks, zero failures/drops). Public
+contract load achieved 321.79/s with 40,970 dropped arrivals; HTTP p95 933.28 ms,
+pool acquisition p95 354.08 ms. Remaining nine contract stages and mixed,
+spike/recovery, soak and capacity were not run. v0.7 remains blocked; no tasks
+closed or version bumped. See [V07_GATE_RESULT.md](crates/haven-web/load-tests/V07_GATE_RESULT.md) for retained evidence and instrumentation gaps.

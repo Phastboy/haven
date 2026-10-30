@@ -1,0 +1,227 @@
+{
+  "history": "all",
+  "journey_latencies": {
+    "public/none/all/first": {
+      "count": 1771,
+      "p50_ns": 602656028,
+      "p95_ns": 671900062,
+      "p99_ns": 723801433
+    },
+    "public/none/all/later": {
+      "count": 1794,
+      "p50_ns": 600237196,
+      "p95_ns": 671822945,
+      "p99_ns": 723949161
+    },
+    "public/none/combined/first": {
+      "count": 1734,
+      "p50_ns": 600972617,
+      "p95_ns": 669332070,
+      "p99_ns": 724389929
+    },
+    "public/none/combined/later": {
+      "count": 1715,
+      "p50_ns": 602213027,
+      "p95_ns": 674027200,
+      "p99_ns": 725068230
+    },
+    "public/none/dominant/first": {
+      "count": 1822,
+      "p50_ns": 602118945,
+      "p95_ns": 676569088,
+      "p99_ns": 731499635
+    },
+    "public/none/dominant/later": {
+      "count": 1795,
+      "p50_ns": 601400697,
+      "p95_ns": 673680298,
+      "p99_ns": 720661992
+    },
+    "public/none/empty/first": {
+      "count": 1857,
+      "p50_ns": 304270110,
+      "p95_ns": 358205537,
+      "p99_ns": 393711997
+    },
+    "public/none/free/first": {
+      "count": 1792,
+      "p50_ns": 854805989,
+      "p95_ns": 1029062764,
+      "p99_ns": 1093742411
+    },
+    "public/none/free/later": {
+      "count": 1810,
+      "p50_ns": 854098875,
+      "p95_ns": 1044678492,
+      "p99_ns": 1111460966
+    },
+    "public/none/rare/first": {
+      "count": 1800,
+      "p50_ns": 601463234,
+      "p95_ns": 670906532,
+      "p99_ns": 727287501
+    },
+    "public/none/rare/later": {
+      "count": 1740,
+      "p50_ns": 601515781,
+      "p95_ns": 678007309,
+      "p99_ns": 731836179
+    }
+  },
+  "fixture_sha256": "f4880de32a23999e68ac69fd3fe253b6aae58ae0a679493f78654050bffbb65a",
+  "semantic_percent": 10,
+  "sample_seed": 42,
+  "query_class": "public",
+  "semantic_cases": {
+    "public-none-0-all-first": {
+      "checked": 198,
+      "passed": 198
+    },
+    "public-none-0-all-later": {
+      "checked": 180,
+      "passed": 180
+    },
+    "public-none-0-combined-first": {
+      "checked": 163,
+      "passed": 163
+    },
+    "public-none-0-combined-later": {
+      "checked": 161,
+      "passed": 161
+    },
+    "public-none-0-dominant-first": {
+      "checked": 175,
+      "passed": 175
+    },
+    "public-none-0-dominant-later": {
+      "checked": 166,
+      "passed": 166
+    },
+    "public-none-0-empty-first": {
+      "checked": 184,
+      "passed": 184
+    },
+    "public-none-0-free-first": {
+      "checked": 184,
+      "passed": 184
+    },
+    "public-none-0-free-later": {
+      "checked": 186,
+      "passed": 186
+    },
+    "public-none-0-rare-first": {
+      "checked": 164,
+      "passed": 164
+    },
+    "public-none-0-rare-later": {
+      "checked": 173,
+      "passed": 173
+    }
+  },
+  "scenario": "v07",
+  "duration_ns": 61002572914,
+  "target_journeys_per_second": 1010,
+  "scheduled": 60600,
+  "started": 19630,
+  "completed": 19630,
+  "dropped": 40970,
+  "failed": 0,
+  "requests": 19630,
+  "requests_per_second": 321.78970594689366,
+  "checks_passed": 19630,
+  "checks": 19630,
+  "routes": [
+    {
+      "route": "public/none/all/first",
+      "count": 1771,
+      "p50_ns": 602614713,
+      "p95_ns": 671841350,
+      "p99_ns": 723796333
+    },
+    {
+      "route": "public/none/all/later",
+      "count": 1794,
+      "p50_ns": 600158933,
+      "p95_ns": 671818116,
+      "p99_ns": 723943730
+    },
+    {
+      "route": "public/none/combined/first",
+      "count": 1734,
+      "p50_ns": 600906276,
+      "p95_ns": 669326720,
+      "p99_ns": 724384398
+    },
+    {
+      "route": "public/none/combined/later",
+      "count": 1715,
+      "p50_ns": 602161829,
+      "p95_ns": 674019917,
+      "p99_ns": 725061737
+    },
+    {
+      "route": "public/none/dominant/first",
+      "count": 1822,
+      "p50_ns": 602072572,
+      "p95_ns": 676564009,
+      "p99_ns": 731492180
+    },
+    {
+      "route": "public/none/dominant/later",
+      "count": 1795,
+      "p50_ns": 601260901,
+      "p95_ns": 673560956,
+      "p99_ns": 720653690
+    },
+    {
+      "route": "public/none/empty/first",
+      "count": 1857,
+      "p50_ns": 304263188,
+      "p95_ns": 358198743,
+      "p99_ns": 393704744
+    },
+    {
+      "route": "public/none/free/first",
+      "count": 1792,
+      "p50_ns": 854400792,
+      "p95_ns": 1029054489,
+      "p99_ns": 1093732281
+    },
+    {
+      "route": "public/none/free/later",
+      "count": 1810,
+      "p50_ns": 854093224,
+      "p95_ns": 1044672730,
+      "p99_ns": 1111455275
+    },
+    {
+      "route": "public/none/rare/first",
+      "count": 1800,
+      "p50_ns": 601425954,
+      "p95_ns": 670889059,
+      "p99_ns": 727280978
+    },
+    {
+      "route": "public/none/rare/later",
+      "count": 1740,
+      "p50_ns": 601221600,
+      "p95_ns": 677999584,
+      "p99_ns": 731823556
+    }
+  ],
+  "overall": {
+    "count": 19630,
+    "p50_ns": 607440389,
+    "p95_ns": 933280591,
+    "p99_ns": 1034796207
+  },
+  "pool_acquire": {
+    "scope": "SQLx connection acquisition (wait plus connection creation)",
+    "count": 37414,
+    "p50_seconds": 0.298456066,
+    "p95_seconds": 0.354079927,
+    "p99_seconds": 0.393145901
+  },
+  "gate_status": "failed",
+  "gate_error": "request/correctness/arrival failure"
+}

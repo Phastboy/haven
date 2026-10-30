@@ -1,0 +1,183 @@
+{
+  "history": "zero",
+  "journey_latencies": {
+    "saved/zero/all/first": {
+      "count": 1000,
+      "p50_ns": 4161286,
+      "p95_ns": 5786587,
+      "p99_ns": 7254057
+    },
+    "saved/zero/combined/first": {
+      "count": 1000,
+      "p50_ns": 4331795,
+      "p95_ns": 6140937,
+      "p99_ns": 8592473
+    },
+    "saved/zero/dominant/first": {
+      "count": 1000,
+      "p50_ns": 4210088,
+      "p95_ns": 5845511,
+      "p99_ns": 7559583
+    },
+    "saved/zero/empty/first": {
+      "count": 1000,
+      "p50_ns": 4182290,
+      "p95_ns": 6045949,
+      "p99_ns": 7616277
+    },
+    "saved/zero/free/first": {
+      "count": 1000,
+      "p50_ns": 4161661,
+      "p95_ns": 6067272,
+      "p99_ns": 7458523
+    },
+    "saved/zero/rare/first": {
+      "count": 1000,
+      "p50_ns": 4153364,
+      "p95_ns": 5635590,
+      "p99_ns": 7206551
+    }
+  },
+  "fixture_sha256": "f4880de32a23999e68ac69fd3fe253b6aae58ae0a679493f78654050bffbb65a",
+  "semantic_percent": 100,
+  "sample_seed": 42,
+  "query_class": "saved",
+  "semantic_cases": {
+    "saved-zero-16-all-first": {
+      "checked": 1000,
+      "passed": 1000
+    },
+    "saved-zero-16-combined-first": {
+      "checked": 1000,
+      "passed": 1000
+    },
+    "saved-zero-16-dominant-first": {
+      "checked": 1000,
+      "passed": 1000
+    },
+    "saved-zero-16-empty-first": {
+      "checked": 1000,
+      "passed": 1000
+    },
+    "saved-zero-16-free-first": {
+      "checked": 1000,
+      "passed": 1000
+    },
+    "saved-zero-16-rare-first": {
+      "checked": 1000,
+      "passed": 1000
+    }
+  },
+  "scenario": "v07",
+  "duration_ns": 60001114477,
+  "target_journeys_per_second": 100,
+  "scheduled": 6000,
+  "started": 6000,
+  "completed": 6000,
+  "dropped": 0,
+  "failed": 0,
+  "requests": 12000,
+  "requests_per_second": 199.99628514566865,
+  "checks_passed": 12000,
+  "checks": 12000,
+  "routes": [
+    {
+      "route": "saved/zero/all/first",
+      "count": 1000,
+      "p50_ns": 2772704,
+      "p95_ns": 3913661,
+      "p99_ns": 5481970
+    },
+    {
+      "route": "saved/zero/all/first/unread",
+      "count": 1000,
+      "p50_ns": 1259154,
+      "p95_ns": 2052526,
+      "p99_ns": 3243273
+    },
+    {
+      "route": "saved/zero/combined/first",
+      "count": 1000,
+      "p50_ns": 2854895,
+      "p95_ns": 4104385,
+      "p99_ns": 6058408
+    },
+    {
+      "route": "saved/zero/combined/first/unread",
+      "count": 1000,
+      "p50_ns": 1264565,
+      "p95_ns": 2208911,
+      "p99_ns": 4034471
+    },
+    {
+      "route": "saved/zero/dominant/first",
+      "count": 1000,
+      "p50_ns": 2794502,
+      "p95_ns": 3979798,
+      "p99_ns": 5446981
+    },
+    {
+      "route": "saved/zero/dominant/first/unread",
+      "count": 1000,
+      "p50_ns": 1260997,
+      "p95_ns": 2023579,
+      "p99_ns": 3529594
+    },
+    {
+      "route": "saved/zero/empty/first",
+      "count": 1000,
+      "p50_ns": 2769587,
+      "p95_ns": 4065848,
+      "p99_ns": 5868807
+    },
+    {
+      "route": "saved/zero/empty/first/unread",
+      "count": 1000,
+      "p50_ns": 1259154,
+      "p95_ns": 2197566,
+      "p99_ns": 3821201
+    },
+    {
+      "route": "saved/zero/free/first",
+      "count": 1000,
+      "p50_ns": 2744112,
+      "p95_ns": 4047640,
+      "p99_ns": 5442228
+    },
+    {
+      "route": "saved/zero/free/first/unread",
+      "count": 1000,
+      "p50_ns": 1246622,
+      "p95_ns": 1876172,
+      "p99_ns": 3550514
+    },
+    {
+      "route": "saved/zero/rare/first",
+      "count": 1000,
+      "p50_ns": 2764811,
+      "p95_ns": 3940313,
+      "p99_ns": 5603953
+    },
+    {
+      "route": "saved/zero/rare/first/unread",
+      "count": 1000,
+      "p50_ns": 1250187,
+      "p95_ns": 2028293,
+      "p99_ns": 3120789
+    }
+  ],
+  "overall": {
+    "count": 12000,
+    "p50_ns": 2465441,
+    "p95_ns": 3560039,
+    "p99_ns": 5036186
+  },
+  "pool_acquire": {
+    "scope": "SQLx connection acquisition (wait plus connection creation)",
+    "count": 24013,
+    "p50_seconds": 0.000165809,
+    "p95_seconds": 0.000248272,
+    "p99_seconds": 0.000786114
+  },
+  "gate_status": "passed"
+}

@@ -1,0 +1,24 @@
+[
+  {
+    "jit": "on",
+    "rate": 100,
+    "completed": 6000,
+    "dropped": 0,
+    "failed": 0,
+    "checks": 6000,
+    "checks_passed": 6000,
+    "exit_code": 0,
+    "p95_ms": 26.781404
+  },
+  {
+    "jit": "on",
+    "rate": 1010,
+    "completed": 26977,
+    "dropped": 33623,
+    "failed": 0,
+    "checks": 26977,
+    "checks_passed": 26977,
+    "exit_code": 1,
+    "p95_ms": 666.0242
+  }
+]

@@ -1,5 +1,8 @@
 # Haven Load Tests
 
+**Current v0.7 handoff:** read [NEXT_SESSION.md](../../../../NEXT_SESSION.md)
+first. It records the deferred full release-gate run and the completed Saved fix.
+
 Load scenarios are implemented in Go under `go/`; no k6 or JavaScript runner is required.
 The runner uses an open-arrival schedule, bounded workers, seeded sessions, and emits
 machine-readable summaries with per-route p50, p95, and p99.

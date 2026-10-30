@@ -1,0 +1,507 @@
+{
+  "history": "sparse",
+  "journey_latencies": {
+    "inquired/sparse/all/first": {
+      "count": 667,
+      "p50_ns": 4404345,
+      "p95_ns": 5187825,
+      "p99_ns": 5995138
+    },
+    "inquired/sparse/all/later": {
+      "count": 667,
+      "p50_ns": 3383893,
+      "p95_ns": 3852770,
+      "p99_ns": 4640958
+    },
+    "inquired/sparse/combined/first": {
+      "count": 666,
+      "p50_ns": 4684660,
+      "p95_ns": 5539941,
+      "p99_ns": 5881189
+    },
+    "inquired/sparse/combined/later": {
+      "count": 666,
+      "p50_ns": 3629409,
+      "p95_ns": 4119558,
+      "p99_ns": 4654526
+    },
+    "inquired/sparse/dominant/first": {
+      "count": 667,
+      "p50_ns": 4455982,
+      "p95_ns": 5403772,
+      "p99_ns": 6362565
+    },
+    "inquired/sparse/dominant/later": {
+      "count": 667,
+      "p50_ns": 3415256,
+      "p95_ns": 3897250,
+      "p99_ns": 4597952
+    },
+    "inquired/sparse/empty/first": {
+      "count": 667,
+      "p50_ns": 3402936,
+      "p95_ns": 3897749,
+      "p99_ns": 4711064
+    },
+    "inquired/sparse/free/first": {
+      "count": 666,
+      "p50_ns": 3501473,
+      "p95_ns": 3934397,
+      "p99_ns": 4341331
+    },
+    "inquired/sparse/rare/first": {
+      "count": 667,
+      "p50_ns": 3413347,
+      "p95_ns": 3904917,
+      "p99_ns": 5511686
+    }
+  },
+  "fixture_sha256": "f4880de32a23999e68ac69fd3fe253b6aae58ae0a679493f78654050bffbb65a",
+  "semantic_percent": 100,
+  "sample_seed": 42,
+  "query_class": "inquired",
+  "semantic_cases": {
+    "inquired-sparse-10-all-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "inquired-sparse-10-all-later": {
+      "checked": 84,
+      "passed": 84
+    },
+    "inquired-sparse-10-combined-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-10-combined-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-10-dominant-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "inquired-sparse-10-dominant-later": {
+      "checked": 84,
+      "passed": 84
+    },
+    "inquired-sparse-10-empty-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "inquired-sparse-10-free-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-10-rare-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "inquired-sparse-11-all-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-11-all-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-11-combined-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-11-combined-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-11-dominant-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-11-dominant-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-11-empty-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-11-free-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-11-rare-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-12-all-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-12-all-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-12-combined-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-12-combined-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-12-dominant-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-12-dominant-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-12-empty-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-12-free-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-12-rare-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-13-all-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-13-all-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-13-combined-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-13-combined-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-13-dominant-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-13-dominant-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-13-empty-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-13-free-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-13-rare-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-14-all-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-14-all-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-14-combined-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-14-combined-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-14-dominant-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-14-dominant-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-14-empty-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-14-free-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-14-rare-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-15-all-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-15-all-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-15-combined-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-15-combined-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-15-dominant-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-15-dominant-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-15-empty-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-15-free-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-15-rare-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "inquired-sparse-8-all-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "inquired-sparse-8-all-later": {
+      "checked": 84,
+      "passed": 84
+    },
+    "inquired-sparse-8-combined-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "inquired-sparse-8-combined-later": {
+      "checked": 84,
+      "passed": 84
+    },
+    "inquired-sparse-8-dominant-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "inquired-sparse-8-dominant-later": {
+      "checked": 84,
+      "passed": 84
+    },
+    "inquired-sparse-8-empty-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "inquired-sparse-8-free-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "inquired-sparse-8-rare-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "inquired-sparse-9-all-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "inquired-sparse-9-all-later": {
+      "checked": 84,
+      "passed": 84
+    },
+    "inquired-sparse-9-combined-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "inquired-sparse-9-combined-later": {
+      "checked": 84,
+      "passed": 84
+    },
+    "inquired-sparse-9-dominant-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "inquired-sparse-9-dominant-later": {
+      "checked": 84,
+      "passed": 84
+    },
+    "inquired-sparse-9-empty-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "inquired-sparse-9-free-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "inquired-sparse-9-rare-first": {
+      "checked": 84,
+      "passed": 84
+    }
+  },
+  "scenario": "v07",
+  "duration_ns": 60000816890,
+  "target_journeys_per_second": 100,
+  "scheduled": 6000,
+  "started": 6000,
+  "completed": 6000,
+  "dropped": 0,
+  "failed": 0,
+  "requests": 12000,
+  "requests_per_second": 199.99727707040554,
+  "checks_passed": 12000,
+  "checks": 12000,
+  "routes": [
+    {
+      "route": "inquired/sparse/all/first",
+      "count": 667,
+      "p50_ns": 3221136,
+      "p95_ns": 3643123,
+      "p99_ns": 4165479
+    },
+    {
+      "route": "inquired/sparse/all/first/unread",
+      "count": 667,
+      "p50_ns": 1024951,
+      "p95_ns": 1203860,
+      "p99_ns": 1574513
+    },
+    {
+      "route": "inquired/sparse/all/later",
+      "count": 667,
+      "p50_ns": 2283227,
+      "p95_ns": 2608724,
+      "p99_ns": 3074327
+    },
+    {
+      "route": "inquired/sparse/all/later/unread",
+      "count": 667,
+      "p50_ns": 1024047,
+      "p95_ns": 1228866,
+      "p99_ns": 1483063
+    },
+    {
+      "route": "inquired/sparse/combined/first",
+      "count": 666,
+      "p50_ns": 3366888,
+      "p95_ns": 3750854,
+      "p99_ns": 4065131
+    },
+    {
+      "route": "inquired/sparse/combined/first/unread",
+      "count": 666,
+      "p50_ns": 1026490,
+      "p95_ns": 1185844,
+      "p99_ns": 1385222
+    },
+    {
+      "route": "inquired/sparse/combined/later",
+      "count": 666,
+      "p50_ns": 2442233,
+      "p95_ns": 2688651,
+      "p99_ns": 3140717
+    },
+    {
+      "route": "inquired/sparse/combined/later/unread",
+      "count": 666,
+      "p50_ns": 1025099,
+      "p95_ns": 1225607,
+      "p99_ns": 1333652
+    },
+    {
+      "route": "inquired/sparse/dominant/first",
+      "count": 667,
+      "p50_ns": 3255462,
+      "p95_ns": 3755703,
+      "p99_ns": 4831969
+    },
+    {
+      "route": "inquired/sparse/dominant/first/unread",
+      "count": 667,
+      "p50_ns": 1032379,
+      "p95_ns": 1182179,
+      "p99_ns": 1488059
+    },
+    {
+      "route": "inquired/sparse/dominant/later",
+      "count": 667,
+      "p50_ns": 2309692,
+      "p95_ns": 2614543,
+      "p99_ns": 3178465
+    },
+    {
+      "route": "inquired/sparse/dominant/later/unread",
+      "count": 667,
+      "p50_ns": 1026605,
+      "p95_ns": 1222882,
+      "p99_ns": 1457941
+    },
+    {
+      "route": "inquired/sparse/empty/first",
+      "count": 667,
+      "p50_ns": 2292330,
+      "p95_ns": 2580085,
+      "p99_ns": 3080610
+    },
+    {
+      "route": "inquired/sparse/empty/first/unread",
+      "count": 667,
+      "p50_ns": 1025646,
+      "p95_ns": 1222341,
+      "p99_ns": 1530291
+    },
+    {
+      "route": "inquired/sparse/free/first",
+      "count": 666,
+      "p50_ns": 2353678,
+      "p95_ns": 2609449,
+      "p99_ns": 2859489
+    },
+    {
+      "route": "inquired/sparse/free/first/unread",
+      "count": 666,
+      "p50_ns": 1027694,
+      "p95_ns": 1187259,
+      "p99_ns": 1320963
+    },
+    {
+      "route": "inquired/sparse/rare/first",
+      "count": 667,
+      "p50_ns": 2295502,
+      "p95_ns": 2593580,
+      "p99_ns": 2990008
+    },
+    {
+      "route": "inquired/sparse/rare/first/unread",
+      "count": 667,
+      "p50_ns": 1029346,
+      "p95_ns": 1270707,
+      "p99_ns": 2208867
+    }
+  ],
+  "overall": {
+    "count": 12000,
+    "p50_ns": 2135795,
+    "p95_ns": 3381228,
+    "p99_ns": 3714534
+  },
+  "pool_acquire": {
+    "scope": "SQLx connection acquisition (wait plus connection creation)",
+    "count": 28012,
+    "p50_seconds": 0.000130821,
+    "p95_seconds": 0.00017466,
+    "p99_seconds": 0.000211173
+  },
+  "gate_status": "passed"
+}

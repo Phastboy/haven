@@ -1,0 +1,507 @@
+{
+  "history": "sparse",
+  "journey_latencies": {
+    "saved/sparse/all/first": {
+      "count": 667,
+      "p50_ns": 5394612,
+      "p95_ns": 7824210,
+      "p99_ns": 9893364
+    },
+    "saved/sparse/all/later": {
+      "count": 667,
+      "p50_ns": 4092679,
+      "p95_ns": 5571160,
+      "p99_ns": 7845533
+    },
+    "saved/sparse/combined/first": {
+      "count": 666,
+      "p50_ns": 5661511,
+      "p95_ns": 7822879,
+      "p99_ns": 9595114
+    },
+    "saved/sparse/combined/later": {
+      "count": 666,
+      "p50_ns": 4271683,
+      "p95_ns": 6326350,
+      "p99_ns": 8249948
+    },
+    "saved/sparse/dominant/first": {
+      "count": 667,
+      "p50_ns": 5427354,
+      "p95_ns": 7956220,
+      "p99_ns": 9404501
+    },
+    "saved/sparse/dominant/later": {
+      "count": 667,
+      "p50_ns": 4114134,
+      "p95_ns": 5940338,
+      "p99_ns": 7977487
+    },
+    "saved/sparse/empty/first": {
+      "count": 667,
+      "p50_ns": 4122836,
+      "p95_ns": 5891896,
+      "p99_ns": 7787305
+    },
+    "saved/sparse/free/first": {
+      "count": 666,
+      "p50_ns": 4161834,
+      "p95_ns": 6075308,
+      "p99_ns": 7263576
+    },
+    "saved/sparse/rare/first": {
+      "count": 667,
+      "p50_ns": 4164348,
+      "p95_ns": 5890206,
+      "p99_ns": 7891850
+    }
+  },
+  "fixture_sha256": "f4880de32a23999e68ac69fd3fe253b6aae58ae0a679493f78654050bffbb65a",
+  "semantic_percent": 100,
+  "sample_seed": 42,
+  "query_class": "saved",
+  "semantic_cases": {
+    "saved-sparse-10-all-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "saved-sparse-10-all-later": {
+      "checked": 84,
+      "passed": 84
+    },
+    "saved-sparse-10-combined-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-10-combined-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-10-dominant-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "saved-sparse-10-dominant-later": {
+      "checked": 84,
+      "passed": 84
+    },
+    "saved-sparse-10-empty-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "saved-sparse-10-free-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-10-rare-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "saved-sparse-11-all-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-11-all-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-11-combined-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-11-combined-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-11-dominant-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-11-dominant-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-11-empty-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-11-free-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-11-rare-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-12-all-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-12-all-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-12-combined-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-12-combined-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-12-dominant-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-12-dominant-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-12-empty-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-12-free-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-12-rare-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-13-all-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-13-all-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-13-combined-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-13-combined-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-13-dominant-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-13-dominant-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-13-empty-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-13-free-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-13-rare-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-14-all-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-14-all-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-14-combined-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-14-combined-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-14-dominant-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-14-dominant-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-14-empty-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-14-free-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-14-rare-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-15-all-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-15-all-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-15-combined-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-15-combined-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-15-dominant-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-15-dominant-later": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-15-empty-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-15-free-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-15-rare-first": {
+      "checked": 83,
+      "passed": 83
+    },
+    "saved-sparse-8-all-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "saved-sparse-8-all-later": {
+      "checked": 84,
+      "passed": 84
+    },
+    "saved-sparse-8-combined-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "saved-sparse-8-combined-later": {
+      "checked": 84,
+      "passed": 84
+    },
+    "saved-sparse-8-dominant-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "saved-sparse-8-dominant-later": {
+      "checked": 84,
+      "passed": 84
+    },
+    "saved-sparse-8-empty-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "saved-sparse-8-free-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "saved-sparse-8-rare-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "saved-sparse-9-all-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "saved-sparse-9-all-later": {
+      "checked": 84,
+      "passed": 84
+    },
+    "saved-sparse-9-combined-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "saved-sparse-9-combined-later": {
+      "checked": 84,
+      "passed": 84
+    },
+    "saved-sparse-9-dominant-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "saved-sparse-9-dominant-later": {
+      "checked": 84,
+      "passed": 84
+    },
+    "saved-sparse-9-empty-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "saved-sparse-9-free-first": {
+      "checked": 84,
+      "passed": 84
+    },
+    "saved-sparse-9-rare-first": {
+      "checked": 84,
+      "passed": 84
+    }
+  },
+  "scenario": "v07",
+  "duration_ns": 60000860753,
+  "target_journeys_per_second": 100,
+  "scheduled": 6000,
+  "started": 6000,
+  "completed": 6000,
+  "dropped": 0,
+  "failed": 0,
+  "requests": 12000,
+  "requests_per_second": 199.9971308644936,
+  "checks_passed": 12000,
+  "checks": 12000,
+  "routes": [
+    {
+      "route": "saved/sparse/all/first",
+      "count": 667,
+      "p50_ns": 3927451,
+      "p95_ns": 5576427,
+      "p99_ns": 7673486
+    },
+    {
+      "route": "saved/sparse/all/first/unread",
+      "count": 667,
+      "p50_ns": 1236922,
+      "p95_ns": 2022616,
+      "p99_ns": 4296722
+    },
+    {
+      "route": "saved/sparse/all/later",
+      "count": 667,
+      "p50_ns": 2730797,
+      "p95_ns": 3968323,
+      "p99_ns": 6214069
+    },
+    {
+      "route": "saved/sparse/all/later/unread",
+      "count": 667,
+      "p50_ns": 1233365,
+      "p95_ns": 1830293,
+      "p99_ns": 2826727
+    },
+    {
+      "route": "saved/sparse/combined/first",
+      "count": 666,
+      "p50_ns": 3996568,
+      "p95_ns": 5460543,
+      "p99_ns": 7134992
+    },
+    {
+      "route": "saved/sparse/combined/first/unread",
+      "count": 666,
+      "p50_ns": 1239036,
+      "p95_ns": 2097956,
+      "p99_ns": 4103231
+    },
+    {
+      "route": "saved/sparse/combined/later",
+      "count": 666,
+      "p50_ns": 2803860,
+      "p95_ns": 4279939,
+      "p99_ns": 5643711
+    },
+    {
+      "route": "saved/sparse/combined/later/unread",
+      "count": 666,
+      "p50_ns": 1232095,
+      "p95_ns": 2122850,
+      "p99_ns": 4069826
+    },
+    {
+      "route": "saved/sparse/dominant/first",
+      "count": 667,
+      "p50_ns": 3956418,
+      "p95_ns": 5781191,
+      "p99_ns": 7240560
+    },
+    {
+      "route": "saved/sparse/dominant/first/unread",
+      "count": 667,
+      "p50_ns": 1230754,
+      "p95_ns": 2089877,
+      "p99_ns": 4114565
+    },
+    {
+      "route": "saved/sparse/dominant/later",
+      "count": 667,
+      "p50_ns": 2744667,
+      "p95_ns": 3997043,
+      "p99_ns": 5653633
+    },
+    {
+      "route": "saved/sparse/dominant/later/unread",
+      "count": 667,
+      "p50_ns": 1239496,
+      "p95_ns": 1867137,
+      "p99_ns": 3061650
+    },
+    {
+      "route": "saved/sparse/empty/first",
+      "count": 667,
+      "p50_ns": 2767187,
+      "p95_ns": 4136011,
+      "p99_ns": 6052204
+    },
+    {
+      "route": "saved/sparse/empty/first/unread",
+      "count": 667,
+      "p50_ns": 1236987,
+      "p95_ns": 1906559,
+      "p99_ns": 3134649
+    },
+    {
+      "route": "saved/sparse/free/first",
+      "count": 666,
+      "p50_ns": 2755565,
+      "p95_ns": 3869066,
+      "p99_ns": 5522142
+    },
+    {
+      "route": "saved/sparse/free/first/unread",
+      "count": 666,
+      "p50_ns": 1236583,
+      "p95_ns": 1919798,
+      "p99_ns": 3844415
+    },
+    {
+      "route": "saved/sparse/rare/first",
+      "count": 667,
+      "p50_ns": 2780321,
+      "p95_ns": 4142816,
+      "p99_ns": 5788966
+    },
+    {
+      "route": "saved/sparse/rare/first/unread",
+      "count": 667,
+      "p50_ns": 1242736,
+      "p95_ns": 1987606,
+      "p99_ns": 3137376
+    }
+  ],
+  "overall": {
+    "count": 12000,
+    "p50_ns": 2500279,
+    "p95_ns": 4391690,
+    "p99_ns": 5912335
+  },
+  "pool_acquire": {
+    "scope": "SQLx connection acquisition (wait plus connection creation)",
+    "count": 28012,
+    "p50_seconds": 0.000162052,
+    "p95_seconds": 0.000237402,
+    "p99_seconds": 0.000739765
+  },
+  "gate_status": "passed"
+}

@@ -14,7 +14,7 @@ Status: draft. Only entries under **Decided** were confirmed by the owner. The w
 | 0.4.x | Can someone act on it? | know about expressed interest | express willingness to take on an offer | inquiry and communication | completed | |
 | 0.5.x | Can someone find it? | | find an offer by name, narrow by price | | completed | met; aggregate p95 28.0ms / p99 31.4ms |
 | 0.6.x | Can I come back to what I care about? | | save an offer, follow a person, return to both | | completed | met; aggregate p95 17.8ms / p99 23.4ms |
-| 0.7.x | Can I narrow it down? | | narrow by category, tags, saved, inquired about | | in progress | |
+| 0.7.x | Can I narrow it down? | | narrow by category, saved, inquired about (tags deferred) | | product accepted for release by exception; packaging pending | failed; debt deferred to freeze |
 | 0.8.x to 0.9.x | TBD | | | | not reached | |
 | 1.0.x | Can two people close an offer? | | | agreement, closing | not reached | |
 | 1.x | TBD | | | | not reached | |
@@ -77,7 +77,7 @@ sequenceDiagram
 ### Deferred dependencies
 - Formal contract closing and mutual agreement. Belongs to 1.0.x. Current behaviour until then: informal communication and status progression only.
 - Payment processing and escrow. Belongs to 2.0.x. Current behaviour until then: no money handling.
-- Category, tag, saved, and inquired-about filters. Belong to 0.7.x.
+- Category, saved and inquired-about filters belong to 0.7.x; tags are deferred until further notice.
 
 ### Done when (from the roadmap)
 An offer can receive a meaningful response from another person, and the system meets its load-testing target.
@@ -90,25 +90,29 @@ submit the same controls, see the same validation/summary, retain criteria acros
 paging and save-return links, and receive offers ordered by the existing public
 keyset. Offerers' publishing journey is unchanged. Scope is separate from facets;
 the public query API accepts only Public. Saved and Inquired now have separate personal retrieval with actor/scope/facet-bound
-activity cursors. Saved orders by save-row time/id; Inquired streams the latest
-qualifying sent message with participant and non-owner checks. Regression and HTTP
-performance validation of these paths remain pending.
+activity cursors. Saved orders by save-row time/id; Inquired uses maintained latest qualifying inquiry activity with participant and non-owner checks. Integrated regression
+verification passed in [CI run 40718082449](https://github.com/Phastboy/haven/actions/runs/40718082449).
+The full HTTP gate failed at guest Public contract load; remaining contract,
+mixed, spike/recovery, soak and capacity stages were skipped. On 2026-10-30 the
+owner accepted v0.7 product scope for release with this explicit exception and
+deferred performance patches and routine bug fixes to the development freeze.
+See [release acceptance](../expts/rust/V0.7_RELEASE.md) and
+[debt register](../expts/rust/V0.7_DEBT.md). Product acceptance is recorded separately
+from the failed performance gate; packaging/deployment are not yet recorded.
 
 There is no prelaunch real-title inventory gate: Haven is deployed but unlaunched
 and has no real offers. Accept vocabulary by owner decision, review names/control
 at 390px before migration, and schedule real-title grouping after launch. Existing
 slugs freeze at launch; prelaunch renames/merges may use migrations and new
-categories may be added later. Synthetic fixtures test performance, not taxonomy. Tags are deferred until further notice by owner decision on 2026-10-28. After category, Saved uses its existing index. Before
-Inquired is built, spike dense read-time aggregation; if it misses the contract
-budget, use maintained last-inquiry rows with a qualifying-message write and
-backfill. Record evidence and the design choice before building. Personal cursor
-encode/decode and normalized-facet binding tests precede repository queries.
+categories may be added later. Synthetic fixtures test performance, not taxonomy. Tags are deferred until further notice by owner decision on 2026-10-28. Saved retains save-row ordering; Inquired uses the maintained activity fallback
+already implemented in migration 020. Person/scope/facet cursor correctness is
+verified. Further maintenance is deferred under the release decision above.
 
 The [cover patch](COVER_PATCH.md) is merged independently; verify it before launch
 as readiness work, not an incident. Sitemap discovery is a
 separate lane: include deep visible offers and remove deleted/unavailable offers;
-its acceptance does not block the narrowing gate. No new narrowing journey or
-performance gate is marked complete by this refactor.
+its acceptance does not block the narrowing gate. The narrowing journeys are accepted under the release exception above; no
+performance gate is marked passed.
 
 ### Category chip journey (implemented and regression-verified)
 
@@ -129,7 +133,7 @@ images disabled; photo delivery is outside that review. Malformed numeric filter
 return 400 rather than silently dropping category. No narrowing item or performance
 gate is marked complete; v0.7 load testing remains pending.
 
-### Personal narrowing journey (implemented, verification pending)
+### Personal narrowing journey (implemented and regression-verified)
 
 Responders select All offers, Saved or Inquired in the filter controls. A personal
 URL always refers to the signed-in recipient's own collection. Guests sign in
@@ -141,7 +145,10 @@ notice. Saved retains save-time order, with unavailable offers omitted from this
 feed (the profile collection keeps its existing placeholders). Inquired uses latest
 qualifying sent-message time; replies, self-offer messages and mismatched participant
 pairs do not qualify. The dense SQL spike selected indexed latest-message streaming;
-see V0.7_PLAN.md and V0.7_INQUIRY_SPIKE.txt. HTTP load gates are still pending.
+see V0.7_PLAN.md and V0.7_INQUIRY_SPIKE.txt. The dense HTTP gate later exceeded
+its arrival budget, so Inquired now maintains the latest qualifying sent-message
+activity in the message transaction. Owner replies, self-offer messages and
+mismatched participant pairs still do not qualify. HTTP load gates are pending.
 
 ### Decided for v0.7
 
@@ -189,7 +196,7 @@ The feature checklist is implemented and the load-test gate is recorded as met i
 
 ### Deferred dependencies
 
-- Category and tag filters remain owned by 0.7.x.
+- Category filters belong to 0.7.x; tags are deferred until further notice.
 - Filtering the public offer feed by saved state belongs to 0.7.x.
 
 ### Done when (from the roadmap)
