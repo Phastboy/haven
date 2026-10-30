@@ -4,12 +4,16 @@ on:
   pull_request:
     paths:
       - 'expts/rust/**'
+      - 'docker-compose.yml'
+      - 'docker/postgres-init/**'
       - '.github/workflows/haven-rust-*'
   push:
     branches:
       - main
     paths:
       - 'expts/rust/**'
+      - 'docker-compose.yml'
+      - 'docker/postgres-init/**'
       - '.github/workflows/haven-rust-*'
   workflow_dispatch:
     inputs:
@@ -76,6 +80,10 @@ jobs:
         uses: actions/checkout@v7
         with:
           persist-credentials: false
+
+      - name: Validate development database Compose
+        working-directory: .
+        run: docker compose config --quiet
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
