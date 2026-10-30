@@ -16,7 +16,7 @@ Haven is an **identity-centered trade platform** built around offers and the peo
 
 **Identity is the frame; offer is the content.** Proximity helps people find locally relevant offers when they choose it, but does not exclude distant offers or make location a requirement for general discovery.
 
-**Status snapshot (2026-10-30):** v0.1–v0.6 complete; v0.7.0 released under the documented exception, with maintenance deferred; v0.8 agreed but not implemented. Haven is deployed but unlaunched, with no real offers reported in the supplied roadmap. The workspace package version is **0.7.0** as recorded in that roadmap.
+**Status snapshot (2026-10-30):** v0.1–v0.6 complete; v0.7.0 released under the documented exception, with maintenance deferred; v0.8 agreed but not implemented. Haven is reported as deployed but unlaunched; the deployment environment is not identified, and production deployment is not verified. No real offers were reported in the supplied roadmap. The workspace package version is **0.7.0** as recorded in that roadmap.
 
 ---
 
