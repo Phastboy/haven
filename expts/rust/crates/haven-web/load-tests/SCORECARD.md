@@ -244,5 +244,6 @@ on `4c379aa` failed at guest Public contract load. All ten correctness strata
 passed (60,000 journeys, 114,000 HTTP checks, zero failures/drops). Public
 contract load achieved 321.79/s with 40,970 dropped arrivals; HTTP p95 933.28 ms,
 pool acquisition p95 354.08 ms. Remaining nine contract stages and mixed,
-spike/recovery, soak and capacity were not run. v0.7 remains blocked; no tasks
-closed or version bumped. See [V07_GATE_RESULT.md](V07_GATE_RESULT.md) for retained evidence and instrumentation gaps.
+spike/recovery, soak and capacity were not run. The technical gate failed; v0.7.0
+was subsequently published under the owner exception. Open maintenance tasks
+remain deferred. See [V07_GATE_RESULT.md](V07_GATE_RESULT.md) for retained evidence and instrumentation gaps.

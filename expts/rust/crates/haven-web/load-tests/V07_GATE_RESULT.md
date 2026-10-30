@@ -8,8 +8,10 @@
 > they no longer prohibit the scoped release exception. No performance pass is claimed.
 
 
-Decision: **Blocked.** Guest Public failed the first contract-rate stage. No
-version bump, tag, deployment, or v0.7 completion is justified by this run.
+Technical outcome: **Failed.** Guest Public failed the first contract-rate stage.
+The owner subsequently accepted the explicit release exception; v0.7.0 is
+published with the unresolved performance and verification debt. This run does
+not establish a full performance pass or verified production deployment.
 
 - Run: [41072121846](https://github.com/Phastboy/haven/actions/runs/41072121846)
 - Branch: `plan/v0.7-discovery`
@@ -71,9 +73,10 @@ Pool acquisition instrumentation was populated for every measured stage. This
 HTTP runner includes server cover/status work but excludes external image transfer
 and browser decode. Cumulative journey coverage and enforcement remain unfinished.
 
-## Next bounded task
+## Disposition
 
-Prepare a targeted Public contract-rate diagnosis using this artifact, with
-explicit query/CPU/pool evidence and a fixed stopping condition before changing
-code. A full-gate rerun is warranted after a verified fix or a demonstrated runner
-issue. No repeat run or new exploratory investigation was dispatched in this task.
+v0.7.0 was published under the owner-approved exception. Public diagnosis and
+its rejected equality experiment are recorded in
+[V0.7_DEBT.md](../../../V0.7_DEBT.md). Further maintenance and full-gate
+verification are deferred to the development freeze; this report does not
+authorize a new investigation or rerun.

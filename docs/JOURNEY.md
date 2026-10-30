@@ -2,7 +2,12 @@
 
 One story, two lanes. Lanes are roles, not people: the **Offerer** (the person making an offer) and the **Responder** (the person responding to it). One person can play both. Stages follow `ROADMAP.md`; only the current stage is detailed.
 
-Status: draft. Only entries under **Decided** were confirmed by the owner. The workspace package version is 0.6.0. Stages 0.1.x through 0.6.x are complete; v0.7 has begun with the behavior-preserving title/price criteria refactor. Narrowing journeys and their performance gate remain incomplete.
+Status: v0.7.0 released on 2026-10-30 under the owner-approved performance
+exception. Workspace version: 0.7.0. Stages 0.1–0.6 retain their recorded completion;
+v0.7 narrowing behavior is accepted and released, with failed/unrun performance
+verification tracked in [V0.7_DEBT.md](../expts/rust/V0.7_DEBT.md). Production
+deployment has not been verified. Only entries under **Decided** are confirmed
+product decisions.
 
 ## The story at a glance
 
@@ -14,7 +19,7 @@ Status: draft. Only entries under **Decided** were confirmed by the owner. The w
 | 0.4.x | Can someone act on it? | know about expressed interest | express willingness to take on an offer | inquiry and communication | completed | |
 | 0.5.x | Can someone find it? | | find an offer by name, narrow by price | | completed | met; aggregate p95 28.0ms / p99 31.4ms |
 | 0.6.x | Can I come back to what I care about? | | save an offer, follow a person, return to both | | completed | met; aggregate p95 17.8ms / p99 23.4ms |
-| 0.7.x | Can I narrow it down? | | narrow by category, saved, inquired about (tags deferred) | | product accepted for release by exception; packaging pending | failed; debt deferred to freeze |
+| 0.7.x | Can I narrow it down? | | narrow by category, saved, inquired about (tags deferred) | | v0.7.0 released by exception | failed; debt deferred to freeze |
 | 0.8.x to 0.9.x | TBD | | | | not reached | |
 | 1.0.x | Can two people close an offer? | | | agreement, closing | not reached | |
 | 1.x | TBD | | | | not reached | |
@@ -98,7 +103,7 @@ owner accepted v0.7 product scope for release with this explicit exception and
 deferred performance patches and routine bug fixes to the development freeze.
 See [release acceptance](../expts/rust/V0.7_RELEASE.md) and
 [debt register](../expts/rust/V0.7_DEBT.md). Product acceptance is recorded separately
-from the failed performance gate; packaging/deployment are not yet recorded.
+from the failed performance gate; v0.7.0 is published; production deployment is not verified.
 
 There is no prelaunch real-title inventory gate: Haven is deployed but unlaunched
 and has no real offers. Accept vocabulary by owner decision, review names/control
@@ -130,8 +135,9 @@ on commit `699ec12`, including fresh migrations, regenerated SQLx metadata, data
 and route regressions, build, lint and documentation checks. Synthetic SSR snapshots
 passed responsive review at 390px, 768px, 1024px and 1440px with JavaScript and
 images disabled; photo delivery is outside that review. Malformed numeric filters
-return 400 rather than silently dropping category. No narrowing item or performance
-gate is marked complete; v0.7 load testing remains pending.
+return 400 rather than silently dropping category. The narrowing behavior is now
+released under the owner exception; the full performance gate failed and its
+remaining obligations are deferred debt.
 
 ### Personal narrowing journey (implemented and regression-verified)
 
@@ -148,7 +154,9 @@ pairs do not qualify. The dense SQL spike selected indexed latest-message stream
 see V0.7_PLAN.md and V0.7_INQUIRY_SPIKE.txt. The dense HTTP gate later exceeded
 its arrival budget, so Inquired now maintains the latest qualifying sent-message
 activity in the message transaction. Owner replies, self-offer messages and
-mismatched participant pairs still do not qualify. HTTP load gates are pending.
+mismatched participant pairs still do not qualify. Low-rate correctness passed;
+personal contract-rate stages were skipped after the Public load failure and
+remain deferred verification debt.
 
 ### Decided for v0.7
 

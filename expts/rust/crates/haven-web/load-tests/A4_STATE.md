@@ -1,21 +1,18 @@
-# A4 Measurement State
+# A4 measurement history
 
-**Resume here first:** [NEXT_SESSION.md](../../../../NEXT_SESSION.md) records the
-deferred full v0.7 release-gate run and its state. The Saved investigation is
-finished; the next session is release verification.
+Archived measurements from 2026-10-29–30. This file records historical evidence,
+not a session handoff or instructions to resume investigations. v0.7.0 is published
+with an explicit performance exception; current obligations are in
+[V0.7_DEBT.md](../../../V0.7_DEBT.md) and
+[the execution checklist](../../../PERFORMANCE_AND_JOURNEY_CI_TASKS.md).
 
-Updated 2026-10-30. A4 remains **in progress** in
-[`PERFORMANCE_AND_JOURNEY_CI_TASKS.md`](../../PERFORMANCE_AND_JOURNEY_CI_TASKS.md).
-This file carries the current evidence, affected code, and next action so the
-work can resume without relying on chat history.
+The dense Saved investigation concluded with verified fix `dfb79ad`; see
+[SAVED_PROFILE_RESULT.md](SAVED_PROFILE_RESULT.md). The later full gate failed
+at Public contract load; see [V07_GATE_RESULT.md](V07_GATE_RESULT.md).
+Older records sometimes called HTTP-request p95 a journey p95; use the
+`journey_latencies` data for combined journey timing.
 
-The dense Saved investigation is concluded. Fix `dfb79ad` passed CI 41045410575:
-6,000/6,000 journeys at 100 journeys/s, zero drops, all 12,000 HTTP checks
-correct, and 3.07 ms HTTP p95. See [SAVED_PROFILE_RESULT.md](SAVED_PROFILE_RESULT.md)
-for the cause, single verification, and remaining release gates. Older results
-below are historical; some mislabeled HTTP p95 as journey p95.
-
-## Current evidence
+## Instrumentation evidence
 
 The pool acquisition signal and load-gate reporting were added in commits
 `82e18eb` and `518d808`. The opt-in instrumentation is enabled only when
@@ -69,13 +66,6 @@ isolate those costs causally.
   and skipped stages. The gate still fails when any correctness phase fails.
 - `.github/workflows/haven-rust-ci.yml` enables acquisition telemetry only for
   the isolated v0.7 load gate.
-
-## Run queued at the previous checkpoint
-
-The previous checkpoint's immediate steps (inspect run status/artifact, check
-matrix coverage, and record the outcome) are complete. See the diagnostic result
-below. The dense personal-feed results now direct the next investigation; do not
-infer that a larger pool alone fixes the underlying query cost.
 
 ## Diagnostic run result — 2026-10-29
 
@@ -370,12 +360,9 @@ pool logs, and database files remain under `/tmp/haven-a4-analysis-*` for this
 session. The EXPLAIN output is summarized above but was not retained as a raw
 plan file.
 
-Current conclusion: the covering index avoids heap reads and representative
-isolated plans are fast, while concurrent Saved feed statements run slowly under
-the load gate. The source of the per-query CPU cost is still unisolated. Next,
-capture per-statement planning/execution totals during a dense Saved replay on a
-clean runner (or use a comparable isolated host) before another query rewrite.
-Keep A4 open.
+This local investigation was superseded by the completed Saved profiling and
+verified fix in [SAVED_PROFILE_RESULT.md](SAVED_PROFILE_RESULT.md). Its proposed
+follow-up replay is no longer an active task.
 
 ## Still unmeasured
 
@@ -388,4 +375,5 @@ Keep A4 open.
 - CI 41045410575 passed the full 530-case narrowing sweep and dense Saved
   through 100 journeys/s. Contract-rate and later stages remain unverified.
 - No contract, mixed, spike/recovery, soak, capacity, or release gate passed.
-  A4, A5, A6, B3–B7, and v0.7 release completion remain open.
+  A4–A7 and B3–B7 remain technical debt. v0.7.0 was released under the owner
+  exception; these measurements do not constitute a performance pass.

@@ -3,13 +3,13 @@
 ## Current execution policy — 2026-10-30
 
 The owner has deferred further performance patches, routine bug fixes and
-maintenance investigations to the development freeze so v0.7 can ship with
+maintenance investigations to the development freeze; v0.7.0 is published with
 explicit known debt. [Release acceptance](V0.7_RELEASE.md) and
 [debt register](V0.7_DEBT.md) govern this decision. No open maintenance item below
 is a v0.7 release blocker solely because its performance work is incomplete.
 A4–A7 and B3–B7 remain technically open; do not check them off or lower targets.
 A7's original release dependency is waived for this scoped release exception;
-versioning/packaging remains a separate release step. Security, data loss or
+version 0.7.0 was packaged and published through PR #43. Security, data loss or
 broken core journeys still require immediate triage. Older continuation sections
 below are historical and do not authorize resuming maintenance before the freeze.
 
@@ -107,8 +107,8 @@ This checklist does not mark a product stage or release gate complete.
 - [ ] **A7. Complete v0.7 verification and release evidence — medium; follows
   applicable fixes and Track B.** Pass regressions and all required load, mixed,
   spike/recovery, soak, and capacity gates. Record results in `SCORECARD.md`, then
-  update release/product completion records and bump the workspace version to
-  `0.7.0`. Tags remain deferred. Do not claim completion from implementation alone.
+  close the technical verification record. The version bump and v0.7.0 tag were
+  completed under the owner exception; remaining gates stay deferred, not passed.
 
 Keep initial offer pages at 20 items. Pagination already bounds returned feed
 rows; it does not by itself bound database work required to find those rows.
@@ -191,7 +191,7 @@ For every completed task, append an evidence entry here:
 | A3 | `3d4d2c4`, `32bb582` / [40841600614](https://github.com/Phastboy/haven/actions/runs/40841600614) | Ten unread reuse/refresh/account-isolation script regressions; 232 Rust and 15 total script checks pass | 2026-10-29 |
 
 
-## Continuation point — 2026-10-29
+## Historical progress — 2026-10-29
 
 A1–A3 and B1–B2 are complete as recorded above. A3 and the first B3 tranche passed
 [CI 40841600614](https://github.com/Phastboy/haven/actions/runs/40841600614) at
@@ -219,7 +219,7 @@ that setup. No full load gate or v0.7 completion is claimed.
 and zero-history strata, dense/read-only and isolated mutable truth, inbox/thread
 paging and SSE, remaining auth/profile/media journeys/adapters and complete pool
 telemetry. The legacy write journey still needs a real-application round trip.
-A4 is now unblocked by A1–A3 and must measure complete authenticated requests.
+A1–A3 unblocked A4 measurement work; remaining work is now deferred to the freeze.
 B4–B7 still need cumulative every-push coverage, complete success/failure evidence,
 regression baselines, actual merge/deployment enforcement and measured procedure.
 
@@ -272,7 +272,7 @@ Sessions and private fixture truth were not uploaded. A concurrently staged
 Cargo.lock dependency update was preserved separately and is not in the verified
 branch state.
 
-Latest continuation: A4 needs actual pool-wait telemetry, external-cover handling
+Remaining freeze work: A4 needs actual pool-wait telemetry, external-cover handling
 and comparable sustained authenticated measurements; request/journey accounting
 and the full correctness matrix are now available. B3 still needs inbox/thread
 paging and SSE, remaining auth/profile/media scenarios/adapters, complete mutable
@@ -287,5 +287,6 @@ on `4c379aa` failed at guest Public contract load. All ten correctness strata
 passed (60,000 journeys, 114,000 HTTP checks, zero failures/drops). Public
 contract load achieved 321.79/s with 40,970 dropped arrivals; HTTP p95 933.28 ms,
 pool acquisition p95 354.08 ms. Remaining nine contract stages and mixed,
-spike/recovery, soak and capacity were not run. v0.7 remains blocked; no tasks
-closed or version bumped. See [V07_GATE_RESULT.md](crates/haven-web/load-tests/V07_GATE_RESULT.md) for retained evidence and instrumentation gaps.
+spike/recovery, soak and capacity were not run. The technical gate failed; v0.7.0
+was subsequently published under the owner exception. Open maintenance tasks
+remain deferred. See [V07_GATE_RESULT.md](crates/haven-web/load-tests/V07_GATE_RESULT.md) for retained evidence and instrumentation gaps.
