@@ -38,7 +38,7 @@ deploy, poll reviews or resume performance work. Standard PR CI may run normally
 
 The isolated worktree `/tmp/haven-v07-release` uses `plan/v0.7-discovery` and
 packages version 0.7.0 with the documented release exception and deferred debt.
-Original worktree staging is preserved. PR URL will be recorded after creation.
+Original worktree staging is preserved. PR: [#43](https://github.com/Phastboy/haven/pull/43), targeting main.
 The Public experiment branch is excluded. Release acceptance and debt remain in
 V0.7_RELEASE.md and V0.7_DEBT.md. No full performance pass is claimed.
 
@@ -158,5 +158,5 @@ links and whitespace checked; no application code, version, tag or deployment ch
 ## PR preparation — 2026-10-30
 
 Documentation and 0.7.0 package metadata prepared on plan/v0.7-discovery in
-/tmp/haven-v07-release. Next: open PR targeting main, record URL, then stop until
-the owner requests review inspection. No merge or deployment is authorized here.
+/tmp/haven-v07-release. PR opened: [#43](https://github.com/Phastboy/haven/pull/43), targeting main.
+Release preparation commit: `09dfd6d`. Stop until the owner requests review inspection. No merge or deployment is authorized here.
