@@ -6,7 +6,7 @@
 > documented performance and verification debt deferred to the development freeze.
 > The full load gate failed; its targets are unchanged. See
 > [release acceptance](expts/rust/V0.7_RELEASE.md) and [debt register](expts/rust/V0.7_DEBT.md).
-> Packaging/deployment are not yet recorded; this is not a performance pass.
+> v0.7.0 is published; production deployment is not verified. This is not a performance pass.
 
 ---
 
@@ -16,7 +16,7 @@ Haven is an **identity-centered trade platform** built around offers and the peo
 
 **Identity is the frame; offer is the content.** Proximity helps people find locally relevant offers when they choose it, but does not exclude distant offers or make location a requirement for general discovery.
 
-**Status snapshot (2026-10-29):** v0.1–v0.6 complete; v0.7 product scope accepted for release under the documented exception, with PR/merge pending and maintenance deferred; v0.8 agreed but not implemented. Haven is deployed but unlaunched, with no real offers reported in the supplied roadmap. The workspace package version is **0.7.0** as recorded in that roadmap.
+**Status snapshot (2026-10-30):** v0.1–v0.6 complete; v0.7.0 released under the documented exception, with maintenance deferred; v0.8 agreed but not implemented. Haven is deployed but unlaunched, with no real offers reported in the supplied roadmap. The workspace package version is **0.7.0** as recorded in that roadmap.
 
 ---
 
@@ -125,7 +125,7 @@ The load-test gate is recorded as met in [`crates/haven-web/load-tests/SCORECARD
 
 ---
 
-The workspace package version is **0.7.0**. Stages 0.1.x through 0.6.x are complete; v0.7 narrowing functionality is accepted for release under the 2026-10-30 exception. Its failed performance gate and incomplete verification remain open freeze-phase debt; merge and deployment remain pending.
+The workspace package version is **0.7.0**. Stages 0.1.x through 0.6.x are complete; v0.7 narrowing functionality is accepted for release under the 2026-10-30 exception. Its failed performance gate and incomplete verification remain open freeze-phase debt; v0.7.0 was published after rebase-merging PR #43; production deployment is not verified.
 
 ## 0.7.x — Can I narrow it down?
 

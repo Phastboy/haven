@@ -10,7 +10,8 @@
 
 **Conclusion:** Public category/currency/price-filter query execution dominates
 this workload. JIT is ruled out for the captured queries. No application fix or
-full-gate rerun was made; v0.7 remains blocked.
+full-gate rerun was made by this diagnostic; v0.7.0 was later published under
+the documented exception.
 
 ## Reproducible run
 
@@ -69,16 +70,16 @@ a database-heavy bottleneck but does not prove a particular scan or join plan.
 
 The Public query in `crates/haven-db/src/offers/feed.rs::list_public` joins makers
 before `ORDER BY`/`LIMIT` and uses `.persistent(false)`; facet emission adds bound
-currency and price constraints. No EXPLAIN plan was captured, so an index mismatch,
+currency and price constraints. No EXPLAIN plan was captured in this initial diagnostic, so an index mismatch,
 poor selectivity estimate or excessive join work remains to be distinguished.
 
-## Stopping point and next step
+## Subsequent findings and deferred work
 
-The four-stage diagnostic is complete. Next: capture `EXPLAIN (ANALYZE, BUFFERS,
-SETTINGS, FORMAT JSON)` for the first/later free-price fixture cases and fast
-controls on the same seeded CI database. Inspect existing indexes and cardinality
-estimates; choose one minimal query/index correction only after the plans explain
-the observed cost. Verify correctness and Public contract rate before a full-gate
-rerun. Do not increase pool size, lower targets, or reopen Saved diagnosis from
-this evidence. No soak, spike, mixed, personal contract or external-image claims
-are supported by this diagnostic.
+Actual plans captured in CI 41084281841 show free-price first/later queries
+parallel-scanning 100k offers and sorting; fast controls use ordered index scans.
+The equality experiment `ada6524` passed correctness but retained the slow plans
+and failed contract load in CI 41086635067. It is excluded from the release.
+See [V0.7_DEBT.md](../../../V0.7_DEBT.md) for the findings, retained evidence and
+freeze-phase completion criteria. No further investigation is scheduled before
+that phase. This diagnostic does not establish soak, spike, mixed, personal
+contract or external-image performance.
